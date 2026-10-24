@@ -85,7 +85,7 @@ function adminDialog(tab = 'users', fid = null) {
     fid = fid || (fs[0] && fs[0].id);
     const list = fid ? chatOf(fid) : [];
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
-      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${esc(m.name)}</span>${esc(m.text)}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
+      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${chatWho(m)}</span>${esc(m.text)}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
   }
   openModal(`<h2>👁 관리자 보기 <span class="dim small">· 새 정보는 1분마다 받아 와요</span></h2>${tabs}${body}
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
@@ -747,6 +747,8 @@ function renderCommands() {
 // 우리 세력끼리만, 최근 50개. 서버의 세계에 함께 저장된다 (화면은 1분마다 새로 받아 온다)
 const CHAT_MAX = 50, CHAT_LEN = 100;
 const chatOf = fid => (S.chat && S.chat[fid]) || [];
+// 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 예전 글은 성이 없어 이름만
+const chatWho = m => esc(m.name) + (m.city && cityById(m.city) ? `<span class="dim">(${esc(cityById(m.city).name)})</span>` : '');
 async function sendChat(text) {
   text = text.trim().slice(0, CHAT_LEN);
   if (!text || !me().faction) return;
@@ -777,7 +779,7 @@ function renderChat() {
 function renderChatList() {
   const ul = $('#chat .chatList'), p = me(), list = chatOf(p.faction);
   ul.innerHTML = list.length
-    ? list.map(m => `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${esc(m.name)}</span>${esc(m.text)}</li>`).join('')
+    ? list.map(m => `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m)}</span>${esc(m.text)}</li>`).join('')
     : '<li class="empty">아직 아무 말도 없어요. 첫마디를 남겨 보세요.</li>';
   ul.scrollTop = ul.scrollHeight; // 새 글이 보이게 맨 아래로
 }
