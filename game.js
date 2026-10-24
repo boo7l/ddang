@@ -835,7 +835,9 @@ function cityDetailRows(c) {
     rows.push(`<tr class="wide"><th>수비</th><td>${defs.length ? defenseText(c, defs, '<br>') : '<span class="dim">방어하는 장수 없음</span>'}</td></tr>`);
   }
   // 다른 세력 성은 방어만 보이고 나머지 지금 수치는 ? (서버가 보내지 않는다)
-  const val = k => (cs.hidden && k !== 'wall' ? '?' : cs[k]);
+  // 치안이 낮으면 색으로 경고: 50 미만 주황 (수입·징병 감소), 20 미만 빨강 (징병 불가)
+  const peaceCls = v => (v < RULES.peaceLow ? 'bad' : v < RULES.peaceOk ? 'warn' : '');
+  const val = k => (cs.hidden && k !== 'wall' ? '?' : k === 'peace' && peaceCls(cs[k]) ? `<b class="${peaceCls(cs[k])}">${cs[k]}</b>` : cs[k]);
   rows.push(...Object.keys(DOMESTIC).filter(cmdOn).map(k =>
     `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
   if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.hidden ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
