@@ -78,6 +78,8 @@ const RULES = {
   // 5합 전투 (기획서 8장): 출진 1회에 최대 5합. 한 합에 양쪽이 동시에 상대 병력을 "내 전투력 × 20%"만큼 줄인다
   roundsMax: 5,
   roundRate: 0.2,           // 임시: 비슷하면 5합 뒤에도 양쪽이 남고, 2~3배 차이면 2~3합에 끝난다
+  // 병력 곡선: 병력이 많을수록 전투력이 덜 늘어난다. 실효 병력 = 5,000 × (병력 ÷ 5,000)^exp (exp 1이면 정비례)
+  troopCurve: { ref: 5000, exp: 0.75 },
   battleRandom: 0.05,       // 합마다 전투력에 ±5% 무작위
   wallDivisor: 10000 / 3,   // 수비 보정 = 1 + 방어 × 0.0003 (방어 100마다 +3%, 방어 900이면 1.27배). 예전엔 100마다 +5%였다
   captureCut: 0.2,          // 임시: 함락된 성의 농업·상업·치안이 20% 깎인다 (방어는 아래 captureWall로 다시 세운다)
@@ -205,7 +207,8 @@ const UNIT_TYPES = {
 function unitPower(u) {
   const stat = u.stats[UNIT_TYPES[u.type].stat];
   const drill = !RULES.features.drill ? 1 : RULES.trainingFloor + (1 - RULES.trainingFloor) * (u.training || 0) / 100;
-  return u.troops * (0.4 + stat / 100) * drill;
+  const c = RULES.troopCurve, eff = u.troops > 0 ? c.ref * Math.pow(u.troops / c.ref, c.exp) : 0; // 병력 곡선
+  return eff * (0.4 + stat / 100) * drill;
 }
 // 상성 보정: a가 b에게 강하면 1.2. 약할 때 깎는 것은 없다 (너무 세서 뺐다)
 function matchupOf(a, b) {
