@@ -412,7 +412,7 @@ function capture(g, to, oldFaction, lines) {
 // 턴이 오면 출진해서 바로 싸운다 (기획서 7장).
 //  1. 공백지: 주인이 없어 그냥 들어간다 (금 없음)
 //  2. 수비 부대가 있으면 최대 5합. 병력 많은 순서로 하나씩 상대하고, 합이 남으면 다음 부대와 이어서 싸운다
-//  3. 수비 부대가 없거나 모두 쓰러뜨렸으면 같은 턴에 성벽 공격: 남은 병력의 3~5%와 방어를 맞바꾼다
+//  3. 수비 부대가 없거나 모두 쓰러뜨렸으면 같은 턴에 성벽 공격: 남은 병력의 3~5%만큼 방어를 깎고, 그 2배의 병력을 잃는다
 //  4. 방어가 0이 되면 점령 (금 500). 방어가 남으면 돌아오고, 깎인 방어는 그대로 남는다
 // 보고서는 공격한 장수와 그 성에 있던 장수들이 받고, 그 세력의 다른 장수들에게는 알림이 간다
 function runAttack(g, o, mark) {
@@ -479,11 +479,12 @@ function runAttack(g, o, mark) {
   } else {
     lines.push(defs.length ? '수비 부대를 모두 물리치고 성벽으로 달려들었다!' : '막는 부대가 없어 곧장 성벽으로 달려들었다!');
     const sr = RULES.siegeRate, rate = sr.min + Math.random() * (sr.max - sr.min);
-    const dmg = Math.min(cs.wall, g.troops, Math.max(1, Math.floor(g.troops * rate)));
+    const dmg = Math.min(cs.wall, Math.max(1, Math.floor(g.troops * rate)));
+    const loss = Math.min(g.troops, dmg * RULES.siegeLoss); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 2배만큼 잃는다
     cs.wall -= dmg;
-    g.troops -= dmg;
-    atkLost += dmg;
-    lines.push(`🏯 성벽 공격: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(dmg)}`);
+    g.troops -= loss;
+    atkLost += loss;
+    lines.push(`🏯 성벽 공격: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(loss)}`);
     if (cs.wall <= 0) {
       captured = true;
       lines.push(`${g.name}의 승리! 성벽이 무너져 ${josa(to.name, '을를')} 점령했다. (${owner.name} 세력에게서 빼앗음)`);
