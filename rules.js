@@ -194,8 +194,8 @@ function feedTroops(g, cs) {
 // ===== 병종 =====
 // 기병 → 보병 → 궁병 → 기병 순으로 이긴다. 병종마다 전투력에 쓰는 능력치가 다르다
 const UNIT_TYPES = {
-  기병: { stat: 'war', beats: '보병' },
   보병: { stat: 'lea', beats: '궁병' },
+  기병: { stat: 'war', beats: '보병' },
   궁병: { stat: 'int', beats: '기병' },
 };
 
