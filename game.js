@@ -167,6 +167,22 @@ function rankDialog() {
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
+// ===== 명예의 전당 (첫 화면 아래) =====
+// 시즌이 끝날 때마다 서버가 남긴 공적 상위 10명. 가장 최근 시즌이 펼쳐져 있다
+async function renderHof() {
+  const box = $('#hof');
+  if (!sb) return;
+  const { data, error } = await sb.from('hall_of_fame').select('*').order('season', { ascending: false });
+  if (error || !data || !data.length) { box.innerHTML = ''; return; }
+  const sw = c => (c ? `<span class="swatch" style="background:${c}"></span>` : '');
+  box.innerHTML = `<h3 class="hofTitle">🏆 명예의 전당</h3>` + data.map((h, n) => `
+    <details class="hofSeason"${n === 0 ? ' open' : ''}>
+      <summary>시즌 ${h.season} · ${sw(h.winner_color)}${esc(h.winner || '?')} 천하통일 <span class="dim">(${dateText(h.turn)})</span></summary>
+      <table class="hofTable">${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
+        <td>${g.faction ? `${sw(g.color)}${esc(g.faction)}` : '<span class="dim">재야</span>'}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>
+    </details>`).join('');
+}
+
 // ===== 턴 =====
 // 턴 처리는 서버가 한다. 여기서는 세계를 다시 받아 와서 그린다
 async function refresh() {
@@ -459,6 +475,7 @@ let authMode = 'login'; // 'login' 로그인 | 'new' 계정 만들기
 
 function showTitle(msg) {
   showScreen('title');
+  renderHof();
   setAuthMode(authMode);
   $('#tMsg').hidden = !msg;
   $('#tMsg').textContent = msg || '';

@@ -46,10 +46,11 @@ function addLog(g, text) {
 const logAll = text => allGenerals().forEach(g => addLog(g, text));
 
 // ===== 세계 만들기 =====
-function newWorld() {
+function newWorld(season = 1) {
   const t = Date.now();
   S = {
     v: SAVE_VERSION,
+    season,      // 몇 번째 시즌인지 (명예의 전당에 쓴다)
     timeOffset: 0,
     incomeAt: Math.floor(t / RULES.turnLength) * RULES.turnLength, // 마지막으로 처리한 턴 시각
     turn: 0,      // 지난 턴 수. 게임 속 날짜 = 190년 1월 + turn달

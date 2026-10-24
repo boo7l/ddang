@@ -475,3 +475,13 @@ details.fold > summary:hover h2 { color: var(--title); }
 .bar.stat { display: inline-flex; }
 .bar.stat > span { flex: none; }
 .bar.stat > span.item { background: var(--ok); }
+
+/* 첫 화면: 명예의 전당 (작게) */
+#hof { margin-top: 18px; text-align: left; font-size: 14px; }
+#hof .hofTitle { margin: 0 0 6px; font-size: 15px; font-weight: normal; color: var(--title); text-align: center; border-top: 1px dotted var(--gold-dark); padding-top: 12px; }
+#hof .hofSeason { margin: 4px 0; padding: 4px 8px; background: var(--panel-dark); border: 1px solid var(--gold-dark); }
+#hof .hofSeason > summary { cursor: pointer; color: var(--label); }
+#hof .hofTable { width: 100%; margin-top: 4px; border-collapse: collapse; }
+#hof .hofTable td { padding: 1px 4px; }
+#hof .hofTable .num { text-align: right; }
+#hof .swatch { width: 12px; height: 12px; }
