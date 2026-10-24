@@ -126,7 +126,7 @@ function adminToolsDialog() {
       unifyDialog({ faction: fid, turn: S.turn });
     };
     $('#aSeason').onclick = async () => {
-      if (!confirm('새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 턴이 흐르는 상태로 시작해요.')) return;
+      if (!confirm('새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 멈춘 채로 기다리다가, 첫 장수가 세력에 들어오면 190년 1월부터 턴이 흘러요.')) return;
       if (await call('newSeason')) location.reload();
     };
     $('#aReset').onclick = async () => {
@@ -174,7 +174,8 @@ async function renderSeasonBadge() {
     const s = await api('status');
     const f = s.unified && factionById(s.unified);
     el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일`
-      : s.paused ? `⏸ 시즌 ${s.season} · 장수 모집 중 <span class="dim">(${dateText(s.turn)}, 곧 시작)</span>`
+      : s.waiting ? `⏸ 시즌 ${s.season} · 장수 모집 중 <span class="dim">(첫 장수가 세력에 들어오면 시작)</span>`
+      : s.paused ? `⏸ 시즌 ${s.season} · 잠시 멈춤 <span class="dim">(${dateText(s.turn)})</span>`
       : `⚔ 시즌 ${s.season} 진행 중 <span class="dim">· ${dateText(s.turn)}</span>`;
   } catch (e) { el.innerHTML = ''; }
 }
