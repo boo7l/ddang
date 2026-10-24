@@ -201,11 +201,11 @@ const UNIT_TYPES = {
 
 // ===== 전투 =====
 // 부대 하나: { name, troops, stats, type(병종), training(훈련도 0~100) }
-// 부대 전투력 = 병력 × (0.5 + 병종 능력치 ÷ 100) × 훈련 보정
+// 부대 전투력 = 병력 × (0.4 + 병종 능력치 ÷ 100) × 훈련 보정 (2026-10-25 0.5에서 낮춤: 주고받는 피해를 조금 줄임)
 function unitPower(u) {
   const stat = u.stats[UNIT_TYPES[u.type].stat];
   const drill = !RULES.features.drill ? 1 : RULES.trainingFloor + (1 - RULES.trainingFloor) * (u.training || 0) / 100;
-  return u.troops * (0.5 + stat / 100) * drill;
+  return u.troops * (0.4 + stat / 100) * drill;
 }
 // 상성 보정: a가 b에게 강하면 1.2. 약할 때 깎는 것은 없다 (너무 세서 뺐다)
 function matchupOf(a, b) {
