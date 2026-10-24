@@ -354,7 +354,7 @@ function plotDialog(kind) {
     const f = factionById(c.faction), cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>
-      <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall}` : cs.hidden ? '치안 ? · 농업 ? · 상업 ?' : `치안 ${cs.peace} · 농업 ${cs.agri} · 상업 ${cs.comm}`}</span></label>`;
+      <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall}` : ''}</span></label>`;
   }).join('');
   const effect = kind === 'destroy'
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
