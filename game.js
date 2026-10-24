@@ -354,7 +354,7 @@ function plotDialog(kind) {
     const f = factionById(c.faction), cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>
-      <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall}` : cs.hidden ? '치안·농업·상업 ?' : `치안 ${cs.peace} · 농업 ${cs.agri} · 상업 ${cs.comm}`}</span></label>`;
+      <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall}` : cs.hidden ? '치안 ? · 농업 ? · 상업 ?' : `치안 ${cs.peace} · 농업 ${cs.agri} · 상업 ${cs.comm}`}</span></label>`;
   }).join('');
   const effect = kind === 'destroy'
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
@@ -834,15 +834,11 @@ function cityDetailRows(c) {
     const defs = defendersOf(c);
     rows.push(`<tr class="wide"><th>수비</th><td>${defs.length ? defenseText(c, defs, '<br>') : '<span class="dim">방어하는 장수 없음</span>'}</td></tr>`);
   }
-  // 다른 세력 성은 방어만 보인다 (서버가 나머지를 보내지 않는다)
-  if (cs.hidden) {
-    rows.push(`<tr><th>방어</th><td>${cs.wall} <span class="dim">/ ${devMax(c.grade, 'wall')}</span></td></tr>`);
-    rows.push('<tr class="wide"><td colspan="2" class="dim">다른 세력 성이라 농업·상업·치안·군량은 알 수 없어요</td></tr>');
-    return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
-  }
+  // 다른 세력 성은 방어만 보이고 나머지 지금 수치는 ? (서버가 보내지 않는다)
+  const val = k => (cs.hidden && k !== 'wall' ? '?' : cs[k]);
   rows.push(...Object.keys(DOMESTIC).filter(cmdOn).map(k =>
-    `<tr><th>${DOMESTIC[k].label}</th><td>${cs[k]} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
-  if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
+    `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
+  if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.hidden ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
   if (intel) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${fmtClock(intel.at + RULES.spyValid)}까지</td></tr>`);
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
