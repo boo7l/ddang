@@ -168,7 +168,7 @@ function rankDialog() {
 }
 
 // ===== 명예의 전당 (첫 화면 아래) =====
-// 시즌이 끝날 때마다 서버가 남긴 공적 상위 10명. 가장 최근 시즌이 펼쳐져 있다
+// 시즌이 끝날 때마다 서버가 남긴 공적 상위 10명. 모두 접혀 있고, 시즌 제목을 누르면 펼쳐진다
 async function renderHof() {
   const box = $('#hof');
   if (!sb) return;
@@ -176,10 +176,10 @@ async function renderHof() {
   if (error || !data || !data.length) { box.innerHTML = ''; return; }
   const sw = c => (c ? `<span class="swatch" style="background:${c}"></span>` : '');
   box.innerHTML = `<h3 class="hofTitle">🏆 명예의 전당</h3>` + data.map((h, n) => `
-    <details class="hofSeason"${n === 0 ? ' open' : ''}>
+    <details class="hofSeason">
       <summary>시즌 ${h.season} · ${sw(h.winner_color)}${esc(h.winner || '?')} 천하통일 <span class="dim">(${dateText(h.turn)})</span></summary>
-      <table class="hofTable">${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
-        <td>${g.faction ? `${sw(g.color)}${esc(g.faction)}` : '<span class="dim">재야</span>'}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>
+      <table class="hofTable"><tr><th></th><th>이름</th><th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
+        <td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td></tr>`).join('')}</table>
     </details>`).join('');
 }
 
