@@ -278,7 +278,7 @@ function draftDialog() {
   opts, '예약', t => {
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     reserve({ cmd: 'draft', unit: t });
-  });
+  }, `<p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
 }
 
 function spyDialog() {
