@@ -690,7 +690,7 @@ function renderGeneral() {
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
-    </table>${STATS.some(st => effStats(p)[st.key] > p.stats[st.key]) ? '<p class="dim small statNote">막대의 <span class="okc">초록</span> 부분은 상점 아이템으로 오른 만큼이에요.</p>' : ''}`;
+    </table>`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();

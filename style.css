@@ -475,4 +475,3 @@ details.fold > summary:hover h2 { color: var(--title); }
 .bar.stat { display: inline-flex; }
 .bar.stat > span { flex: none; }
 .bar.stat > span.item { background: var(--ok); }
-.statNote { margin: 4px 0 0; } .okc { color: var(--ok); }
