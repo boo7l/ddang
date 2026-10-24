@@ -149,13 +149,17 @@ function afterAdmin() {
 function rankDialog() {
   if (!S) return;
   const list = meritRanking();
-  const rows = list.map((g, i) => {
-    const mine = me() && g.name === me().name && g.faction === me().faction;
-    return `<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
+  const isMe = g => me() && g.name === me().name && g.faction === me().faction;
+  const myIdx = list.findIndex(isMe);
+  // 상위 10명만. 내가 10위 밖이면 맨 아래에 내 줄을 따로 붙인다
+  const shown = list.map((g, i) => [g, i]).filter(([, i]) => i < 10 || i === myIdx);
+  const rows = shown.map(([g, i]) => {
+    const mine = isMe(g);
+    return `${i >= 10 ? '<tr><td colspan="4" class="dim center">…</td></tr>' : ''}<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
       <td>${g.faction ? `<span class="swatch" style="background:${factionById(g.faction).color}"></span>${esc(factionById(g.faction).name)}` : '<span class="dim">재야</span>'}</td>
       <td class="num">${fmt(g.merit)}</td></tr>`;
   }).join('');
-  openModal(`<h2>🏆 공적 순위 <span class="dim small">· ${dateText(S.turn)} · 장수 ${list.length}명</span></h2>
+  openModal(`<h2>🏆 공적 순위 <span class="dim small">· ${dateText(S.turn)} · 상위 10명 (장수 ${list.length}명)</span></h2>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table></div>` : '<p class="dim">아직 장수가 없어요.</p>'}
     <p class="dim">공적은 수련을 뺀 명령마다 쌓이고, 전투에 이기면 많이 쌓여요. 천하통일 때 이 순위로 시즌을 마무리해요.</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
