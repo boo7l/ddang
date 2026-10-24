@@ -665,7 +665,7 @@ function runSiege(g, o) {
 }
 
 // ----- 상점 (내 금, 예약 없이 바로) -----
-// 명검·서적·명마는 여러 번 살 수 있다. 살 때마다 그 물건 값이 오른다 (shopPrice).
+// 명마·명검·서적은 여러 번 살 수 있다. 살 때마다 그 물건 값이 오른다 (shopPrice).
 // 명령이 아니라서 턴을 쓰지 않고 공적도 없다. 틀리면 이유를 돌려준다
 function buyItem(g, item) {
   const o = { item }, it = SHOP[o.item];

@@ -337,9 +337,9 @@ const SIEGE_EFFECT = {
 // 내 금으로 산다. 하나씩만 가질 수 있고, 가지고 있는 동안 능력치가 오른다 (임시값)
 // 상점 물건: 하나 살 때마다 그 능력치 +bonus (여러 번 살 수 있다). gear[이름] = 산 수
 const SHOP = {
+  명마: { stat: 'lea', bonus: 1 },
   명검: { stat: 'war', bonus: 1 },
   서적: { stat: 'int', bonus: 1 },
-  명마: { stat: 'lea', bonus: 1 },
 };
 const gearCount = (g, name) => Number((g.gear || {})[name]) || 0; // 예전 저장의 true는 1개
 const shopPrice = (g, name) => RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name);
