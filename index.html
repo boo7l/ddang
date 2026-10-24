@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>쌈국지 - 땅따먹기 대소동</title>
+  <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="win titlebar">
+    <span class="seal">쌈</span>
+    <h1>쌈국지 <small>땅따먹기 대소동</small></h1>
+    <span class="era" id="nowDate"></span><!-- 게임 속 지금 연월 (메인 화면에서만) -->
+    <div id="check" hidden></div>
+    <div class="hdrRight">
+      <button id="helpBtn" class="main">📜 처음이세요? 도움말</button>
+      <div id="who" hidden><button id="adminBtn" hidden>🛠 관리</button><span class="dim" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="logout">로그아웃</button></div>
+    </div>
+  </header>
+
+  <!-- 1. 메인 / 로그인: 아이디·비밀번호. 계정 만들기도 여기서 (6번 가입 화면을 합침) -->
+  <section id="title" class="win" hidden>
+    <h2>천하로 들어가기</h2>
+    <p class="bigTitle">쌈국지</p>
+    <p class="hi center">땅따먹기 대소동</p>
+    <div class="tTabs"><button id="tTabLogin" class="on">로그인</button><button id="tTabNew">계정 만들기</button></div>
+    <p class="dim center" id="tHelp" hidden>아이디는 나만 쓰는 <b class="hi">계정 이름</b>이에요. (한글·영문·숫자)<br>게임 속 <b class="hi">장수 이름</b>은 다음 단계에서 따로 정해요.</p>
+    <form id="tForm" autocomplete="on">
+      <input type="text" id="tId" maxlength="8" placeholder="아이디" autocomplete="username">
+      <input type="password" id="tPw" maxlength="72" placeholder="비밀번호" autocomplete="current-password">
+      <input type="password" id="tPw2" maxlength="72" placeholder="비밀번호 한 번 더" autocomplete="new-password" hidden>
+      <button type="submit" id="tGo" class="btn big">로그인</button>
+    </form>
+    <p id="tMsg" class="center" hidden></p>
+  </section>
+
+  <!-- 7. 장수 생성 -->
+  <section id="create" class="win" hidden>
+    <h2>장수 생성</h2>
+    <div class="createGrid">
+      <div>
+        <p class="sub">장수 이름 <span class="dim">(게임 속에서 다른 장수들에게 보이는 이름)</span></p>
+        <input type="text" id="cName" maxlength="8" placeholder="장수 이름" autocomplete="off">
+        <p class="sub">얼굴</p>
+        <div class="facePick">
+          <div id="cFaceBig"></div>
+          <div id="cFaces"></div>
+        </div>
+      </div>
+      <div>
+        <p class="sub">능력치</p>
+        <p class="dim">주사위를 굴려 170포인트를 통솔·무력·지력에 나눠요. 한 항목은 30~70. 마음에 들 때까지 다시 굴릴 수 있어요.</p>
+        <button id="cRoll" class="btn">🎲 주사위 굴리기</button>
+        <p class="sub">보너스 포인트 남은 것: <b id="cLeft" class="hi"></b></p>
+        <table id="cStats" class="createStats"></table>
+        <p class="dim">보너스 10포인트는 원하는 곳에 직접 나눠 줘요. 능력치 최대치는 120. 시작한 뒤에는 행동할 때마다 그 능력치의 경험치가 쌓여 저절로 올라요.</p>
+        <button id="cStart" class="btn big">이 장수로 결정</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 세력 선택 -->
+  <main id="join" hidden>
+    <div id="joinMap" class="win map"></div>
+    <aside class="wide">
+      <div class="win">
+        <h2>세력 선택</h2>
+        <p class="dim">소속할 세력을 고르세요. 지도에서 성을 눌러도 돼요.</p>
+        <div id="jList" class="picks factions"></div>
+      </div>
+      <div id="jInfo" class="win"></div>
+    </aside>
+  </main>
+
+  <!-- 5. 메인 화면: 왼쪽 전국 지도, 오른쪽 명령과 기록 -->
+  <main id="game" hidden>
+    <div class="col">
+      <div id="info" class="win"></div>
+      <div id="map" class="win map"></div>
+      <div id="log" class="win"></div>
+    </div>
+    <!-- 둘째 칸: 장수 · 세력 · 개발자 도구 -->
+    <aside class="mid">
+      <div id="general" class="win"></div>
+      <!-- 접었다 펼 수 있는 창 (처음엔 접힘): 제목을 누르면 열린다 -->
+      <details class="win fold"><summary><h2>우리 세력 장수 <span class="dim" id="membersTitle"></span></h2></summary><div id="members"></div></details>
+      <details class="win fold"><summary><h2>세력</h2></summary><ul id="legend"></ul></details>
+    </aside>
+    <!-- 셋째 칸: 명령 버튼 -->
+    <aside class="cmdCol">
+      <div id="commands" class="win"></div>
+    </aside>
+    <!-- 넷째 칸: 명령 예약표 -->
+    <aside class="cmdCol queueCol">
+      <div id="queueBox" class="win"></div>
+      <div id="chat" class="win"></div><!-- 세력 채팅 -->
+    </aside>
+  </main>
+
+  <!-- 출진·수송·이동 대화 상자 -->
+  <div id="modal" hidden><div id="modalBox" class="win"></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="server.js"></script>
+  <script src="mapcore.js"></script>
+  <script src="data/map_190.js"></script>
+  <script src="rules.js"></script>
+  <script src="faces.js"></script>
+  <script src="map.js"></script>
+  <script src="engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

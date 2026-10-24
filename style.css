@@ -1,0 +1,468 @@
+/* ===== 쌈국지 공통 모양: 옛날 DOS 코에이 삼국지 + 고대 중국 (붉은 옻칠과 금테) ===== */
+
+/* 도트 글꼴 '둥근모꼴'을 게임 폴더에 같이 넣어 둬서 어느 컴퓨터에서도 같은 글꼴로 보인다.
+   이 글꼴은 16px의 배수(16, 32)일 때 가장 또렷하므로 글자 크기는 16px을 기본으로 쓴다. */
+@font-face {
+  font-family: "DungGeunMo";
+  /* 웹용 woff(1.6MB)를 먼저 쓰고, 안 되면 원본 ttf(7MB) */
+  src: url("fonts/DungGeunMo.woff") format("woff"), url("fonts/DungGeunMo.ttf") format("truetype");
+  font-display: block; /* 받는 동안 잠깐(최대 3초) 글자를 숨겨서, 다른 글꼴로 깨져 보였다 바뀌지 않게 */
+}
+
+/* 색표. 색을 바꾸고 싶으면 여기만 고치면 된다 */
+:root {
+  --bg: #120604;          /* 화면 바탕: 먹색에 가까운 검붉은색 */
+  --panel: #4a0e0a;       /* 창 바탕: 붉은 옻칠 */
+  --panel-dark: #2a0604;  /* 입력칸 등 더 어두운 바탕 */
+  --gold: #e8b23a;        /* 창 테두리·장식 */
+  --gold-dark: #8a5a14;
+  --text: #fbefd0;        /* 본문: 밝은 상아색 */
+  --title: #ffd860;       /* 제목·강조: 노랑 */
+  --label: #ffa040;       /* 항목 이름: 주황 */
+  --dim: #c49a7a;         /* 흐린 설명 글씨 */
+  --ok: #9be05a;
+  --bad: #ff6a4a;
+  --seal: #c8281e;        /* 낙관 도장 빨강 */
+  --empty: #b4aea6;       /* 공백지 성: 옅은 회색 */
+  --cell: 64px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; } /* 숨긴 창은 모양 설정과 상관없이 숨긴다 */
+html { background: var(--bg); }
+body {
+  margin: 0;
+  padding: 12px 16px;
+  min-height: 100vh;
+  /* 아주 옅은 마름모 무늬 */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(45deg, rgba(232, 178, 58, .035) 25%, transparent 25%, transparent 75%, rgba(232, 178, 58, .035) 75%),
+    linear-gradient(45deg, rgba(232, 178, 58, .035) 25%, transparent 25%, transparent 75%, rgba(232, 178, 58, .035) 75%);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+  color: var(--text);
+  font-family: "DungGeunMo", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ===== 창: 붉은 옻칠 바탕 + 금색 이중 테두리 + 네 귀퉁이 금장식 ===== */
+.win {
+  position: relative;
+  background:
+    linear-gradient(var(--gold), var(--gold)) top 6px left 6px / 6px 6px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) top 6px right 6px / 6px 6px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom 6px left 6px / 6px 6px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom 6px right 6px / 6px 6px no-repeat,
+    var(--panel);
+  border: 3px solid var(--gold);
+  box-shadow:
+    inset 0 0 0 3px var(--panel),
+    inset 0 0 0 4px var(--gold-dark),
+    4px 4px 0 0 #000;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+/* 창 제목: 금색 띠 위의 글씨 */
+.win h2 {
+  margin: -4px 0 12px;
+  font-size: 16px;
+  font-weight: normal;
+  color: var(--title);
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--gold-dark);
+}
+.win h2::before { content: "◆ "; color: var(--seal); }
+
+/* 제목줄: 낙관 도장 + 게임 이름, 아래에 번개무늬(回) 띠 */
+.titlebar { display: flex; align-items: center; gap: 16px; padding: 12px 18px 22px; }
+.titlebar::after {
+  content: "";
+  position: absolute;
+  left: 10px; right: 10px; bottom: 6px;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='%23e8b23a' d='M0 0h12v2H2v4h6V4H6V2h4v6H0zM14 0h2v8h-2z'/%3E%3C/svg%3E") repeat-x;
+}
+.seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  background: var(--seal);
+  color: var(--text);
+  font-size: 32px;
+  border: 2px solid #ffb8a0;
+  box-shadow: inset 0 0 0 2px var(--seal), inset 0 0 0 3px #ffb8a0;
+  transform: rotate(-4deg);
+}
+h1 { margin: 0; font-size: 32px; font-weight: normal; color: var(--title); letter-spacing: 4px; text-shadow: 2px 2px 0 #000; }
+h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left: 12px; text-shadow: none; }
+.era { color: var(--label); }
+#check { margin-left: auto; }
+#check.ok { color: var(--ok); }
+#check.bad { color: var(--bad); }
+
+.dim { color: var(--dim); }
+.small p { margin: 4px 0; }
+
+/* 버튼·링크 */
+.btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--panel-dark);
+  color: var(--title);
+  border: 2px solid var(--gold);
+  cursor: pointer;
+}
+.btn:hover { background: var(--gold); color: var(--panel-dark); }
+.link { color: var(--title); text-decoration: none; cursor: pointer; }
+.link:hover { color: var(--panel-dark); background: var(--title); }
+
+#loader { margin: 60px auto; max-width: 560px; text-align: center; }
+
+#game, #join { display: flex; gap: 16px; align-items: flex-start; }
+aside { width: 300px; flex: none; }
+
+/* ===== 지도 ===== */
+.map {
+  display: grid;
+  gap: 0;
+  padding: 14px;
+  margin-bottom: 0;
+}
+/* 빈 땅: 어두운 흙색에 점무늬 */
+.cell {
+  width: var(--cell);
+  height: var(--cell);
+  background-color: #1e0c06;
+  background-image: radial-gradient(#3a1e0e 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+/* 성: 세력 색 블록에 입체 테두리, 이름은 어두운 띠 위에 써서 어떤 색에서도 잘 읽히게 */
+.city {
+  position: relative;
+  margin: 2px;
+  width: calc(var(--cell) - 4px);
+  height: calc(var(--cell) - 4px);
+  box-shadow:
+    inset 3px 3px 0 rgba(255, 255, 255, .4),
+    inset -3px -3px 0 rgba(0, 0, 0, .5),
+    0 0 0 1px #000;
+  color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  cursor: pointer;
+}
+.city .name { background: rgba(0, 0, 0, .72); padding: 0 3px; line-height: 18px; font-size: 16px; white-space: nowrap; }
+.city.empty { background: var(--empty); }
+.city:hover { outline: 2px solid var(--text); z-index: 1; }
+.city.sel { outline: 3px solid var(--title); z-index: 2; animation: blink 0.8s steps(1) infinite; }
+.city.near { outline: 2px dashed var(--title); }
+@keyframes blink { 50% { outline-color: var(--seal); } }
+.grade { font-size: 12px; line-height: 12px; color: var(--title); text-shadow: 1px 1px 0 #000; letter-spacing: -1px; }
+
+/* 성 정보 표 */
+#info { margin-bottom: 12px; min-height: 216px; } /* 성마다 줄 수가 달라도 지도가 들썩이지 않게 */
+.stats { border-collapse: collapse; width: 100%; }
+.stats th { color: var(--label); font-weight: normal; text-align: left; vertical-align: top; width: 56px; padding: 3px 0; }
+.stats td { padding: 3px 0; }
+
+/* 세력 목록 */
+#legend { list-style: none; padding: 0; margin: 0; }
+#legend li { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px dotted var(--gold-dark); }
+#legend .cnt { margin-left: auto; color: var(--title); }
+#legend .cnt::after { content: "성"; color: var(--dim); margin-left: 4px; }
+.swatch {
+  width: 16px; height: 16px;
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 4px;
+  border: 1px solid var(--text);
+}
+
+/* ===== 버튼과 입력칸 (게임 화면과 편집기 공통) ===== */
+button, select, input {
+  font: inherit;
+  font-size: 16px;
+  background: var(--panel-dark);
+  color: var(--text);
+  border: 2px solid var(--gold);
+  border-radius: 0;
+  padding: 2px 8px;
+}
+button {
+  cursor: pointer;
+  color: var(--title);
+  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .5), inset 2px 2px 0 rgba(255, 216, 96, .25);
+}
+button:hover { background: var(--gold); color: var(--panel-dark); }
+button:active { box-shadow: inset 2px 2px 0 rgba(0, 0, 0, .5); }
+button.main { background: var(--seal); color: var(--text); }
+button.main:hover { background: var(--title); color: var(--panel-dark); }
+button.mini { padding: 0 5px; }
+button.on { background: var(--title); color: var(--panel-dark); }
+button.danger { color: var(--bad); border-color: var(--bad); }
+button.danger:hover { background: var(--bad); color: var(--text); }
+input:focus, select:focus { outline: none; border-color: var(--title); background: #000; }
+input[type=number] { width: 64px; }
+input[type=color] { width: 32px; height: 28px; padding: 0 2px; cursor: pointer; }
+button:disabled, button:disabled:hover {
+  cursor: not-allowed;
+  color: var(--dim);
+  border-color: var(--gold-dark);
+  background: var(--panel-dark);
+  opacity: .6;
+}
+
+.hi { color: var(--title); }
+.sub { color: var(--label); margin: 10px 0 6px; }
+.sub:first-child { margin-top: 0; }
+
+/* ===== 게임 화면 배치: 지도+기록 | 장수+명령 | 성 정보+세력 ===== */
+#game .col { flex: none; }
+aside.wide { width: 380px; }
+.row2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; margin-top: 12px; align-items: start; width: 0; min-width: 100%; } /* 지도 너비에 맞춘다 */
+.row2 .win { margin-bottom: 0; }
+#log { max-height: 260px; overflow-y: auto; margin-top: 12px; }
+#log ul { list-style: none; margin: 0; padding: 0; }
+#log li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); }
+#log .t { color: var(--dim); margin-right: 10px; }
+
+/* 내 장수가 있는 성: 귀퉁이에 빨간 깃발 */
+.city.home::before {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 10px; height: 10px;
+  background: var(--seal);
+  border: 2px solid var(--title);
+}
+.stats tr.gap td { height: 6px; border-bottom: 1px dotted var(--gold-dark); }
+.stats tr.gap + tr th, .stats tr.gap + tr td { padding-top: 6px; }
+
+/* 장수 창 */
+.gname { margin: 0 0 8px; font-size: 32px; line-height: 1.1; color: var(--title); }
+.gname .dim { font-size: 16px; }
+.statbars { border-collapse: collapse; width: 100%; margin-top: 8px; }
+.statbars th { color: var(--label); font-weight: normal; text-align: left; width: 48px; padding: 2px 0; }
+.statbars .num { width: 40px; text-align: right; padding-right: 8px; }
+.statbars td:last-child { width: 30px; text-align: right; }
+.statbars td.xp { width: 72px; padding-left: 8px; white-space: nowrap; } /* 경험치 / 다음 1까지 */
+.bar { display: inline-block; width: 100%; height: 10px; background: var(--panel-dark); border: 1px solid var(--gold-dark); vertical-align: middle; }
+.bar > span { display: block; height: 100%; background: var(--title); }
+.bar.big { height: 14px; margin: 4px 0; }
+.bar.big > span { background: linear-gradient(to right, var(--seal), var(--title)); }
+.ap { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid var(--gold-dark); }
+.ap #apNext { float: right; margin-top: 4px; }
+.ap .lbl { color: var(--label); }
+.ap b { color: var(--title); font-size: 20px; font-weight: normal; }
+
+/* 명령 버튼 */
+.cmds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.cmds button { padding: 6px 4px; }
+.cmds button small { display: block; font-size: 12px; color: var(--dim); }
+.cmds button:hover small { color: var(--panel-dark); }
+
+/* 장수 만들기 */
+#create { max-width: 900px; margin: 24px auto; }
+.createGrid { display: grid; grid-template-columns: 1fr 320px; gap: 28px; }
+#cName { width: 240px; font-size: 16px; padding: 6px 8px; }
+.picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.picks.factions button { width: calc(50% - 3px); text-align: left; }
+.picks .dim { float: right; }
+button.pick.on, button.pick.on .dim { background: var(--title); color: var(--panel-dark); }
+.createStats { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+.createStats th { color: var(--label); font-weight: normal; text-align: left; padding: 4px 0; }
+.createStats .num { font-size: 20px; text-align: right; width: 50px; }
+.createStats .plus { color: var(--ok); width: 40px; padding-left: 6px; }
+.createStats td:last-child { text-align: right; }
+.createStats tr.sum th, .createStats tr.sum td { border-top: 2px solid var(--gold-dark); padding-top: 6px; }
+.btn.big { width: 100%; padding: 10px; font-size: 16px; }
+
+/* 세력 선택 화면: 고른 세력이 아닌 성은 흐리게 */
+.city.faded { filter: saturate(.25) brightness(.55); }
+.city.faded:hover { filter: none; }
+.typeNote { margin-top: 10px; }
+.cmds.three { grid-template-columns: repeat(3, 1fr); }
+.cmds.one { grid-template-columns: 1fr; margin-top: 6px; }
+#jInfo .btn.big { margin-top: 12px; }
+
+/* ===== 대화 상자 (출진·수송·이동) ===== */
+#modal {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, .6);
+  display: flex; align-items: center; justify-content: center;
+}
+#modalBox { width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; margin: 0; }
+#modalBox p { margin: 6px 0; }
+.opts { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+.opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  border: 2px solid var(--gold-dark);
+  background: var(--panel-dark);
+  cursor: pointer;
+}
+.opt:hover { border-color: var(--gold); }
+.opt:has(input:checked) { border-color: var(--title); background: #5e1a10; }
+.opt input { accent-color: var(--title); margin: 0; }
+.opt .r { margin-left: auto; font-size: 14px; }
+.g-유리, .g-무혈입성 { color: var(--ok); }
+.g-비슷 { color: var(--title); }
+.g-불리 { color: var(--bad); }
+.amounts { display: flex; gap: 16px; margin: 10px 0; color: var(--label); }
+.amounts input { width: 100px; }
+.modalBtns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.modalBtns button { padding: 6px 18px; }
+
+/* 출진 중 표시, 전투 보고서 */
+.marching { margin: 0 0 8px; padding: 6px 8px; background: var(--seal); color: var(--text); border: 2px solid var(--title); }
+#log li.report { color: var(--title); padding: 4px 0; }
+
+/* ===== 장수 얼굴 (img/faces 그림) ===== */
+.face { object-fit: cover; display: block; border: 2px solid var(--gold); background: #000; }
+.facePick { display: flex; gap: 14px; align-items: flex-start; }
+#cFaceBig .face { width: 128px; height: 160px; }
+#cFaces { display: grid; grid-template-columns: repeat(3, 68px); gap: 6px; }
+#cFaces button { padding: 0; border: 2px solid var(--gold-dark); background: none; box-shadow: none; }
+#cFaces button .face { width: 64px; height: 80px; border: 0; }
+#cFaces button.on { border-color: var(--title); outline: 2px solid var(--title); }
+#cFaces button:hover { border-color: var(--gold); background: none; }
+.gHead { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 4px; }
+.gHead > div { flex: 1; min-width: 0; }
+.gHead .gname { font-size: 24px; margin: 0 0 4px; }
+.gHead .face { width: 96px; height: 120px; flex: none; }
+
+/* 로그인(1번) 화면과 오른쪽 위 접속 정보 */
+.hdrRight { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+#who { display: flex; align-items: center; gap: 10px; }
+#who #whoName { color: var(--title); }
+#title { max-width: 460px; margin: 60px auto; text-align: center; }
+#title .bigTitle { font-size: 64px; line-height: 1.1; margin: 20px 0 4px; color: var(--title); letter-spacing: 8px; text-shadow: 3px 3px 0 #000; }
+.center { text-align: center; }
+#title .btn.big { margin-top: 16px; }
+#title input { display: block; width: 240px; margin: 8px auto 0; text-align: center; }
+#title .tTabs { display: flex; justify-content: center; gap: 6px; margin: 14px 0 6px; }
+#title .tTabs button { padding: 4px 14px; }
+#title #tMsg { color: var(--title); margin-top: 12px; }
+.opts.train .bar { width: 120px; }
+/* 정각을 기다리는 수송·첩보 목록 */
+.pending { list-style: none; margin: 0 0 8px; padding: 4px 8px; border: 1px dashed var(--gold-dark); font-size: 14px; }
+.pending li::before { content: "⏳ "; }
+
+/* ===== 명령 예약표 ===== */
+.turnInfo { margin: 0 0 6px; }
+.queue { list-style: none; margin: 0 0 8px; padding: 0; border: 2px solid var(--gold-dark); background: var(--panel-dark); }
+.queue li { display: flex; align-items: center; gap: 8px; padding: 2px 8px; border-bottom: 1px dotted var(--gold-dark); cursor: pointer; min-height: 26px; }
+.queue li:last-child { border-bottom: 0; }
+.queue li:hover { background: #3a120a; }
+.queue li.sel { background: var(--seal); color: var(--text); outline: 2px solid var(--title); outline-offset: -2px; }
+.queue li.idle .what { color: var(--dim); }
+.queue li.sel.idle .what { color: var(--text); }
+.queue .t { color: var(--label); width: 46px; flex: none; }
+.queue li.sel .t { color: var(--title); }
+.queue .what { flex: 1; min-width: 0; white-space: normal; word-break: keep-all; line-height: 1.25; } /* 길면 잘리지 않고 다음 줄로 */
+.queue .x { padding: 0 5px; }
+.cmds.two { margin-top: 8px; }
+.queue .clock { color: var(--dim); font-size: 13px; flex: none; order: 3; }
+.queue .t { width: 76px; white-space: nowrap; } /* 10월💰🌾 까지 한 줄 */
+.queue .x { order: 4; }
+.plusg { color: var(--ok); font-size: 12px; margin-left: 2px; }
+
+/* 메인 화면 세 칸: 지도 | 장수·세력·개발자 도구 | 명령 예약·명령 */
+aside.mid { width: 340px; }
+
+/* 도움말 창 */
+#modalBox.wideBox { width: 680px; }
+.help h3 { margin: 0 0 6px; font-size: 16px; font-weight: normal; color: var(--title); }
+.help ul, .help ol { margin: 0; padding-left: 22px; }
+.help li { margin: 3px 0; }
+.help b { color: var(--label); font-weight: normal; }
+/* 처음 안내: 위쪽 항목 단추, 한 번에 한 항목 */
+.helpTabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.helpTabs button { padding: 3px 8px; }
+.helpTabs button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
+#modalBox .help { min-height: 190px; padding: 10px 4px; border-top: 1px dotted var(--gold-dark); border-bottom: 1px dotted var(--gold-dark); }
+.helpNav { align-items: center; }
+.helpNav .helpPage { margin: 0 6px; }
+
+/* 세력 목록: 두 줄로 촘촘하게 */
+#legend { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; } /* 글자는 16px 그대로 (둥근모꼴이 또렷한 크기) */
+#legend li { padding: 1px 0; gap: 6px; }
+#legend .swatch { width: 14px; height: 14px; margin-right: 0; }
+/* 네 칸: 지도 | 장수·세력·개발자 도구 | 명령 | 명령 예약 */
+aside.cmdCol { width: 310px; }
+
+/* 성 정보: 지도 위에 가로로 넓게 (항목을 세 줄로 나란히) */
+#info .stats, #info .stats tbody { display: block; }
+#info .stats tbody { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 16px; }
+#info .stats tr { display: flex; gap: 8px; }
+#info .stats tr.gap { display: none; }
+#info .stats tr.wide { grid-column: 1 / -1; }
+#info .stats th { width: auto; flex: none; }
+#info h2 { margin-bottom: 8px; }
+/* 첫 칸의 너비는 지도가 정한다. 성 정보·기록은 그 너비에 맞춘다 (긴 글이 칸을 넓히지 않게) */
+#game .col > #info, #game .col > #log { width: 0; min-width: 100%; }
+#game .col > .map { width: max-content; }
+
+/* ===== 게임 화면 10% 촘촘하게 (상단 바 제외) =====
+   글자는 16px 그대로 둔다 (둥근모꼴은 16px보다 작으면 번진다). 대신 여백·줄 간격·칸 크기를 줄인다 */
+#game, #join, #create, #title, #modal { line-height: 1.38; }
+#game .win, #join .win, #create.win, #title.win { padding: 13px 15px; margin-bottom: 10px; }
+#game .win h2, #join .win h2, #create h2 { margin-bottom: 9px; padding-bottom: 5px; }
+#game, #join { gap: 12px; }
+.map { --cell: 58px; padding: 10px; }
+aside.mid { width: 318px; }
+aside.cmdCol { width: 292px; }
+aside.cmdCol.queueCol { width: 370px; } /* 예약표: "출진 → 낙양" 같은 긴 명령도 한 줄에 */
+#info { min-height: 190px; }
+#log { max-height: 236px; }
+.cmds { gap: 5px; }
+.cmds button { padding: 4px 3px; }
+.queue li { min-height: 23px; padding: 1px 7px; }
+.stats th, .stats td { padding: 1px 0; }
+.statbars th, .statbars td { padding: 1px 0; }
+.opt { padding: 4px 7px; }
+.sub { margin: 8px 0 5px; }
+
+/* 천하통일 축하 화면 */
+.unifyHead { font-size: 18px; margin: 8px 0; }
+table.rank { width: 100%; margin: 4px 0 12px; }
+table.rank th { color: var(--label); text-align: left; width: auto; }
+table.rank .num { text-align: right; padding-right: 12px; }
+.turnInfo > span { white-space: nowrap; } /* "(0:39 남음)"이 중간에 끊기지 않게 */
+
+/* 세력 채팅 (기획서 10장) */
+#chat { margin-top: 12px; }
+#chat .chatList { list-style: none; margin: 0 0 8px; padding: 4px 8px; height: 220px; overflow-y: auto;
+  border: 2px solid var(--gold-dark); background: var(--panel-dark); }
+#chat .chatList li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); word-break: keep-all; overflow-wrap: anywhere; }
+#chat .chatList li:last-child { border-bottom: 0; }
+#chat .chatList .t { color: var(--dim); font-size: 13px; margin-right: 6px; }
+#chat .chatList .who { color: var(--label); margin-right: 6px; }
+#chat .chatList li.mine .who { color: var(--title); }
+#chat .chatList .empty { color: var(--dim); border: 0; }
+#chat .chatForm { display: flex; gap: 6px; }
+#chat .chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
+#chat .note { color: var(--dim); font-size: 13px; margin: 6px 0 0; }
+
+/* 관리자 보기 (개발자 도구) */
+#modalBox.adminBox { width: 960px; max-width: calc(100vw - 32px); }
+.adminScroll { max-height: 440px; overflow: auto; }
+.adminScroll td { vertical-align: top; }
+.adminChat { list-style: none; margin: 10px 0 0; padding: 4px 8px; max-height: 360px; overflow-y: auto; background: var(--panel-dark); border: 1px solid var(--gold-dark); }
+.adminChat li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); overflow-wrap: anywhere; }
+.adminChat .t { color: var(--dim); font-size: 13px; margin-right: 6px; }
+.adminChat .who { color: var(--label); margin-right: 6px; }
+.adminBox .picks .dim { float: none; margin-left: 6px; }
+
+/* 우리 세력 장수 */
+table.members { margin: 0; }
+table.members tr.mine td { color: var(--title); }
+
+/* 접었다 펴는 창 (우리 세력 장수, 세력): 제목을 누르면 열리고 닫힌다 */
+details.fold > summary { list-style: none; cursor: pointer; }
+details.fold > summary::-webkit-details-marker { display: none; }
+#game details.fold > summary h2 { margin: -4px 0 0; padding-bottom: 0; border-bottom: 0; }
+details.fold > summary h2::after { content: " ▶"; color: var(--dim); font-size: 13px; }
+details.fold[open] > summary h2::after { content: " ▼"; }
+#game details.fold[open] > summary h2 { margin-bottom: 9px; padding-bottom: 5px; border-bottom: 2px solid var(--gold-dark); }
+details.fold > summary:hover h2 { color: var(--title); }
