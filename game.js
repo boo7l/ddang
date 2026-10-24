@@ -662,6 +662,11 @@ function renderMembers() {
 function bar(v, max) {
   return `<span class="bar"><span style="width:${Math.min(100, (v / max) * 100)}%"></span></span>`;
 }
+// 능력치 막대: 기본 능력치는 노랑, 상점 아이템으로 오른 만큼은 초록으로 이어 붙인다 (숫자는 합친 값 하나만)
+function statBar(base, eff, max) {
+  const w = v => Math.min(100, (v / max) * 100);
+  return `<span class="bar stat"><span style="width:${w(Math.min(base, eff))}%"></span><span class="item" style="width:${w(Math.max(0, eff - base))}%"></span></span>`;
+}
 
 function renderGeneral() {
   const p = me(), f = factionById(p.faction), city = cityById(p.city);
@@ -683,9 +688,9 @@ function renderGeneral() {
       </table>
     </div></div>
     <table class="statbars">${STATS.map(st => `
-      <tr><th>${st.name}</th><td class="num">${effStats(p)[st.key]}${effStats(p)[st.key] > p.stats[st.key] ? `<small class="plusg">+${effStats(p)[st.key] - p.stats[st.key]}</small>` : ''}</td><td>${bar(effStats(p)[st.key], RULES.statMax)}</td>
+      <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
-    </table>`;
+    </table>${STATS.some(st => effStats(p)[st.key] > p.stats[st.key]) ? '<p class="dim small statNote">막대의 <span class="okc">초록</span> 부분은 상점 아이템으로 오른 만큼이에요.</p>' : ''}`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();

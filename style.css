@@ -470,3 +470,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 /* 성 정보: 치안 경고 (50 미만 주황, 20 미만 빨강) */
 #info b.warn { color: #ffe08a; background: rgba(255, 150, 40, .35); padding: 0 4px; font-weight: normal; }
 #info b.bad { color: #fff; background: var(--bad); padding: 0 4px; font-weight: normal; }
+
+/* 능력치 막대: 노랑 = 기본, 초록 = 상점 아이템 */
+.bar.stat { display: inline-flex; }
+.bar.stat > span { flex: none; }
+.bar.stat > span.item { background: var(--ok); }
+.statNote { margin: 4px 0 0; } .okc { color: var(--ok); }
