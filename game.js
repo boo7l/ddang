@@ -167,6 +167,18 @@ function rankDialog() {
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
+// 첫 화면: 지금 시즌 상태 (로그인 없이 서버에 물어본다)
+async function renderSeasonBadge() {
+  const el = $('#tSeason');
+  try {
+    const s = await api('status');
+    const f = s.unified && factionById(s.unified);
+    el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일`
+      : s.paused ? `⏸ 시즌 ${s.season} · 장수 모집 중 <span class="dim">(${dateText(s.turn)}, 곧 시작)</span>`
+      : `⚔ 시즌 ${s.season} 진행 중 <span class="dim">· ${dateText(s.turn)}</span>`;
+  } catch (e) { el.innerHTML = ''; }
+}
+
 // ===== 명예의 전당 (첫 화면 아래) =====
 // 시즌이 끝날 때마다 서버가 남긴 공적 상위 10명. 모두 접혀 있고, 시즌 제목을 누르면 펼쳐진다
 async function renderHof() {
@@ -476,6 +488,7 @@ let authMode = 'login'; // 'login' 로그인 | 'new' 계정 만들기
 function showTitle(msg) {
   showScreen('title');
   renderHof();
+  renderSeasonBadge();
   setAuthMode(authMode);
   $('#tMsg').hidden = !msg;
   $('#tMsg').textContent = msg || '';
