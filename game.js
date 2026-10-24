@@ -767,8 +767,12 @@ function renderCommands() {
 // 우리 세력끼리만, 최근 50개. 서버의 세계에 함께 저장된다 (화면은 1분마다 새로 받아 온다)
 const CHAT_MAX = 50, CHAT_LEN = 100;
 const chatOf = fid => (S.chat && S.chat[fid]) || [];
-// 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 예전 글은 성이 없어 이름만
-const chatWho = m => esc(m.name) + (m.city && cityById(m.city) ? `<span class="dim">(${esc(cityById(m.city).name)})</span>` : '');
+// 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
+const chatWho = m => {
+  const g = m.city ? null : allGenerals().find(x => x.name === m.name);
+  const c = cityById(m.city || (g && g.city));
+  return esc(m.name) + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
+};
 async function sendChat(text) {
   text = text.trim().slice(0, CHAT_LEN);
   if (!text || !me().faction) return;
