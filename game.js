@@ -19,6 +19,9 @@ function applyView(d) {
   if (S) S.timeOffset += d.serverNow - Date.now(); // 내 컴퓨터 시계를 서버 시계에 맞춘다
   IS_ADMIN = !!d.admin;
   $('#adminBtn').hidden = !IS_ADMIN;
+  // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
+  const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
+  $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
   ACCOUNTS = d.accounts || {};
   lastFetch = Date.now();
   if (!ORIGIN) ORIGIN = MAP.cities.map(c => c.faction);
@@ -139,6 +142,23 @@ function adminToolsDialog() {
 function afterAdmin() {
   if (!$('#game').hidden && me() && me().faction) { render(); renderLegend(); renderAll(); }
   adminToolsDialog();
+}
+
+// ===== 공적 순위 (오른쪽 위 "🏆 순위") =====
+// 모든 장수의 공적 순위. 세계를 새로 받아 올 때마다(턴이 바뀔 때, 1분마다) 최신으로 바뀐다
+function rankDialog() {
+  if (!S) return;
+  const list = meritRanking();
+  const rows = list.map((g, i) => {
+    const mine = me() && g.name === me().name && g.faction === me().faction;
+    return `<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
+      <td>${g.faction ? `<span class="swatch" style="background:${factionById(g.faction).color}"></span>${esc(factionById(g.faction).name)}` : '<span class="dim">재야</span>'}</td>
+      <td class="num">${fmt(g.merit)}</td></tr>`;
+  }).join('');
+  openModal(`<h2>🏆 공적 순위 <span class="dim small">· ${dateText(S.turn)} · 장수 ${list.length}명</span></h2>
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table></div>` : '<p class="dim">아직 장수가 없어요.</p>'}
+    <p class="dim">공적은 수련을 뺀 명령마다 쌓이고, 전투에 이기면 많이 쌓여요. 천하통일 때 이 순위로 시즌을 마무리해요.</p>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
 // ===== 턴 =====
@@ -842,6 +862,7 @@ $('#tTabNew').onclick = () => setAuthMode('new');
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 $('#adminBtn').onclick = adminToolsDialog;
+$('#rankBtn').onclick = rankDialog;
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
 
