@@ -47,7 +47,7 @@ const MAP_DATA = {
   {
    "id": "f1791965980948",
    "name": "유언",
-   "color": "#2f4f9e"
+   "color": "#1d6f6c"
   },
   {
    "id": "f1791965980949",
