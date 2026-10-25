@@ -219,12 +219,35 @@ let lastOrder = null; // 마지막으로 예약한 명령 ("빈 칸 채우기"�
 async function reserve(order) {
   const at = slot;
   lastOrder = order;
-  if (await call('order', { i: at, order })) slot = Math.min(at + 1, RULES.queueSize - 1);
-  renderCommands();
+  slot = Math.min(at + 1, RULES.queueSize - 1);
+  if (!(await queueCall('order', { i: at, order }, q => { q[at] = order; }))) { slot = at; renderCommands(); }
 }
 async function clearSlot(i) {
-  await call('order', { i, order: null });
+  await queueCall('order', { i, order: null }, q => { q[i] = null; });
+}
+
+// 예약표 바꾸기는 서버 답을 기다리지 않고 화면에 먼저 보여 준다 (서버가 느려도 바로 보이게).
+// 서버가 거절하면 서버가 돌려준 진짜 예약표로 되돌아간다. 여러 번 빠르게 누르면 마지막 답이 올 때 한 번만 맞춘다
+let pendingOrders = 0;
+async function queueCall(action, payload, change) {
+  change(me().queue);
   renderCommands();
+  pendingOrders++;
+  busy = true;
+  let ok = false;
+  try {
+    const d = await api(action, payload);
+    ok = !d.error;
+    if (!ok || pendingOrders === 1) applyView(d);
+    if (!ok) alert(d.error);
+  } catch (e) {
+    alert('서버와 연결하지 못했어요: ' + (e.message || e));
+  }
+  pendingOrders--;
+  busy = pendingOrders > 0;
+  if (!ok && !busy) await call('state'); // 실패했으면 서버의 진짜 예약표를 다시 받아 온다
+  if (!busy) renderCommands();
+  return ok;
 }
 
 // 방어 모드 (예약 없이 바로)
@@ -809,12 +832,11 @@ function renderCommands() {
   $('#queueBox').querySelectorAll('.queue li').forEach(li => { li.onclick = () => { slot = +li.dataset.i; renderCommands(); }; });
   $('#queueBox').querySelectorAll('[data-x]').forEach(b => { b.onclick = e => { e.stopPropagation(); clearSlot(+b.dataset.x); }; });
   $('#qClear').onclick = () => clearSlot(slot);
-  $('#qFill').onclick = async () => { if (lastOrder) { await call('fill', { order: lastOrder }); renderCommands(); } };
-  $('#qClearAll').onclick = async () => {
+  $('#qFill').onclick = () => { if (lastOrder) queueCall('fill', { order: lastOrder }, q => q.forEach((o, i) => { if (!o) q[i] = lastOrder; })); };
+  $('#qClearAll').onclick = () => {
     if (!confirm('예약한 명령을 모두 비울까요?')) return;
-    await call('clear');
     slot = 0;
-    renderCommands();
+    queueCall('clear', {}, q => q.fill(null));
   };
   // 천하통일로 시즌이 끝나면: 버튼은 그대로 보이지만 아무 작동도 하지 않는다
   if (S.unified) {
