@@ -157,6 +157,9 @@ aside { width: 300px; flex: none; }
 .city.sel { outline: 3px solid var(--title); z-index: 2; animation: blink 0.8s steps(1) infinite; }
 .city.near { outline: 2px dashed var(--title); }
 @keyframes blink { 50% { outline-color: var(--seal); } }
+/* 도트 배경을 깐 지도 (mapbg.js): 빈 칸은 비워서 아래 그림이 보이게 */
+.map.bg { image-rendering: pixelated; }
+.map.bg .cell:not(.city) { background: none; }
 .grade { font-size: 12px; line-height: 12px; color: var(--title); text-shadow: 1px 1px 0 #000; letter-spacing: -1px; }
 
 /* 성 정보 표 */

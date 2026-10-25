@@ -39,6 +39,7 @@ function drawMap(el, opts = {}) {
       el.appendChild(div);
     }
   }
+  if (typeof applyMapBg === 'function') applyMapBg(el); // 도트 배경 (mapbg.js)
 }
 
 // 메인 화면 지도
