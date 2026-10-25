@@ -386,7 +386,7 @@ const MAP_DATA = {
    "y": 6,
    "name": "여강",
    "faction": "",
-   "grade": 1
+   "grade": 2
   },
   {
    "id": "c1791951679352",
