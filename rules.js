@@ -323,7 +323,7 @@ function fightRounds(att, def, wall, left) {
 // ===== 계략 (지력) =====
 // 이웃한 다른 세력 성에 쓴다. 지력이 높을수록 잘 되고, 성공하면 낮은 확률로 대성공(효과 2배) (임시값)
 const PLOT = {
-  successRate: int => Math.min(0.85, int / 150),
+  successRate: int => Math.min(0.9, int / 150 + 0.05), // 2026-10-26 전체 +5%p (최대 85% → 90%)
   critRate: int => int / 400,          // 성공했을 때 그중 대성공 확률
   destroy: { wallPerInt: 1 },          // 파괴: 방어 -(지력 × 1)
   rumor: { peacePerInt: 0.25, devPerInt: 0.25 }, // 유언: 치안·농업·상업 각각 -(지력 × 0.25) (2026-10-25 0.2에서 올림)
