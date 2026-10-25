@@ -76,12 +76,13 @@ function adminDialog(tab = 'users', fid = null) {
   let body;
   if (tab === 'users') {
     const summary = Object.entries(counts).map(([f, n]) => `${swatch(f)}${fname(f)} ${n}명`).join(' · ') || '장수가 없어요.';
-    const rows = gens.map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td>${esc(g.name)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
+    const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
+    const rows = gens.map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td>${esc(g.name)}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
       <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>
       <td>${(g.queue || []).filter(Boolean).map(o => esc(orderLabel(o))).join(', ') || '<span class="dim">없음</span>'}</td></tr>`).join('');
     body = `<p>${summary} <span class="dim">(모두 ${gens.length}명)</span></p>
-      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>예약</th></tr>${rows}</table></div>`;
+      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>예약</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
     const fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
