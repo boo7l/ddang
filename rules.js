@@ -296,7 +296,7 @@ const PLOT = {
   successRate: int => Math.min(0.85, int / 150),
   critRate: int => int / 400,          // 성공했을 때 그중 대성공 확률
   destroy: { wallPerInt: 1 },          // 파괴: 방어 -(지력 × 1)
-  rumor: { peacePerInt: 0.2, devPerInt: 0.2 }, // 유언: 치안·농업·상업 각각 -(지력 × 0.2)
+  rumor: { peacePerInt: 0.25, devPerInt: 0.25 }, // 유언: 치안·농업·상업 각각 -(지력 × 0.25) (2026-10-25 0.2에서 올림)
   exp: 30, critExp: 50,                // 성공하면 지력 경험치 (대성공이면 50)
 };
 // 'fail' | 'ok' | 'crit'
