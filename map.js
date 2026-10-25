@@ -84,7 +84,7 @@ function renderLegend() {
   const f = legendPick && MAP.factions.find(x => x.id === legendPick), t = f && FACTION_TRAITS[f.name];
   const members = f && typeof S !== 'undefined' && S ? Object.values(S.generals).filter(g => g.faction === f.id).length : 0;
   box.innerHTML = !f ? '세력을 누르면 정보가 보여요.'
-    : `<b>${f.name} (${members}명)</b><br>특성 : ${t ? t.name : '없음'}${t ? `<br>${t.desc}` : ''}`;
+    : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? t.name : '없음'}${t ? `<br>${t.desc}` : ''}`;
 }
 
 function renderCheck() {
