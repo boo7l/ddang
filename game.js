@@ -228,7 +228,9 @@ async function clearSlot(i) {
 
 // 예약표 바꾸기는 서버 답을 기다리지 않고 화면에 먼저 보여 준다 (서버가 느려도 바로 보이게).
 // 서버가 거절하면 서버가 돌려준 진짜 예약표로 되돌아간다. 여러 번 빠르게 누르면 마지막 답이 올 때 한 번만 맞춘다
+// 서버가 몰리지 않게 요청은 한 번에 하나씩 차례로 보낸다 (화면에는 바로 보임)
 let pendingOrders = 0;
+let orderChain = Promise.resolve();
 async function queueCall(action, payload, change) {
   change(me().queue);
   renderCommands();
@@ -236,7 +238,9 @@ async function queueCall(action, payload, change) {
   busy = true;
   let ok = false;
   try {
-    const d = await api(action, payload);
+    const send = orderChain.then(() => api(action, payload));
+    orderChain = send.catch(() => {});
+    const d = await send;
     ok = !d.error;
     if (!ok || pendingOrders === 1) applyView(d);
     if (!ok) alert(d.error);
