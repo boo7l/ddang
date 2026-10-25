@@ -778,10 +778,8 @@ function renderCommands() {
     <div class="cmds">${plot}</div>
     ${etc ? `<p class="sub">기타</p>
     <div class="cmds">${etc}</div>` : ''}
-    <p class="resignRow"><button id="cResign" class="mini danger" title="예약 없이 바로 세력을 떠나요">하야</button></p>
 `;
   const dialogs = { siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
-  $('#cResign').onclick = resignDialog;
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
@@ -933,6 +931,7 @@ $('#tTabNew').onclick = () => setAuthMode('new');
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 $('#adminBtn').onclick = adminToolsDialog;
+$('#cResign').onclick = resignDialog;
 $('#rankBtn').onclick = rankDialog;
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
