@@ -188,7 +188,7 @@ const dateText = turn => { const d = dateOf(turn); return `${d.year}년 ${d.mont
 
 // 매달 장수의 병사가 군량을 먹는다. 모자라면 병력이 흩어진다. 굶었으면 true
 function feedTroops(g, cs) {
-  const need = Math.ceil(g.troops * RULES.foodPerTroops);
+  const need = Math.ceil(g.troops * RULES.foodPerTroops * (1 + (traitOf(g.faction).food || 0))); // 장로: 덜 먹는다
   if (cs.food >= need) { cs.food -= need; return false; }
   cs.food = 0;
   g.troops = Math.floor(g.troops * (1 - RULES.starveLoss));
@@ -201,6 +201,25 @@ const UNIT_TYPES = {
   보병: { stat: 'lea', beats: '궁병' },
   기병: { stat: 'war', beats: '보병' },
   궁병: { stat: 'int', beats: '기병' },
+};
+
+// ===== 세력 특성 (기획서 "세력 특성"): 역사에 근거한 작은 패시브. 세력 이름으로 찾는다 =====
+// 숫자는 비율 (0.05 = 5%). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 traitOf(세력id)로 읽는다
+const FACTION_TRAITS = {
+  마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
+  공손찬: { name: '백마의종', desc: '기병으로 수비할 때 전투력 +10%', cavalryDefense: 0.10 },
+  조조: { name: '유재시거', desc: '모든 능력치 경험치 +10%', exp: 0.10 },
+  원소: { name: '사세삼공', desc: '금 수입 +5%', gold: 0.05 },
+  유비: { name: '인덕', desc: '징병으로 떨어지는 치안 -30%', draftPeace: -0.30 },
+  손견: { name: '강동의 호랑이', desc: '출진 공격 전투력 +5%', attack: 0.05 },
+  동탁: { name: '서량 대군', desc: '징병 +5% 더 모임', draft: 0.05 },
+  원술: { name: '옥새', desc: '상점 값 -10%', shop: -0.10 },
+  유표: { name: '형주 학풍', desc: '지력 경험치 +15%', expInt: 0.15 },
+  유언: { name: '익주 천험', desc: '수비 방어 보정 +5%', wall: 0.05 },
+  도겸: { name: '서주의 풍요', desc: '상업 내정 +5%', comm: 0.05 },
+  장로: { name: '오두미도', desc: '병사 군량 소비 -15%', food: -0.15 },
+  엄백호: { name: '강동 호족', desc: '성벽 공격으로 깎는 방어 +5%', siege: 0.05 },
+  왕랑: { name: '경학대가', desc: '수련에 금이 들지 않음', freeTrain: true },
 };
 
 // ===== 전투 =====
@@ -218,9 +237,19 @@ function matchupOf(a, b) {
   return 1;
 }
 // 공격력: 정란이 있으면 더 세다
-const attackPower = (a, d) => unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1);
+// 세력 특성: 기병(마등), 출진 공격(손견)
+const attackPower = (a, d) => {
+  const t = traitOf(a.faction);
+  return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
+    * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1);
+};
 // 수비력: 성 방어 보정을 받는다. 공격자가 충차를 가졌으면 그 보정을 덜 받는다
-const defensePower = (d, wall, a) => unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (a && a.siege && a.siege.충차 ? wall * SIEGE_EFFECT.ramWall : wall) / RULES.wallDivisor);
+// 세력 특성: 기병(마등·공손찬 수비), 방어 보정(유언)
+const defensePower = (d, wall, a) => {
+  const t = traitOf(d.faction), w = a && a.siege && a.siege.충차 ? wall * SIEGE_EFFECT.ramWall : wall;
+  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (w / RULES.wallDivisor) * (1 + (t.wall || 0)))
+    * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1);
+};
 
 // 훈련: 한 번에 오르는 훈련도 (임시: 통솔 10마다 1씩 더)
 const drillGain = lea => 5 + Math.floor(lea / 10);
@@ -348,7 +377,7 @@ const SHOP = {
   서적: { stat: 'int', bonus: 1 },
 };
 const gearCount = (g, name) => Number((g.gear || {})[name]) || 0; // 예전 저장의 true는 1개
-const shopPrice = (g, name) => RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name);
+const shopPrice = (g, name) => Math.round((RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name)) * (1 + (traitOf(g.faction).shop || 0))); // 원술 할인
 
 // 장수의 실제 능력치: 기본 능력치 + 가진 상점 물건 (최대치 120을 넘지 않는다)
 function effStats(g) {

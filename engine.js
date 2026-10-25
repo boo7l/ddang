@@ -16,6 +16,10 @@ const cityById = id => MAP.cities.find(c => c.id === id);
 const factionById = id => MAP.factions.find(f => f.id === id);
 const citiesOfFaction = fid => MAP.cities.filter(c => c.faction === fid);
 const allGenerals = () => Object.values(S.generals);
+// 세력 특성 (rules.js의 FACTION_TRAITS). 세력이 없거나 특성이 없으면 빈 것
+const traitOf = fid => { const f = fid && factionById(fid); return (f && FACTION_TRAITS[f.name]) || {}; };
+// 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
+const traitExp = (g, key, amount) => { const t = traitOf(g.faction); return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0))); };
 // 시각은 언제나 한국 시간으로 적는다 (서버는 다른 나라 시간일 수 있다)
 const kst = t => new Date(t + 9 * HOUR);
 const fmtTime = t => { const d = kst(t); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
@@ -197,7 +201,7 @@ function advance() {
     if (RULES.goldMonths.includes(month)) {
       for (const g of allGenerals()) {
         if (!g.faction) continue;
-        const cs = S.cities[g.city], got = earnGold(g, goldIncome(cs, g.merit));
+        const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit) * (1 + (traitOf(g.faction).gold || 0))));
         addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${cityById(g.city).name} 상업 ${cs.comm}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 치안 ${cs.peace}으로 줄어듦` : ''})`);
       }
     }
@@ -289,7 +293,7 @@ function addMerit(g, n) {
 // 능력치 경험치를 쌓는다. 다 차서 능력치가 오르면 기록에 남긴다
 function gainStatExp(g, key, amount) {
   const st = STATS.find(s => s.key === key);
-  const up = addStatExp(g, key, amount);
+  const up = addStatExp(g, key, traitExp(g, key, amount));
   if (up) addLog(g, `★ ${josa(st.name, '이가')} 올랐다! (${g.stats[key]})`);
 }
 
@@ -298,7 +302,8 @@ function runDomestic(g, key) {
   const city = cityById(g.city), c = S.cities[g.city], d = DOMESTIC[key];
   const max = devMax(city.grade, key);
   if (c[key] >= max) return `${josa(d.label, '이가')} 이미 최대치`;
-  const gain = Math.min(domesticGain(key, effStats(g)[d.stat]), max - c[key]);
+  const t = traitOf(g.faction), bonus = key === 'comm' ? t.comm || 0 : 0; // 도겸: 상업 내정 +5%
+  const gain = Math.min(Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus)), max - c[key]);
   c[key] += gain;
   addLog(g, `${city.name}: ${VERB[key]}. ${d.label} +${gain} (${c[key]}/${max})`);
   addMerit(g, RULES.merit.domestic);
@@ -319,11 +324,12 @@ function runDraft(g, o) {
   let note = '';
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   if (g.troops <= 0) g.training = 0; // 병사가 없을 때 모으면 새 부대
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea) * rate), troopsMax(g) - g.troops);
+  const t = traitOf(g.faction);
+  const gain = Math.min(Math.floor(draftGain(effStats(g).lea) * rate * (1 + (t.draft || 0))), troopsMax(g) - g.troops); // 동탁: 더 모인다
   if (g.troops > 0) g.training = dilutedTraining(g.training, g.troops, gain);
   g.unitType = type;
   g.troops += gain;
-  const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer)); // 징병하면 민심이 흉흉해진다
+  const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
   cs.peace -= drop;
   addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
@@ -353,7 +359,7 @@ function toggleDefense(g) {
 
 // ----- 출진 -----
 // 장수의 부대 (전투 계산용). ref는 전투가 끝난 뒤 병력을 되돌려 적을 장수
-const unitOf = g => ({ name: g.name, troops: g.troops, stats: effStats(g), type: g.unitType, training: g.training, siege: g.siege || {}, player: true, ref: g });
+const unitOf = g => ({ name: g.name, faction: g.faction, troops: g.troops, stats: effStats(g), type: g.unitType, training: g.training, siege: g.siege || {}, player: true, ref: g });
 
 // 성을 지키는 부대들. 병력이 많은 순서로 나서서 요격한다.
 //   - 수비대장: 유저가 없는 세력의 성
@@ -364,7 +370,7 @@ function defendersOf(c) {
   if (hasGuard(c) && cs.guard > 0) {
     const st = RULES.guardStat;
     list.push({ name: '수비대장', troops: cs.guard, stats: { lea: st, war: st, int: st },
-      type: RULES.guardUnit.type, training: RULES.guardUnit.training, guard: true });
+      type: RULES.guardUnit.type, training: RULES.guardUnit.training, guard: true, faction: c.faction });
   }
   for (const g of allGenerals()) {
     if (g.city === c.id && g.faction === c.faction && g.defense && g.troops > 0) list.push(unitOf(g));
@@ -480,8 +486,9 @@ function runAttack(g, o, mark) {
   } else {
     lines.push(defs.length ? '수비 부대를 모두 물리치고 성벽으로 달려들었다!' : '막는 부대가 없어 곧장 성벽으로 달려들었다!');
     const sr = RULES.siegeRate, rate = sr.min + Math.random() * (sr.max - sr.min);
-    const dmg = Math.min(cs.wall, Math.max(1, Math.floor(g.troops * rate)));
-    const loss = Math.min(g.troops, dmg * RULES.siegeLoss); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 3배(siegeLoss)만큼 잃는다
+    const base = Math.max(1, Math.floor(g.troops * rate));
+    const dmg = Math.min(cs.wall, Math.floor(base * (1 + (traitOf(g.faction).siege || 0)))); // 엄백호: 같은 손실로 더 깎는다
+    const loss = Math.min(g.troops, Math.round(dmg / (1 + (traitOf(g.faction).siege || 0))) * RULES.siegeLoss); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 3배(siegeLoss)만큼 잃는다
     cs.wall -= dmg;
     g.troops -= loss;
     atkLost += loss;
@@ -641,11 +648,12 @@ function runTrain(g, o) {
   const st = STATS.find(s => s.key === o.stat);
   if (!st) return '없는 능력치';
   if (g.stats[o.stat] >= RULES.statMax) return `${josa(st.name, '이가')} 이미 최대`;
-  const why = pay(g, 'train');
+  const free = traitOf(g.faction).freeTrain; // 왕랑: 수련에 금이 들지 않는다
+  const why = free ? '' : pay(g, 'train');
   if (why) return why;
-  const gain = randInt(RULES.statExp.train.min, RULES.statExp.train.max);
+  const gain = traitExp(g, o.stat, randInt(RULES.statExp.train.min, RULES.statExp.train.max));
   const up = addStatExp(g, o.stat, gain);
-  addLog(g, `${st.name} 수련: 경험 +${gain}` + ` · 내 금 -${RULES.myGoldCost.train}` +
+  addLog(g, `${st.name} 수련: 경험 +${gain}` + (free ? '' : ` · 내 금 -${RULES.myGoldCost.train}`) +
     (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[o.stat]})` : ` (${g.statExp[o.stat]}/${expNeed(g.stats[o.stat])})`));
   return '';
 }

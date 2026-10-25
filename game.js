@@ -328,7 +328,7 @@ function trainDialog() {
       <b>${st.name} 수련</b> <span class="dim">${p.stats[st.key]}</span>
       <span class="r">${bar(xp(st.key), expNeed(p.stats[st.key]))} <span class="dim">${xp(st.key)}/${expNeed(p.stats[st.key])}</span></span></label>`).join('');
   pickDialog('수련', `<p>능력치 하나를 골라 경험치를 집중해서 쌓습니다 (한 번에 ${RULES.statExp.train.min}~${RULES.statExp.train.max}). 경험치가 다 차면 그 능력치가 1 올라요.</p>
-    <p class="dim">필요한 경험치 = ${RULES.expNeedBase} + 지금 능력치 · 금 ${RULES.myGoldCost.train}</p>`, opts, '예약', v => reserve({ cmd: 'train', stat: v }));
+    <p class="dim">필요한 경험치 = ${RULES.expNeedBase} + 지금 능력치 · ${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => reserve({ cmd: 'train', stat: v }));
   $('#modalBox .opts').classList.add('train');
 }
 
@@ -643,6 +643,7 @@ function renderJoinInfo() {
     <table class="stats">
       <tr><th>장수</th><td>${memberCount(f.id)}명 <span class="dim">(소속한 유저 수)</span></td></tr>
       <tr><th>성</th><td>${cities.length}개</td></tr>
+      ${traitOf(f.id).name ? `<tr><th>특성</th><td><b class="hi">${traitOf(f.id).name}</b> <span class="dim">${traitOf(f.id).desc}</span></td></tr>` : ''}
     </table>
     <p class="sub">시작할 성 <span class="dim">(지도에서 눌러도 돼요)</span></p>
     <div class="picks" id="jCities">${cities.map(c =>
@@ -708,7 +709,7 @@ function renderGeneral() {
     <div class="gHead"><span id="gFace"></span><div>
       <p class="gname">${esc(p.name)}</p>
       <table class="stats">
-        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
+        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}${traitOf(f.id).name ? ` <span class="dim" title="${traitOf(f.id).desc}">· ${traitOf(f.id).name}</span>` : ''}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
         <tr><th>군량</th><td>${fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
@@ -752,7 +753,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
   const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
-    btn('train', '수련', `능력치 경험 · ${cost('train')}`), btn('buyFood', '군량 사기', `금${RULES.foodBuy.gold} → 군량 ${RULES.foodBuy.food}`)].join('');
+    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `금${RULES.foodBuy.gold} → 군량 ${RULES.foodBuy.food}`)].join('');
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>
     <p class="turnInfo">다음 턴 ${fmtClock(slotTime(0))} <span class="dim">(<b id="turnLeft"></b> 남음)</span>
