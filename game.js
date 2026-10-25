@@ -522,7 +522,7 @@ function showScreen(id) {
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   $('#who').hidden = id === 'title';
-  if (id !== 'game') $('#nowDate').textContent = '';
+  if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
 }
 
@@ -785,6 +785,7 @@ function updateTurn() {
 function renderCommands() {
   const p = me();
   $('#nowDate').textContent = dateText(S.turn); // 상단: 게임 속 지금 연월
+  $('#nowSeason').textContent = `시즌 ${S.season || 1}`; // 상단: 몇 번째 시즌
   const statName = k => STATS.find(s => s.key === k).name;
   const cost = k => (RULES.myGoldCost[k] ? `금${RULES.myGoldCost[k]}` : '');
   const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}">${name}<small>${sub}</small></button>` : '');

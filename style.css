@@ -97,6 +97,8 @@ body {
 h1 { margin: 0; font-size: 32px; font-weight: normal; color: var(--title); letter-spacing: 4px; text-shadow: 2px 2px 0 #000; }
 h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left: 12px; text-shadow: none; }
 .era { color: var(--label); }
+.season { color: var(--title); border: 1px solid var(--gold-dark); padding: 0 6px; }
+.season:empty { display: none; }
 #check { margin-left: auto; }
 #check.ok { color: var(--ok); }
 #check.bad { color: var(--bad); }
