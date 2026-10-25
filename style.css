@@ -175,6 +175,9 @@ aside { width: 300px; flex: none; }
 #legend li { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px dotted var(--gold-dark); }
 #legend .cnt { margin-left: auto; color: var(--title); }
 #legend .cnt::after { content: "성"; color: var(--dim); margin-left: 4px; }
+#legend li.pickable { cursor: pointer; }
+#legend li.pickable:hover, #legend li.on { color: var(--title); }
+#legendTrait { margin: 6px 0 0; }
 .swatch {
   width: 16px; height: 16px;
   display: inline-block;

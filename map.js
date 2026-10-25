@@ -69,13 +69,19 @@ function renderInfo() {
     </table>`;
 }
 
+let legendPick = null; // 세력 창에서 눌러 특성을 펼쳐 본 세력
 function renderLegend() {
   const count = id => MAP.cities.filter(c => c.faction === id).length;
-  // 멸망한 세력(성이 하나도 없는 세력)은 목록에서 뺀다
+  // 멸망한 세력(성이 하나도 없는 세력)은 목록에서 뺀다. 세력을 누르면 아래에 그 세력 특성이 보인다 (다시 누르면 접힘)
   const rows = MAP.factions.filter(f => count(f.id) > 0).map(f =>
-    `<li><span class="swatch" style="background:${f.color}"></span>${f.name} <span class="cnt">${count(f.id)}</span></li>`);
+    `<li data-f="${f.id}" class="pickable${f.id === legendPick ? ' on' : ''}" title="눌러서 세력 특성 보기"><span class="swatch" style="background:${f.color}"></span>${f.name} <span class="cnt">${count(f.id)}</span></li>`);
   rows.push(`<li><span class="swatch" style="background:var(--empty)"></span>공백지 <span class="cnt">${count('')}</span></li>`);
   $('#legend').innerHTML = rows.join('');
+  $('#legend').querySelectorAll('[data-f]').forEach(li => { li.onclick = () => { legendPick = legendPick === li.dataset.f ? null : li.dataset.f; renderLegend(); }; });
+  const box = $('#legendTrait');
+  if (!box) return;
+  const f = legendPick && MAP.factions.find(x => x.id === legendPick), t = f && FACTION_TRAITS[f.name];
+  box.innerHTML = !f ? '세력을 누르면 특성이 보여요.' : t ? `${f.name} · <b>${t.name}</b><br>${t.desc}` : `${f.name} · 특성 없음`;
 }
 
 function renderCheck() {
