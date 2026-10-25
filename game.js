@@ -323,12 +323,13 @@ function unitAtSlot(p, i) {
 
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
-  const lea = effStats(p).lea, lo = lea * RULES.draftPerLea.min, hi = lea * RULES.draftPerLea.max;
+  const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
+  const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
-  pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다 (통솔 ${lea} × ${RULES.draftPerLea.min}~${RULES.draftPerLea.max}, 최대 병력 ${fmt(troopsMax(p))}까지). 병종마다 전투력에 쓰는 능력치가 달라요.</p>
+  pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다 (최대 병력 ${fmt(troopsMax(p))}까지). 병종마다 전투력에 쓰는 능력치가 달라요.</p>
     <p class="dim">${p.troops > 0 ? `지금 ${p.unitType} ${fmt(p.troops)}. 다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'} 금 ${RULES.myGoldCost.draft}</p>`,
   opts, '예약', t => {
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
@@ -489,7 +490,7 @@ function helpDialog(page = 0) {
       <li><b>축성</b>으로 성의 <b>방어</b>를 올려 두면, 적이 쳐들어올 때 수비하는 쪽 전투력이 세져요. (방어 100마다 +${Math.round(100 / RULES.wallDivisor * 100)}%)</li>
       <li>출진할 군량이 모자라면 <b>군량 사기</b>로 금을 군량으로 바꿀 수 있어요.</li>
       <li><b>탐색</b>(금 ${RULES.myGoldCost.explore})으로 주변을 뒤지면 금·군량·의병·능력치를 얻을 수 있어요. 가끔 도적을 만나요.</li>
-      <li><b>공적</b>이 높을수록 금 수입이 늘어나요.</li></ul>`],
+      <li><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</li></ul>`],
   ];
   const [title, body] = pages[page];
   const last = page === pages.length - 1;

@@ -59,6 +59,7 @@ const RULES = {
   // 치안 구간 (기획서 9장): 50 이상은 그대로, 20~49는 수입·징병 10% 줄고, 20 미만은 수입 75%에 징병 불가
   peaceOk: 50, peaceLow: 20,
   draftPerLea: { min: 15, max: 25 }, // 징병 1회 = 통솔 × 15~25명 (무작위. 2026-10-25 15~20에서 올림)
+  draftPerMerit: 0.1,       // 징병에 공적 × 0.1명이 더 모인다 (2026-10-25)
   draftPeacePer: 250,       // 징병하면 그 성의 치안이 모은 병사 250명당 1 떨어진다 (2026-10-25 200에서 바꿈)
   troopsPerLea: 100,        // 장수 한 명의 최대 병력 = 통솔 × 100
 
@@ -159,7 +160,8 @@ const domesticGain = (key, stat) => {
   return Math.max(1, Math.floor(stat * (lo + Math.random() * (hi - lo))));
 };
 // 징병 1회로 늘어나는 병력: 통솔 × 10~20 (무작위)
-const draftGain = lea => lea * randInt(RULES.draftPerLea.min, RULES.draftPerLea.max);
+// 징병 1회 = 통솔 × 15~25 (무작위) + 공적 × 0.1
+const draftGain = (lea, merit = 0) => lea * randInt(RULES.draftPerLea.min, RULES.draftPerLea.max) + Math.floor(merit * RULES.draftPerMerit);
 // 출진에 필요한 군량
 const marchFood = troops => Math.ceil(troops * RULES.marchFoodRate);
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)

@@ -335,7 +335,7 @@ function runDraft(g, o) {
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   if (g.troops <= 0) g.training = 0; // 병사가 없을 때 모으면 새 부대
   const t = traitOf(g.faction);
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea) * rate * (1 + (t.draft || 0))), troopsMax(g) - g.troops); // 동탁: 더 모인다
+  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0))), troopsMax(g) - g.troops); // 동탁: 더 모인다
   if (g.troops > 0) g.training = dilutedTraining(g.training, g.troops, gain);
   g.unitType = type;
   g.troops += gain;
