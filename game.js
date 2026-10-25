@@ -708,7 +708,7 @@ function renderGeneral() {
     <div class="gHead"><span id="gFace"></span><div>
       <p class="gname">${esc(p.name)}</p>
       <table class="stats">
-        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)} <button id="gResign" class="mini">하야</button></td></tr>
+        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
         <tr><th>군량</th><td>${fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
@@ -726,7 +726,6 @@ function renderGeneral() {
     </table>`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
   $('#gDefense').onclick = onDefense;
-  $('#gResign').onclick = resignDialog;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
 }
 
@@ -779,8 +778,10 @@ function renderCommands() {
     <div class="cmds">${plot}</div>
     ${etc ? `<p class="sub">기타</p>
     <div class="cmds">${etc}</div>` : ''}
+    <p class="resignRow"><button id="cResign" class="mini danger" title="예약 없이 바로 세력을 떠나요">하야</button></p>
 `;
   const dialogs = { siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  $('#cResign').onclick = resignDialog;
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
