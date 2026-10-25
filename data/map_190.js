@@ -290,7 +290,7 @@ const MAP_DATA = {
    "y": 7,
    "name": "강주",
    "faction": "f1791965980948",
-   "grade": 1
+   "grade": 2
   },
   {
    "id": "c28",
