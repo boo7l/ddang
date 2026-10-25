@@ -430,12 +430,12 @@ function plotDialog(kind) {
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
 
-// 군량 사기: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
+// 군량 구매: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
 function buyFoodDialog() {
   // 쓸 금을 직접 적는다 (1~goldMax). 예전 선택지는 빠른 단추로
   const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), perGold = foodPrice(), { choices, goldMax } = RULES.foodBuy;
   openModal(`
-    <h2>군량 사기 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
+    <h2>군량 구매 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
     <p>${esc(at.name)}에 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
     <p class="dim">시세는 매달 바뀌어요 (${RULES.foodBuy.min}~${RULES.foodBuy.max}). 실제로는 예약한 턴의 시세로 사요.</p>
     <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 내 금 ${fmt(p.gold)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>
@@ -519,7 +519,7 @@ function helpDialog(page = 0) {
       <li>오른쪽 <b>명령 예약표</b>에 ${RULES.queueSize}턴까지 명령을 넣어 두면, 접속하지 않아도 한 턴에 하나씩 실행돼요.</li>
       <li>실행할 수 없는 명령(금이 모자람 등)은 <b>실패 → 대기</b>로 넘어가요. 결과는 <b>기록</b> 창에서 확인해요.</li></ul>`],
     ['💰 금과 군량', `<ul>
-      <li><b>금</b> (내 것): 1·4·7·10월 💰에 <b>내가 있는 성의 상업</b>만큼 들어와요. 징병·수련·상점·군량 사기에 써요. 내정은 금 없이 턴만 써요.</li>
+      <li><b>금</b> (내 것): 1·4·7·10월 💰에 <b>내가 있는 성의 상업</b>만큼 들어와요. 징병·수련·상점·군량 구매에 써요. 내정은 금 없이 턴만 써요.</li>
       <li><b>군량</b> (성마다 따로): 4·10월 🌾 수확 때 그 성의 농업만큼 들어오고, 병사는 머무는 성의 군량을 매달 먹어요. 출진하면 병력의 ${Math.round(RULES.marchFoodRate * 100)}%만큼 더 들어요.</li></ul>`],
     ['📊 능력치', `<ul>
       <li><b>통솔</b>: 최대 병력(통솔 × ${RULES.troopsPerLea}), 징병, 치안, 보병</li>
@@ -542,7 +542,7 @@ function helpDialog(page = 0) {
       <li>지도에서 성을 누르면 그 성의 정보가 나와요.</li>
       <li>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</li>
       <li><b>축성</b>으로 성의 <b>방어</b>를 올려 두면, 적이 쳐들어올 때 수비하는 쪽 전투력이 세져요. (방어 100마다 +${Math.round(100 / RULES.wallDivisor * 100)}%)</li>
-      <li>출진할 군량이 모자라면 <b>군량 사기</b>로 금을 군량으로 바꿀 수 있어요.</li>
+      <li>출진할 군량이 모자라면 <b>군량 구매</b>로 금을 군량으로 바꿀 수 있어요.</li>
       <li><b>탐색</b>(금 ${RULES.myGoldCost.explore})으로 주변을 뒤지면 금·군량·의병·능력치를 얻을 수 있어요. 가끔 도적을 만나요.</li>
       <li><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</li></ul>`],
   ];
@@ -848,7 +848,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
   const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
-    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기')].join('');
+    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기')].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>

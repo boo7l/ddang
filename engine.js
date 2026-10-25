@@ -16,7 +16,7 @@ const cityById = id => MAP.cities.find(c => c.id === id);
 const factionById = id => MAP.factions.find(f => f.id === id);
 const citiesOfFaction = fid => MAP.cities.filter(c => c.faction === fid);
 const allGenerals = () => Object.values(S.generals);
-// 군량 사기에 쓸 금: 1~goldMax (예약에 적힌 값, 없으면 첫 빠른 단추 값)
+// 군량 구매에 쓸 금: 1~goldMax (예약에 적힌 값, 없으면 첫 빠른 단추 값)
 const buyFoodGold = o => Math.max(1, Math.min(RULES.foodBuy.goldMax, Math.floor(+(o && o.item)) || RULES.foodBuy.choices[0]));
 // 이번 달 군량 시세 (금 1당 군량). 세계에 없으면 처음 값
 const foodPrice = () => (S && S.foodPrice) || RULES.foodBuy.start;
@@ -747,7 +747,7 @@ function buyItem(g, item) {
   return '';
 }
 
-// ----- 군량 사기 (내 금) -----
+// ----- 군량 구매 (내 금) -----
 // 금을 내고 지금 있는 성에 군량을 들인다. 예약할 때 얼마어치(금) 살지 고른다 (order.item = 금액).
 // 창고(군량 최대치)에 다 안 들어가면 들어가는 만큼만 사고, 금도 그만큼만 낸다
 function runBuyFood(g, o) {
@@ -822,7 +822,7 @@ const COMMANDS = {
   spy: { label: o => `첩보 → ${cityName(o.to)}`, run: runSpy },
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 생산 (${o.type})`, run: runSiege },
-  buyFood: { label: o => `군량 사기 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
+  buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');
