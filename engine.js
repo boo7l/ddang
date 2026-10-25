@@ -58,7 +58,7 @@ function newWorld(season = 1) {
     v: SAVE_VERSION,
     season,      // 몇 번째 시즌인지 (명예의 전당에 쓴다)
     timeOffset: 0,
-    incomeAt: Math.floor(t / RULES.turnLength) * RULES.turnLength, // 마지막으로 처리한 턴 시각
+    incomeAt: turnStart(t), // 마지막으로 처리한 턴 시각
     turn: 0,      // 지난 턴 수. 게임 속 날짜 = 190년 1월 + turn달
     foodPrice: RULES.foodBuy.start, // 군량 시세 (금 1당 군량)
     generals: {}, // 계정id → 장수
@@ -127,7 +127,7 @@ function addGeneral(id, { name, face, stats }) {
     stats: Object.fromEntries(STATS.map(st => [st.key, stats[st.key]])),
     troops: 0, unitType: null, training: 0, defense: true, // 병종은 첫 징병 때 고른다
     gold: RULES.startGold, merit: 0, statExp: {}, siege: {}, gear: {}, intel: {},
-    queue: Array(RULES.queueSize).fill(null), // 앞으로 12턴의 예약 명령 (null = 대기)
+    queue: Array(RULES.queueSize).fill(null), // 앞으로 queueSize턴의 예약 명령 (null = 대기)
     log: [],
   };
   addLog(g, `${name}, 천하에 뜻을 품고 길을 나서다.`);
@@ -186,13 +186,13 @@ function linkedOwnCities(fromId, fid) {
 // 매 턴(게임 속 1달, 모든 장수가 같은 정각)마다: 예약 명령 실행 → 금 수입(1·4·7·10월) → 군량 수확(4·10월) → 병사가 군량을 먹음.
 // 아무도 접속하지 않아도 지난 턴들을 차례로 처리한다. 처리한 턴 수를 돌려준다
 function advance() {
-  const t = now(), T = RULES.turnLength;
+  const t = now();
   let turns = 0;
   const starved = new Set();
   if (S.unified || S.paused) return 0; // 시즌이 끝났거나 관리자가 멈췄으면 턴이 흐르지 않는다
-  while (S.incomeAt + T <= t) {
-    const mark = S.incomeAt + T;
-    if (turns >= 24 * 30) { S.incomeAt = Math.floor(t / T) * T; break; } // 오래 비워 둬도 최대 720턴치만
+  while (nextTurn(S.incomeAt) <= t) {
+    const mark = nextTurn(S.incomeAt);
+    if (turns >= 24 * 30) { S.incomeAt = turnStart(t); break; } // 오래 비워 둬도 최대 720턴치만
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     if (S.unified) { // 이번 턴에 통일했다

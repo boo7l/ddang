@@ -18,8 +18,10 @@ const RULES = {
     shop: true,       // 상점: 명검·서적·명마를 여러 번 살 수 있고, 살 때마다 비싸진다
   },
   // 턴 (기획서 6장): 모든 장수가 같은 정각에 예약한 명령 하나씩을 실행한다
-  turnLength: 10 * MIN,     // 한 턴의 길이: 10분 (2026-10-25. 시즌 1은 시험용 1분, 시즌 2 처음엔 30분)
-  queueSize: 12,            // 몇 턴 앞까지 예약할 수 있는지
+  // 한 턴의 길이 (2026-10-25): 낮 5분, 밤(한국 시간 0~8시) 20분. 두 값 모두 60분을 나눠떨어지게 한다 (정각에 맞물리도록)
+  turnLength: 5 * MIN,
+  night: { from: 0, to: 8, turnLength: 20 * MIN },
+  queueSize: 24,            // 몇 턴 앞까지 예약할 수 있는지 (자정에 채우면 아침 8시까지)
 
   // 능력치 (기획서 7장 확정값)
   statMax: 120,
@@ -171,7 +173,20 @@ function captureDamage(cs) {
 }
 
 // 다음 턴 시각 (모든 장수의 예약 명령이 이때 실행된다)
-const nextTurn = t => Math.floor(t / RULES.turnLength) * RULES.turnLength + RULES.turnLength;
+// 시각 t에 쓰는 턴 길이: 한국 시간 밤(0~6시)이면 밤 턴, 아니면 낮 턴
+function turnLengthAt(t) {
+  const h = new Date(t + 9 * HOUR).getUTCHours();
+  return h >= RULES.night.from && h < RULES.night.to ? RULES.night.turnLength : RULES.turnLength;
+}
+// 길이가 60분을 나눠떨어지므로 낮↔밤이 바뀌는 정각을 건너뛰지 않는다
+const turnStart = t => Math.floor(t / turnLengthAt(t)) * turnLengthAt(t); // t가 속한 턴이 시작한 시각
+const nextTurn = t => turnStart(t) + turnLengthAt(t);
+// 지금부터 i+1번째 턴 시각 (i = 0이면 다음 턴)
+function turnAfter(t, i) {
+  let x = nextTurn(t);
+  while (i-- > 0) x = nextTurn(x);
+  return x;
+}
 
 // 금 수입(1·4·7·10월): 장수가 있는 성의 상업에 따라 정해진다
 // 장수의 금 수입: 있는 성의 상업에 공적 보너스와 치안 보정을 곱한다

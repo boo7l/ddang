@@ -102,12 +102,12 @@ function adminDialog(tab = 'users', fid = null) {
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
 function adminToolsDialog() {
   const state = !S ? '-' : S.unified ? '천하통일 (턴 멈춤)' : S.paused ? '⏸ 멈춤' : '흐르는 중';
-  const ahead = S && Math.round(S.timeOffset / RULES.turnLength);
+  const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
   openModal(`
     <h2>🛠 관리 <span class="dim small">· 관리자만 보여요</span></h2>
     <table class="stats">
       <tr><th>날짜</th><td>${S ? `${dateText(S.turn)} (${S.turn}턴)` : '-'} · ${state}</td></tr>
-      <tr><th>시각</th><td>${S ? fmtTime(now()) : '-'}${ahead ? ` <span class="dim">(실제보다 ${ahead}턴 빠름)</span>` : ''}</td></tr>
+      <tr><th>시각</th><td>${S ? fmtTime(now()) : '-'}${ahead ? ` <span class="dim">(실제보다 ${ahead}분 빠름)</span>` : ''}</td></tr>
       <tr><th>장수</th><td>${S ? allGenerals().length : 0}명</td></tr>
     </table>
     <p class="sub">턴 <span class="dim">(모든 장수에게 적용)</span></p>
@@ -209,7 +209,9 @@ async function refresh() {
 
 // ===== 예약표 =====
 let slot = 0; // 예약표에서 고른 칸
-const slotTime = i => nextTurn(now()) + i * RULES.turnLength;
+const slotTime = i => turnAfter(now(), i);
+// 밤 턴(0~8시, 20분 간격)인 칸은 예약표에서 어둡게: 바로 앞 20분이 밤이었던 턴 (00:20 ~ 08:00)
+const isNightTurn = t => turnLengthAt(t - 1) === RULES.night.turnLength && RULES.night.turnLength !== RULES.turnLength;
 
 // 고른 칸에 명령을 넣고, 다음 칸으로 넘어간다
 let lastOrder = null; // 마지막으로 예약한 명령 ("빈 칸 채우기"에 쓴다)
@@ -430,11 +432,11 @@ function moveDialog() {
 // 핵심만 짧게. 숫자는 rules.js에서 가져와서 규칙을 고쳐도 안내가 따라간다
 // 한 번에 한 항목씩: 위의 항목 단추나 이전·다음으로 넘겨 본다
 function helpDialog(page = 0) {
-  const turnMin = RULES.turnLength / MIN;
+  const turnMin = RULES.turnLength / MIN, nightMin = RULES.night.turnLength / MIN;
   const pages = [
     ['🎯 목표', '<p>세력에 들어가 동료들과 함께 이웃 성을 하나씩 차지해, 천하를 손에 넣는 게임이에요.</p>'],
     ['⏳ 턴과 명령 예약', `<ul>
-      <li>1턴 = ${turnMin}분 = 게임 속 <b>1달</b>. 모든 장수가 같은 정각에 움직여요.</li>
+      <li>1턴 = ${turnMin}분 = 게임 속 <b>1달</b>. 모든 장수가 같은 정각에 움직여요. 밤 ${RULES.night.from}~${RULES.night.to}시에는 1턴 = ${nightMin}분으로 느려져요.</li>
       <li>오른쪽 <b>명령 예약표</b>에 ${RULES.queueSize}턴까지 명령을 넣어 두면, 접속하지 않아도 한 턴에 하나씩 실행돼요.</li>
       <li>실행할 수 없는 명령(금이 모자람 등)은 <b>실패 → 대기</b>로 넘어가요. 결과는 <b>기록</b> 창에서 확인해요.</li></ul>`],
     ['💰 금과 군량', `<ul>
@@ -757,7 +759,7 @@ function renderCommands() {
   const statName = k => STATS.find(s => s.key === k).name;
   const cost = k => (RULES.myGoldCost[k] ? `금${RULES.myGoldCost[k]}` : '');
   const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}">${name}<small>${sub}</small></button>` : '');
-  const rows = p.queue.map((o, i) => `<li data-i="${i}" class="${i === slot ? 'sel' : ''}${o ? '' : ' idle'}">
+  const rows = p.queue.map((o, i) => `<li data-i="${i}" class="${i === slot ? 'sel' : ''}${o ? '' : ' idle'}${isNightTurn(slotTime(i)) ? ' night' : ''}">
       <span class="t">${dateOf(S.turn + 1 + i).month}월${RULES.goldMonths.includes(dateOf(S.turn + 1 + i).month) ? '💰' : ''}${RULES.harvestMonths.includes(dateOf(S.turn + 1 + i).month) ? '🌾' : ''}</span>
       <span class="clock">${fmtClock(slotTime(i))}</span>
       <span class="what">${o ? esc(orderLabel(o)) : '대기'}</span>
@@ -767,10 +769,11 @@ function renderCommands() {
   const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
   const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
     btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `이번 달 금 1 → 군량 ${foodPrice()}`)].join('');
+  const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>
     <p class="turnInfo">다음 턴 ${fmtClock(slotTime(0))} <span class="dim">(<b id="turnLeft"></b> 남음)</span>
-      <span class="dim">· 1턴 ${RULES.turnLength / MIN}분 = 1달</span></p>
+      <span class="dim">· 1턴 ${RULES.turnLength / MIN}분 = 1달 (밤 ${RULES.night.from}~${RULES.night.to}시는 ${RULES.night.turnLength / MIN}분)</span></p>
     <ol class="queue">${rows}</ol>
     <p class="cmds two"><button id="qClear">칸 비우기</button><button id="qClearAll" class="danger">모두 비우기</button></p>
     <p class="cmds one"><button id="qFill"${lastOrder ? '' : ' disabled'}>빈 칸 모두 채우기<small>${lastOrder ? `마지막 명령: ${esc(orderLabel(lastOrder))}` : '명령을 하나 넣으면 쓸 수 있어요'}</small></button></p>
@@ -798,6 +801,10 @@ function renderCommands() {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
   });
+  const q = $('#queueBox .queue'), sel = q.querySelector('li.sel');
+  q.scrollTop = qTop;
+  if (sel && sel.offsetTop < q.scrollTop) q.scrollTop = sel.offsetTop; // 고른 칸이 가려지면 보이게
+  else if (sel && sel.offsetTop + sel.offsetHeight > q.scrollTop + q.clientHeight) q.scrollTop = sel.offsetTop + sel.offsetHeight - q.clientHeight;
   $('#queueBox').querySelectorAll('.queue li').forEach(li => { li.onclick = () => { slot = +li.dataset.i; renderCommands(); }; });
   $('#queueBox').querySelectorAll('[data-x]').forEach(b => { b.onclick = e => { e.stopPropagation(); clearSlot(+b.dataset.x); }; });
   $('#qClear').onclick = () => clearSlot(slot);

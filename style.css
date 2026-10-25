@@ -350,9 +350,11 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 
 /* ===== 명령 예약표 ===== */
 .turnInfo { margin: 0 0 6px; }
-.queue { list-style: none; margin: 0 0 8px; padding: 0; border: 2px solid var(--gold-dark); background: var(--panel-dark); }
+.queue { list-style: none; margin: 0 0 8px; padding: 0; border: 2px solid var(--gold-dark); background: var(--panel-dark); max-height: 420px; overflow-y: auto; position: relative; } /* 칸이 많아 넘치면 스크롤 */
 .queue li { display: flex; align-items: center; gap: 8px; padding: 2px 8px; border-bottom: 1px dotted var(--gold-dark); cursor: pointer; min-height: 26px; }
 .queue li:last-child { border-bottom: 0; }
+.queue li.night { background: #150308; } /* 밤 턴 (0~8시): 살짝 어둡게 */
+.queue li.night:not(.sel) .t, .queue li.night:not(.sel) .clock { opacity: 0.75; }
 .queue li:hover { background: #3a120a; }
 .queue li.sel { background: var(--seal); color: var(--text); outline: 2px solid var(--title); outline-offset: -2px; }
 .queue li.idle .what { color: var(--dim); }
