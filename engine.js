@@ -96,6 +96,11 @@ function fixWorld() {
   ensureCities();
   applyOwners();
   trimDefense();
+  // 세력별 몸담은 턴 수를 세기 전부터 있던 장수는, 지금 세력에 지금까지의 턴을 모두 준다 (2026-10-26, 한 번만)
+  if (!S.factionTurnsInit) {
+    for (const g of allGenerals()) if (g.faction && !g.factionTurns) g.factionTurns = { [g.faction]: S.turn };
+    S.factionTurnsInit = true;
+  }
   for (const g of allGenerals()) {
     if (!g.log) g.log = []; // 기록을 gen_logs 표로 옮긴 뒤의 세계에는 기록이 없다 (예전 서버로 되돌려도 깨지지 않게)
     if (g.log && g.log.length > RULES.logMax) g.log.length = RULES.logMax; // 기록 줄 수를 줄였을 때
@@ -207,6 +212,8 @@ function advance() {
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     trimDefense();
+    // 세력마다 몸담은 턴 수 (명예의 전당 소속 = 가장 오래 있었던 세력)
+    for (const g of allGenerals()) if (g.faction) { g.factionTurns = g.factionTurns || {}; g.factionTurns[g.faction] = (g.factionTurns[g.faction] || 0) + 1; }
     if (S.unified) { // 이번 턴에 통일했다
       logAll(`🏆 ${dateText(S.turn)}, ${factionById(S.unified.faction).name} 세력이 천하를 통일했다!`);
       S.incomeAt = mark; turns++; break;
