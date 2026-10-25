@@ -210,7 +210,7 @@ async function refresh() {
 // ===== 예약표 =====
 let slot = 0; // 예약표에서 고른 칸
 const slotTime = i => turnAfter(now(), i);
-// 밤 턴(0~8시, 20분 간격)인 칸은 예약표에서 어둡게: 바로 앞 20분이 밤이었던 턴 (00:20 ~ 08:00)
+// 밤 턴(rules.js night)인 칸은 예약표에서 어둡게: 바로 앞 시간이 밤이었던 턴 (지금은 01:15 ~ 07:00)
 const isNightTurn = t => turnLengthAt(t - 1) === RULES.night.turnLength && RULES.night.turnLength !== RULES.turnLength;
 
 // 고른 칸에 명령을 넣고, 다음 칸으로 넘어간다
