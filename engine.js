@@ -242,7 +242,7 @@ function setOrder(g, i, order) {
 function clearOrders(g) { g.queue = Array(RULES.queueSize).fill(null); }
 // 비어 있는 칸을 모두 같은 명령으로 채운다 (예: 12칸 모두 농업). 하야는 되풀이할 수 없다
 function fillOrders(g, order) {
-  if (!order || order.cmd === 'resign') return '채울 수 없는 명령이에요.';
+  if (!order) return '채울 수 없는 명령이에요.';
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
     const why = setOrder(g, i, order);
@@ -699,10 +699,11 @@ function runBuyFood(g) {
 }
 
 
-// ----- 하야 -----
+// ----- 하야 (예약 없이 바로) -----
 // 세력을 떠나 재야가 된다. 병사는 세력의 것이라 흩어지고, 공적·금·능력치는 그대로 (멸망했을 때와 같다).
 // 남은 예약은 모두 지워지고, 다음에 들어오면 세력 선택부터 다시 한다. 떠난 세력에는 RULES.rejoinWait턴 동안 못 들어간다
 function runResign(g) {
+  if (!g.faction) return '세력에 소속되어 있지 않아요.';
   const f = factionById(g.faction), city = cityById(g.city);
   const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
   Object.assign(g, { faction: null, city: null, troops: 0, unitType: null, training: 0 });
@@ -731,6 +732,5 @@ const COMMANDS = {
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 생산 (${o.type})`, run: runSiege },
   buyFood: { label: () => '군량 사기', run: runBuyFood },
-  resign: { label: () => '하야', run: runResign },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');

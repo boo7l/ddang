@@ -215,7 +215,7 @@ const slotTime = i => nextTurn(now()) + i * RULES.turnLength;
 let lastOrder = null; // 마지막으로 예약한 명령 ("빈 칸 채우기"에 쓴다)
 async function reserve(order) {
   const at = slot;
-  if (order.cmd !== 'resign') lastOrder = order;
+  lastOrder = order;
   if (await call('order', { i: at, order })) slot = Math.min(at + 1, RULES.queueSize - 1);
   renderCommands();
 }
@@ -393,17 +393,17 @@ function plotDialog(kind) {
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
 
-// 하야: 되돌릴 수 없으니 한 번 더 묻는다
-function resignDialog() {
+// 하야: 예약 없이 바로. 되돌릴 수 없으니 한 번 더 묻는다
+async function resignDialog() {
   const p = me(), f = factionById(p.faction);
-  if (!confirm(`${dateText(S.turn + 1 + slot)} 턴에 ${f.name} 세력을 떠나 재야가 되도록 예약할까요?
+  if (!confirm(`지금 바로 ${f.name} 세력을 떠나 재야가 될까요?
 
 - 거느린 병사는 모두 흩어져요.
-- 남은 예약 명령은 모두 지워져요.
+- 예약해 둔 명령은 모두 지워져요.
 - 공적·금·능력치는 그대로예요.
-- 그 뒤 세력을 새로 골라 들어가요.
+- 세력을 새로 골라 들어가요.
 - ${f.name} 세력에는 ${RULES.rejoinWait}턴 동안 다시 들어갈 수 없어요.`)) return;
-  reserve({ cmd: 'resign' });
+  if (await call('resign')) showJoin();
 }
 
 function moveDialog() {
@@ -708,7 +708,7 @@ function renderGeneral() {
     <div class="gHead"><span id="gFace"></span><div>
       <p class="gname">${esc(p.name)}</p>
       <table class="stats">
-        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
+        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)} <button id="gResign" class="mini">하야</button></td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
         <tr><th>군량</th><td>${fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
@@ -726,6 +726,7 @@ function renderGeneral() {
     </table>`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
   $('#gDefense').onclick = onDefense;
+  $('#gResign').onclick = resignDialog;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
 }
 
@@ -752,7 +753,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
   const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
-    btn('train', '수련', `능력치 경험 · ${cost('train')}`), btn('buyFood', '군량 사기', `금${RULES.foodBuy.gold} → 군량 ${RULES.foodBuy.food}`), btn('resign', '하야', '세력을 떠남')].join('');
+    btn('train', '수련', `능력치 경험 · ${cost('train')}`), btn('buyFood', '군량 사기', `금${RULES.foodBuy.gold} → 군량 ${RULES.foodBuy.food}`)].join('');
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>
     <p class="turnInfo">다음 턴 ${fmtClock(slotTime(0))} <span class="dim">(<b id="turnLeft"></b> 남음)</span>
@@ -779,7 +780,7 @@ function renderCommands() {
     ${etc ? `<p class="sub">기타</p>
     <div class="cmds">${etc}</div>` : ''}
 `;
-  const dialogs = { resign: resignDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
