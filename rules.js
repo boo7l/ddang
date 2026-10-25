@@ -218,7 +218,7 @@ const FACTION_TRAITS = {
   유언: { name: '익주 천험', desc: '수비 전투력 +5%', defense: 0.05 },
   도겸: { name: '서주의 풍요', desc: '상업 내정 +5%', comm: 0.05 },
   장로: { name: '오두미도', desc: '병사 군량 소비 -15%', food: -0.15 },
-  엄백호: { name: '강동 호족', desc: '성벽 공격으로 깎는 방어 +5%', siege: 0.05 },
+  엄백호: { name: '강동 호족', desc: '성벽 공격으로 깎는 방어 +15%', siege: 0.15 },
   왕랑: { name: '경학대가', desc: '수련에 금이 들지 않음', freeTrain: true },
 };
 
