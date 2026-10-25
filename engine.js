@@ -16,6 +16,8 @@ const cityById = id => MAP.cities.find(c => c.id === id);
 const factionById = id => MAP.factions.find(f => f.id === id);
 const citiesOfFaction = fid => MAP.cities.filter(c => c.faction === fid);
 const allGenerals = () => Object.values(S.generals);
+// 이번 달 군량 시세 (금 1당 군량). 세계에 없으면 처음 값
+const foodPrice = () => (S && S.foodPrice) || RULES.foodBuy.start;
 // 세력 특성 (rules.js의 FACTION_TRAITS). 세력이 없거나 특성이 없으면 빈 것
 const traitOf = fid => { const f = fid && factionById(fid); return (f && FACTION_TRAITS[f.name]) || {}; };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
@@ -58,6 +60,7 @@ function newWorld(season = 1) {
     timeOffset: 0,
     incomeAt: Math.floor(t / RULES.turnLength) * RULES.turnLength, // 마지막으로 처리한 턴 시각
     turn: 0,      // 지난 턴 수. 게임 속 날짜 = 190년 1월 + turn달
+    foodPrice: RULES.foodBuy.start, // 군량 시세 (금 1당 군량)
     generals: {}, // 계정id → 장수
     cities: {},
     owners: {},
@@ -205,6 +208,8 @@ function advance() {
         addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${cityById(g.city).name} 상업 ${cs.comm}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 치안 ${cs.peace}으로 줄어듦` : ''})`);
       }
     }
+    // 군량 시세: 매달 -1 / 0 / +1 (4~8)
+    S.foodPrice = Math.min(RULES.foodBuy.max, Math.max(RULES.foodBuy.min, foodPrice() + randInt(-1, 1)));
     // 군량: 세력이 있는 성마다 그 성의 농업에 따라 (공백지는 수입 없음)
     if (RULES.harvestMonths.includes(month)) {
       for (const c of MAP.cities) if (c.faction) harvestFood(S.cities[c.id], c.grade);
@@ -698,14 +703,14 @@ function buyItem(g, item) {
 function runBuyFood(g, o) {
   const city = cityById(g.city), cs = S.cities[g.city], max = foodMax(city.grade);
   if (cs.food >= max) return `${city.name}의 군량 창고가 가득 참 (${fmt(max)})`;
-  const { perGold, choices } = RULES.foodBuy;
+  const perGold = foodPrice(), { choices } = RULES.foodBuy;
   const want = choices.includes(+(o && o.item)) ? +o.item : choices[0];
   const got = Math.min(want * perGold, max - cs.food);
   const pay = Math.ceil(got / perGold);
   if (g.gold < pay) return `내 금 부족 (필요 ${fmt(pay)}, 있음 ${fmt(g.gold)})`;
   g.gold -= pay;
   cs.food += got;
-  addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${fmt(pay)}`);
+  addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${fmt(pay)} · 시세 1:${perGold}`);
   addMerit(g, RULES.merit.buy);
   return '';
 }
