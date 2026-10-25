@@ -763,6 +763,29 @@ function runBuyFood(g, o) {
   return '';
 }
 
+// ----- 군량 수송 (2026-10-25) -----
+// 내가 있는 성과 우리 땅으로 2칸 안의 다른 우리 성 사이에서 군량을 옮긴다. dir: send(내 성 → 그 성) / fetch(그 성 → 내 성).
+// 양은 1~5,000 중 플레이어가 정하고, 보내는 성에 있는 만큼만, 받는 성 최대치까지만 옮긴다. 가다가 줄지 않는다
+const transportAmount = o => Math.max(1, Math.min(RULES.transportMax, Math.floor(+(o && o.amount)) || 1));
+function runTransport(g, o) {
+  const here = cityById(g.city), other = cityById(o.to);
+  if (!other) return '없는 성';
+  if (other.id === here.id) return '같은 성끼리는 옮길 수 없음';
+  if (other.faction !== g.faction) return `${josa(other.name, '은는')} 아군 성이 아님`;
+  if (!linkedOwnCities(here.id, g.faction, RULES.moveRange).includes(other)) return `${here.name}에서 ${other.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
+  const pull = o.dir === 'fetch', from = pull ? other : here, to = pull ? here : other;
+  const src = S.cities[from.id], dst = S.cities[to.id], room = foodMax(to.grade) - dst.food;
+  if (src.food <= 0) return `${from.name}에 보낼 군량이 없음`;
+  if (room <= 0) return `${to.name}의 군량 창고가 가득 참 (${fmt(foodMax(to.grade))})`;
+  const want = transportAmount(o), n = Math.min(want, src.food, room);
+  src.food -= n;
+  dst.food += n;
+  const short = n < want ? (src.food <= 0 ? ` (${from.name}에 있는 만큼만)` : ` (${to.name} 창고에 들어가는 만큼만)`) : '';
+  addLog(g, `🚚 군량 수송: ${from.name} → ${to.name} ${fmt(n)}${short} · ${from.name} ${fmt(src.food)} · ${to.name} ${fmt(dst.food)}`);
+  addMerit(g, RULES.merit.transport);
+  return '';
+}
+
 
 
 // ----- 하야 (예약 없이 바로) -----
@@ -798,5 +821,6 @@ const COMMANDS = {
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 생산 (${o.type})`, run: runSiege },
   buyFood: { label: o => `군량 사기 (금 ${(o && o.item) || RULES.foodBuy.choices[0]})`, run: runBuyFood },
+  transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');

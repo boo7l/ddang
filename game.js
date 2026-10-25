@@ -441,6 +441,33 @@ function buyFoodDialog() {
   opts, '예약', v => reserve({ cmd: 'buyFood', item: v }));
 }
 
+// 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~5,000 직접 입력 (빠른 단추도)
+function transportDialog() {
+  const p = me(), at = cityAtSlot(p, slot), here = S.cities[at.id];
+  const opts = linkedOwnCities(at.id, p.faction, RULES.moveRange).map(c => {
+    const cs = S.cities[c.id];
+    return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>
+      <span class="r dim">군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
+  }).join('');
+  const max = RULES.transportMax;
+  const extra = `
+    <p class="sub">방향</p>
+    <p class="picks"><label class="opt"><input type="radio" name="dir" value="send" checked> 보내기 <span class="dim">(${esc(at.name)} → 고른 성)</span></label>
+      <label class="opt"><input type="radio" name="dir" value="fetch"> 가져오기 <span class="dim">(고른 성 → ${esc(at.name)})</span></label></p>
+    <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
+    <p><input type="number" id="tAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
+      ${[500, 1000, 2000, max].map(n => `<button type="button" class="mini" data-amt="${n}">${fmt(n)}</button>`).join(' ')}</p>`;
+  pickDialog('군량 수송', `<p>${esc(josa(at.name, '과와'))} 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성 사이에서 군량을 옮겨요. 가는 동안 줄지 않아요.</p>
+    <p class="dim">${esc(at.name)} 군량 ${fmt(here.food)} / ${fmt(foodMax(at.grade))} · 실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요</p>`,
+  opts, '예약', (v, box) => {
+    const amount = Math.floor(+box.querySelector('#tAmount').value);
+    if (!(amount >= 1 && amount <= max)) { alert(`양은 1~${fmt(max)} 사이로 적어 주세요.`); return false; }
+    const dir = box.querySelector('input[name=dir]:checked').value;
+    reserve({ cmd: 'transport', to: v, dir, amount: String(amount) });
+  }, extra);
+  document.querySelectorAll('[data-amt]').forEach(b => { b.onclick = () => { $('#tAmount').value = b.dataset.amt; }; });
+}
+
 // 하야: 예약 없이 바로. 되돌릴 수 없으니 한 번 더 묻는다
 async function resignDialog() {
   const p = me(), f = factionById(p.faction);
@@ -804,7 +831,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
   const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
-    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `금 1 → 군량 ${foodPrice()}`)].join('');
+    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', `${RULES.moveRange}칸 안 · 보내기·가져오기`)].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>
@@ -832,7 +859,7 @@ function renderCommands() {
     ${etc ? `<p class="sub">기타</p>
     <div class="cmds">${etc}</div>` : ''}
 `;
-  const dialogs = { buyFood: buyFoodDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));

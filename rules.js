@@ -39,9 +39,10 @@ const RULES = {
   shopPrice: { base: 100, step: 100 }, // 임시: 상점 가격 = 100 + 100 × 그 물건을 이미 산 수 (100, 200, 300 …, 장수마다 따로)
   // 군량 사기: 시세 = 금 1당 군량 몇. 매달 -1/0/+1 중 하나로 바뀌고 4~8 사이를 오간다. 예약할 때 얼마어치(금) 살지 고른다
   foodBuy: { start: 6, min: 4, max: 8, choices: [100, 200, 500, 1000] },
+  transportMax: 5000,       // 군량 수송 한 번에 옮길 수 있는 최대량 (플레이어가 1~5,000 사이에서 정한다)
   battleReward: 500,        // 임시: 전투에 이기면 들어오는 금 (명령으로 금을 더 얻는 길. 기획서 [미정])
   // 공적: 수련을 뺀 모든 명령에 붙는다. 순위를 매기는 점수 (임시값)
-  merit: { domestic: 10, draft: 10, buy: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
+  merit: { domestic: 10, draft: 10, buy: 10, transport: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
   // 첩보: 엿본 정보가 유효한 시간 (임시값)
   spyValid: 3 * HOUR,
   startGold: 500,           // 임시: 장수를 만들 때 가진 금
