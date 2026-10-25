@@ -721,7 +721,7 @@ function renderGeneral() {
         <tr><th>공적</th><td>${fmt(p.merit)} <span class="dim">(순위 점수)</span></td></tr>
       </table>
     </div></div>
-    ${traitOf(f.id).name ? `<p class="traitLine">${traitOf(f.id).name} · ${traitOf(f.id).desc}</p>` : ''}
+    ${traitOf(f.id).name ? `<p class="traitLine"><b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}

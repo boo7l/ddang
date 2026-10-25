@@ -489,3 +489,4 @@ details.fold > summary:hover h2 { color: var(--title); }
 #title .tSeason { margin: 10px 0 0; padding: 4px 8px; display: inline-block; color: var(--title); border: 1px solid var(--gold-dark); background: var(--panel-dark); } #title .tSeason:empty { display: none; }
 .resignRow { margin: -4px 0 10px; text-align: right; } /* 명령 창 바로 아래, 창 밖 */
 .traitLine { margin: 2px 0 6px; color: var(--dim); } /* 세력 특성: 늘 보이되 눈에 덜 띄게 (흐린 글씨 한 줄) */
+.traitLine b { color: var(--label); font-weight: normal; } /* 특성 이름은 항목 이름처럼 주황 */
