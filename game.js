@@ -970,7 +970,7 @@ function renderChatList() {
 }
 
 function renderLog() {
-  $('#log').innerHTML = `<h2>기록</h2><ul>${me().log.map(l =>
+  $('#log').innerHTML = `<h2>기록</h2><ul>${(me().log || []).map(l =>
     `<li${l.text.includes('\n') ? ' class="report"' : ''}><span class="t">${fmtTime(l.t)}</span>${esc(l.text).replace(/\n/g, '<br>')}</li>`).join('')}</ul>`;
 }
 

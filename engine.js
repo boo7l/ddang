@@ -48,6 +48,7 @@ const hasGuard = c => !!c.faction && memberCount(c.faction) === 0;
 
 // 기록은 장수마다 따로. 여러 줄이어도 된다 (전투 보고서)
 function addLog(g, text) {
+  if (!g.log) g.log = [];
   g.log.unshift({ t: now(), text });
   if (g.log.length > RULES.logMax) g.log.length = RULES.logMax;
 }
@@ -96,6 +97,7 @@ function fixWorld() {
   applyOwners();
   trimDefense();
   for (const g of allGenerals()) {
+    if (!g.log) g.log = []; // 기록을 gen_logs 표로 옮긴 뒤의 세계에는 기록이 없다 (예전 서버로 되돌려도 깨지지 않게)
     if (g.log && g.log.length > RULES.logMax) g.log.length = RULES.logMax; // 기록 줄 수를 줄였을 때
     g.queue = (g.queue || []).slice(0, RULES.queueSize).map(o => (o && COMMANDS[o.cmd] ? o : null)); // 없어진 명령은 비운다
     while (g.queue.length < RULES.queueSize) g.queue.push(null);
