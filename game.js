@@ -27,6 +27,7 @@ function applyView(d) {
   if (!ORIGIN) ORIGIN = MAP.cities.map(c => c.faction);
   MAP.cities.forEach((c, i) => { c.faction = ORIGIN[i]; });
   if (S) applyOwners();
+  syncChatChannel();
 }
 
 // 서버에 요청하고 세계를 받아 온다. 성공하면 true (실패 이유는 알림 창으로)
@@ -534,6 +535,7 @@ async function submitAuth() {
 async function logout() {
   try { await serverSignOut(); } catch (e) { /* 무시 */ }
   S = null;
+  syncChatChannel(); // 채팅 채널을 끊는다
   setAuthMode('login');
   showTitle();
 }
@@ -819,6 +821,25 @@ async function sendChat(text) {
   await call('chat', { text });
   renderChatList();
 }
+// 실시간 채팅: 우리 세력의 비밀 채널(S.chatTopic)을 듣고 있다가, 누가 글을 보내면 곧바로 채팅 목록에 붙인다.
+// 글은 서버에도 저장되므로, 새로고침하거나 늦게 들어와도 지난 글이 보인다
+let chatChannel = null, chatTopicNow = null;
+function syncChatChannel() {
+  const topic = (S && S.chatTopic) || null;
+  if (topic === chatTopicNow) return;
+  if (chatChannel) { sb.removeChannel(chatChannel); chatChannel = null; }
+  chatTopicNow = topic;
+  if (!topic || !sb) return;
+  chatChannel = sb.channel(topic).on('broadcast', { event: 'msg' }, ({ payload: m }) => {
+    if (!S || !me() || me().faction !== m.faction) return;
+    S.chat = S.chat || {};
+    const list = S.chat[m.faction] || (S.chat[m.faction] = []);
+    if (list.some(x => x.t === m.t && x.name === m.name && x.text === m.text)) return; // 이미 받아 온 글
+    list.push({ t: m.t, name: m.name, city: m.city, text: m.text });
+    if (list.length > CHAT_MAX) list.splice(0, list.length - CHAT_MAX);
+    if (!$('#game').hidden) renderChatList();
+  }).subscribe();
+}
 // 틀(입력칸)은 한 번만 만든다. 다시 그리면 한글 입력 중이던 글자가 깨지므로 그 뒤로는 목록만 고친다
 function renderChat() {
   const box = $('#chat');
@@ -829,7 +850,7 @@ function renderChat() {
         <input type="text" id="chatInput" maxlength="${CHAT_LEN}" placeholder="우리 세력에게 한마디">
         <button type="submit">보내기</button>
       </form>
-      <p class="note">같은 세력 장수들끼리만 보여요. 새 글은 1분마다 받아 와요. (최근 ${CHAT_MAX}개)</p>`;
+      <p class="note">같은 세력 장수들끼리만 보여요. 새 글은 곧바로 떠요. (최근 ${CHAT_MAX}개)</p>`;
     box.querySelector('.chatForm').onsubmit = e => {
       e.preventDefault();
       const input = $('#chatInput');
