@@ -362,8 +362,7 @@ function runDrill(g) {
 // 켜 두면 머무는 성이 공격받을 때 요격에 나선다. 병력이 없으면 켤 수 없다
 function toggleDefense(g) {
   if (g.troops <= 0) return '병력이 없으면 켤 수 없어요.';
-  g.defense = !g.defense;
-  addLog(g, g.defense ? '방어 모드를 켰다. 이 성이 공격받으면 요격에 나선다.' : '방어 모드를 껐다. 이 성이 공격받아도 나서지 않는다.');
+  g.defense = !g.defense; // 기록에는 남기지 않는다 (장수 창에 켜짐·꺼짐이 보인다)
   return '';
 }
 
