@@ -709,7 +709,7 @@ function renderGeneral() {
     <div class="gHead"><span id="gFace"></span><div>
       <p class="gname">${esc(p.name)}</p>
       <table class="stats">
-        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}${traitOf(f.id).name ? ` <span class="dim" title="${traitOf(f.id).desc}">· ${traitOf(f.id).name}</span>` : ''}</td></tr>
+        <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
         <tr><th>군량</th><td>${fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
@@ -721,6 +721,7 @@ function renderGeneral() {
         <tr><th>공적</th><td>${fmt(p.merit)} <span class="dim">(순위 점수)</span></td></tr>
       </table>
     </div></div>
+    ${traitOf(f.id).name ? `<p class="traitLine">⚑ <b class="hi">${traitOf(f.id).name}</b> <span class="dim">${traitOf(f.id).desc}</span></p>` : ''}
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
