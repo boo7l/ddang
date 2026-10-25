@@ -75,6 +75,7 @@ const RULES = {
   goldPerComm: 1,           // 임시: 금 수입 = 장수가 있는 성의 상업 × 1 × (1 + 공적 × meritIncome) (× 치안 보정)
   meritIncome: 0.0002,      // 공적 보너스: 공적 100마다 수입 2% 더 (1,000이면 20%. 2026-10-25 0.0001에서 올림)
   foodPerAgri: 3.5,         // 임시: 수확 군량 = 그 성의 농업 × 3.5 (× 치안 보정, 2026-10-25 3에서 올림)
+  foodBase: 500,            // 수확마다 성마다 기본으로 더 들어오는 군량: 수확 = (농업 × 3.5 + 500) × 치안 보정 (2026-10-25, 농업 낮은 성 보완)
   foodPerTroops: 0.02,      // 매달 병사 100명이 군량 2를 먹는다 (장수가 머무는 성의 군량. 2026-10-25 1에서 2배로)
   starveLoss: 0.05,         // 임시: 군량이 모자라면 그달 병력 5%가 흩어진다
 
@@ -198,7 +199,7 @@ function turnAfter(t, i) {
 const goldIncome = (cs, merit = 0) => Math.floor(cs.comm * RULES.goldPerComm * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
 // 수확(4·10월): 그 성의 농업에 따라 군량이 들어온다 (상한까지만)
 function harvestFood(cs, grade) {
-  cs.food = Math.min(foodMax(grade), cs.food + Math.floor(cs.agri * RULES.foodPerAgri * peaceIncome(cs.peace)));
+  cs.food = Math.min(foodMax(grade), cs.food + Math.floor((cs.agri * RULES.foodPerAgri + RULES.foodBase) * peaceIncome(cs.peace)));
 }
 // 게임 속 날짜: n번째 턴이 몇 년 몇 월인지
 function dateOf(turn) {
