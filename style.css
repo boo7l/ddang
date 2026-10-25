@@ -459,6 +459,11 @@ table.rank .num { text-align: right; padding-right: 12px; }
 /* 우리 세력 장수 */
 table.members { margin: 0; }
 table.members tr.mine td { color: var(--title); }
+/* 줄바꿈 없이 한 줄씩: 이름이 길면 …으로 줄이고, 나머지 칸은 필요한 만큼만 */
+table.members th, table.members td { white-space: nowrap; padding-left: 10px; }
+table.members th:first-child, table.members td:first-child { padding-left: 0; }
+table.members .num { padding-right: 0; }
+table.members td.name { max-width: 0; width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
 /* 접었다 펴는 창 (우리 세력 장수, 세력): 제목을 누르면 열리고 닫힌다 */
 details.fold > summary { list-style: none; cursor: pointer; }
