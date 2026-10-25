@@ -104,7 +104,7 @@ const RULES = {
 
   // 병종과 훈련 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
-  warAttackPer20: 0.01,     // 출진해서 싸울 때 병종과 상관없이 무력 20마다 공격력 +1% (무력 100이면 +5%, 2026-10-26)
+  warAttackPer20: 0.01,     // 병종과 상관없이 무력 20마다 전투력 +1%, 공격·수비 모두 (무력 100이면 +5%, 2026-10-26)
   trainingFloor: 0.7,       // 임시: 훈련도 0이면 전투력 70%, 100이면 100%
   guardUnit: { type: '보병', training: 50 },  // 임시: 수비대장의 병종과 훈련도
 
@@ -263,17 +263,19 @@ function matchupOf(a, b) {
 }
 // 공격력: 정란이 있으면 더 세다
 // 세력 특성: 기병(마등), 출진 공격(손견)
+// 무력 보너스: 병종과 상관없이 무력 20마다 전투력 +1%, 공격·수비 모두 (2026-10-26, 무력의 가치를 올리려고)
+const warBonus = u => 1 + Math.floor((u.stats.war || 0) / 20) * RULES.warAttackPer20;
 const attackPower = (a, d) => {
   const t = traitOf(a.faction);
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
-    * (1 + Math.floor((a.stats.war || 0) / 20) * RULES.warAttackPer20) // 병종과 상관없이 무력 20마다 공격력 +1% (2026-10-26)
+    * warBonus(a)
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1);
 };
 // 수비력: 성 방어 보정을 받는다
 // 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
 const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
-  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + wall / RULES.wallDivisor) * (1 + (t.defense || 0))
+  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + wall / RULES.wallDivisor) * (1 + (t.defense || 0)) * warBonus(d)
     * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1);
 };
 
