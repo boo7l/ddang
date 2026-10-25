@@ -16,6 +16,8 @@ const cityById = id => MAP.cities.find(c => c.id === id);
 const factionById = id => MAP.factions.find(f => f.id === id);
 const citiesOfFaction = fid => MAP.cities.filter(c => c.faction === fid);
 const allGenerals = () => Object.values(S.generals);
+// 군량 사기에 쓸 금: 1~goldMax (예약에 적힌 값, 없으면 첫 빠른 단추 값)
+const buyFoodGold = o => Math.max(1, Math.min(RULES.foodBuy.goldMax, Math.floor(+(o && o.item)) || RULES.foodBuy.choices[0]));
 // 이번 달 군량 시세 (금 1당 군량). 세계에 없으면 처음 값
 const foodPrice = () => (S && S.foodPrice) || RULES.foodBuy.start;
 // 세력 특성 (rules.js의 FACTION_TRAITS). 세력이 없거나 특성이 없으면 빈 것
@@ -751,8 +753,8 @@ function buyItem(g, item) {
 function runBuyFood(g, o) {
   const city = cityById(g.city), cs = S.cities[g.city], max = foodMax(city.grade);
   if (cs.food >= max) return `${city.name}의 군량 창고가 가득 참 (${fmt(max)})`;
-  const perGold = foodPrice(), { choices } = RULES.foodBuy;
-  const want = choices.includes(+(o && o.item)) ? +o.item : choices[0];
+  const perGold = foodPrice();
+  const want = buyFoodGold(o);
   const got = Math.min(want * perGold, max - cs.food);
   const pay = Math.ceil(got / perGold);
   if (g.gold < pay) return `내 금 부족 (필요 ${fmt(pay)}, 있음 ${fmt(g.gold)})`;
@@ -820,7 +822,7 @@ const COMMANDS = {
   spy: { label: o => `첩보 → ${cityName(o.to)}`, run: runSpy },
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 생산 (${o.type})`, run: runSiege },
-  buyFood: { label: o => `군량 사기 (금 ${(o && o.item) || RULES.foodBuy.choices[0]})`, run: runBuyFood },
+  buyFood: { label: o => `군량 사기 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');

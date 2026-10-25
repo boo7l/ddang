@@ -432,13 +432,30 @@ function plotDialog(kind) {
 
 // 군량 사기: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
 function buyFoodDialog() {
-  const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), perGold = foodPrice(), { choices } = RULES.foodBuy;
-  const opts = choices.map((gold, i) => `<label class="opt"><input type="radio" name="tgt" value="${gold}"${i === 0 ? ' checked' : ''}>
-      <b>금 ${fmt(gold)}</b> <span class="r">→ 약 군량 ${fmt(gold * perGold)}</span></label>`).join('');
-  pickDialog('군량 사기', `<p>${esc(at.name)}에 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
+  // 쓸 금을 직접 적는다 (1~goldMax). 예전 선택지는 빠른 단추로
+  const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), perGold = foodPrice(), { choices, goldMax } = RULES.foodBuy;
+  openModal(`
+    <h2>군량 사기 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
+    <p>${esc(at.name)}에 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
     <p class="dim">시세는 매달 바뀌어요 (${RULES.foodBuy.min}~${RULES.foodBuy.max}). 실제로는 예약한 턴의 시세로 사요.</p>
-    <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 내 금 ${fmt(p.gold)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>`,
-  opts, '예약', v => reserve({ cmd: 'buyFood', item: v }));
+    <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 내 금 ${fmt(p.gold)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>
+    <p class="sub">쓸 금 <span class="dim">(1~${fmt(goldMax)})</span></p>
+    <p><input type="number" id="bGold" min="1" max="${goldMax}" step="1" value="${choices[0]}" style="width:110px">
+      ${choices.map(n => `<button type="button" class="mini" data-gold="${n}">${fmt(n)}</button>`).join(' ')}
+      <span class="dim" id="bEst"></span></p>
+    <div class="modalBtns"><button data-close>취소</button><button id="mOk" class="main">예약</button></div>`, box => {
+    const input = box.querySelector('#bGold');
+    const est = () => { const n = Math.floor(+input.value); box.querySelector('#bEst').textContent = n >= 1 ? `→ 약 군량 ${fmt(n * perGold)}` : ''; };
+    input.oninput = est;
+    est();
+    box.querySelectorAll('[data-gold]').forEach(b => { b.onclick = () => { input.value = b.dataset.gold; est(); }; });
+    box.querySelector('#mOk').onclick = () => {
+      const n = Math.floor(+input.value);
+      if (!(n >= 1 && n <= goldMax)) { alert(`금은 1~${fmt(goldMax)} 사이로 적어 주세요.`); return; }
+      closeModal();
+      reserve({ cmd: 'buyFood', item: String(n) });
+    };
+  });
 }
 
 // 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~5,000 직접 입력 (빠른 단추도)
