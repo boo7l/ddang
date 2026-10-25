@@ -215,7 +215,7 @@ const FACTION_TRAITS = {
   동탁: { name: '서량 대군', desc: '징병 +5% 더 모임', draft: 0.05 },
   원술: { name: '옥새', desc: '상점 값 -10%', shop: -0.10 },
   유표: { name: '형주 학풍', desc: '지력 경험치 +15%', expInt: 0.15 },
-  유언: { name: '익주 천험', desc: '수비 방어 보정 +5%', wall: 0.05 },
+  유언: { name: '익주 천험', desc: '수비 전투력 +5%', defense: 0.05 },
   도겸: { name: '서주의 풍요', desc: '상업 내정 +5%', comm: 0.05 },
   장로: { name: '오두미도', desc: '병사 군량 소비 -15%', food: -0.15 },
   엄백호: { name: '강동 호족', desc: '성벽 공격으로 깎는 방어 +5%', siege: 0.05 },
@@ -244,10 +244,10 @@ const attackPower = (a, d) => {
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1);
 };
 // 수비력: 성 방어 보정을 받는다. 공격자가 충차를 가졌으면 그 보정을 덜 받는다
-// 세력 특성: 기병(마등·공손찬 수비), 방어 보정(유언)
+// 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
 const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction), w = a && a.siege && a.siege.충차 ? wall * SIEGE_EFFECT.ramWall : wall;
-  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (w / RULES.wallDivisor) * (1 + (t.wall || 0)))
+  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + w / RULES.wallDivisor) * (1 + (t.defense || 0))
     * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1);
 };
 
