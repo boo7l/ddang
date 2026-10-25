@@ -693,19 +693,23 @@ function buyItem(g, item) {
 }
 
 // ----- 군량 사기 (내 금) -----
-// 금을 내고 지금 있는 성에 군량을 들인다. 성의 군량 창고가 가득 차면 넘치는 만큼은 버려진다
-function runBuyFood(g) {
+// 금을 내고 지금 있는 성에 군량을 들인다. 예약할 때 얼마어치(금) 살지 고른다 (order.item = 금액).
+// 창고(군량 최대치)에 다 안 들어가면 들어가는 만큼만 사고, 금도 그만큼만 낸다
+function runBuyFood(g, o) {
   const city = cityById(g.city), cs = S.cities[g.city], max = foodMax(city.grade);
   if (cs.food >= max) return `${city.name}의 군량 창고가 가득 참 (${fmt(max)})`;
-  const { gold, food } = RULES.foodBuy;
-  if (g.gold < gold) return `내 금 부족 (필요 ${gold}, 있음 ${fmt(g.gold)})`;
-  g.gold -= gold;
-  const got = Math.min(food, max - cs.food);
+  const { perGold, choices } = RULES.foodBuy;
+  const want = choices.includes(+(o && o.item)) ? +o.item : choices[0];
+  const got = Math.min(want * perGold, max - cs.food);
+  const pay = Math.ceil(got / perGold);
+  if (g.gold < pay) return `내 금 부족 (필요 ${fmt(pay)}, 있음 ${fmt(g.gold)})`;
+  g.gold -= pay;
   cs.food += got;
-  addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${gold}`);
+  addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${fmt(pay)}`);
   addMerit(g, RULES.merit.buy);
   return '';
 }
+
 
 
 // ----- 하야 (예약 없이 바로) -----
@@ -740,6 +744,6 @@ const COMMANDS = {
   spy: { label: o => `첩보 → ${cityName(o.to)}`, run: runSpy },
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 생산 (${o.type})`, run: runSiege },
-  buyFood: { label: () => '군량 사기', run: runBuyFood },
+  buyFood: { label: o => `군량 사기 (금 ${(o && o.item) || RULES.foodBuy.choices[0]})`, run: runBuyFood },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');

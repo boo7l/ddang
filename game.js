@@ -393,6 +393,16 @@ function plotDialog(kind) {
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
 
+// 군량 사기: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
+function buyFoodDialog() {
+  const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), { perGold, choices } = RULES.foodBuy;
+  const opts = choices.map((gold, i) => `<label class="opt"><input type="radio" name="tgt" value="${gold}"${i === 0 ? ' checked' : ''}>
+      <b>금 ${fmt(gold)}</b> <span class="r">→ 군량 ${fmt(gold * perGold)}</span></label>`).join('');
+  pickDialog('군량 사기', `<p>${esc(at.name)}에 군량을 들입니다. 금 1당 군량 ${perGold}이에요.</p>
+    <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 내 금 ${fmt(p.gold)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>`,
+  opts, '예약', v => reserve({ cmd: 'buyFood', item: v }));
+}
+
 // 하야: 예약 없이 바로. 되돌릴 수 없으니 한 번 더 묻는다
 async function resignDialog() {
   const p = me(), f = factionById(p.faction);
@@ -755,7 +765,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
   const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
-    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `금${RULES.foodBuy.gold} → 군량 ${RULES.foodBuy.food}`)].join('');
+    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 사기', `금 1 → 군량 ${RULES.foodBuy.perGold}`)].join('');
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>
     <p class="turnInfo">다음 턴 ${fmtClock(slotTime(0))} <span class="dim">(<b id="turnLeft"></b> 남음)</span>
@@ -782,7 +792,7 @@ function renderCommands() {
     ${etc ? `<p class="sub">기타</p>
     <div class="cmds">${etc}</div>` : ''}
 `;
-  const dialogs = { siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { buyFood: buyFoodDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
