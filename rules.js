@@ -11,7 +11,7 @@ const RULES = {
   // 기능 스위치 (기획서 2장 "1024 개편"): false면 버튼과 효과가 꺼진다. 코드는 남겨 두어 나중에 다시 켤 수 있다
   features: {
     tech: false,      // 기술 내정
-    siege: false,     // 병기 (기술이 있어야 만들 수 있음)
+    siege: true,      // 병기: 충차·정란·벽력거를 금으로 만든다 (2026-10-26 다시 켬, 기술 조건 없음)
     spy: false,       // 첩보 (끄면 적 성 정보가 처음부터 보임)
     drill: false,     // 훈련 (끄면 훈련도에 따른 전투력 차이도 없음)
     explore: true,    // 탐색 (2026-10-25 다시 켬)
@@ -42,7 +42,7 @@ const RULES = {
   transportMax: 5000,       // 군량 수송 한 번에 옮길 수 있는 최대량 (플레이어가 1~5,000 사이에서 정한다)
   battleReward: 500,        // 임시: 전투에 이기면 들어오는 금 (명령으로 금을 더 얻는 길. 기획서 [미정])
   // 공적: 수련을 뺀 모든 명령에 붙는다. 순위를 매기는 점수 (임시값)
-  merit: { domestic: 10, draft: 10, buy: 10, transport: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
+  merit: { domestic: 10, draft: 10, buy: 10, transport: 10, siege: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
   // 첩보: 엿본 정보가 유효한 시간 (임시값)
   spyValid: 3 * HOUR,
   startGold: 500,           // 임시: 장수를 만들 때 가진 금
@@ -91,7 +91,7 @@ const RULES = {
   // 병력 곡선: 병력이 많을수록 전투력이 덜 늘어난다. 실효 병력 = 5,000 × (병력 ÷ 5,000)^exp (exp 1이면 정비례)
   troopCurve: { ref: 5000, exp: 0.75 },
   battleRandom: 0.05,       // 합마다 전투력에 ±5% 무작위
-  wallDivisor: 10000 / 3,   // 수비 보정 = 1 + 방어 × 0.0003 (방어 100마다 +3%, 방어 900이면 1.27배). 예전엔 100마다 +5%였다
+  wallDivisor: 2000,        // 수비 보정 = 1 + 방어 × 0.0005 (방어 100마다 +5%, 방어 1,000이면 1.5배. 2026-10-26 병기가 생겨 3%에서 다시 올림)
   captureCut: 0.2,          // 임시: 함락된 성의 농업·상업·치안이 20% 깎인다 (방어는 아래 captureWall로 다시 세운다)
   // 성벽 공격 (기획서 7장): 지키는 부대가 없거나 모두 쓰러뜨리면, 남은 병력의 3~5%만큼 성의 방어를 깎고, 깎은 양의 3배(siegeLoss)만큼 병력을 잃는다.
   // 방어가 0이 되어야 점령. 점령하면 방어를 성 크기만큼 다시 세운다
@@ -266,11 +266,11 @@ const attackPower = (a, d) => {
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1);
 };
-// 수비력: 성 방어 보정을 받는다. 공격자가 충차를 가졌으면 그 보정을 덜 받는다
+// 수비력: 성 방어 보정을 받는다
 // 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
 const defensePower = (d, wall, a) => {
-  const t = traitOf(d.faction), w = a && a.siege && a.siege.충차 ? wall * SIEGE_EFFECT.ramWall : wall;
-  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + w / RULES.wallDivisor) * (1 + (t.defense || 0))
+  const t = traitOf(d.faction);
+  return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + wall / RULES.wallDivisor) * (1 + (t.defense || 0))
     * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1);
 };
 
@@ -290,6 +290,14 @@ function fightRounds(att, def, wall, left) {
   let used = 0;
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
+    // 벽력거: 이번 출진에서 수비 부대와 싸우는 첫 합은 일방적으로 때린다 (일기토 없이, 피해를 받지 않음)
+    if (att.siege && att.siege.벽력거 && !att.struck) {
+      att.struck = true;
+      const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * luck()));
+      def.troops -= dLoss;
+      lines.push(`${used}합: 💥 벽력거 선제 사격! ${att.name} 피해 없음 · ${def.name} -${dLoss.toLocaleString('ko-KR')}`);
+      continue;
+    }
     // 일기토: 양쪽 무력이 기준 이상이면 낮은 확률로. 이긴 쪽은 피해 없이, 진 쪽 부대만 크게 다친다
     const D = RULES.duel;
     if (att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < D.chance) {
@@ -379,17 +387,18 @@ function addStatExp(g, key, gain) {
 }
 
 // ===== 병기 (기획서 9장) =====
-// 내 장수가 있는 성의 기술이 기준을 넘으면 생산할 수 있다. 내 금을 쓴다. 종류마다 하나씩만 가질 수 있다
+// 예약 명령으로 내 금을 내고 만든다 (2026-10-26, 기술 조건 없음). 장수마다 하나만: 다른 병기를 만들면 있던 것은 사라진다.
+// 공격할 때만 효과가 있다. 부대가 전투에서 전멸하면 50% 확률로 부서진다
 const SIEGE = {
-  충차: { tech: 300, price: 300, desc: '공격할 때 성 방어의 영향을 덜 받음' },
-  정란: { tech: 500, price: 500, desc: '공격력 상승' },
-  벽력거: { tech: 800, price: 800, desc: '공격으로 없앤 적의 일부만큼, 그 성에서 싸우지 않은 모든 부대에 피해' },
+  충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
+  정란: { price: 2000, desc: '수비 부대와 싸울 때 공격력 +15%' },
+  벽력거: { price: 3000, desc: '수비 부대와 싸우는 첫 합에 피해를 받지 않음' },
 };
 // 병기 효과 (임시값)
 const SIEGE_EFFECT = {
-  ramWall: 0.5,     // 충차: 성 방어 보정을 절반만 받는다
-  towerAttack: 0.2, // 정란: 공격력 +20%
-  splash: 0.1,      // 벽력거: 없앤 적 병력의 10%만큼 그 성의 다른 부대마다 피해 (5,000을 없애면 각각 500)
+  ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
+  towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격력 +15%
+  breakChance: 0.5, // 부대가 전멸하면 병기가 부서질 확률
 };
 
 // ===== 상점 (기획서 9장) =====

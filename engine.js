@@ -540,12 +540,13 @@ function runAttack(g, o, mark) {
     lines.push(defs.length ? '수비 부대를 모두 물리치고 성벽으로 달려들었다!' : '막는 부대가 없어 곧장 성벽으로 달려들었다!');
     const sr = RULES.siegeRate, rate = sr.min + Math.random() * (sr.max - sr.min);
     const base = Math.max(1, Math.floor(g.troops * rate));
-    const dmg = Math.min(cs.wall, Math.floor(base * (1 + (traitOf(g.faction).siege || 0)))); // 엄백호: 같은 손실로 더 깎는다
-    const loss = Math.min(g.troops, Math.round(dmg / (1 + (traitOf(g.faction).siege || 0))) * RULES.siegeLoss); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 3배(siegeLoss)만큼 잃는다
+    const boost = 1 + (traitOf(g.faction).siege || 0) + (g.siege && g.siege.충차 ? SIEGE_EFFECT.ramWall : 0); // 엄백호·충차: 같은 손실로 더 깎는다
+    const dmg = Math.min(cs.wall, Math.floor(base * boost));
+    const loss = Math.min(g.troops, Math.round(dmg / boost) * RULES.siegeLoss); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 3배(siegeLoss)만큼 잃는다
     cs.wall -= dmg;
     g.troops -= loss;
     atkLost += loss;
-    lines.push(`🏯 성벽 공격: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(loss)}`);
+    lines.push(`🏯 성벽 공격${g.siege && g.siege.충차 ? ' (충차)' : ''}: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(loss)}`);
     if (cs.wall <= 0) {
       captured = true;
       lines.push(`${g.name}의 승리! 성벽이 무너져 ${josa(to.name, '을를')} 점령했다. (${owner.name} 세력에게서 빼앗음)`);
@@ -553,6 +554,11 @@ function runAttack(g, o, mark) {
     } else {
       lines.push(`성벽을 다 무너뜨리지 못하고 ${josa(from.name, '으로')} 돌아왔다.`);
     }
+  }
+  // 전투에서 전멸한 부대의 병기는 50% 확률로 부서진다 (공격한 장수와 수비 장수 모두)
+  for (const x of [g, ...defs.filter(d => d.ref).map(d => d.ref)]) {
+    const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
+    if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
   if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · 공적 +${RULES.merit.win}`); addMerit(g, RULES.merit.win); }
@@ -720,13 +726,13 @@ function runSiege(g, o) {
   if (!w) return '없는 병기';
   g.siege = g.siege || {};
   if (g.siege[o.type]) return `${josa(o.type, '은는')} 이미 가지고 있음`;
-  if (cs.tech < w.tech) return `${city.name}의 기술이 모자람 (필요 ${w.tech}, 지금 ${cs.tech})`;
   if (g.gold < w.price) return `내 금 부족 (필요 ${w.price}, 있음 ${fmt(g.gold)})`;
   g.gold -= w.price;
   // 부대마다 병기는 하나만. 다른 병기를 가지고 있었으면 버린다
   const old = Object.keys(g.siege).find(t => g.siege[t]);
   g.siege = { [o.type]: true };
-  addLog(g, `${city.name}: ${josa(o.type, '을를')} 만들어 부대에 갖췄다! (${w.desc}) 내 금 -${w.price}` + (old ? ` · 가지고 있던 ${josa(old, '은는')} 버렸다` : ''));
+  addMerit(g, RULES.merit.siege);
+  addLog(g, `${city.name}: ${josa(o.type, '을를')} 만들어 부대에 갖췄다! (${w.desc}) 내 금 -${fmt(w.price)}` + (old ? ` · 가지고 있던 ${josa(old, '은는')} 버렸다` : ''));
   return '';
 }
 
@@ -821,7 +827,7 @@ const COMMANDS = {
   explore: { label: () => '탐색', run: runExplore },
   spy: { label: o => `첩보 → ${cityName(o.to)}`, run: runSpy },
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
-  siege: { label: o => `병기 생산 (${o.type})`, run: runSiege },
+  siege: { label: o => `병기 제작 (${o.type})`, run: runSiege },
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
 };

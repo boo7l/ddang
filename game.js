@@ -370,15 +370,15 @@ function trainDialog() {
 }
 
 function siegeDialog() {
-  const p = me(), from = cityAtSlot(me(), slot), cs = S.cities[from.id];
+  const p = me();
   const opts = Object.entries(SIEGE).map(([t, w]) => {
-    const have = p.siege && p.siege[t], ok = cs.tech >= w.tech;
+    const have = p.siege && p.siege[t];
     return `<label class="opt"><input type="radio" name="tgt" value="${t}"${have ? ' disabled' : ''}>
-      <b>${t}</b> <span class="dim">기술 ${w.tech} · 내 금 ${w.price}</span>
-      <span class="r ${have ? 'dim' : ok ? '' : 'bad'}">${have ? '가지고 있음' : ok ? w.desc : `기술 모자람 (${esc(from.name)} ${cs.tech})`}</span></label>`;
+      <b>${t}</b> <span class="dim">금 ${fmt(w.price)}</span>
+      <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc}</span></label>`;
   }).join('');
-  pickDialog('병기 생산', `<p>${esc(from.name)}의 기술로 병기를 만들어 내 부대에 갖춥니다. 부대마다 병기는 하나만 가질 수 있어요. 다른 병기를 만들면 가지고 있던 병기는 버려져요.</p>
-    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'} · 내 금 ${fmt(p.gold)} · ${esc(from.name)} 기술 ${cs.tech}</p>`, opts, '예약', v => {
+  pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 50% 확률로 부서져요.</p>
+    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'} · 내 금 ${fmt(p.gold)}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
     reserve({ cmd: 'siege', type: v });
