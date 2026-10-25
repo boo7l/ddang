@@ -408,11 +408,17 @@ function retreatFrom(c, oldFaction) {
 }
 
 // 점령: 성 주인을 바꾸고, 군량 일부를 차지하고, 함락된 성의 수치가 깎인다. 방어는 성 크기만큼 다시 세운다.
+// 공백지는 싸움 없이 들어가므로 농업·상업·치안·방어·군량이 모두 그대로다 (2026-10-25)
 // 보고서 줄을 lines에 더한다
 function capture(g, to, oldFaction, lines) {
   const cs = S.cities[to.id];
   setOwner(to, g.faction);
   cs.guard = 0; // 수비대장은 물러난다
+  if (!oldFaction) { // 공백지: 군량도 모두 그대로 차지한다
+    lines.push(`성의 군량 ${fmt(cs.food)}${numJosa(cs.food)} 차지했다.`);
+    g.city = to.id;
+    return;
+  }
   lines.push(seize(cs));
   const cut = captureDamage(cs);
   cs.wall = RULES.captureWall[to.grade];
