@@ -581,7 +581,7 @@ function runExplore(g) {
         g.troops -= n;
         text = `도적 떼와 마주쳐 싸우다 병사 ${fmt(n)}명을 잃었다.`;
       } else {
-        const n = Math.min(g.gold, randInt(e.lossMin, e.lossMax));
+        const n = Math.floor(g.gold * (e.goldMinRate + Math.random() * (e.goldMaxRate - e.goldMinRate))); // 가진 금의 15~20%
         g.gold -= n;
         text = n > 0 ? `도적에게 금을 빼앗겼다. 금 -${fmt(n)}` : '도적과 마주쳤지만 빼앗길 것도 없어 무사히 돌아왔다.';
       }
@@ -591,6 +591,7 @@ function runExplore(g) {
       text = '주변을 살폈으나 별다른 일은 없었다.';
   }
   addLog(g, `${city.name} 탐색: ${text}`);
+  addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 공적이 붙는다
   return '';
 }
 

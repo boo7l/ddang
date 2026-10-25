@@ -14,7 +14,7 @@ const RULES = {
     siege: false,     // 병기 (기술이 있어야 만들 수 있음)
     spy: false,       // 첩보 (끄면 적 성 정보가 처음부터 보임)
     drill: false,     // 훈련 (끄면 훈련도에 따른 전투력 차이도 없음)
-    explore: false,   // 탐색 [보류]
+    explore: true,    // 탐색 (2026-10-25 다시 켬)
     shop: true,       // 상점: 명검·서적·명마를 여러 번 살 수 있고, 살 때마다 비싸진다
   },
   // 턴 (기획서 6장): 모든 장수가 같은 정각에 예약한 명령 하나씩을 실행한다
@@ -35,7 +35,7 @@ const RULES = {
   foodBuy: { gold: 100, food: 300 },   // 임시: 군량 사기. 금 100으로 지금 있는 성에 군량 300
   battleReward: 500,        // 임시: 전투에 이기면 들어오는 금 (명령으로 금을 더 얻는 길. 기획서 [미정])
   // 공적: 수련을 뺀 모든 명령에 붙는다. 순위를 매기는 점수 (임시값)
-  merit: { domestic: 10, draft: 10, buy: 10, move: 5, plot: 10, win: 50, lose: 10 },
+  merit: { domestic: 10, draft: 10, buy: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
   // 첩보: 엿본 정보가 유효한 시간 (임시값)
   spyValid: 3 * HOUR,
   startGold: 500,           // 임시: 장수를 만들 때 가진 금
@@ -306,20 +306,21 @@ function rollPlot(int) {
 
 // ===== 탐색 (임시값) =====
 // weight: 일어날 확률(%) — 합계 100
+// 탐색 사건 (확률 = weight%, 합 100). 2026-10-25 기획자 수치
 const EXPLORE = [
-  { key: 'none', weight: 20 },
-  // jackpot: 발견했을 때 그중 이 확률로 대박 (금 500, 군량 1,000)
-  { key: 'gold', weight: 30, min: 50, max: 150, jackpot: { rate: 0.1, amount: 500 } },
-  { key: 'food', weight: 20, min: 100, max: 300, jackpot: { rate: 0.1, amount: 1000 } },
-  { key: 'troops', weight: 13, min: 100, max: 300 },  // 의병 합류
-  { key: 'item', weight: 7 },                          // 능력치 하나 +1
-  { key: 'bandit', weight: 10, minRate: 0.03, maxRate: 0.08, lossMin: 20, lossMax: 60 },
+  { key: 'none', weight: 15 },
+  // jackpot: 발견했을 때 그중 이 확률로 대박
+  { key: 'gold', weight: 30, min: 100, max: 250, jackpot: { rate: 0.2, min: 500, max: 700 } },
+  { key: 'food', weight: 20, min: 500, max: 700, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
+  { key: 'troops', weight: 15, min: 500, max: 1500 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
+  { key: 'item', weight: 10 },                         // 능력치 하나 +1
+  { key: 'bandit', weight: 10, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20%
 ];
 
 // 아이템: 발견하면 해당 능력치 +1
 const ITEMS = [
   { name: '병법서', stat: 'lea' },
-  { name: '명검', stat: 'war' },
+  { name: '보검', stat: 'war' }, // 상점의 명검과 헷갈리지 않게
   { name: '고서', stat: 'int' },
 ];
 
@@ -334,7 +335,7 @@ function rollExplore() {
 
 // 금·군량 발견량. 낮은 확률로 대박. { amount, jackpot }
 function foundAmount(e) {
-  if (e.jackpot && Math.random() < e.jackpot.rate) return { amount: e.jackpot.amount, jackpot: true };
+  if (e.jackpot && Math.random() < e.jackpot.rate) return { amount: randInt(e.jackpot.min, e.jackpot.max), jackpot: true };
   return { amount: randInt(e.min, e.max), jackpot: false };
 }
 
