@@ -696,7 +696,8 @@ function runPlot(g, kind, o) {
     return '';
   }
   const x = r === 'crit' ? 2 : 1, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
-  const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v} (${cs[k]})`; };
+  // 남은 수치는 방어만 적는다 (다른 세력 성의 농업·상업·치안은 비공개)
+  const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}${k === 'wall' ? ` (${cs[k]})` : ''}`; };
   const what = kind === 'destroy'
     ? [cut('wall', int * PLOT.destroy.wallPerInt)]
     : [cut('peace', int * PLOT.rumor.peacePerInt), cut('agri', int * PLOT.rumor.devPerInt), cut('comm', int * PLOT.rumor.devPerInt)];
