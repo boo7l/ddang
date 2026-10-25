@@ -4,6 +4,7 @@
 // 그림 파일 없이 코드로 그린다: 바다·황하·장강·한수·회수·산·사막·만리장성, 중원 논밭·나무, 강남 숲.
 // 좌표는 "칸" 단위 (가로 0~cols, 세로 0~rows). 검토용 원본은 preview/map_bg.html
 const MAP_BG_TONE = 'dark'; // dark(지금 화면과 어울림) / old(고지도) / green(자연색)
+const MAP_BG_DIM = 0.3;     // 배경 위에 덮는 어두운 막 (0 = 그대로, 높을수록 어둡게. 2026-10-25 시선을 덜 끌게)
 // 한 도트 = P 화면 픽셀
 const P = 6;
 const PALETTES = {
@@ -150,6 +151,7 @@ function paintBg(kind, w, h) {
       }
     }
   }
+  if (MAP_BG_DIM) { g.fillStyle = `rgba(8, 3, 1, ${MAP_BG_DIM})`; g.fillRect(0, 0, w, h); } // 전체를 살짝 어둡게
   return cv.toDataURL();
 }
 
