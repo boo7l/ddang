@@ -197,8 +197,8 @@ function advance() {
     if (RULES.goldMonths.includes(month)) {
       for (const g of allGenerals()) {
         if (!g.faction) continue;
-        const cs = S.cities[g.city], got = earnGold(g, goldIncome(cs));
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${cityById(g.city).name} 상업 ${cs.comm}${peaceIncome(cs.peace) < 1 ? ` · 치안 ${cs.peace}으로 줄어듦` : ''})`);
+        const cs = S.cities[g.city], got = earnGold(g, goldIncome(cs, g.merit));
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${cityById(g.city).name} 상업 ${cs.comm}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 치안 ${cs.peace}으로 줄어듦` : ''})`);
       }
     }
     // 군량: 세력이 있는 성마다 그 성의 농업에 따라 (공백지는 수입 없음)

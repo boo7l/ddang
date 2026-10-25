@@ -449,7 +449,8 @@ function helpDialog(page = 0) {
       <li>지도에서 성을 누르면 그 성의 정보가 나와요.</li>
       <li>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요.</li>
       <li><b>축성</b>으로 성의 <b>방어</b>를 올려 두면, 적이 쳐들어올 때 수비하는 쪽 전투력이 세져요. (방어 100마다 +${Math.round(100 / RULES.wallDivisor * 100)}%)</li>
-      <li>출진할 군량이 모자라면 <b>군량 사기</b>로 금을 군량으로 바꿀 수 있어요.</li></ul>`],
+      <li>출진할 군량이 모자라면 <b>군량 사기</b>로 금을 군량으로 바꿀 수 있어요.</li>
+      <li><b>공적</b>이 높을수록 금 수입이 늘어나요.</li></ul>`],
   ];
   const [title, body] = pages[page];
   const last = page === pages.length - 1;
