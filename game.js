@@ -705,7 +705,7 @@ function renderMembers() {
   $('#membersTitle').textContent = `· ${f.name} ${list.length}명`;
   $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>공적</th></tr>${list.map(g => `
       <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}">${esc(g.name)}</td><td>${esc(cityById(g.city).name)}</td>
-        <td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
+        <td class="num">${g.unitType ? `${g.unitType[0]} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
 }
 
 function bar(v, max) {
