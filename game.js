@@ -75,15 +75,18 @@ function adminDialog(tab = 'users', fid = null) {
     `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>`;
   let body;
   if (tab === 'users') {
-    const summary = Object.entries(counts).map(([f, n]) => `${swatch(f)}${fname(f)} ${n}명`).join(' · ') || '장수가 없어요.';
+    // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
+    const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const pick = fid !== null && counts[fid === '-' ? '' : fid] ? (fid === '-' ? '' : fid) : (keys[0] || '');
+    const summary = keys.map(f => `<button class="pick${f === pick ? ' on' : ''}" data-uf="${f || '-'}">${swatch(f)}${fname(f)} <span class="dim">${counts[f]}</span></button>`).join('') || '장수가 없어요.';
     // 예약은 앞에서부터 10개만 (나머지는 "외 N개")
     const queueText = g => { const os = (g.queue || []).filter(Boolean); return os.slice(0, 10).map(o => esc(orderLabel(o))).join(', ') + (os.length > 10 ? ` <span class="dim">외 ${os.length - 10}개</span>` : ''); };
     const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
-    const rows = gens.map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td>${esc(g.name)}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
+    const rows = gens.filter(g => (g.faction || '') === pick).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td>${esc(g.name)}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
       <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>
       <td>${queueText(g) || '<span class="dim">없음</span>'}</td></tr>`).join('');
-    body = `<p>${summary} <span class="dim">(모두 ${gens.length}명)</span></p>
+    body = `<div class="picks">${summary}</div><p class="dim">모두 ${gens.length}명 · ${fname(pick)} ${counts[pick] || 0}명 보는 중</p>
       <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>예약</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
@@ -97,6 +100,7 @@ function adminDialog(tab = 'users', fid = null) {
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
+    box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
   });
   $('#modalBox').classList.add('adminBox');
 }
