@@ -169,15 +169,19 @@ const meritRanking = () => allGenerals()
 const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', drill: 'drill', explore: 'explore', shop: 'shop', buy: 'shop' };
 const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
 
-// fid 세력 성 가운데, fromId에서 그 세력 땅만 밟고 갈 수 있는 성들 (이동 목적지)
+// fid 세력 성 가운데, fromId에서 그 세력 땅만 밟고 maxSteps칸 안에 갈 수 있는 성들 (이동 목적지)
 // (fromId가 아직 내 성이 아니어도 된다: 예약표에서 출진 뒤 그 성에 있을 거라고 짐작할 때)
-function linkedOwnCities(fromId, fid) {
+function linkedOwnCities(fromId, fid, maxSteps = Infinity) {
   const seen = new Set([fromId]);
-  const queue = [cityById(fromId)];
-  while (queue.length) {
-    for (const n of neighborsOf(MAP, queue.shift())) {
-      if (n.faction === fid && !seen.has(n.id)) { seen.add(n.id); queue.push(n); }
+  let ring = [cityById(fromId)];
+  for (let step = 0; step < maxSteps && ring.length; step++) { // 한 칸씩 넓혀 간다
+    const next = [];
+    for (const c of ring) {
+      for (const n of neighborsOf(MAP, c)) {
+        if (n.faction === fid && !seen.has(n.id)) { seen.add(n.id); next.push(n); }
+      }
     }
+    ring = next;
   }
   seen.delete(fromId);
   return MAP.cities.filter(c => seen.has(c.id));
@@ -535,7 +539,7 @@ function runMove(g, o) {
   if (!to) return '없는 성';
   if (to.id === from.id) return `이미 ${to.name}에 있음`;
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
-  if (!linkedOwnCities(from.id, g.faction).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 이어져 있지 않음`;
+  if (!linkedOwnCities(from.id, g.faction, RULES.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
   g.city = to.id;
   addLog(g, `${from.name}에서 ${josa(to.name, '으로')} 옮겨 갔다. (병력 ${fmt(g.troops)})`);
   addMerit(g, RULES.merit.move);
