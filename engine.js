@@ -92,6 +92,7 @@ function setOwner(c, fid) {
 function fixWorld() {
   ensureCities();
   applyOwners();
+  trimDefense();
   for (const g of allGenerals()) {
     if (g.log && g.log.length > RULES.logMax) g.log.length = RULES.logMax; // 기록 줄 수를 줄였을 때
     g.queue = (g.queue || []).slice(0, RULES.queueSize).map(o => (o && COMMANDS[o.cmd] ? o : null)); // 없어진 명령은 비운다
@@ -148,6 +149,7 @@ function joinFaction(g, fid, cityId) {
   const home = picked && picked.faction === f.id ? picked : startCity(f.id);
   g.faction = f.id;
   g.city = home.id;
+  capDefense(g);
   addLog(g, `${g.name}, ${f.name} 세력에 몸을 담다. ${home.name}에서 첫발을 내딛는다.`);
   return '';
 }
@@ -200,6 +202,7 @@ function advance() {
     if (turns >= 24 * 30) { S.incomeAt = turnStart(t); break; } // 오래 비워 둬도 최대 720턴치만
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
+    trimDefense();
     if (S.unified) { // 이번 턴에 통일했다
       logAll(`🏆 ${dateText(S.turn)}, ${factionById(S.unified.faction).name} 세력이 천하를 통일했다!`);
       S.incomeAt = mark; turns++; break;
@@ -339,6 +342,7 @@ function runDraft(g, o) {
   if (g.troops > 0) g.training = dilutedTraining(g.training, g.troops, gain);
   g.unitType = type;
   g.troops += gain;
+  capDefense(g); // 병사가 처음 생겼는데 이 성 수비가 꽉 찼으면 방어 모드는 꺼진 채로
   const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
   cs.peace -= drop;
   addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
@@ -362,8 +366,39 @@ function runDrill(g) {
 // 켜 두면 머무는 성이 공격받을 때 요격에 나선다. 병력이 없으면 켤 수 없다
 function toggleDefense(g) {
   if (g.troops <= 0) return '병력이 없으면 켤 수 없어요.';
+  if (!g.defense && defendingIn(g.city, g.faction, g).length >= RULES.defenseMax) return `이 성은 수비가 꽉 찼어요 (한 성에 최대 ${RULES.defenseMax}명).`;
   g.defense = !g.defense; // 기록에는 남기지 않는다 (장수 창에 켜짐·꺼짐이 보인다)
   return '';
+}
+
+// ----- 수비 인원: 한 성에 방어 모드는 최대 5명 (2026-10-25) -----
+// fid 세력 장수 가운데 cityId 성에서 방어 모드를 켜고 병사가 있는 장수 (except는 빼고 센다)
+const defendingIn = (cityId, fid, except) =>
+  allGenerals().filter(x => x !== except && x.city === cityId && x.faction === fid && x.defense && x.troops > 0);
+// 새로 들어왔거나 병사가 처음 생긴 장수: 그 성 수비가 꽉 찼으면 방어 모드를 끈다
+function capDefense(g) {
+  if (g.faction && g.defense && g.troops > 0 && defendingIn(g.city, g.faction, g).length >= RULES.defenseMax) g.defense = false;
+}
+// 수비 장수가 전멸한 만큼, 그 성에서 방어를 끈 장수 가운데 병력이 많은 순으로 자동으로 켠다 (다음 공격부터 막는다)
+function refillDefense(c, fallen) {
+  for (let k = 0; k < fallen; k++) {
+    if (defendingIn(c.id, c.faction).length >= RULES.defenseMax) return;
+    const next = allGenerals().filter(x => x.city === c.id && x.faction === c.faction && !x.defense && x.troops > 0)
+      .sort((a, b) => b.troops - a.troops)[0];
+    if (!next) return;
+    next.defense = true;
+    addLog(next, `🛡 ${c.name}의 수비 장수가 쓰러져 방어 모드가 자동으로 켜졌다.`);
+  }
+}
+// 한 성에 5명이 넘게 켜져 있으면 병력이 많은 5명만 남기고 끈다 (규칙을 바꾼 뒤 처음, 징병·탐색으로 병사가 생겼을 때 등)
+function trimDefense() {
+  const by = {};
+  for (const g of allGenerals()) {
+    if (g.faction && g.city && g.defense && g.troops > 0) (by[g.city] = by[g.city] || []).push(g);
+  }
+  for (const list of Object.values(by)) {
+    if (list.length > RULES.defenseMax) list.sort((a, b) => b.troops - a.troops).slice(RULES.defenseMax).forEach(g => { g.defense = false; });
+  }
 }
 
 // ----- 출진 -----
@@ -406,6 +441,7 @@ function retreatFrom(c, oldFaction) {
     const to = near.length ? near[randInt(0, near.length - 1)] : any.length ? any[randInt(0, any.length - 1)] : null;
     if (!to) { g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…`); continue; }
     g.city = to.id;
+    capDefense(g);
     out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다.`);
   }
   return out;
@@ -522,6 +558,7 @@ function runAttack(g, o, mark) {
   const text = lines.join('\n');
   addLog(g, text);
   victims.forEach(v => addLog(v, text));
+  if (!captured) refillDefense(to, defs.filter(d => d.ref && d.troops <= 0).length); // 쓰러진 수비 장수 자리를 채운다
   others.forEach(x => addLog(x, captured
     ? `⚠ ${josa(to.name, '을를')} ${myF.name} 세력 ${g.name}에게 빼앗겼다!`
     : `⚠ ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}의 공격을 받았다. (남은 방어 ${fmt(cs.wall)})`));
@@ -540,6 +577,7 @@ function runMove(g, o) {
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
   if (!linkedOwnCities(from.id, g.faction, RULES.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
   g.city = to.id;
+  capDefense(g);
   addLog(g, `${from.name}에서 ${josa(to.name, '으로')} 옮겨 갔다. (병력 ${fmt(g.troops)})`);
   addMerit(g, RULES.merit.move);
   return '';
