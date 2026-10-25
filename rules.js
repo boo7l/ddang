@@ -103,6 +103,7 @@ const RULES = {
 
   // 병종과 훈련 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
+  warAttackPer20: 0.01,     // 출진해서 싸울 때 병종과 상관없이 무력 20마다 공격력 +1% (무력 100이면 +5%, 2026-10-26)
   trainingFloor: 0.7,       // 임시: 훈련도 0이면 전투력 70%, 100이면 100%
   guardUnit: { type: '보병', training: 50 },  // 임시: 수비대장의 병종과 훈련도
 
@@ -264,6 +265,7 @@ function matchupOf(a, b) {
 const attackPower = (a, d) => {
   const t = traitOf(a.faction);
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
+    * (1 + Math.floor((a.stats.war || 0) / 20) * RULES.warAttackPer20) // 병종과 상관없이 무력 20마다 공격력 +1% (2026-10-26)
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1);
 };
 // 수비력: 성 방어 보정을 받는다
