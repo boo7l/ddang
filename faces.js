@@ -7,9 +7,11 @@ const FACES = [
   { id: 'm1', name: '무관 1', style: '무관' },
   { id: 'm2', name: '무관 2', style: '무관' },
   { id: 'm3', name: '무관 3', style: '무관' },
+  { id: 'm4', name: '무관 4', style: '무관' },
   { id: 'c1', name: '문관 1', style: '문관' },
   { id: 'c2', name: '문관 2', style: '문관' },
   { id: 'c3', name: '문관 3', style: '문관' },
+  { id: 'c4', name: '문관 4', style: '문관' },
 ];
 
 function faceCanvas(faceId, cls = '') {

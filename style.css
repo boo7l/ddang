@@ -329,7 +329,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .face { object-fit: cover; display: block; border: 2px solid var(--gold); background: #000; }
 .facePick { display: flex; gap: 14px; align-items: flex-start; }
 #cFaceBig .face { width: 128px; height: 160px; }
-#cFaces { display: grid; grid-template-columns: repeat(3, 68px); gap: 6px; }
+#cFaces { display: grid; grid-template-columns: repeat(4, 68px); gap: 6px; } /* 윗줄 무관, 아랫줄 문관 (각 4개) */
 #cFaces button { padding: 0; border: 2px solid var(--gold-dark); background: none; box-shadow: none; }
 #cFaces button .face { width: 64px; height: 80px; border: 0; }
 #cFaces button.on { border-color: var(--title); outline: 2px solid var(--title); }
