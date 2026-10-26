@@ -8,6 +8,12 @@
   src: url("fonts/DungGeunMo.woff") format("woff"), url("fonts/DungGeunMo.ttf") format("truetype");
   font-display: block; /* 받는 동안 잠깐(최대 3초) 글자를 숨겨서, 다른 글꼴로 깨져 보였다 바뀌지 않게 */
 }
+/* 작은 글씨용 도트 글꼴 (갈무리11 굵게, 12px용, SIL OFL: fonts/Galmuri-LICENSE.txt). 둥근모는 16px용이라 작게 줄이면 0과 8이 뭉개진다 (2026-10-27) */
+@font-face {
+  font-family: "Galmuri11";
+  src: url("fonts/Galmuri11-Bold.woff2") format("woff2");
+  font-display: swap;
+}
 
 /* 색표. 색을 바꾸고 싶으면 여기만 고치면 된다 */
 :root {
@@ -272,7 +278,7 @@ aside.wide { width: 380px; }
 /* 명령 버튼 */
 .cmds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .cmds button { padding: 6px 4px; }
-.cmds button small { display: block; font-size: 12px; color: var(--dim); }
+.cmds button small { display: block; font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; color: var(--dim); }
 .cmds button:hover small { color: var(--panel-dark); }
 
 /* 장수 만들기 */
@@ -318,7 +324,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .opt:hover { border-color: var(--gold); }
 .opt:has(input:checked) { border-color: var(--title); background: #5e1a10; }
 .opt input { accent-color: var(--title); margin: 0; }
-.opt .r { margin-left: auto; font-size: 14px; }
+.opt .r { margin-left: auto; font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; }
 .g-유리, .g-무혈입성 { color: var(--ok); }
 .g-비슷 { color: var(--title); }
 .g-불리 { color: var(--bad); }
@@ -364,7 +370,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 #title #tMsg { color: var(--title); margin-top: 12px; }
 .opts.train .bar { width: 120px; }
 /* 정각을 기다리는 수송·첩보 목록 */
-.pending { list-style: none; margin: 0 0 8px; padding: 4px 8px; border: 1px dashed var(--gold-dark); font-size: 14px; }
+.pending { list-style: none; margin: 0 0 8px; padding: 4px 8px; border: 1px dashed var(--gold-dark); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; }
 .pending li::before { content: "⏳ "; }
 
 /* ===== 명령 예약표 ===== */
@@ -383,10 +389,10 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .queue .what { flex: 1; min-width: 0; white-space: normal; word-break: keep-all; line-height: 1.25; } /* 길면 잘리지 않고 다음 줄로 */
 .queue .x { padding: 0 5px; }
 .cmds.two { margin-top: 8px; }
-.queue .clock { color: var(--dim); font-size: 13px; flex: none; order: 3; }
+.queue .clock { color: var(--dim); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; flex: none; order: 3; }
 .queue .t { width: 76px; white-space: nowrap; } /* 10월💰🌾 까지 한 줄 */
 .queue .x { order: 4; }
-.plusg { color: var(--ok); font-size: 12px; margin-left: 2px; }
+.plusg { color: var(--ok); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; margin-left: 2px; }
 
 /* 메인 화면 세 칸: 지도 | 장수·세력·개발자 도구 | 명령 예약·명령 */
 aside.mid { width: 340px; }
@@ -457,13 +463,13 @@ table.rank .num { text-align: right; padding-right: 12px; }
   border: 2px solid var(--gold-dark); background: var(--panel-dark); }
 #chat .chatList li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); word-break: keep-all; overflow-wrap: anywhere; }
 #chat .chatList li:last-child { border-bottom: 0; }
-#chat .chatList .t { color: var(--dim); font-size: 13px; margin-right: 6px; }
+#chat .chatList .t { color: var(--dim); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; margin-right: 6px; }
 #chat .chatList .who { color: var(--label); margin-right: 6px; }
 #chat .chatList li.mine .who { color: var(--title); }
 #chat .chatList .empty { color: var(--dim); border: 0; }
 #chat .chatForm { display: flex; gap: 6px; }
 #chat .chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
-#chat .note { color: var(--dim); font-size: 13px; margin: 6px 0 0; }
+#chat .note { color: var(--dim); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; margin: 6px 0 0; }
 
 /* 관리자 보기 (개발자 도구) */
 #modalBox.adminBox { width: 960px; max-width: calc(100vw - 32px); }
@@ -471,7 +477,7 @@ table.rank .num { text-align: right; padding-right: 12px; }
 .adminScroll td { vertical-align: top; }
 .adminChat { list-style: none; margin: 10px 0 0; padding: 4px 8px; max-height: 360px; overflow-y: auto; background: var(--panel-dark); border: 1px solid var(--gold-dark); }
 .adminChat li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); overflow-wrap: anywhere; }
-.adminChat .t { color: var(--dim); font-size: 13px; margin-right: 6px; }
+.adminChat .t { color: var(--dim); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; margin-right: 6px; }
 .adminChat .who { color: var(--label); margin-right: 6px; }
 .adminBox .picks .dim { float: none; margin-left: 6px; }
 
@@ -490,7 +496,7 @@ table.members td.name { max-width: 0; width: 100%; overflow: hidden; text-overfl
 details.fold > summary { list-style: none; cursor: pointer; }
 details.fold > summary::-webkit-details-marker { display: none; }
 #game details.fold > summary h2 { margin: -4px 0 0; padding-bottom: 0; border-bottom: 0; }
-details.fold > summary h2::after { content: " ▶"; color: var(--dim); font-size: 13px; }
+details.fold > summary h2::after { content: " ▶"; color: var(--dim); font-size: 12px; font-family: "Galmuri11", "DungGeunMo", monospace; }
 details.fold[open] > summary h2::after { content: " ▼"; }
 #game details.fold[open] > summary h2 { margin-bottom: 9px; padding-bottom: 5px; border-bottom: 2px solid var(--gold-dark); }
 details.fold > summary:hover h2 { color: var(--title); }
