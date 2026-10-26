@@ -205,7 +205,7 @@ async function renderSeasonBadge() {
 async function renderHof() {
   const box = $('#hof');
   if (!sb) return;
-  const { data, error } = await sb.from('hall_of_fame').select('*').order('season', { ascending: false });
+  const { data, error } = await sb.from('hall_of_fame').select('*').order('season', { ascending: true }); // 시즌 1부터 차례로 (2026-10-27)
   if (error || !data || !data.length) { box.innerHTML = ''; return; }
   const sw = c => (c ? `<span class="swatch" style="background:${c}"></span>` : '');
   box.innerHTML = `<h3 class="hofTitle">🏆 명예의 전당</h3>` + data.map((h, n) => `
