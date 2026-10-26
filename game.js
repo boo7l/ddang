@@ -610,15 +610,35 @@ function showTitle(msg) {
   $('#tMsg').hidden = !msg;
   $('#tMsg').textContent = msg || '';
 }
-const updateGoogleBtn = () => { $('#tGoogle').disabled = !($('#tAge').checked && $('#tAgree').checked); };
 const sayTitle = m => { $('#tMsg').hidden = false; $('#tMsg').textContent = m; };
 
-async function startGoogle() {
-  if (!sb) { sayTitle('서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); return; }
-  if (!($('#tAge').checked && $('#tAgree').checked)) { sayTitle('만 14세 이상 확인과 처리방침·약관 동의를 체크해 주세요.'); return; }
+// 두 칸을 다 체크하면 구글 공식 로그인 단추를 보여 준다 (구글 스크립트가 늦게 오면 올 때까지 잠깐 기다린다)
+let googleReady = false;
+async function updateGoogleBtn() {
+  const ok = $('#tAge').checked && $('#tAgree').checked;
+  $('#tGoogle').hidden = !ok;
+  $('#tGoogleHint').hidden = ok;
+  if (!ok) return;
   try { localStorage.setItem(AGREE_KEY, '1'); } catch (e) { /* 무시 */ }
-  $('#tGoogle').disabled = true;
-  try { await signInGoogle(); } catch (e) { sayTitle(e.message || String(e)); updateGoogleBtn(); }
+  if (googleReady) return;
+  if (!(window.google && google.accounts && google.accounts.id)) { setTimeout(updateGoogleBtn, 300); return; }
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, nonce: await googleNonceHash(), callback: onGoogleCredential });
+  google.accounts.id.renderButton($('#tGoogle'), { theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', locale: 'ko', width: 260 });
+  googleReady = true;
+}
+
+// 구글 팝업에서 계정을 고르면 불린다
+async function onGoogleCredential(resp) {
+  if (!sb) { sayTitle('서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); return; }
+  try {
+    await signInWithGoogleCredential(resp.credential);
+    if (ME && ME.nickname) enterFlow(); else showTitle(); // 처음이면 아이디 정하기
+  } catch (e) {
+    sayTitle('구글 로그인에 실패했어요: ' + (e.message || e));
+    googleReady = false; // 일회용 값을 새로 만들어 다시 시도할 수 있게
+    $('#tGoogle').innerHTML = '';
+    updateGoogleBtn();
+  }
 }
 
 async function submitNick() {
@@ -1046,7 +1066,6 @@ async function enterFlow() {
 
 $('#cStart').onclick = createGeneral;
 $('#cRoll').onclick = () => { draft.base = rollStats(); renderCreateStats(); };
-$('#tGoogle').onclick = startGoogle;
 $('#tAge').onchange = $('#tAgree').onchange = updateGoogleBtn;
 $('#tNickBox').onsubmit = e => { e.preventDefault(); submitNick(); };
 $('#tNickCancel').onclick = logout;

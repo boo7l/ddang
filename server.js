@@ -26,11 +26,20 @@ async function serverInit() {
   return true;
 }
 
-// 구글 로그인: 구글 창으로 갔다가 이 페이지로 돌아온다 (그 뒤 serverInit이 로그인 상태를 읽는다)
-async function signInGoogle() {
-  const back = location.origin + location.pathname;
-  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: back } });
+// 구글 로그인 (2026-10-26): 구글이 주는 로그인 단추·팝업을 이 페이지에서 바로 쓴다 (Google Identity Services).
+// Supabase 주소로 다녀오지 않아서, 구글 창에 서버 주소 대신 게임 주소가 보인다. 클라이언트 ID는 공개돼도 되는 값
+const GOOGLE_CLIENT_ID = '634851733129-m5cvp1dlv758c7uksngpa95u0cgi311m.apps.googleusercontent.com';
+let googleNonce = null; // 이번 로그인 시도의 일회용 값 (구글에는 해시를, Supabase에는 원래 값을 준다)
+async function googleNonceHash() {
+  googleNonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(googleNonce));
+  return Array.from(new Uint8Array(h), b => b.toString(16).padStart(2, '0')).join('');
+}
+// 구글이 돌려준 신분증(credential)으로 Supabase에 로그인한다
+async function signInWithGoogleCredential(credential) {
+  const { error } = await sb.auth.signInWithIdToken({ provider: 'google', token: credential, nonce: googleNonce });
   if (error) throw new Error(error.message);
+  await serverInit();
 }
 
 // 처음 들어온 사람: 게임 아이디를 정한다 (만 14세 이상·처리방침·약관 동의를 함께 보낸다)

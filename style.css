@@ -352,7 +352,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 #title .tAuth { margin-top: 16px; }
 #title .agree { display: block; margin: 6px 0; cursor: pointer; } /* 구글 로그인 전 동의 체크 */
 #title .agree input { display: inline-block; width: auto; margin: 0 6px 0 0; vertical-align: middle; }
-#title #tGoogle:disabled { opacity: 0.5; cursor: not-allowed; }
+#title .gBtnWrap { display: flex; justify-content: center; margin-top: 14px; min-height: 44px; } /* 구글 공식 로그인 단추 */
 #title #tMsg { color: var(--title); margin-top: 12px; }
 .opts.train .bar { width: 120px; }
 /* 정각을 기다리는 수송·첩보 목록 */

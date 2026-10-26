@@ -30,7 +30,8 @@
     <div id="tGoogleBox" class="tAuth">
       <label class="agree"><input type="checkbox" id="tAge"> 만 14세 이상입니다</label>
       <label class="agree"><input type="checkbox" id="tAgree"> <a class="link" href="privacy.html" target="_blank">개인정보 처리방침</a>과 <a class="link" href="terms.html" target="_blank">이용약관</a>에 동의합니다 (필수)</label>
-      <button id="tGoogle" class="btn big">구글로 시작하기</button>
+      <div id="tGoogle" class="gBtnWrap"></div><!-- 구글 로그인 단추 (두 칸을 체크하면 보인다) -->
+      <p id="tGoogleHint" class="dim center">위 두 칸을 체크하면 구글 로그인 단추가 나와요.</p>
     </div>
     <!-- 구글로 처음 들어온 사람: 게임 아이디 정하기 -->
     <form id="tNickBox" class="tAuth" autocomplete="off" hidden>
@@ -112,6 +113,7 @@
   <div id="modal" hidden><div id="modalBox" class="win"></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
   <script src="server.js"></script>
   <script src="mapcore.js"></script>
   <script src="data/map_190.js"></script>
