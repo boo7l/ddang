@@ -586,14 +586,14 @@ function runAttack(g, o, mark) {
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
   // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 200명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
-  const base = captured ? RULES.merit.win : RULES.merit.lose, extra = [hitMerit && `피해 +${hitMerit}`, wallMerit && `성벽 +${wallMerit}`].filter(Boolean);
-  const meritText = `공적 +${base + hitMerit + wallMerit}${extra.length ? ` (${captured ? '함락' : '출진'} +${base} · ${extra.join(' · ')})` : ''}`;
+  const base = captured ? RULES.merit.win : RULES.merit.lose;
+  const meritText = `공적 +${base + hitMerit + wallMerit}`; // 합계만 적는다
   if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · ${meritText}`); }
   else lines.push(`${g.name} ${meritText}`);
   addMerit(g, base + hitMerit + wallMerit);
   for (const [x, dealt] of dealtBy) {
     const m = Math.floor(dealt / RULES.meritPerKill);
-    if (m > 0) { addMerit(x, m); lines.push(`${x.name} 수비 공적 +${m}`); }
+    if (m > 0) { addMerit(x, m); lines.push(`${x.name} 공적 +${m}`); }
   }
   const text = lines.join('\n');
   addLog(g, text);
