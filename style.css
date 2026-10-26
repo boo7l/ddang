@@ -8,10 +8,10 @@
   src: url("fonts/DungGeunMo.woff") format("woff"), url("fonts/DungGeunMo.ttf") format("truetype");
   font-display: block; /* 받는 동안 잠깐(최대 3초) 글자를 숨겨서, 다른 글꼴로 깨져 보였다 바뀌지 않게 */
 }
-/* 작은 글씨용 도트 글꼴 (갈무리11 굵게, 12px용, SIL OFL: fonts/Galmuri-LICENSE.txt). 둥근모는 16px용이라 작게 줄이면 0과 8이 뭉개진다 (2026-10-27) */
+/* 작은 글씨용 도트 글꼴 (갈무리11 보통 굵기, 12px용. 굵게는 너무 눈에 띄어서 바꿈, SIL OFL: fonts/Galmuri-LICENSE.txt). 둥근모는 16px용이라 작게 줄이면 0과 8이 뭉개진다 (2026-10-27) */
 @font-face {
   font-family: "Galmuri11";
-  src: url("fonts/Galmuri11-Bold.woff2") format("woff2");
+  src: url("fonts/Galmuri11.woff2") format("woff2");
   font-display: swap;
 }
 
