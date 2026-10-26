@@ -530,6 +530,7 @@ function runAttack(g, o, mark) {
   // 2. 수비 부대와 싸움
   const att = unitOf(g);
   let left = RULES.roundsMax, atkLost = 0, defLost = 0;
+  const dealtBy = new Map();
   lines.push(`⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`);
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
@@ -538,6 +539,7 @@ function runAttack(g, o, mark) {
     const r = fightRounds(att, d, cs.wall, left);
     left -= r.used;
     atkLost += r.atkLost;
+    if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 공적)
     defLost += r.defLost;
     lines.push(...r.lines);
     if (d.guard) cs.guard = d.troops;
@@ -551,7 +553,7 @@ function runAttack(g, o, mark) {
   const standing = defs.filter(x => x.troops > 0);
 
   // 3. 성벽 공격 → 4. 점령 또는 돌아옴
-  let captured = false;
+  let captured = false, wallDmg = 0;
   if (g.troops <= 0) {
     lines.push(`${g.name}의 부대가 전멸했다… ${josa(from.name, '으로')} 홀로 돌아왔다.`);
   } else if (standing.length) {
@@ -564,6 +566,7 @@ function runAttack(g, o, mark) {
     const dmg = Math.min(cs.wall, Math.floor(base * boost));
     const loss = Math.min(g.troops, Math.round(dmg / boost) * RULES.siegeLoss); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 3배(siegeLoss)만큼 잃는다
     cs.wall -= dmg;
+    wallDmg = dmg;
     g.troops -= loss;
     atkLost += loss;
     lines.push(`🏯 성벽 공격${g.siege && g.siege.충차 ? ' (충차)' : ''}: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(loss)}`);
@@ -581,8 +584,17 @@ function runAttack(g, o, mark) {
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
-  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · 공적 +${RULES.merit.win}`); addMerit(g, RULES.merit.win); }
-  else { lines.push(`${g.name} 공적 +${RULES.merit.lose}`); addMerit(g, RULES.merit.lose); }
+  // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 200명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
+  const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
+  const base = captured ? RULES.merit.win : RULES.merit.lose, extra = [hitMerit && `피해 +${hitMerit}`, wallMerit && `성벽 +${wallMerit}`].filter(Boolean);
+  const meritText = `공적 +${base + hitMerit + wallMerit}${extra.length ? ` (${captured ? '함락' : '출진'} +${base} · ${extra.join(' · ')})` : ''}`;
+  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · ${meritText}`); }
+  else lines.push(`${g.name} ${meritText}`);
+  addMerit(g, base + hitMerit + wallMerit);
+  for (const [x, dealt] of dealtBy) {
+    const m = Math.floor(dealt / RULES.meritPerKill);
+    if (m > 0) { addMerit(x, m); lines.push(`${x.name} 수비 공적 +${m}`); }
+  }
   const text = lines.join('\n');
   addLog(g, text);
   victims.forEach(v => addLog(v, text));
