@@ -244,7 +244,10 @@ function advance() {
 }
 
 // 모든 장수의 예약표 맨 앞 칸 명령을 예약한 순서대로 실행하고, 예약표를 한 칸씩 당긴다. 빈 칸이면 대기
+// 이번 턴에 성마다 출진한 장수 id (runOrders가 턴마다 비운다)
+let turnAttackers = {};
 function runOrders(mark) {
+  turnAttackers = {};
   const todo = [];
   for (const g of allGenerals()) {
     const order = g.queue.shift();
@@ -488,12 +491,20 @@ function runAttack(g, o, mark) {
   const from = cityById(g.city), to = cityById(o.to);
   if (!to) return '없는 성';
   const cs = S.cities[to.id], home = S.cities[from.id];
-  if (g.troops <= 0) return '병력이 없음';
   if (!neighborsOf(MAP, from).includes(to)) return `${josa(to.name, '은는')} ${from.name}의 이웃 성이 아님`;
-  if (to.faction === g.faction) return `${josa(to.name, '은는')} 이미 아군 성`;
+  // 이미 우리 성이면 (같은 턴에 앞서 동료가 함락시킨 경우 등) 싸우지 않고 그 성으로 들어간다. 출진 군량도 들지 않는다 (2026-10-26)
+  if (to.faction === g.faction) {
+    g.city = to.id;
+    capDefense(g);
+    addLog(g, `${josa(to.name, '은는')} 이미 우리 성이라 싸우지 않고 그대로 들어갔다. (병력 ${fmt(g.troops)})`);
+    addMerit(g, RULES.merit.move);
+    return '';
+  }
+  if (g.troops <= 0) return '병력이 없음';
   const food = marchFood(g.troops);
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
   home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
+  (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
 
   const oldFaction = to.faction, owner = factionById(oldFaction), myF = factionById(g.faction);
   const lines = [];
@@ -581,6 +592,16 @@ function runAttack(g, o, mark) {
     : `⚠ ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}의 공격을 받았다. (남은 방어 ${fmt(cs.wall)})`));
   gainStatExp(g, statKey, RULES.statExp.battle);
   if (captured) gainStatExp(g, 'lea', RULES.statExp.capture); // 성 점령은 통솔 경험치
+  // 함락했으면, 이번 턴에 이 성을 함께 공격했던 우리 세력 장수들도 모두 들어간다 (2026-10-26)
+  if (captured) {
+    for (const id of turnAttackers[to.id] || []) {
+      const x = S.generals[id];
+      if (!x || x === g || x.faction !== g.faction || x.city === to.id) continue;
+      x.city = to.id;
+      capDefense(x);
+      addLog(x, `⚔ ${josa(to.name, '이가')} 함락됐다! 함께 공격한 부대로서 ${josa(to.name, '으로')} 들어갔다. (병력 ${fmt(x.troops)})`);
+    }
+  }
   if (att.duelWins) gainStatExp(g, 'war', RULES.duel.exp * att.duelWins); // 일기토에서 이기면 무력 경험치
   return '';
 }
