@@ -636,9 +636,11 @@ function runAttack(g, o, mark) {
   if (captured) gainStatExp(g, 'lea', RULES.statExp.capture); // 성 점령은 통솔 경험치
   // 함락했으면, 이번 턴에 이 성을 함께 공격했던 우리 세력 장수들도 모두 들어간다 (2026-10-26)
   if (captured) {
-    for (const id of turnAttackers[to.id] || []) {
+    for (const id of new Set(turnAttackers[to.id] || [])) { // 한 장수는 한 번만
       const x = S.generals[id];
-      if (!x || x === g || x.faction !== g.faction || x.city === to.id) continue;
+      if (!x || x === g || x.faction !== g.faction) continue;
+      gainStatExp(x, 'lea', RULES.statExp.capture); // 함락에 기여한 장수 모두 점령 경험치 (2026-10-27)
+      if (x.city === to.id) continue;
       x.city = to.id;
       capDefense(x);
       addLog(x, `⚔ ${josa(to.name, '이가')} 함락됐다! 함께 공격한 부대로서 ${josa(to.name, '으로')} 들어갔다. (병력 ${fmt(x.troops)})`);
@@ -795,7 +797,7 @@ function runTrain(g, o) {
   const free = traitOf(g.faction).freeTrain; // 왕랑: 수련에 금이 들지 않는다
   const why = free ? '' : pay(g, 'train');
   if (why) return why;
-  const gain = traitExp(g, o.stat, randInt(RULES.statExp.train.min, RULES.statExp.train.max));
+  const gain = traitExp(g, o.stat, Math.round(randInt(RULES.statExp.train.min, RULES.statExp.train.max) * (1 + (traitOf(g.faction).trainExp || 0)))); // 왕랑: 수련 경험치 +20%
   const up = addStatExp(g, o.stat, gain);
   addLog(g, `${st.name} 수련: 경험 +${gain}` + (free ? '' : ` · 내 금 -${RULES.myGoldCost.train}`) +
     (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[o.stat]})` : ` (${g.statExp[o.stat]}/${expNeed(g.stats[o.stat])})`));

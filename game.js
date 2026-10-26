@@ -391,7 +391,7 @@ function trainDialog() {
       <b>${st.name} 수련</b> <span class="dim">${p.stats[st.key]}</span>
       <span class="r">${bar(xp(st.key), expNeed(p.stats[st.key]))} <span class="dim">${xp(st.key)}/${expNeed(p.stats[st.key])}</span></span></label>`).join('');
   pickDialog('수련', `<p>능력치 하나를 골라 경험치를 집중해서 쌓습니다 (한 번에 ${RULES.statExp.train.min}~${RULES.statExp.train.max}). 경험치가 다 차면 그 능력치가 1 올라요.</p>
-    <p class="dim">필요한 경험치 = ${RULES.expNeedBase} + 지금 능력치 · ${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => reserve({ cmd: 'train', stat: v }));
+    <p class="dim">${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => reserve({ cmd: 'train', stat: v }));
   $('#modalBox .opts').classList.add('train');
 }
 
@@ -890,9 +890,9 @@ function renderGeneral() {
         ${RULES.features.drill ? '' : '<!--'}<tr><th>훈련</th><td>${p.training} <span class="dim">/ 100</span></td></tr>${RULES.features.drill ? '' : '-->'}
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
         ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
-        ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `${t} ${gearCount(p, t)}`).join(' · ') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
+        ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
-        <tr><th>공적</th><td>${fmt(p.merit)} <span class="dim">(순위 점수)</span></td></tr>
+        <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
       </table>
     </div></div>
     ${traitOf(f.id).name ? `<p class="traitLine"><b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}

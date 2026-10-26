@@ -32,8 +32,8 @@ const RULES = {
   startBonus: 10,           // 만들 때만 받는 보너스 포인트
   // 성장 (기획서 7장): 능력치마다 경험치가 쌓이고, 다 차면 그 능력치 +1 (임시값)
   // 내정 1회 · 징병 1회(통솔) · 출진 1회(병종 능력치, 승패 상관없이) · 성 점령(통솔) · 수련 1회(무작위)
-  statExp: { domestic: 25, draft: 10, battle: 30, capture: 30, train: { min: 40, max: 60 } },
-  expNeedBase: 50,          // 능력치 1을 올리는 데 필요한 경험치 = 50 + 지금 능력치 (50이면 100, 100이면 150)
+  statExp: { domestic: 20, draft: 10, battle: 30, capture: 50, train: { min: 40, max: 60 } }, // 2026-10-27 내정 25 → 20, 점령 30 → 50
+  expNeedBase: 40, expNeedPer: 1.2, // 능력치 1을 올리는 데 필요한 경험치 = 40 + 지금 능력치 × 1.2 (2026-10-27 50 + 능력치에서: 50에선 같고 높을수록 조금 더)
 
   // 금은 장수 개인 것 하나뿐이다. 국고는 없다 (기획서 9장). 내정은 턴만 쓴다
   myGoldCost: { draft: 200, train: 30, explore: 20, plot: 50, attack: 50 }, // 임시: 내 금에서 나가는 금 (plot = 계략 파괴·유언·첩보, 2026-10-26)
@@ -105,9 +105,9 @@ const RULES = {
   siegeLoss: 3,             // 성벽 공격에서 잃는 병력 = 깎은 방어 × 3
   captureWall: { 1: 100, 2: 200, 3: 300 },
   // 일기토 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
-  duel: { minWar: 70, chance: 0.08, loserLoss: 0.3, exp: 40 }, // 일기토: 양쪽 무력 70 이상이면 합마다 8%, 출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈)
+  duel: { minWar: 70, chance: 0.08, loserLoss: 0.3, exp: 50 }, // 일기토: 양쪽 무력 70 이상이면 합마다 8%, 출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
   // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 15)% 확률로 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (50~100) × 10 × (지력 차이 ÷ 10)^0.7
-  scheme: { minInt: 70, chancePerInt: 1 / 1500, base: [50, 100], ref: 10, exp: 0.7, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 30 }, // 책략 한 번에 지력 경험치 30. 출진 한 번(5합)에 최대 1번
+  scheme: { minInt: 70, chancePerInt: 1 / 1500, base: [50, 100], ref: 10, exp: 0.7, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 40 }, // 책략 한 번에 지력 경험치 40 (2026-10-27 30에서). 출진 한 번(5합)에 최대 1번
 
   // 병종과 훈련 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
@@ -254,7 +254,7 @@ const FACTION_TRAITS = {
   도겸: { name: '서주의 풍요', desc: '상업 내정 +5%', comm: 0.05 },
   장로: { name: '오두미도', desc: '병사 군량 소비 -15%', food: -0.15 },
   엄백호: { name: '강동 호족', desc: '성벽 공격으로 깎는 방어 +15%', siege: 0.15 },
-  왕랑: { name: '경학대가', desc: '수련에 금이 들지 않음', freeTrain: true },
+  왕랑: { name: '경학대가', desc: '수련에 금이 들지 않고 수련 경험치 +20%', freeTrain: true, trainExp: 0.20 }, // 2026-10-27 수련 경험치 +20% 더함
 };
 
 // ===== 전투 =====
@@ -357,7 +357,7 @@ const PLOT = {
   critMul: 1.5,                        // 대성공 효과 배수 (2026-10-26 2배 → 1.5배)
   destroy: { wallPerInt: 1 },          // 파괴: 방어 -(지력 × 1)
   rumor: { peacePerInt: 0.2, devPerInt: 0.2 }, // 유언: 치안·농업·상업 각각 -(지력 × 0.2) (2026-10-25 0.2 → 0.25, 2026-10-26 다시 0.2)
-  exp: 30, critExp: 50,                // 성공하면 지력 경험치 (대성공이면 50)
+  exp: 40, critExp: 60,                // 성공하면 지력 경험치 (대성공이면 60, 2026-10-27 30·50에서)
 };
 // 'fail' | 'ok' | 'crit'
 function rollPlot(int) {
@@ -401,7 +401,7 @@ function foundAmount(e) {
 }
 
 // 능력치 1을 올리는 데 필요한 경험치: 능력치가 높을수록 조금씩 더 필요하다
-const expNeed = stat => RULES.expNeedBase + stat;
+const expNeed = stat => Math.round(RULES.expNeedBase + stat * RULES.expNeedPer);
 
 // 능력치 경험치를 쌓는다. 다 차면 그 능력치 +1 (최대치까지). 오른 양을 돌려준다
 function addStatExp(g, key, gain) {
