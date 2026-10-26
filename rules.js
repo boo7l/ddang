@@ -104,9 +104,9 @@ const RULES = {
   siegeLoss: 3,             // 성벽 공격에서 잃는 병력 = 깎은 방어 × 3
   captureWall: { 1: 100, 2: 200, 3: 300 },
   // 일기토 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
-  duel: { minWar: 70, chance: 0.1, loserLoss: 0.3, exp: 40 },
-  // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 × 0.1)% 확률로 일방 공격. 피해 = (50~100) × 10 × (지력 차이 ÷ 10)^0.7
-  scheme: { minInt: 70, chancePerInt: 0.001, base: [50, 100], ref: 10, exp: 0.7, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'] },
+  duel: { minWar: 70, chance: 0.08, loserLoss: 0.3, exp: 40 }, // 일기토: 양쪽 무력 70 이상이면 합마다 8%, 출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈)
+  // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 15)% 확률로 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (50~100) × 10 × (지력 차이 ÷ 10)^0.7
+  scheme: { minInt: 70, chancePerInt: 1 / 1500, base: [50, 100], ref: 10, exp: 0.7, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 30 }, // 책략 한 번에 지력 경험치 30. 출진 한 번(5합)에 최대 1번
 
   // 병종과 훈련 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
@@ -310,7 +310,8 @@ function fightRounds(att, def, wall, left) {
     used++;
     // 일기토: 양쪽 무력이 기준 이상이면 낮은 확률로. 이긴 쪽은 피해 없이, 진 쪽 부대만 크게 다친다
     const D = RULES.duel;
-    if (att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < D.chance) {
+    if (!att.dueled && att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < D.chance) {
+      att.dueled = true; // 이번 출진에서는 더 일어나지 않는다
       const aWin = Math.random() < duelWinRate(att.stats.war, def.stats.war);
       const w = aWin ? att : def, l = aWin ? def : att;
       const loss = Math.ceil(l.troops * D.loserLoss);
@@ -319,14 +320,16 @@ function fightRounds(att, def, wall, left) {
       lines.push(`${used}합: ⚡ 일기토! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${loss.toLocaleString('ko-KR')}`);
       continue;
     }
-    // 책략 (2026-10-26): 지력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (지력 ÷ 10)% 확률로 보통 교전 대신 일방적으로 친다.
+    // 책략 (2026-10-26): 지력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (지력 ÷ 15)% 확률로 보통 교전 대신 일방적으로 친다.
     // 피해 = (50~100) × 10 × (지력 차이 ÷ 10)^0.7. 병종·공수·수비대장 가리지 않음, 병력 상한 없음
     const C = RULES.scheme, ai = att.stats.int || 0, di = def.stats.int || 0;
     const sch = ai >= C.minInt && ai > di ? [att, def, ai - di] : di >= C.minInt && di > ai ? [def, att, di - ai] : null;
-    if (sch && Math.random() < sch[0].stats.int * C.chancePerInt) {
+    if (sch && !att.schemed && Math.random() < sch[0].stats.int * C.chancePerInt) {
+      att.schemed = true; // 책략도 출진 한 번(5합)에 최대 1번 (어느 쪽이 쓰든)
       const [me, foe, gap] = sch;
       const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow(gap / C.ref, C.exp)));
       foe.troops -= loss;
+      me.schemes = (me.schemes || 0) + 1;
       const kind = C.kinds[Math.floor(Math.random() * C.kinds.length)];
       lines.push(`${used}합: ${kind}! ${me.name}(지력 ${me.stats.int})의 계책에 ${foe.name} 부대 -${loss.toLocaleString('ko-KR')}`);
       continue;

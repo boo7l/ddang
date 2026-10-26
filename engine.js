@@ -568,6 +568,7 @@ function runAttack(g, o, mark) {
     if (d.ref) { // 수비 장수의 병력을 되돌려 적는다
       d.ref.troops = d.troops;
       if (d.duelWins) gainStatExp(d.ref, 'war', RULES.duel.exp * d.duelWins);
+      if (d.schemes) gainStatExp(d.ref, 'int', RULES.scheme.statExp * d.schemes); // 책략을 쓰면 지력 경험치
     }
     if (d.troops <= 0) lines.push(`${d.name} 부대 전멸!`);
   }
@@ -637,6 +638,7 @@ function runAttack(g, o, mark) {
     }
   }
   if (att.duelWins) gainStatExp(g, 'war', RULES.duel.exp * att.duelWins); // 일기토에서 이기면 무력 경험치
+  if (att.schemes) gainStatExp(g, 'int', RULES.scheme.statExp * att.schemes); // 책략을 쓰면 지력 경험치
   return '';
 }
 

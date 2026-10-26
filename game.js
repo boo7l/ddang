@@ -564,7 +564,7 @@ function helpDialog(page = 0) {
   const [title, body] = pages[page];
   const last = page === pages.length - 1;
   openModal(`
-    <h2>쌈국지 처음 안내</h2>
+    <h2>땅국지 처음 안내</h2>
     <div class="helpTabs">${pages.map(([t], i) => `<button data-page="${i}" class="${i === page ? 'on' : ''}">${t}</button>`).join('')}</div>
     <div class="help"><h3>${title}</h3>${body}</div>
     <div class="modalBtns helpNav">
