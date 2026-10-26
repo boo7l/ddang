@@ -505,6 +505,8 @@ function runAttack(g, o, mark) {
   if (g.troops <= 0) return '병력이 없음';
   const food = marchFood(g.troops);
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
+  const why = pay(g, 'attack'); // 출진은 금 50 (2026-10-26. 군량이 모자라 못 나가면 들지 않는다)
+  if (why) return why;
   home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
 
