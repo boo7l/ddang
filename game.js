@@ -359,7 +359,7 @@ function spyDialog() {
       <span class="r dim">${until ? `${dateText(until)} 전까지 알고 있음` : '모름'}</span></label>`;
   }).join('');
   pickDialog('첩보', `<p>${esc(from.name)}의 이웃한 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(spySuccessRate(int) * 100)}% · 금은 들지 않아요</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(spySuccessRate(int) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
 }
 
 function trainDialog() {
@@ -429,7 +429,7 @@ function plotDialog(kind) {
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
     : `성공하면 그 성의 <b>치안</b>을 약 ${Math.floor(int * PLOT.rumor.peacePerInt)}, 농업·상업을 약 ${Math.floor(int * PLOT.rumor.devPerInt)}씩 낮춰요.`;
   pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 ${PLOT.critMul}배!</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(PLOT.successRate(int) * 100)}% · 금은 들지 않아요</p>`,
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(PLOT.successRate(int) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`,
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
 
@@ -861,7 +861,7 @@ function renderCommands() {
       ${o ? `<button class="mini x" data-x="${i}" title="이 칸 비우기">✕</button>` : ''}</li>`).join('');
   const at = cityAtSlot(me(), slot);
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
-  const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력'), btn('spy', '첩보', '적 성 엿보기 · 지력')].join('');
+  const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
   const etc = [btn('explore', '탐색', cost('explore')),
     btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기')].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로

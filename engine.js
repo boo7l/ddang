@@ -713,6 +713,8 @@ function runSpy(g, o) {
   if (!c) return '없는 성';
   if (!c.faction || c.faction === g.faction) return `${josa(c.name, '은는')} 이제 ${c.faction ? '아군 성' : '빈 땅'}`;
   if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
+  const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다)
+  if (why) return why;
   addMerit(g, RULES.merit.plot);
   if (Math.random() >= spySuccessRate(effStats(g).int)) {
     addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
@@ -736,6 +738,8 @@ function runPlot(g, kind, o) {
   const cs = S.cities[c.id], name = PLOT_NAME[kind];
   if (!c.faction || c.faction === g.faction) return `${josa(c.name, '은는')} 이제 ${c.faction ? '아군 성' : '빈 땅'}`;
   if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
+  const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다, 2026-10-26)
+  if (why) return why;
   const int = effStats(g).int, r = rollPlot(int);
   if (r === 'fail') {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
