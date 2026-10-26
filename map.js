@@ -105,7 +105,7 @@ function start(data) {
   onMapReady(); // 어느 화면을 보여줄지는 game.js가 정한다
 }
 
-// 지도는 data/map_190.js에 들어 있다 (서버가 쓰는 지도와 같은 파일에서 만든다: supabase/build.sh).
+// 지도는 data/map.js에 들어 있다 (서버가 쓰는 지도와 같은 파일에서 만든다: supabase/build.sh).
 // 따로 읽어 오지 않으니 파일을 더블클릭해 열어도, 웹에서 열어도 늘 같은 지도가 바로 뜬다
 // (game.js까지 다 읽은 뒤에 시작한다)
 addEventListener('DOMContentLoaded', () => start(JSON.parse(JSON.stringify(MAP_DATA))));

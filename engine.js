@@ -62,7 +62,8 @@ function newWorld(season = 1) {
     season,      // 몇 번째 시즌인지 (명예의 전당에 쓴다)
     timeOffset: 0,
     incomeAt: turnStart(t), // 마지막으로 처리한 턴 시각
-    turn: 0,      // 지난 턴 수. 게임 속 날짜 = 190년 1월 + turn달
+    startYear: RULES.startYear, // 이 시즌이 시작한 해 (시나리오)
+    turn: 0,      // 지난 턴 수. 게임 속 날짜 = 시작한 해 1월 + turn달
     foodPrice: RULES.foodBuy.start, // 군량 시세 (금 1당 군량)
     generals: {}, // 계정id → 장수
     cities: {},

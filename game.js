@@ -58,7 +58,7 @@ function unifyDialog(u = S.unified) {
   openModal(`
     <h2>🏆 천하통일</h2>
     <p class="unifyHead"><span class="swatch" style="background:${f.color}"></span><b class="hi">${esc(f.name)}</b> 세력이 천하를 손에 넣었습니다!</p>
-    <p class="dim">${RULES.startYear}년 ${RULES.startMonth}월 → ${dateText(u.turn)} (${u.turn}달)</p>
+    <p class="dim">${dateText(0)} → ${dateText(u.turn)} (${u.turn}달)</p>
     <h3>공적 순위 <span class="dim small">· 상위 10명</span></h3>
     <table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table>
     <p class="dim">이번 시즌은 여기서 끝났어요. 다음 시즌을 기다려 주세요.</p>
@@ -112,6 +112,7 @@ function adminDialog(tab = 'users', fid = null) {
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
 function adminToolsDialog() {
   const state = !S ? '-' : S.unified ? '천하통일 (턴 멈춤)' : S.paused ? '⏸ 멈춤' : '흐르는 중';
+  const door = S && (S.closed || S.unified) ? '🔒 닫힘 (관리자만 들어옴)' : '🔓 열림';
   const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
   openModal(`
     <h2>🛠 관리 <span class="dim small">· 관리자만 보여요</span></h2>
@@ -119,6 +120,7 @@ function adminToolsDialog() {
       <tr><th>날짜</th><td>${S ? `${dateText(S.turn)} (${S.turn}턴)` : '-'} · ${state}</td></tr>
       <tr><th>시각</th><td>${S ? fmtTime(now()) : '-'}${ahead ? ` <span class="dim">(실제보다 ${ahead}분 빠름)</span>` : ''}</td></tr>
       <tr><th>장수</th><td>${S ? allGenerals().length : 0}명</td></tr>
+      <tr><th>문</th><td>${door}</td></tr>
     </table>
     <p class="sub">턴 <span class="dim">(모든 장수에게 적용)</span></p>
     <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button>
@@ -126,6 +128,7 @@ function adminToolsDialog() {
     <p class="sub">보기</p>
     <p><button id="aView">👁 관리자 보기</button> <button id="aUnify">통일 미리 보기</button></p>
     <p class="sub">시즌·계정</p>
+    <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     <p><a class="link" href="editor.html">▶ 지도 편집기 (내 컴퓨터에서만)</a></p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
@@ -136,8 +139,12 @@ function adminToolsDialog() {
       const fid = (me() && me().faction) || (playable()[0] && playable()[0].id);
       unifyDialog({ faction: fid, turn: S.turn });
     };
+    $('#aDoor').onclick = async () => {
+      if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
+      await call('door'); afterAdmin();
+    };
     $('#aSeason').onclick = async () => {
-      if (!confirm('새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 멈춘 채로 기다리다가, 첫 장수가 세력에 들어오면 190년 1월부터 턴이 흘러요.')) return;
+      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n첫 장수가 세력에 들어오면 ${RULES.startYear}년 ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
       if (await call('newSeason')) location.reload();
     };
     $('#aReset').onclick = async () => {
@@ -192,10 +199,11 @@ async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
     const s = await api('status');
-    preparing = s.preparing ? s.season + 1 : 0;
+    preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
     el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일`
+      : s.preparing ? `🛠 시즌 ${s.season} · 준비 중`
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
       : `⚔ 시즌 ${s.season} · 진행 중`; // 첫 장수를 기다리는 중이어도 "진행 중"으로 보인다
   } catch (e) { el.innerHTML = ''; }
@@ -211,7 +219,7 @@ async function renderHof() {
   const sw = c => (c ? `<span class="swatch" style="background:${c}"></span>` : '');
   box.innerHTML = `<h3 class="hofTitle">🏆 명예의 전당</h3>` + data.map((h, n) => `
     <details class="hofSeason">
-      <summary>시즌 ${h.season} · ${sw(h.winner_color)}${esc(h.winner || '?')} 천하통일 <span class="dim">(${dateText(h.turn)})</span></summary>
+      <summary>시즌 ${h.season} · ${sw(h.winner_color)}${esc(h.winner || '?')} 천하통일 <span class="dim">(${dateText(h.turn, h.start_year || 190)})</span></summary>
       <table class="hofTable"><tr><th></th><th>이름</th>${h.season > 1 ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}${(h.heroes || []).some(x => x.name === g.name) ? `<span class="medal" title="개국공신">${MEDAL}</span>` : ''}</td>${h.season > 1 ? `<td>${g.faction ? `${sw(g.color)}${esc(g.faction)}` : '<span class="dim">-</span>'}</td>` : ''}
         <td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td></tr>`).join('')}</table>
       ${h.heroes && h.heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${h.heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}

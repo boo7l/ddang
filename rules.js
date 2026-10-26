@@ -74,7 +74,7 @@ const RULES = {
   foodStart: { 1: 1500, 2: 2000, 3: 3000 },  // 시즌을 시작할 때 성마다 있는 군량 (2026-10-26, 다음 시즌부터)
 
   // 달력: 1턴 = 게임 속 1달 (기획서 6장)
-  startYear: 190, startMonth: 1,
+  startYear: 200, startMonth: 1, // 시나리오 시작 (2026-10-27 시즌 3부터 200년 지도. 시즌 1·2는 190년). 새 시즌을 열 때 세계에 S.startYear로 남긴다
   goldMonths: [1, 4, 7, 10], // 금 수입이 들어오는 달
   harvestMonths: [4, 10],   // 군량 수확이 들어오는 달 (먹는 것은 매달)
   // 수입 (임시값)
@@ -213,11 +213,11 @@ function harvestFood(cs, grade) {
   cs.food = Math.min(foodMax(grade), cs.food + Math.floor((cs.agri * RULES.foodPerAgri + RULES.foodBase) * peaceIncome(cs.peace)));
 }
 // 게임 속 날짜: n번째 턴이 몇 년 몇 월인지
-function dateOf(turn) {
+function dateOf(turn, year = (typeof S !== "undefined" && S && S.startYear) || RULES.startYear) { // 해는 그 세계가 시작한 해 (명예의 전당은 그 시즌의 해를 준다)
   const m = RULES.startMonth - 1 + turn;
-  return { year: RULES.startYear + Math.floor(m / 12), month: (m % 12) + 1 };
+  return { year: year + Math.floor(m / 12), month: (m % 12) + 1 };
 }
-const dateText = turn => { const d = dateOf(turn); return `${d.year}년 ${d.month}월`; };
+const dateText = (turn, year) => { const d = dateOf(turn, year); return `${d.year}년 ${d.month}월`; };
 
 // 매달 장수의 병사가 군량을 먹는다. 모자라면 병력이 흩어진다. 굶었으면 true
 function feedTroops(g, cs) {
