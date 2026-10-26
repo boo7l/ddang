@@ -102,6 +102,7 @@ h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left
 .era { color: var(--label); }
 .season { color: var(--title); border: 1px solid var(--gold-dark); padding: 0 6px; }
 .season:empty { display: none; }
+.scenario { color: var(--title); } .scenario:empty { display: none; } /* 시나리오 이름 (2026-10-27) */
 .legal { margin: 14px 0 0; color: var(--dim); } /* 첫 화면 맨 아래 처리방침·약관 링크 */
 #check { margin-left: auto; }
 #check.ok { color: var(--ok); }
