@@ -6,45 +6,38 @@ const SUPA_URL = 'https://zycnheerlcsngdtpnkhj.supabase.co';
 const SUPA_KEY = 'sb_publishable_0V5WhlkuNWYr76Wy5Co_TQ_tXemKUr9';
 const sb = window.supabase ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
 
-// 지금 접속한 사람: { id, nickname } (없으면 null). nickname = 아이디 (계정 이름)
+// 지금 접속한 사람: { id, nickname } (없으면 null). nickname = 게임 아이디 (계정 이름).
+// 구글로 처음 들어와 아직 아이디를 안 정했으면 { id, nickname: null }
 let ME = null;
-
-// 로그인 = 아이디 + 비밀번호. Supabase는 이메일로 로그인하므로 아이디를 가짜 이메일로 바꿔 쓴다
-// (한글 아이디도 되도록 글자를 16진수로 적는다. 진짜 메일은 보내지 않는다)
-const idToEmail = id => 'u' + Array.from(new TextEncoder().encode(id.toLowerCase()), b => b.toString(16).padStart(2, '0')).join('') + '@sam.game';
 const ID_RULE = /^[0-9A-Za-z가-힣_]{2,8}$/;
-// Supabase는 비밀번호를 6자 이상만 받는다. 게임은 4자부터 받으므로 뒤에 정해진 글자를 붙여 넘긴다 (서버 함수의 realPw와 같아야 한다)
-const realPw = pw => pw + '::sam';
 
+// 로그인 상태를 읽는다. 구글 로그인에서 돌아오면 주소에 붙은 정보로 Supabase가 알아서 로그인해 둔다
 async function serverInit() {
   if (!sb) return false;
   const { data } = await sb.auth.getSession();
   const u = data.session && data.session.user;
   ME = null;
   if (!u) return true;
+  // 시즌 3부터 구글 로그인만: 예전 익명 계정과 아이디·비밀번호(가짜 메일) 계정은 로그아웃시킨다
+  if (u.is_anonymous || String(u.email || '').endsWith('@sam.game')) { await sb.auth.signOut(); return true; }
   const { data: prof, error } = await sb.from('profiles').select('nickname').eq('id', u.id).maybeSingle();
   if (error) throw error;
-  // 예전 방식(닉네임만)으로 만든 계정이나 프로필이 없는 계정은 더 쓰지 않는다
-  if (!prof || u.is_anonymous) { await sb.auth.signOut(); return true; }
-  ME = { id: u.id, nickname: prof.nickname };
+  ME = { id: u.id, nickname: prof ? prof.nickname : null };
   return true;
 }
 
-const LOGIN_FAIL = '아이디나 비밀번호가 맞지 않아요.';
-
-async function signIn(id, pw) {
-  const { data, error } = await sb.auth.signInWithPassword({ email: idToEmail(id), password: realPw(pw) });
-  if (error) throw new Error(/invalid/i.test(error.message) ? LOGIN_FAIL : error.message);
-  await serverInit();
-  if (!ME) throw new Error(LOGIN_FAIL);
-  return data;
+// 구글 로그인: 구글 창으로 갔다가 이 페이지로 돌아온다 (그 뒤 serverInit이 로그인 상태를 읽는다)
+async function signInGoogle() {
+  const back = location.origin + location.pathname;
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: back } });
+  if (error) throw new Error(error.message);
 }
 
-// 계정 만들기는 서버 함수가 한다 (아이디 중복 검사·확인 메일 없이 바로 쓰는 계정). 만든 뒤 바로 로그인
-async function signUp(id, pw) {
-  const d = await api('signup', { id, pw });
+// 처음 들어온 사람: 게임 아이디를 정한다 (만 14세 이상·처리방침·약관 동의를 함께 보낸다)
+async function registerNickname(nickname) {
+  const d = await api('register', { nickname, agree: true });
   if (d.error) throw new Error(d.error);
-  await signIn(id, pw);
+  await serverInit();
 }
 
 // 게임 서버(Edge Function "game")에 요청한다. 돌려받는 것: { error, view, serverNow, admin }

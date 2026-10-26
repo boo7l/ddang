@@ -592,51 +592,46 @@ function showScreen(id) {
 }
 
 // ===== 1. 메인 / 로그인 =====
-// 아이디·비밀번호로 로그인하거나, 같은 화면에서 계정을 만든다. 로그인해 두면 다음에 열 때 바로 들어간다
-let authMode = 'login'; // 'login' 로그인 | 'new' 계정 만들기
+// 구글 로그인 (2026-10-26 시즌 3부터). 만 14세 이상·처리방침·약관에 동의해야 단추를 누를 수 있다.
+// 구글로 처음 들어온 사람은 게임 아이디를 정한다. 로그인해 두면 다음에 열 때 바로 들어간다
+const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가 미리 되어 있다 (이 브라우저에서만)
 
 function showTitle(msg) {
   showScreen('title');
   renderHof();
   renderSeasonBadge();
-  setAuthMode(authMode);
+  const needNick = !!(ME && !ME.nickname);
+  $('#tGoogleBox').hidden = needNick;
+  $('#tNickBox').hidden = !needNick;
+  let agreed = false;
+  try { agreed = localStorage.getItem(AGREE_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 매번 체크 */ }
+  $('#tAge').checked = $('#tAgree').checked = agreed;
+  updateGoogleBtn();
   $('#tMsg').hidden = !msg;
   $('#tMsg').textContent = msg || '';
 }
+const updateGoogleBtn = () => { $('#tGoogle').disabled = !($('#tAge').checked && $('#tAgree').checked); };
+const sayTitle = m => { $('#tMsg').hidden = false; $('#tMsg').textContent = m; };
 
-// 로그인 ↔ 계정 만들기. 입력칸은 다시 만들지 않고 보이기·글자만 바꾼다 (한글 입력이 안 깨지게)
-function setAuthMode(mode) {
-  authMode = mode;
-  const isNew = mode === 'new';
-  $('#tTabLogin').className = isNew ? '' : 'on';
-  $('#tTabNew').className = isNew ? 'on' : '';
-  $('#tHelp').hidden = !isNew;
-  $('#tPw2').hidden = !isNew;
-  $('#tId').placeholder = isNew ? '아이디 (2~8자)' : '아이디';
-  $('#tPw').placeholder = isNew ? '비밀번호 (4자 이상)' : '비밀번호';
-  $('#tPw').autocomplete = isNew ? 'new-password' : 'current-password';
-  $('#tGo').textContent = isNew ? '계정 만들고 시작하기' : '로그인';
-  $('#tMsg').hidden = true;
+async function startGoogle() {
+  if (!sb) { sayTitle('서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); return; }
+  if (!($('#tAge').checked && $('#tAgree').checked)) { sayTitle('만 14세 이상 확인과 처리방침·약관 동의를 체크해 주세요.'); return; }
+  try { localStorage.setItem(AGREE_KEY, '1'); } catch (e) { /* 무시 */ }
+  $('#tGoogle').disabled = true;
+  try { await signInGoogle(); } catch (e) { sayTitle(e.message || String(e)); updateGoogleBtn(); }
 }
 
-async function submitAuth() {
-  const id = $('#tId').value.trim(), pw = $('#tPw').value;
-  const say = m => { $('#tMsg').hidden = false; $('#tMsg').textContent = m; };
-  if (!sb) { say('서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.'); return; }
-  if (authMode === 'new') {
-    if (!ID_RULE.test(id)) { say('아이디는 2~8자의 한글·영문·숫자로 정해 주세요.'); return; }
-    if (pw.length < 4) { say('비밀번호는 4자 이상으로 정해 주세요.'); return; }
-    if (pw !== $('#tPw2').value) { say('비밀번호 두 칸이 서로 달라요.'); return; }
-  } else if (!id || !pw) { say('아이디와 비밀번호를 적어 주세요.'); return; }
-  $('#tGo').disabled = true;
+async function submitNick() {
+  const nick = $('#tNick').value.trim();
+  if (!ID_RULE.test(nick)) { sayTitle('아이디는 2~8자의 한글·영문·숫자로 정해 주세요.'); return; }
+  $('#tNickGo').disabled = true;
   try {
-    if (authMode === 'new') await signUp(id, pw); else await signIn(id, pw);
-    $('#tPw').value = $('#tPw2').value = '';
+    await registerNickname(nick);
     enterFlow();
   } catch (e) {
-    say(e.message || String(e));
+    sayTitle(e.message || String(e));
   } finally {
-    $('#tGo').disabled = false;
+    $('#tNickGo').disabled = false;
   }
 }
 
@@ -644,8 +639,20 @@ async function logout() {
   try { await serverSignOut(); } catch (e) { /* 무시 */ }
   S = null;
   syncChatChannel(); // 채팅 채널을 끊는다
-  setAuthMode('login');
   showTitle();
+}
+
+// 회원 탈퇴: 장수와 계정을 지운다 (되돌릴 수 없음). 이미 쓴 채팅은 처리방침대로 3개월 뒤 지워진다
+async function withdraw() {
+  if (!confirm(`정말 탈퇴할까요?\n\n- 계정(구글 연결, 게임 아이디)과 이번 시즌 장수가 모두 지워져요.\n- 되돌릴 수 없어요.\n- 이미 쓴 세력 채팅은 작성일로부터 3개월 뒤 지워져요.`)) return;
+  try {
+    const d = await api('leave');
+    if (d.error) { alert(d.error); return; }
+  } catch (e) { alert('탈퇴하지 못했어요: ' + (e.message || e)); return; }
+  try { await serverSignOut(); } catch (e) { /* 무시 */ }
+  S = null;
+  syncChatChannel();
+  showTitle('탈퇴했어요. 그동안 고마웠어요!');
 }
 
 // ===== 7. 장수 생성 화면 =====
@@ -1019,7 +1026,8 @@ function cityDetailRows(c) {
 // map.js가 지도를 다 읽으면 부른다. 1. 들어와 있지 않으면 로그인 화면부터
 async function onMapReady() {
   try { await serverInit(); } catch (e) { /* 서버가 안 되면 첫 화면에서 알려 준다 */ }
-  if (ME) enterFlow(); else showTitle(sb ? '' : '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.');
+  // 로그인돼 있고 아이디도 정했으면 바로 게임으로, 아니면 첫 화면 (구글로 처음 왔으면 아이디 정하기)
+  if (ME && ME.nickname) enterFlow(); else showTitle(sb ? '' : '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.');
 }
 
 // 2~5. 장수·세력이 있는지 보고 알맞은 화면으로 보낸다
@@ -1038,9 +1046,11 @@ async function enterFlow() {
 
 $('#cStart').onclick = createGeneral;
 $('#cRoll').onclick = () => { draft.base = rollStats(); renderCreateStats(); };
-$('#tForm').onsubmit = e => { e.preventDefault(); submitAuth(); };
-$('#tTabLogin').onclick = () => setAuthMode('login');
-$('#tTabNew').onclick = () => setAuthMode('new');
+$('#tGoogle').onclick = startGoogle;
+$('#tAge').onchange = $('#tAgree').onchange = updateGoogleBtn;
+$('#tNickBox').onsubmit = e => { e.preventDefault(); submitNick(); };
+$('#tNickCancel').onclick = logout;
+$('#withdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 $('#adminBtn').onclick = adminToolsDialog;

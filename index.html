@@ -15,7 +15,7 @@
     <div id="check" hidden></div>
     <div class="hdrRight">
       <button id="helpBtn" class="main">📜 처음이세요? 도움말</button>
-      <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="logout">로그아웃</button></div>
+      <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="logout">로그아웃</button><button id="withdraw" class="mini danger" title="계정과 장수 정보를 지워요">탈퇴</button></div>
     </div>
   </header>
 
@@ -25,13 +25,18 @@
     <p class="bigTitle">땅국지</p>
     <p class="hi center">땅따먹기 대소동</p>
     <p id="tSeason" class="center tSeason"></p><!-- 지금 시즌 상태 -->
-    <div class="tTabs"><button id="tTabLogin" class="on">로그인</button><button id="tTabNew">계정 만들기</button></div>
-    <p class="dim center" id="tHelp" hidden>아이디는 나만 쓰는 <b class="hi">계정 이름</b>이에요. (한글·영문·숫자)<br>게임 속 <b class="hi">장수 이름</b>은 다음 단계에서 따로 정해요.</p>
-    <form id="tForm" autocomplete="on">
-      <input type="text" id="tId" maxlength="8" placeholder="아이디" autocomplete="username">
-      <input type="password" id="tPw" maxlength="72" placeholder="비밀번호" autocomplete="current-password">
-      <input type="password" id="tPw2" maxlength="72" placeholder="비밀번호 한 번 더" autocomplete="new-password" hidden>
-      <button type="submit" id="tGo" class="btn big">로그인</button>
+    <!-- 구글 로그인 (2026-10-26 시즌 3부터). 처음엔 동의 두 가지를 체크해야 단추를 누를 수 있다 -->
+    <div id="tGoogleBox" class="tAuth">
+      <label class="agree"><input type="checkbox" id="tAge"> 만 14세 이상입니다</label>
+      <label class="agree"><input type="checkbox" id="tAgree"> <a class="link" href="privacy.html" target="_blank">개인정보 처리방침</a>과 <a class="link" href="terms.html" target="_blank">이용약관</a>에 동의합니다 (필수)</label>
+      <button id="tGoogle" class="btn big">구글로 시작하기</button>
+    </div>
+    <!-- 구글로 처음 들어온 사람: 게임 아이디 정하기 -->
+    <form id="tNickBox" class="tAuth" autocomplete="off" hidden>
+      <p class="dim center">처음 오셨네요! 게임에서 쓸 <b class="hi">아이디</b>를 정해 주세요. (2~8자, 한글·영문·숫자)<br>게임 속 <b class="hi">장수 이름</b>은 다음 단계에서 따로 정해요.</p>
+      <input type="text" id="tNick" maxlength="8" placeholder="아이디">
+      <button type="submit" id="tNickGo" class="btn big">시작하기</button>
+      <p class="center"><button type="button" id="tNickCancel" class="mini">다른 구글 계정으로</button></p>
     </form>
     <p id="tMsg" class="center" hidden></p>
     <div id="hof"></div><!-- 시즌별 명예의 전당 (로그인 전에도 보인다) -->
