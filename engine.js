@@ -174,6 +174,11 @@ function checkUnify(fid) {
 }
 
 // 공적 순위: 모든 장수를 공적 순으로
+// 가장 오래 몸담은 세력 (같으면 지금 세력). 명예의 전당과 통일 화면의 공적 순위에 쓴다
+function homeFaction(g) {
+  const turns = g.factionTurns || {};
+  return Object.keys(turns).reduce((best, f) => (!best || turns[f] > turns[best] || (turns[f] === turns[best] && f === g.faction) ? f : best), null) || g.faction;
+}
 const meritRanking = () => allGenerals()
   .map(g => ({ id: g.id, name: g.name, faction: g.faction, merit: g.merit })).sort((a, b) => b.merit - a.merit);
 

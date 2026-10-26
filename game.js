@@ -53,7 +53,8 @@ let celebrated = false; // 이번에 페이지를 연 뒤 축하 화면을 띄�
 // u를 주면 그 내용으로 보여 준다 (개발자 도구의 미리 보기: 진행 상태는 바꾸지 않는다)
 function unifyDialog(u = S.unified) {
   const f = factionById(u.faction);
-  const rows = rankRows(meritRanking());
+  // 공적 순위의 소속은 명예의 전당처럼 가장 오래 몸담은 세력으로 (2026-10-27)
+  const rows = rankRows(meritRanking().map(r => ({ ...r, faction: homeFaction(S.generals[r.id]) })));
   openModal(`
     <h2>🏆 천하통일</h2>
     <p class="unifyHead"><span class="swatch" style="background:${f.color}"></span><b class="hi">${esc(f.name)}</b> 세력이 천하를 손에 넣었습니다!</p>
@@ -157,7 +158,7 @@ function afterAdmin() {
 // 모든 장수의 공적 순위. 세계를 새로 받아 올 때마다(턴이 바뀔 때, 1분마다) 최신으로 바뀐다
 // 공적 순위 표의 줄들: 상위 10명만. 내가 10위 밖이면 맨 아래에 내 줄을 따로 붙인다
 function rankRows(list) {
-  const isMe = g => me() && g.name === me().name && g.faction === me().faction;
+  const isMe = g => g.id === MY_ID; // 소속을 바꿔 보여 줄 때도 나를 찾게 계정 id로
   const myIdx = list.findIndex(isMe);
   const shown = list.map((g, i) => [g, i]).filter(([, i]) => i < 10 || i === myIdx);
   return shown.map(([g, i]) => {
