@@ -35,6 +35,8 @@ async function call(action, payload = {}) {
   busy = true;
   try {
     const d = await api(action, payload);
+    // 시즌 준비 중이라 서버가 들여보내지 않으면 로그아웃하고 첫 화면으로 (관리자는 예외)
+    if (d.preparing) { await logout(); sayTitle(d.error); return null; }
     applyView(d);
     if (d.error) { alert(d.error); return false; }
     return true;
@@ -176,10 +178,21 @@ function rankDialog() {
 }
 
 // 첫 화면: 지금 시즌 상태 (로그인 없이 서버에 물어본다)
+// 시즌이 끝나고 새 시즌을 시작하기 전에는 관리자만 들어온다 (2026-10-27). 관리자는 주소 끝에 ?admin을 붙여 로그인 단추를 연다
+let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
+const ADMIN_DOOR = new URLSearchParams(location.search).has('admin');
+function applyLoginGate() {
+  const closed = preparing && !ADMIN_DOOR;
+  $('#tPrep').hidden = !closed;
+  $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 열리면 다시 들어와 주세요.` : '';
+  if (closed) $('#tGoogleBox').hidden = $('#tNickBox').hidden = true;
+}
 async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
     const s = await api('status');
+    preparing = s.preparing ? s.season + 1 : 0;
+    applyLoginGate();
     const f = s.unified && factionById(s.unified);
     el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일`
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
@@ -614,6 +627,7 @@ function showTitle(msg) {
   const needNick = !!(ME && !ME.nickname);
   $('#tGoogleBox').hidden = needNick;
   $('#tNickBox').hidden = !needNick;
+  applyLoginGate();
   let agreed = false;
   try { agreed = localStorage.getItem(AGREE_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 매번 체크 */ }
   $('#tAge').checked = $('#tAgree').checked = agreed;
@@ -1069,7 +1083,9 @@ async function onMapReady() {
 async function enterFlow() {
   MY_ID = ME.id;
   try { localStorage.removeItem('sam2-save'); } catch (e) { /* 서버로 옮기기 전 브라우저 저장은 이제 안 쓴다 */ }
-  if (!(await call('state'))) { showTitle('서버에서 세계를 받아 오지 못했어요. 잠시 뒤 다시 들어가 주세요.'); return; }
+  const ok = await call('state');
+  if (ok === null) return; // 시즌 준비 중: 이미 첫 화면으로 돌아갔다
+  if (!ok) { showTitle('서버에서 세계를 받아 오지 못했어요. 잠시 뒤 다시 들어가 주세요.'); return; }
   renderLegend();
   // 2. 이번 시즌 내 장수가 없으면 → 7. 장수 생성
   if (!me()) { showCreate(); return; }
