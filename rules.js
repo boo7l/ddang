@@ -45,6 +45,7 @@ const RULES = {
   merit: { domestic: 10, draft: 10, buy: 10, transport: 10, siege: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
   meritPerKill: 200,        // 피해 공적: 전투에서 없앤 적 병력 200명당 공적 1 (공격·수비 모두, 2026-10-26)
   meritPerWall: 30,         // 성벽 공적: 성벽 공격으로 깎은 방어 30당 공적 1 (2026-10-26)
+  isolatedLoss: 0.5,        // 고립된 성(이웃에 우리 성 없음)이 함락되면 그 성 장수는 가장 가까운 우리 성으로 가되 병력 50%를 잃는다 (2026-10-26)
   // 첩보: 엿본 정보가 유효한 시간 (임시값)
   spyTurns: 6, spyBase: 0.05, spyMax: 0.9, // 첩보: 성공하면 6턴 동안 보임, 성공 확률 = 지력 ÷ 100 + 5% (최대 90%)
   startGold: 500,           // 임시: 장수를 만들 때 가진 금
@@ -104,6 +105,8 @@ const RULES = {
   captureWall: { 1: 100, 2: 200, 3: 300 },
   // 일기토 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
   duel: { minWar: 70, chance: 0.1, loserLoss: 0.3, exp: 40 },
+  // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 × 0.1)% 확률로 일방 공격. 피해 = (50~100) × 10 × (지력 차이 ÷ 10)^0.7
+  scheme: { minInt: 70, chancePerInt: 0.001, base: [50, 100], ref: 10, exp: 0.7, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'] },
 
   // 병종과 훈련 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
@@ -314,6 +317,18 @@ function fightRounds(att, def, wall, left) {
       l.troops -= loss;
       w.duelWins = (w.duelWins || 0) + 1;
       lines.push(`${used}합: ⚡ 일기토! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${loss.toLocaleString('ko-KR')}`);
+      continue;
+    }
+    // 책략 (2026-10-26): 지력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (지력 ÷ 10)% 확률로 보통 교전 대신 일방적으로 친다.
+    // 피해 = (50~100) × 10 × (지력 차이 ÷ 10)^0.7. 병종·공수·수비대장 가리지 않음, 병력 상한 없음
+    const C = RULES.scheme, ai = att.stats.int || 0, di = def.stats.int || 0;
+    const sch = ai >= C.minInt && ai > di ? [att, def, ai - di] : di >= C.minInt && di > ai ? [def, att, di - ai] : null;
+    if (sch && Math.random() < sch[0].stats.int * C.chancePerInt) {
+      const [me, foe, gap] = sch;
+      const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow(gap / C.ref, C.exp)));
+      foe.troops -= loss;
+      const kind = C.kinds[Math.floor(Math.random() * C.kinds.length)];
+      lines.push(`${used}합: ${kind}! ${me.name}(지력 ${me.stats.int})의 계책에 ${foe.name} 부대 -${loss.toLocaleString('ko-KR')}`);
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다

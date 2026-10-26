@@ -448,17 +448,35 @@ function seize(cs) {
 }
 
 // 성이 떨어졌을 때, 그 성에 있던 옛 세력 장수들은 무작위 인접 아군 성으로 물러난다. 보고서 줄을 돌려준다
+// 이웃에 우리 성이 없으면(고립) 포위를 뚫고 칸 수로 가장 가까운 우리 성으로 가되 병력을 RULES.isolatedLoss만큼 잃는다 (2026-10-26)
+function nearestOwnCities(c, fid) {
+  const seen = new Set([c.id]);
+  let ring = [c];
+  while (ring.length) {
+    const next = [];
+    for (const x of ring) for (const n of neighborsOf(MAP, x)) if (!seen.has(n.id)) { seen.add(n.id); next.push(n); }
+    const found = next.filter(n => n.faction === fid);
+    if (found.length) return found; // 같은 거리면 여러 곳 (그중 무작위)
+    ring = next;
+  }
+  return [];
+}
 function retreatFrom(c, oldFaction) {
   const out = [];
   for (const g of allGenerals()) {
     if (g.city !== c.id || g.faction !== oldFaction) continue;
     const near = neighborsOf(MAP, c).filter(n => n.faction === oldFaction);
-    const any = citiesOfFaction(oldFaction);
-    const to = near.length ? near[randInt(0, near.length - 1)] : any.length ? any[randInt(0, any.length - 1)] : null;
+    const far = near.length ? [] : nearestOwnCities(c, oldFaction);
+    const list = near.length ? near : far;
+    const to = list.length ? list[randInt(0, list.length - 1)] : null;
     if (!to) { g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…`); continue; }
     g.city = to.id;
+    if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
+      const lost = Math.ceil(g.troops * RULES.isolatedLoss);
+      g.troops -= lost;
+      out.push(`${josa(g.name, '은는')} 포위를 뚫고 ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
+    } else out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다.`);
     capDefense(g);
-    out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다.`);
   }
   return out;
 }
