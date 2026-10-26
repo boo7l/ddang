@@ -157,6 +157,7 @@ function joinFaction(g, fid, cityId) {
   const picked = cityById(cityId);
   const home = picked && picked.faction === f.id ? picked : startCity(f.id);
   g.faction = f.id;
+  g.joins = (g.joins || 0) + 1; // 세력에 들어간 횟수 (개국공신은 한 번만 들어간 장수)
   g.city = home.id;
   capDefense(g);
   addLog(g, `${g.name}, ${f.name} 세력에 몸을 담다. ${home.name}에서 첫발을 내딛는다.`);
@@ -174,7 +175,7 @@ function checkUnify(fid) {
 
 // 공적 순위: 모든 장수를 공적 순으로
 const meritRanking = () => allGenerals()
-  .map(g => ({ name: g.name, faction: g.faction, merit: g.merit })).sort((a, b) => b.merit - a.merit);
+  .map(g => ({ id: g.id, name: g.name, faction: g.faction, merit: g.merit })).sort((a, b) => b.merit - a.merit);
 
 // 기능 스위치가 꺼진 명령인지
 const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', drill: 'drill', explore: 'explore', shop: 'shop', buy: 'shop' };

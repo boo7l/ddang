@@ -349,6 +349,9 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 #who #whoName { color: var(--title); }
 #title { max-width: 460px; margin: 60px auto; text-align: center; }
 #title .bigTitle { font-size: 64px; line-height: 1.1; margin: 20px 0 4px; color: var(--title); letter-spacing: 8px; text-shadow: 3px 3px 0 #000; }
+/* 로고 그림 (101×34 도트): 정수 배로만 키워야 도트가 고르게 보인다 (2026-10-27) */
+.logoBig { width: 202px; height: 68px; image-rendering: pixelated; display: block; margin: 0 auto; }
+.logoTop { width: 101px; height: 34px; image-rendering: pixelated; vertical-align: middle; }
 .center { text-align: center; }
 #title .btn.big { margin-top: 16px; }
 #title input { display: block; width: 240px; margin: 8px auto 0; text-align: center; }
@@ -507,6 +510,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #hof .hofTable { width: 100%; margin-top: 4px; border-collapse: collapse; }
 #hof .hofTable td { padding: 1px 4px; }
 #hof .hofTable .num { text-align: right; }
+#hof .hofHeroes { margin: 6px 4px 2px; color: var(--title); }
+.medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
 #hof .swatch { width: 12px; height: 12px; }
 #hof .hofTable th { color: var(--label); font-weight: normal; text-align: left; padding: 1px 4px; } #hof .hofTable th.num { text-align: right; }
 #title .tSeason { margin: 10px 0 0; padding: 4px 8px; display: inline-block; color: var(--title); border: 1px solid var(--gold-dark); background: var(--panel-dark); } #title .tSeason:empty { display: none; }

@@ -162,7 +162,7 @@ function rankRows(list) {
   const shown = list.map((g, i) => [g, i]).filter(([, i]) => i < 10 || i === myIdx);
   return shown.map(([g, i]) => {
     const mine = isMe(g);
-    return `${i >= 10 ? '<tr><td colspan="4" class="dim center">…</td></tr>' : ''}<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}</td>
+    return `${i >= 10 ? '<tr><td colspan="4" class="dim center">…</td></tr>' : ''}<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}${medalOf(g.id)}</td>
       <td>${g.faction ? `<span class="swatch" style="background:${factionById(g.faction).color}"></span>${esc(factionById(g.faction).name)}` : '<span class="dim">재야</span>'}</td>
       <td class="num">${fmt(g.merit)}</td></tr>`;
   }).join('');
@@ -211,8 +211,9 @@ async function renderHof() {
   box.innerHTML = `<h3 class="hofTitle">🏆 명예의 전당</h3>` + data.map((h, n) => `
     <details class="hofSeason">
       <summary>시즌 ${h.season} · ${sw(h.winner_color)}${esc(h.winner || '?')} 천하통일 <span class="dim">(${dateText(h.turn)})</span></summary>
-      <table class="hofTable"><tr><th></th><th>이름</th>${h.season > 1 ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}</td>${h.season > 1 ? `<td>${g.faction ? `${sw(g.color)}${esc(g.faction)}` : '<span class="dim">-</span>'}</td>` : ''}
+      <table class="hofTable"><tr><th></th><th>이름</th>${h.season > 1 ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}${(h.heroes || []).some(x => x.name === g.name) ? `<span class="medal" title="개국공신">${MEDAL}</span>` : ''}</td>${h.season > 1 ? `<td>${g.faction ? `${sw(g.color)}${esc(g.faction)}` : '<span class="dim">-</span>'}</td>` : ''}
         <td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td></tr>`).join('')}</table>
+      ${h.heroes && h.heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${h.heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
     </details>`).join('');
 }
 
@@ -853,7 +854,7 @@ function renderMembers() {
   const list = allGenerals().filter(g => g.faction === p.faction).sort((a, b) => b.merit - a.merit);
   $('#membersTitle').textContent = `· ${f.name} ${list.length}명`;
   $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>공적</th></tr>${list.map(g => `
-      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}">${esc(g.name)}</td><td>${esc(cityById(g.city).name)}</td>
+      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}">${esc(g.name)}${medalOf(g.id)}</td><td>${esc(cityById(g.city).name)}</td>
         <td class="num">${g.unitType ? `${g.unitType[0]} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
 }
 
@@ -871,7 +872,7 @@ function renderGeneral() {
   $('#general').innerHTML = `
     <h2>장수</h2>
     <div class="gHead"><span id="gFace"></span><div>
-      <p class="gname">${esc(p.name)}</p>
+      <p class="gname">${esc(p.name)}${medalOf(p.id)}</p>
       <table class="stats">
         <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
@@ -980,11 +981,15 @@ function renderCommands() {
 // 우리 세력끼리만, 최근 50개. 서버의 세계에 함께 저장된다 (화면은 1분마다 새로 받아 온다)
 const CHAT_MAX = 50, CHAT_LEN = 100;
 const chatOf = fid => (S.chat && S.chat[fid]) || [];
+// 개국공신 훈장 (2026-10-27): 그 계정이 받은 횟수만큼 🎖 (서버가 S.medals에 { 계정 id: 개수 }로 준다)
+// 훈장 그림: 금메달 + 빨강·흰색·파랑 끈 (8×9 도트, 2026-10-27 기획자가 고름)
+const MEDAL = '<svg viewBox="0 0 8 9" shape-rendering="crispEdges"><rect x="1" y="0" width="2" height="3" fill="#c0392b"/><rect x="3" y="0" width="2" height="3" fill="#f0e0b0"/><rect x="5" y="0" width="2" height="3" fill="#2c4a8a"/><rect x="2" y="3" width="4" height="1" fill="#8a5a10"/><rect x="1" y="4" width="6" height="4" fill="#f2c230"/><rect x="2" y="8" width="4" height="1" fill="#b07a10"/><rect x="3" y="5" width="2" height="2" fill="#fff3a0"/><rect x="6" y="5" width="1" height="3" fill="#c08a10"/></svg>';
+const medalOf = id => { const n = (S && S.medals && S.medals[id]) || 0; return n ? `<span class="medal" title="개국공신 ${n}회">${MEDAL.repeat(n)}</span>` : ''; };
 // 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
 const chatWho = m => {
-  const g = m.city ? null : allGenerals().find(x => x.name === m.name);
+  const g = allGenerals().find(x => x.name === m.name); // 훈장도 지금 장수에서 찾는다
   const c = cityById(m.city || (g && g.city));
-  return esc(m.name) + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
+  return esc(m.name) + (g ? medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
 };
 async function sendChat(text) {
   text = text.trim().slice(0, CHAT_LEN);
