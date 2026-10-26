@@ -65,6 +65,7 @@
         <p class="sub">보너스 포인트 남은 것: <b id="cLeft" class="hi"></b></p>
         <table id="cStats" class="createStats"></table>
         <p class="dim">보너스 10포인트는 원하는 곳에 직접 나눠 줘요. 능력치 최대치는 120. 시작한 뒤에는 행동할 때마다 그 능력치의 경험치가 쌓여 저절로 올라요.</p>
+        <p id="cWait" class="hi center" hidden></p><!-- 장수를 지운 뒤 다시 만들기까지 남은 턴 -->
         <button id="cStart" class="btn big">이 장수로 결정</button>
       </div>
     </div>
@@ -100,7 +101,7 @@
     <!-- 셋째 칸: 명령 버튼 -->
     <aside class="cmdCol">
       <div id="commands" class="win"></div>
-      <p class="resignRow"><button id="cResign" class="mini danger" title="예약 없이 바로 세력을 떠나요">하야</button></p><!-- 예약 명령이 아니라서 명령 창 밖에 둔다 -->
+      <p class="resignRow"><button id="cResign" class="mini danger" title="예약 없이 바로 세력을 떠나요">하야</button> <button id="cDelete" class="mini danger" title="장수를 지우고 처음부터 다시 만들어요">장수 삭제</button></p><!-- 예약 명령이 아니라서 명령 창 밖에 둔다 -->
     </aside>
     <!-- 넷째 칸: 명령 예약표 -->
     <aside class="cmdCol queueCol">

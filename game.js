@@ -501,6 +501,17 @@ async function resignDialog() {
   if (await call('resign')) showJoin();
 }
 
+// 장수 삭제: 예약 없이 바로. 되돌릴 수 없고, 지운 뒤 한동안 새 장수를 못 만드니 한 번 더 묻는다 (2026-10-26)
+async function deleteGeneralDialog() {
+  const p = me();
+  if (!confirm(`장수 ${josa(p.name, '을를')} 지우고 처음부터 다시 만들까요?
+
+- 장수·병력·금·공적·능력치·기록이 모두 사라져요. 되돌릴 수 없어요.
+- 계정(아이디)은 그대로예요.
+- 지운 뒤 ${RULES.recreateWait}턴 동안은 새 장수를 만들 수 없어요.`)) return;
+  if (await call('deleteGeneral')) { slot = 0; enterFlow(); }
+}
+
 function moveDialog() {
   const from = cityAtSlot(me(), slot);
   const opts = linkedOwnCities(from.id, me().faction, RULES.moveRange).map(c =>
@@ -685,6 +696,10 @@ function showCreate() {
   draft.base = rollStats();
   renderFacePick();
   renderCreateStats();
+  // 장수를 지운 뒤 기다리는 중이면 알려 준다 (그때까지 결정 단추는 서버가 막는다)
+  const wait = S && S.myRecreateAt ? S.myRecreateAt - S.turn : 0;
+  $('#cWait').hidden = wait <= 0;
+  $('#cWait').textContent = wait > 0 ? `장수를 지운 뒤라 ${wait}턴 뒤(${dateText(S.myRecreateAt)})부터 새 장수를 만들 수 있어요.` : '';
 }
 
 // 얼굴 고르기: 큰 미리보기 + 작은 얼굴 목록
@@ -1074,6 +1089,7 @@ $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 $('#adminBtn').onclick = adminToolsDialog;
 $('#cResign').onclick = resignDialog;
+$('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = rankDialog;
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
