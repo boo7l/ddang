@@ -302,15 +302,17 @@ function attackDialog() {
   const rows = attackTargetsFrom(from.id, p.faction).map(c => {
     const f = factionById(c.faction);
     const defs = defendersOf(c);
-    const seen = canSee(p, c), d = defs[0];
+    const d = defs[0];
     const hidden = defs.some(x => !x.guard); // 장수가 지키면 병력을 몰라 예상할 수 없다
+    // 다른 세력 성의 방어는 첩보가 있어야 안다 (2026-10-26)
+    const wall = c.faction ? S.cities[c.id].wall : 0, seen = wall !== undefined;
     // 맨 앞에서 요격할 부대와 맞붙었을 때를 비교한다 (상성 포함, 지금 기준. 수비대장만 있을 때)
-    const can = d && me1.type && !hidden;
-    const mine = can ? attackPower(me1, d) : 0, def = can ? defensePower(d, c.faction ? S.cities[c.id].wall : 0, me1) : 0;
-    let guess = !seen ? '?' : !d ? '무혈입성' : !me1.type || hidden ? '?' : mine > def * 1.2 ? '유리' : mine < def * 0.8 ? '불리' : '비슷';
+    const can = d && me1.type && !hidden && seen;
+    const mine = can ? attackPower(me1, d) : 0, def = can ? defensePower(d, wall, me1) : 0;
+    // 공백지는 무혈입성, 수비 부대가 있으면 전투력 비교 (모르면 ?), 수비 부대 없는 세력 성은 아래에서 성벽으로 판단
+    let guess = !c.faction ? '무혈입성' : !can ? '?' : mine > def * 1.2 ? '유리' : mine < def * 0.8 ? '불리' : '비슷';
     let cls = guess;
     // 지키는 부대가 없는 세력 성: 성벽(방어)을 이번에 다 깎을 수 있는지 (지금 병력 기준)
-    const wall = c.faction ? S.cities[c.id].wall : 0;
     if (seen && !d && c.faction) {
       const lo = Math.max(1, Math.floor(p.troops * RULES.siegeRate.min)), hi = Math.max(1, Math.floor(p.troops * RULES.siegeRate.max));
       [guess, cls] = !p.troops ? ['?', '?'] : wall <= lo ? ['점령 가능', '유리'] : wall <= hi ? ['점령할 수도', '비슷'] : [`성벽 ${Math.ceil(wall / ((lo + hi) / 2))}번쯤`, '불리'];
@@ -318,7 +320,7 @@ function attackDialog() {
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f ? f.color : 'var(--empty)'}"></span>
       <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>
-      <span class="r">${!seen ? '수비 ? (첩보 필요)' : defs.length ? defenseText(c, defs, ', ') : c.faction ? `수비 없음 · 방어 ${fmt(wall)}` : '수비 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
+      <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `수비 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '수비 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
     <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 출진 군량 ${fmt(marchFood(p.troops))} (병력 × ${RULES.marchFoodRate}, 결과와 상관없이 사라짐) · 예상은 지금 병력 기준</p>`,
@@ -349,14 +351,15 @@ function draftDialog() {
 
 function spyDialog() {
   const from = cityAtSlot(me(), slot);
+  const int = effStats(me()).int;
   const opts = spyTargetsFrom(from.id, me().faction).map(c => {
-    const f = factionById(c.faction), i = intelOf(me(), c);
+    const f = factionById(c.faction), until = (S.cities[c.id] || {}).spied;
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>
-      <span class="r dim">${i ? `${fmtClock(i.at + RULES.spyValid)}까지 알고 있음` : '모름'}</span></label>`;
+      <span class="r dim">${until ? `${dateText(until)} 전까지 알고 있음` : '모름'}</span></label>`;
   }).join('');
-  pickDialog('첩보', `<p>${esc(from.name)}의 이웃한 다른 세력 성에 첩자를 보내 수비 병력·방어·군량을 알아냅니다. 알아낸 정보는 ${RULES.spyValid / HOUR}시간 동안 성 정보와 출진 창에 보여요.</p>
-    <p class="dim">내 금 ${RULES.myGoldCost.spy}</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
+  pickDialog('첩보', `<p>${esc(from.name)}의 이웃한 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(spySuccessRate(int) * 100)}% · 금은 들지 않아요</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
 }
 
 function trainDialog() {
@@ -420,7 +423,7 @@ function plotDialog(kind) {
     const f = factionById(c.faction), cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>
-      <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall}` : ''}</span></label>`;
+      <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall === undefined ? '?' : cs.wall}` : ''}</span></label>`;
   }).join('');
   const effect = kind === 'destroy'
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
@@ -858,8 +861,8 @@ function renderCommands() {
       ${o ? `<button class="mini x" data-x="${i}" title="이 칸 비우기">✕</button>` : ''}</li>`).join('');
   const at = cityAtSlot(me(), slot);
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
-  const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력')].join('');
-  const etc = [btn('explore', '탐색', cost('explore')), btn('spy', '첩보', `적 성 · ${cost('spy')}`),
+  const plot = [btn('destroy', '파괴', '방어 낮추기 · 지력'), btn('rumor', '유언', '치안 낮추기 · 지력'), btn('spy', '첩보', '적 성 엿보기 · 지력')].join('');
+  const etc = [btn('explore', '탐색', cost('explore')),
     btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기')].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
@@ -994,23 +997,21 @@ function cityDetailRows(c) {
   if (!cs) return '';
   const rows = [];
   const p = me();
-  // 다른 세력 성은 첩보로 엿봐야 속사정이 보인다
-  if (!canSee(p, c)) return '<tr class="gap"><td colspan="2"></td></tr><tr class="wide"><th>수비</th><td class="dim">? (첩보로 알아볼 수 있어요)</td></tr>';
-  const intel = c.faction && c.faction !== p.faction ? intelOf(p, c) : null;
   // 지키는 부대
   if (!c.faction) rows.push('<tr class="wide"><th>수비</th><td class="dim">없음 (공백지)</td></tr>');
   else {
     const defs = defendersOf(c);
     rows.push(`<tr class="wide"><th>수비</th><td>${defs.length ? defenseText(c, defs, '<br>') : '<span class="dim">방어하는 장수 없음</span>'}</td></tr>`);
   }
-  // 다른 세력 성은 방어만 보이고 나머지 지금 수치는 ? (서버가 보내지 않는다)
+  // 다른 세력 성의 지금 수치는 ? (서버가 보내지 않는다). 첩보가 유효하면 농업·상업·방어·치안이 온다
   // 치안이 낮으면 색으로 경고: 50 미만 주황 (수입·징병 감소), 20 미만 빨강 (징병 불가)
   const peaceCls = v => (v < RULES.peaceLow ? 'bad' : v < RULES.peaceOk ? 'warn' : '');
-  const val = k => (cs.hidden && k !== 'wall' ? '?' : k === 'peace' && peaceCls(cs[k]) ? `<b class="${peaceCls(cs[k])}">${cs[k]}</b>` : cs[k]);
+  const val = k => (cs[k] === undefined ? '?' : k === 'peace' && peaceCls(cs[k]) ? `<b class="${peaceCls(cs[k])}">${cs[k]}</b>` : cs[k]);
   rows.push(...Object.keys(DOMESTIC).filter(cmdOn).map(k =>
     `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
-  if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.hidden ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
-  if (intel) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${fmtClock(intel.at + RULES.spyValid)}까지</td></tr>`);
+  if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.food === undefined ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
+  if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
+  else if (cs.hidden) rows.push('<tr class="wide"><td colspan="2" class="dim">첩보로 농업·상업·방어·치안·군량을 알아볼 수 있어요</td></tr>');
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
 

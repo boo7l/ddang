@@ -700,26 +700,30 @@ function runExplore(g) {
   return '';
 }
 
-// ----- 첩보 -----
-// 다른 세력 성의 속사정은 첩보로 엿봐야 보인다. 엿본 정보는 잠시(RULES.spyValid) 유효하다 (장수마다 따로)
+// ----- 첩보 (계략, 2026-10-26) -----
+// 다른 세력 성의 농업·상업·방어·치안·군량은 보이지 않는다. 첩보에 성공하면 우리 세력 모두가 그 성의 수치를 RULES.spyTurns턴 동안 본다.
+// 성공 확률 = 지력 ÷ 100 + 5% (최대 90%). 금은 들지 않는다
 const spyTargetsFrom = (fromId, fid) => neighborsOf(MAP, cityById(fromId)).filter(c => c.faction && c.faction !== fid);
-const intelOf = (g, c) => { const i = (g.intel || {})[c.id]; return i && now() - i.at < RULES.spyValid ? i : null; };
-// 이 성의 속사정을 볼 수 있는지: 내 세력 성, 공백지, 첩보가 유효한 성
-const canSee = (g, c) => !RULES.features.spy || !c.faction || c.faction === g.faction || !!intelOf(g, c);
+const spySuccessRate = int => Math.min(RULES.spyMax, int / 100 + RULES.spyBase);
+// fid 세력이 c 성을 몇 턴까지 볼 수 있는지 (못 보면 0)
+const spiedUntil = (fid, c) => { const u = ((S.intel || {})[fid] || {})[c.id] || 0; return u > S.turn ? u : 0; };
 
-function runSpy(g, o, mark) {
+function runSpy(g, o) {
   const c = cityById(o.to);
   if (!c) return '없는 성';
-  const cs = S.cities[c.id];
   if (!c.faction || c.faction === g.faction) return `${josa(c.name, '은는')} 이제 ${c.faction ? '아군 성' : '빈 땅'}`;
   if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
-  const why = pay(g, 'spy');
-  if (why) return why;
-  g.intel = g.intel || {};
-  g.intel[c.id] = { at: mark };
-  const defs = defendersOf(c);
-  const defText = defs.length ? defs.map(d => `${d.name} ${d.type} ${fmt(d.troops)}`).join(', ') : '지키는 병사 없음';
-  addLog(g, `첩보: ${c.name}의 속사정을 알아냈다.\n수비 ${defText} · 방어 ${cs.wall} · 군량 ${fmt(cs.food)}\n(${fmtClock(mark + RULES.spyValid)}까지 성 정보에서 볼 수 있다)`);
+  addMerit(g, RULES.merit.plot);
+  if (Math.random() >= spySuccessRate(effStats(g).int)) {
+    addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
+    return '';
+  }
+  const cs = S.cities[c.id], until = S.turn + RULES.spyTurns;
+  S.intel = S.intel || {};
+  S.intel[g.faction] = S.intel[g.faction] || {};
+  S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
+  addLog(g, `첩보 성공! ${c.name}: 농업 ${cs.agri} · 상업 ${cs.comm} · 방어 ${cs.wall} · 치안 ${cs.peace} · 군량 ${fmt(cs.food)}\n(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`);
+  gainStatExp(g, 'int', PLOT.exp);
   return '';
 }
 
@@ -738,8 +742,8 @@ function runPlot(g, kind, o) {
     return '';
   }
   const x = r === 'crit' ? PLOT.critMul : 1, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
-  // 남은 수치는 방어만 적는다 (다른 세력 성의 농업·상업·치안은 비공개)
-  const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}${k === 'wall' ? ` (${cs[k]})` : ''}`; };
+  // 남은 수치는 적지 않는다 (다른 세력 성의 농업·상업·방어·치안은 비공개, 2026-10-26 방어도)
+  const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}`; };
   const what = kind === 'destroy'
     ? [cut('wall', int * PLOT.destroy.wallPerInt)]
     : [cut('peace', int * PLOT.rumor.peacePerInt), cut('agri', int * PLOT.rumor.devPerInt), cut('comm', int * PLOT.rumor.devPerInt)];
