@@ -212,6 +212,8 @@ function advance() {
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     trimDefense();
+    // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26)
+    for (const c of MAP.cities) if (hasGuard(c)) { const cs = S.cities[c.id]; cs.guard = Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen); }
     // 세력마다 몸담은 턴 수 (명예의 전당 소속 = 가장 오래 있었던 세력)
     for (const g of allGenerals()) if (g.faction) { g.factionTurns = g.factionTurns || {}; g.factionTurns[g.faction] = (g.factionTurns[g.faction] || 0) + 1; }
     if (S.unified) { // 이번 턴에 통일했다

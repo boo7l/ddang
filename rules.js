@@ -86,8 +86,9 @@ const RULES = {
   // 전쟁 (임시값)
   marchFoodRate: 0.07,      // 출진하면 병력 × 0.07만큼 떠나는 성의 군량을 바로 쓴다 (전투 결과와 상관없이 사라짐. 2026-10-26 수확이 늘어 0.05에서 올림)
   captureKeep: { min: 0.5, max: 0.7 }, // 성을 점령하면 그 성 군량의 50~70%(무작위)만 남는다 (나머지는 흩어짐)
-  guardPerGrade: 1000,      // 수비대장 병력 = 성 규모 × 1,000
-  guardStat: 50,            // 수비대장 능력치
+  guardTroops: { 1: 2000, 2: 3000, 3: 5000 }, // 수비대장 병력 (최대치, 시즌 시작 값). 2026-10-26 성 규모 × 1,000에서 올림 (초반 너무 빠른 확장 막기)
+  guardRegen: 200,          // 수비대장이 매달 회복하는 병력 (최대치까지)
+  guardStat: 60,            // 수비대장 능력치 (통솔·무력·지력 모두, 2026-10-26 50에서 올림)
   // 5합 전투 (기획서 8장): 출진 1회에 최대 5합. 한 합에 양쪽이 동시에 상대 병력을 "내 전투력 × 20%"만큼 줄인다
   roundsMax: 5,
   roundRate: 0.2,           // 임시: 비슷하면 5합 뒤에도 양쪽이 남고, 2~3배 차이면 2~3합에 끝난다
@@ -149,7 +150,7 @@ function newCityState(grade) {
     agri: 100 * grade, comm: 100 * grade, tech: 50 * grade, wall: 100 * grade + 100, // 방어만 100 더 높게 시작
     peace: RULES.peaceStart,
     food: RULES.foodStart[grade],
-    guard: RULES.guardPerGrade * grade,
+    guard: RULES.guardTroops[grade],
   };
 }
 
