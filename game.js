@@ -144,7 +144,7 @@ function adminToolsDialog() {
       await call('door'); afterAdmin();
     };
     $('#aSeason').onclick = async () => {
-      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n첫 장수가 세력에 들어오면 ${RULES.startYear}년 ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
+      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n첫 장수가 세력에 들어오면 ${MAP.scenario ? MAP.scenario + " · " : ""}${MAP.year || RULES.startYear}년 ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
       if (await call('newSeason')) location.reload();
     };
     $('#aReset').onclick = async () => {
@@ -917,7 +917,7 @@ function renderCommands() {
   const p = me();
   $('#nowDate').textContent = dateText(S.turn); // 상단: 게임 속 지금 연월
   $('#nowSeason').textContent = `시즌 ${S.season || 1}`; // 상단: 몇 번째 시즌
-  $('#nowScenario').textContent = S.scenario || RULES.scenario; // 상단: 시나리오 이름 (예: 관도대전)
+  $('#nowScenario').textContent = S.scenario || MAP.scenario || RULES.scenario; // 상단: 시나리오 이름 (예: 관도대전)
   const statName = k => STATS.find(s => s.key === k).name;
   const cost = k => (RULES.myGoldCost[k] ? `금${RULES.myGoldCost[k]}` : '');
   const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}">${name}<small>${sub}</small></button>` : '');

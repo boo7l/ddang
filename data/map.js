@@ -1,5 +1,7 @@
 // 자동으로 만든 파일. data/map_200.json을 고치고 supabase/build.sh를 돌린다.
 const MAP_DATA = {
+ "scenario": "관도대전",
+ "year": 200,
  "cols": 8,
  "rows": 10,
  "adjacency": 8,
