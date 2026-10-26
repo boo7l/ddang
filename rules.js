@@ -293,16 +293,15 @@ function fightRounds(att, def, wall, left) {
   const luck = () => 1 + (Math.random() * 2 - 1) * RULES.battleRandom;
   const a0 = att.troops, d0 = def.troops, lines = [];
   let used = 0;
+  // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
+  if (att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
+    att.struck = true;
+    const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * luck()));
+    def.troops -= dLoss;
+    lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`);
+  }
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
-    // 벽력거: 이번 출진에서 수비 부대와 싸우는 첫 합은 일방적으로 때린다 (일기토 없이, 피해를 받지 않음)
-    if (att.siege && att.siege.벽력거 && !att.struck) {
-      att.struck = true;
-      const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * luck()));
-      def.troops -= dLoss;
-      lines.push(`${used}합: 💥 벽력거 선제 사격! ${att.name} 피해 없음 · ${def.name} -${dLoss.toLocaleString('ko-KR')}`);
-      continue;
-    }
     // 일기토: 양쪽 무력이 기준 이상이면 낮은 확률로. 이긴 쪽은 피해 없이, 진 쪽 부대만 크게 다친다
     const D = RULES.duel;
     if (att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < D.chance) {
@@ -397,14 +396,14 @@ function addStatExp(g, key, gain) {
 const SIEGE = {
   충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
   정란: { price: 2000, desc: '수비 부대와 싸울 때 공격력 +15%' },
-  벽력거: { price: 4000, desc: '수비 부대와 싸우는 첫 합에 피해를 받지 않음 (그 합에 주는 피해는 70%)' },
+  벽력거: { price: 4000, desc: '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)' },
 };
 // 병기 효과 (임시값)
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격력 +15%
   breakChance: 0.5, // 부대가 전멸하면 병기가 부서질 확률
-  firstStrike: 0.7, // 벽력거: 피해 없이 때리는 첫 합에 주는 피해 비율 (2026-10-26 시즌 2 뒤 "너무 세다"는 의견으로 100% → 70%)
+  firstStrike: 0.5, // 벽력거: 합 전에 쏘는 선제 사격의 피해 = 보통 한 합 피해의 50% (2026-10-26 시즌 2 뒤 "너무 세다"는 의견: 첫 합 무피해 100% → 선제 사격 50% + 5합 그대로)
 };
 
 // ===== 상점 (기획서 9장) =====
