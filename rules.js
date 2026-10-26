@@ -331,6 +331,7 @@ function fightRounds(att, def, wall, left) {
 const PLOT = {
   successRate: int => Math.min(0.9, int / 150 + 0.05), // 2026-10-26 전체 +5%p (최대 85% → 90%)
   critRate: int => int / 400,          // 성공했을 때 그중 대성공 확률
+  critMul: 1.5,                        // 대성공 효과 배수 (2026-10-26 2배 → 1.5배)
   destroy: { wallPerInt: 1 },          // 파괴: 방어 -(지력 × 1)
   rumor: { peacePerInt: 0.2, devPerInt: 0.2 }, // 유언: 치안·농업·상업 각각 -(지력 × 0.2) (2026-10-25 0.2 → 0.25, 2026-10-26 다시 0.2)
   exp: 30, critExp: 50,                // 성공하면 지력 경험치 (대성공이면 50)

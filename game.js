@@ -425,7 +425,7 @@ function plotDialog(kind) {
   const effect = kind === 'destroy'
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
     : `성공하면 그 성의 <b>치안</b>을 약 ${Math.floor(int * PLOT.rumor.peacePerInt)}, 농업·상업을 약 ${Math.floor(int * PLOT.rumor.devPerInt)}씩 낮춰요.`;
-  pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 2배!</p>
+  pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 ${PLOT.critMul}배!</p>
     <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(PLOT.successRate(int) * 100)}% · 금은 들지 않아요</p>`,
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
