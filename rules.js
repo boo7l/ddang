@@ -298,7 +298,7 @@ function fightRounds(att, def, wall, left) {
     // 벽력거: 이번 출진에서 수비 부대와 싸우는 첫 합은 일방적으로 때린다 (일기토 없이, 피해를 받지 않음)
     if (att.siege && att.siege.벽력거 && !att.struck) {
       att.struck = true;
-      const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * luck()));
+      const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * luck()));
       def.troops -= dLoss;
       lines.push(`${used}합: 💥 벽력거 선제 사격! ${att.name} 피해 없음 · ${def.name} -${dLoss.toLocaleString('ko-KR')}`);
       continue;
@@ -397,13 +397,14 @@ function addStatExp(g, key, gain) {
 const SIEGE = {
   충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
   정란: { price: 2000, desc: '수비 부대와 싸울 때 공격력 +15%' },
-  벽력거: { price: 3000, desc: '수비 부대와 싸우는 첫 합에 피해를 받지 않음' },
+  벽력거: { price: 4000, desc: '수비 부대와 싸우는 첫 합에 피해를 받지 않음 (그 합에 주는 피해는 70%)' },
 };
 // 병기 효과 (임시값)
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격력 +15%
   breakChance: 0.5, // 부대가 전멸하면 병기가 부서질 확률
+  firstStrike: 0.7, // 벽력거: 피해 없이 때리는 첫 합에 주는 피해 비율 (2026-10-26 시즌 2 뒤 "너무 세다"는 의견으로 100% → 70%)
 };
 
 // ===== 상점 (기획서 9장) =====
