@@ -190,7 +190,7 @@ function rankDialog() {
 let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
 const ADMIN_DOOR = new URLSearchParams(location.search).has('admin');
 function applyLoginGate() {
-  const closed = preparing && !ADMIN_DOOR;
+  const closed = preparing && !ADMIN_DOOR && !(ME && ME.nickname); // 로그인한 채 들어와 있으면(관리자) 안내는 안 띄운다
   $('#tPrep').hidden = !closed;
   $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 열리면 다시 들어와 주세요.` : '';
   if (closed) $('#tGoogleBox').hidden = $('#tNickBox').hidden = true;
@@ -637,6 +637,10 @@ function showTitle(msg) {
   const needNick = !!(ME && !ME.nickname);
   $('#tGoogleBox').hidden = needNick;
   $('#tNickBox').hidden = !needNick;
+  // 로그인한 채로 첫 화면에 왔으면 (제목줄 낙관·로고를 눌러서) 로그인 대신 "게임으로 들어가기" (2026-10-27)
+  const inGame = !!(ME && ME.nickname);
+  $('#tEnter').hidden = !inGame;
+  if (inGame) $('#tGoogleBox').hidden = true;
   applyLoginGate();
   let agreed = false;
   try { agreed = localStorage.getItem(AGREE_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 매번 체크 */ }
@@ -1118,6 +1122,9 @@ $('#cRoll').onclick = () => { draft.base = rollStats(); renderCreateStats(); };
 $('#tAge').onchange = $('#tAgree').onchange = updateGoogleBtn;
 $('#tNickBox').onsubmit = e => { e.preventDefault(); submitNick(); };
 $('#tNickCancel').onclick = logout;
+// 제목줄 '땅' 낙관·'땅국지' 로고: 로그인한 채로 첫 화면으로 (2026-10-27)
+document.querySelectorAll('.toTitle').forEach(el => { el.onclick = () => { if (ME && ME.nickname && $('#title').hidden) showTitle(); }; });
+$('#tEnter').onclick = () => enterFlow();
 $('#withdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게

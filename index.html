@@ -9,8 +9,8 @@
 </head>
 <body>
   <header class="win titlebar">
-    <img class="seal" src="img/seal.png" alt="땅">
-    <h1><img src="img/logo.png" alt="땅국지" class="logoTop"> <small>땅따먹기 대소동</small></h1>
+    <img class="seal toTitle" src="img/seal.png" alt="땅" title="첫 화면으로">
+    <h1><img src="img/logo.png" alt="땅국지" class="logoTop toTitle" title="첫 화면으로"> <small>땅따먹기 대소동</small></h1>
     <span class="season" id="nowSeason"></span><!-- 몇 번째 시즌인지 (메인 화면에서만) -->
     <span class="scenario" id="nowScenario"></span><!-- 시나리오 이름 (메인 화면에서만) -->
     <span class="era" id="nowDate"></span><!-- 게임 속 지금 연월 (메인 화면에서만) -->
@@ -42,6 +42,7 @@
       <p class="center"><button type="button" id="tNickCancel" class="mini">다른 구글 계정으로</button></p>
     </form>
     <p id="tPrep" class="center hi" hidden></p><!-- 시즌 준비 중: 관리자 말고는 로그인 단추를 숨긴다 -->
+    <p class="center"><button id="tEnter" class="btn big" hidden>⚔ 게임으로 들어가기</button></p><!-- 로그인한 채로 첫 화면에 왔을 때 -->
     <p id="tMsg" class="center" hidden></p>
     <div id="hof"></div><!-- 시즌별 명예의 전당 (로그인 전에도 보인다) -->
     <p class="center small legal"><a class="link" href="privacy.html" target="_blank">개인정보 처리방침</a> · <a class="link" href="terms.html" target="_blank">이용약관</a><br>문의 <a class="link" href="mailto:metal926@naver.com">metal926@naver.com</a></p><!-- 2026-10-26 -->

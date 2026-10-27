@@ -348,6 +348,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 /* 로고 그림 (101×34 도트): 정수 배로만 키워야 도트가 고르게 보인다 (2026-10-27) */
 .logoBig { width: 202px; height: 68px; image-rendering: pixelated; display: block; margin: 0 auto; }
 .logoTop { width: 101px; height: 34px; image-rendering: pixelated; vertical-align: middle; }
+.toTitle { cursor: pointer; } /* 누르면 첫 화면으로 */
 .center { text-align: center; }
 #title .btn.big { margin-top: 16px; }
 #title input { display: block; width: 240px; margin: 8px auto 0; text-align: center; }
