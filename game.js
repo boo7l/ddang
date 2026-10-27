@@ -665,6 +665,7 @@ function showTitle(msg) {
   const inGame = !!(ME && ME.nickname);
   $('#tEnter').hidden = !inGame;
   $('#tLogout').hidden = !inGame;
+  $('#tWithdraw').hidden = !inGame;
   if (inGame) $('#tGoogleBox').hidden = true;
   applyLoginGate();
   let agreed = false;
@@ -1259,6 +1260,7 @@ $('#tNickCancel').onclick = logout;
 document.querySelectorAll('.toTitle').forEach(el => { el.onclick = () => { if (ME && ME.nickname && $('#title').hidden) showTitle(); }; });
 $('#tEnter').onclick = () => enterFlow();
 $('#tLogout').onclick = logout;
+$('#tWithdraw').onclick = withdraw;
 $('#withdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
