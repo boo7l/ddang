@@ -243,9 +243,9 @@ const UNIT_TYPES = {
 const GENERAL_TRAITS = {
   brave: { tier: '하', name: '용맹', desc: '공격 전투력 +3%', attack: 0.03 },
   wall: { tier: '하', name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
-  trade: { tier: '중', name: '상재', desc: '상업 내정 +10%', dev: { comm: 0.10 } },
-  farm: { tier: '중', name: '둔전', desc: '농업 내정 +10%', dev: { agri: 0.10 } },
-  build: { tier: '중', name: '장인', desc: '축성 내정 +10%', dev: { wall: 0.10 } },
+  trade: { tier: '하', name: '상재', desc: '상업 내정 +10%', dev: { comm: 0.10 } },
+  farm: { tier: '하', name: '둔전', desc: '농업 내정 +10%', dev: { agri: 0.10 } },
+  build: { tier: '하', name: '장인', desc: '축성 내정 +10%', dev: { wall: 0.10 } },
   politic: { tier: '중', name: '전문정치팀', desc: '모든 내정 +5%', dev: { agri: 0.05, comm: 0.05, tech: 0.05, wall: 0.05, peace: 0.05 } },
   haggle: { tier: '하', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
   schemer: { tier: '하', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
@@ -262,7 +262,7 @@ const GENERAL_TRAITS = {
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
-const TRAIT_TIER_WEIGHT = { 상: 1, 중: 2, 하: 3 }; // 특성 하나가 뽑힐 비율 (2026-10-28: 하나당 상 2.6% · 중 5.1% · 하 7.7%)
+const TRAIT_TIER_WEIGHT = { 상: 2, 중: 5, 하: 7 }; // 특성 하나가 뽑힐 비율 (2026-10-28: 상 3·중 6·하 9개라 하나당 상 2.0% · 중 5.1% · 하 7.1%. 처음 1:2:3)
 const TRAIT_DRAW = 3;     // 주머니에서 나오는 종이 수
 const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 
