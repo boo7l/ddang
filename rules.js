@@ -241,22 +241,22 @@ const UNIT_TYPES = {
 // ===== 장수 특성 (2026-10-27, 금낭: 장수를 만든 뒤 비단 주머니에서 3장을 뽑아 하나를 영구로 고른다. 다시 뽑기 1번) =====
 // 2026-10-28 기획자 목록 18개. tier(상·중·하)마다 뽑힐 비율이 다르다 (TRAIT_TIER_WEIGHT). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 gTrait(장수 또는 부대)로 읽는다
 const GENERAL_TRAITS = {
-  brave: { tier: '하', name: '용맹', desc: '출진 공격 전투력 +3%', attack: 0.03 },
+  brave: { tier: '하', name: '용맹', desc: '공격 전투력 +3%', attack: 0.03 },
   wall: { tier: '하', name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
   trade: { tier: '중', name: '상재', desc: '상업 내정 +10%', dev: { comm: 0.10 } },
   farm: { tier: '중', name: '둔전', desc: '농업 내정 +10%', dev: { agri: 0.10 } },
   build: { tier: '중', name: '장인', desc: '축성 내정 +10%', dev: { wall: 0.10 } },
   politic: { tier: '중', name: '전문정치팀', desc: '모든 내정 +5%', dev: { agri: 0.05, comm: 0.05, tech: 0.05, wall: 0.05, peace: 0.05 } },
   haggle: { tier: '하', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
-  schemer: { tier: '하', name: '책사', desc: '계략(파괴·유언·첩보) 성공 확률 +5%p', plot: 0.05 },
+  schemer: { tier: '하', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
   charisma: { tier: '하', name: '인망', desc: '징병 +5% 더 모임', draft: 0.05 }, // 2026-10-28 +10%에서
   frail: { tier: '상', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
   chadol: { tier: '상', name: '차돌애호가', desc: '지력 경험치 -5%, 통솔·무력 경험치 +10%', exp: { lea: 0.10, war: 0.10, int: -0.05 } }, // 2026-10-28 -10%·+20%에서
-  discipline: { tier: '중', name: '규율', desc: '머무는 성의 치안이 매턴 +2 (같은 성에 여럿이어도 +2)', peaceTurn: 2 },
+  discipline: { tier: '중', name: '규율', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: '하', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
   engineer: { tier: '중', name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
   medic: { tier: '중', name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
-  persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 물러남', persuade: 0.04 }, // 2026-10-28 5%에서
+  persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 퇴각', persuade: 0.04 }, // 2026-10-28 5%에서
   levy: { tier: '중', name: '이게 일상이야', desc: "명령 '갈취' : 금 +10~400, 치안 -3 (쿨타임 6턴)", levy: { min: 10, max: 400, peace: 3, cooldown: 6 } }, // 2026-10-28 10~500·5턴에서
   duelist: { tier: '중', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
 };
