@@ -1071,7 +1071,7 @@ function renderCommands() {
   const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
   const etc = [btn('explore', '탐색', cost('explore')),
     btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
-    gTrait(p).levy ? btn('levy', '징수', levyLeft(p) ? `${levyLeft(p)}턴 뒤 가능` : `금 ${gTrait(p).levy.min}~${gTrait(p).levy.max} · 치안 -${gTrait(p).levy.peace}`) : ''].join(''); // 개인 특성 이게 일상이야
+    gTrait(p).levy ? btn('levy', '징수', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${gTrait(p).levy.min}~${gTrait(p).levy.max} · 치안 -${gTrait(p).levy.peace}`) : ''].join(''); // 개인 특성 이게 일상이야
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>

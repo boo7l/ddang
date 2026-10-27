@@ -300,9 +300,19 @@ function runOrders(mark) {
 
 // ===== 예약표 =====
 // i번 칸에 명령을 넣는다 (null이면 비운다). 같은 턴에 같은 성을 친 장수들은 예약한 순서(orderedAt)대로 싸운다
+// 징수(이게 일상이야)를 i번 칸에 넣을 수 없는 이유. 쿨타임 안에 들어가는 칸은 예약 때 막는다 (2026-10-28, 실패로 턴을 버리지 않게)
+// i번 칸은 S.turn + 1 + i턴에 실행된다. 마지막 징수 뒤 cooldown턴 안이거나, 다른 칸의 징수와 cooldown칸 안이면 안 된다
+function levyBlocked(g, i) {
+  const L = gTrait(g).levy;
+  if (!L) return '징수는 "이게 일상이야" 특성이 있어야 해요.';
+  if (g.levyTurn && g.levyTurn + L.cooldown > S.turn + 1 + i) return `징수는 ${L.cooldown}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.levyTurn + L.cooldown).month}월 칸부터 가능)`;
+  if (g.queue.some((o, j) => j !== i && o && o.cmd === 'levy' && Math.abs(i - j) < L.cooldown)) return `징수는 ${L.cooldown}턴에 한 번이라, 앞뒤 ${L.cooldown - 1}칸 안에 징수가 있으면 넣을 수 없어요.`;
+  return '';
+}
 function setOrder(g, i, order) {
   if (!Number.isInteger(i) || i < 0 || i >= RULES.queueSize) return '없는 칸이에요.';
   if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd))) return '쓸 수 없는 명령이에요.';
+  if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
   g.queue[i] = order ? { ...order, orderedAt: now() } : null;
   return '';
 }
@@ -312,6 +322,7 @@ function fillOrders(g, order) {
   if (!order) return '채울 수 없는 명령이에요.';
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
+    if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 징수는 쿨타임이 끝난 칸에만 채운다
     const why = setOrder(g, i, order);
     if (why) return why;
   }
