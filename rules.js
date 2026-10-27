@@ -251,13 +251,13 @@ const GENERAL_TRAITS = {
   schemer: { tier: '하', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
   charisma: { tier: '하', name: '인망', desc: '징병 +5% 더 모임', draft: 0.05 }, // 2026-10-28 +10%에서
   frail: { tier: '상', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
-  chadol: { tier: '상', name: '차돌애호가', desc: '지력 경험치 -3%, 통솔·무력 경험치 +5%', exp: { lea: 0.05, war: 0.05, int: -0.03 } }, // 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
+  chadol: { tier: '중', name: '차돌애호가', desc: '지력 경험치 -3%, 통솔·무력 경험치 +5%', exp: { lea: 0.05, war: 0.05, int: -0.03 } }, // 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
   discipline: { tier: '중', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: '하', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
   engineer: { tier: '중', name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
   medic: { tier: '중', name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
   persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 퇴각', persuade: 0.04 }, // 2026-10-28 5%에서
-  levy: { tier: '중', name: '이게 일상이야', desc: "명령 '갈취' : 금 +10~400, 치안 -3 (쿨타임 6턴)", levy: { min: 10, max: 400, peace: 3, cooldown: 6 } }, // 2026-10-28 10~500·5턴에서
+  levy: { tier: '상', name: '이게 일상이야', desc: "명령 '갈취' : 금 +10~400, 치안 -3 (쿨타임 5턴)", levy: { min: 10, max: 400, peace: 3, cooldown: 5 } }, // 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 (티어 중 → 상)
   duelist: { tier: '중', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
