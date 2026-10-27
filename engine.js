@@ -150,6 +150,14 @@ function addGeneral(id, { name, face, stats }) {
 // 하야한 세력에 다시 들어가려면 남은 턴 수 (0이면 들어갈 수 있음)
 const rejoinLeft = (g, fid) => (g.leftFaction && g.leftFaction.id === fid ? Math.max(0, g.leftFaction.until - S.turn) : 0);
 
+// 금낭: 장수 특성 TRAIT_DRAW개를 겹치지 않게 무작위로 (다시 뽑을 때는 방금 나온 것을 되도록 빼고)
+function drawTraits(prev = []) {
+  let pool = Object.keys(GENERAL_TRAITS).filter(k => !prev.includes(k));
+  if (pool.length < TRAIT_DRAW) pool = Object.keys(GENERAL_TRAITS);
+  const out = [];
+  while (out.length < TRAIT_DRAW && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  return out;
+}
 function joinFaction(g, fid, cityId) {
   if (g.faction) return '이미 세력에 소속되어 있어요.';
   const f = factionById(fid);

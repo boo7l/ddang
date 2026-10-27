@@ -240,6 +240,25 @@ const UNIT_TYPES = {
 
 // ===== 세력 특성 (기획서 "세력 특성"): 역사에 근거한 작은 패시브. 세력 이름으로 찾는다 =====
 // 숫자는 비율 (0.05 = 5%). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 traitOf(세력id)로 읽는다
+// ===== 장수 특성 (2026-10-27, 금낭: 장수를 만든 뒤 비단 주머니에서 3장을 뽑아 하나를 영구로 고른다. 다시 뽑기 1번) =====
+// [미정] 목록은 기획자가 정한다. 지금은 임시 목록이고, 효과는 아직 게임에 붙이지 않았다 (보여 주기만)
+const GENERAL_TRAITS = {
+  brave: { name: '용맹', desc: '출진 공격 전투력 +3%' },
+  wall: { name: '철벽', desc: '수비 전투력 +3%' },
+  rider: { name: '기마술', desc: '기병일 때 전투력 +3%' },
+  spear: { name: '창술', desc: '보병일 때 전투력 +3%' },
+  archer: { name: '궁술', desc: '궁병일 때 전투력 +3%' },
+  farm: { name: '둔전', desc: '농업 내정 +10%' },
+  trade: { name: '상재', desc: '상업 내정 +10%' },
+  build: { name: '축성가', desc: '축성 내정 +10%' },
+  charisma: { name: '인망', desc: '징병 +5% 더 모임' },
+  thrift: { name: '절약', desc: '병사 군량 소비 -10%' },
+  schemer: { name: '책사', desc: '계략 성공률 +5%p' },
+  scholar: { name: '학구열', desc: '수련 경험치 +10%' },
+};
+const TRAIT_DRAW = 3;     // 주머니에서 나오는 종이 수
+const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
+
 const FACTION_TRAITS = {
   마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
   공손찬: { name: '백마의종', desc: '기병으로 수비할 때 전투력 +10%', cavalryDefense: 0.10 },

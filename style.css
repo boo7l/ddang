@@ -518,6 +518,34 @@ details.fold > summary:hover h2 { color: var(--title); }
 .traitLine { margin: 2px 0 6px; color: var(--dim); } /* 세력 특성: 늘 보이되 눈에 덜 띄게 (흐린 글씨 한 줄) */
 .traitLine b { color: var(--label); font-weight: normal; } /* 특성 이름은 항목 이름처럼 주황 */
 
+/* ===== 금낭: 장수 특성 고르기 (2026-10-27) ===== */
+#trait { max-width: 640px; margin: 24px auto; }
+.trStage { display: flex; flex-direction: column; align-items: center; gap: 14px; min-height: 300px; }
+.trPouch { width: 168px; height: 147px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }
+.trPouch svg { width: 100%; height: 100%; display: block; }
+.trPouch:hover:not(:disabled) { background: none; transform: translateY(-3px); }
+.trPouch:disabled, .trPouch:disabled:hover { cursor: default; opacity: 1; background: none; border: 0; box-shadow: none; filter: none; }
+.trPouch.open { width: 112px; height: 98px; } /* 열리면 작아지고 종이가 앞으로 */
+.trPouch.shake { animation: trShake .45s steps(6); }
+@keyframes trShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-5deg); } 80% { transform: rotate(4deg); } }
+.trSlips { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.trSlip { position: relative; width: 168px; min-height: 150px; padding: 26px 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: #f3e6c4; color: #3a2414; border: 2px solid #b89a62; box-shadow: 3px 3px 0 #000; cursor: pointer; text-align: center; }
+.trSlip:hover { background: #fff3d6; border-color: var(--seal); }
+.trSlip.on { background: #fff3d6; border-color: var(--seal); outline: 3px solid var(--title); transform: translateY(-6px); }
+.trSlip b { font-size: 16px; font-weight: normal; color: #8a1a12; }
+.trSlip .trDesc { color: #3a2414; line-height: 1.35; }
+.trSeal { position: absolute; top: 6px; right: 8px; width: 15px; height: 15px; }
+.trSeal svg { width: 100%; height: 100%; display: block; }
+/* 주머니에서 올라와(아래→위) 접힌 종이가 펼쳐진다. 한 장씩 차례로 (--i) */
+.trSlip.rise { animation: trRise .5s ease-out both, trUnfold .35s steps(4) both; animation-delay: calc(var(--i) * .18s), calc(var(--i) * .18s + .45s); }
+.trSlip.rise > * { animation: trShow .2s linear both; animation-delay: calc(var(--i) * .18s + .7s); }
+@keyframes trRise { from { transform: translateY(-90px) scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes trUnfold { from { clip-path: inset(0 0 85% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes trShow { from { opacity: 0; } to { opacity: 1; } }
+.trBtns { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.myTrait b { color: var(--title); }
+
 /* ===== 휴대폰 (너비 700px 이하, 2026-10-27) =====
    넓은 화면은 그대로 두고, 좁으면 게임 화면 네 칸을 아래 탭으로 하나씩 보여 준다. 글자는 16px 그대로 */
 #mTabs { display: none; }
@@ -584,6 +612,9 @@ details.fold > summary:hover h2 { color: var(--title); }
   #whoName, #who .wideOnly { display: none; } /* 제목줄 단추를 한 줄에 */
   .hdrRight button { padding: 2px 6px; }
   #cFaceBig { display: none; } /* 얼굴은 아래 목록에서 고른 칸이 표시된다 */
+  #trait { margin: 8px auto; }
+  .trSlips { flex-direction: column; align-items: center; }
+  .trSlip { width: 100%; max-width: 360px; min-height: 0; flex-direction: row; justify-content: flex-start; padding: 12px 34px 12px 12px; text-align: left; } /* 휴대폰: 종이를 세로로 쌓는다 */
 
   /* 대화 상자: 화면을 거의 다 쓴다 */
   #modalBox, #modalBox.wideBox, #modalBox.adminBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); }

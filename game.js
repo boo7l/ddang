@@ -617,7 +617,7 @@ function helpDialog(page = 0) {
 // ===== 화면 전환 (기획서 12장 화면 흐름) =====
 // 7 장수 생성 → 4 세력 선택 → 5 메인 화면. 1·6 로그인·가입은 서버 단계에서 만든다.
 function showScreen(id) {
-  ['title', 'create', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
+  ['title', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   $('#who').hidden = id === 'title';
@@ -781,8 +781,103 @@ async function createGeneral() {
   if (bonusLeft() > 0 && !confirm(`보너스 포인트가 ${bonusLeft()}점 남았어요. 남은 포인트는 사라져요. 결정할까요?`)) return;
   const stats = {};
   STATS.forEach(st => { stats[st.key] = draft.base[st.key] + (draft.bonus[st.key] || 0); });
-  if (await call('create', { name, face: draft.face, stats })) showJoin();
+  if (await call('create', { name, face: draft.face, stats })) showTrait(); // 다음은 금낭(특성 고르기)
 }
+
+// ===== 3.5 금낭 (장수 특성 고르기, 2026-10-27) =====
+// 제갈량의 금낭묘계 패러디: 비단 주머니를 누르면 열리면서 종이 3장이 나온다. 하나를 고르면 이 장수의 특성이 된다 (영구). 다시 뽑기 1번.
+// 뽑기는 서버가 한다 (traitOpen·traitReroll·traitPick). 주머니 그림은 글자 지도로 찍은 도트 (한 글자 = 한 칸)
+const POUCH_COLORS = { O: '#4a2c14', B: '#ead9ae', S: '#c9ad78', H: '#fbf1d2', R: '#b8231c', r: '#7a1410', G: '#f2c230', K: '#2a160c' };
+const POUCH_CLOSED = [
+  '........................',
+  '.........OOOOOO.........',
+  '........OBHBBBSO........',
+  '.......OBHBBBBBSO.......',
+  '........OBBBBBSO........',
+  '.........RRGGRR.........',
+  '........RrRGGRrR........',
+  '.......OBBBBBBBSOr......',
+  '......OBHBBBBBBBSOr.....',
+  '.....OBHBBBBBBBBBSOr....',
+  '....OBHBBBBBBBBBBSSO....',
+  '....OBHBBBBRBBBBBBSO....',
+  '...OBBHBBBRRRBBBBBSSO...',
+  '...OBBBBBRRRRRBBBBSSO...',
+  '...OBBBBBBRRRBBBBSSSO...',
+  '...OBBBBBBBRBBBBBSSSO...',
+  '...OSBBBBBBBBBBBBSSSO...',
+  '....OSBBBBBBBBBBSSSO....',
+  '....OSSBBBBBBBBSSSSO....',
+  '.....OSSSSSSSSSSSSO.....',
+  '......OOOOOOOOOOOO......',
+];
+const POUCH_OPEN = [
+  '........................',
+  '.....OO.........OO......',
+  '....OBHO.......OBSO.....',
+  '....OBBHOOOOOOOBBSO.....',
+  '.....OBKKKKKKKKKBO......',
+  '......OKKKKKKKKKO.......',
+  '.......RRRRRRRRR........',
+  '.......OBBBBBBBSOR......',
+  '......OBHBBBBBBBSOR.....',
+  '.....OBHBBBBBBBBBSOr....',
+  '....OBHBBBBBBBBBBSSO....',
+  '....OBHBBBBRBBBBBBSO....',
+  '...OBBHBBBRRRBBBBBSSO...',
+  '...OBBBBBRRRRRBBBBSSO...',
+  '...OBBBBBBRRRBBBBSSSO...',
+  '...OBBBBBBBRBBBBBSSSO...',
+  '...OSBBBBBBBBBBBBSSSO...',
+  '....OSBBBBBBBBBBSSSO....',
+  '....OSSBBBBBBBBSSSSO....',
+  '.....OSSSSSSSSSSSSO.....',
+  '......OOOOOOOOOOOO......',
+];
+const pixelSvg = rows => `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges">${rows.map((row, y) => [...row].map((ch, x) => POUCH_COLORS[ch] ? `<rect x="${x}" y="${y}" width="1" height="1" fill="${POUCH_COLORS[ch]}"/>` : '').join('')).join('')}</svg>`;
+
+let trChoice = null; // 고른 종이 (특성 id)
+function showTrait() {
+  showScreen('trait');
+  trChoice = null;
+  renderTrait(false);
+}
+// 주머니·종이·단추를 지금 상태대로 그린다. animate = 방금 열었거나 다시 뽑았으면 종이가 올라오며 펼쳐진다
+function renderTrait(animate) {
+  const g = me(), offer = g.traitOffer || [];
+  const open = offer.length > 0;
+  $('#trPouch').innerHTML = pixelSvg(open ? POUCH_OPEN : POUCH_CLOSED);
+  $('#trPouch').classList.toggle('open', open);
+  $('#trPouch').disabled = open;
+  $('#trHint').textContent = open ? '종이 한 장을 골라 주세요. 고른 특성은 이 장수에게 영구로 남아요.' : '비단 주머니를 눌러 열어 보세요.';
+  $('#trSlips').innerHTML = offer.map((id, i) => {
+    const t = GENERAL_TRAITS[id] || { name: id, desc: '' };
+    return `<button class="trSlip${animate ? ' rise' : ''}${trChoice === id ? ' on' : ''}" data-id="${id}" style="--i:${i}">
+      <span class="trSeal">${pixelSvg(['RRR', 'RGR', 'RRR'])}</span>
+      <b>${esc(t.name)}</b><span class="trDesc">${esc(t.desc)}</span></button>`;
+  }).join('');
+  $('#trSlips').querySelectorAll('.trSlip').forEach(b => { b.onclick = () => { trChoice = b.dataset.id; renderTrait(false); }; });
+  $('#trReroll').hidden = !open;
+  $('#trReroll').disabled = !(g.traitRerolls > 0);
+  $('#trReroll').textContent = g.traitRerolls > 0 ? `🔄 다시 뽑기 (${g.traitRerolls}번 남음)` : '다시 뽑기를 썼어요';
+  $('#trPick').hidden = !open;
+  $('#trPick').disabled = !trChoice;
+}
+$('#trPouch').onclick = async () => {
+  $('#trPouch').classList.add('shake'); // 흔들리다가 열린다
+  const ok = await call('traitOpen');
+  setTimeout(() => { $('#trPouch').classList.remove('shake'); if (ok) renderTrait(true); }, 450);
+};
+$('#trReroll').onclick = async () => {
+  if (!confirm('종이 3장을 다시 뽑을까요? 다시 뽑기는 한 번뿐이에요.')) return;
+  trChoice = null;
+  if (await call('traitReroll')) renderTrait(true);
+};
+$('#trPick').onclick = async () => {
+  const t = GENERAL_TRAITS[trChoice];
+  if (!t || !confirm(`「${t.name}」 특성으로 정할까요? 이 장수에게 영구로 남아요.\n(${t.desc})`)) return;
+  if (await call('traitPick', { id: trChoice })) showJoin();
+};
 
 // ===== 4. 세력 선택 화면 =====
 let joinPick = null;  // 고른 세력
@@ -915,6 +1010,7 @@ function renderGeneral() {
       </table>
     </div></div>
     ${traitOf(f.id).name ? `<p class="traitLine"><b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
+    ${p.trait && GENERAL_TRAITS[p.trait] ? `<p class="traitLine myTrait"><b>🧧 ${GENERAL_TRAITS[p.trait].name}</b> <span class="dim">(내 특성)</span><br>${GENERAL_TRAITS[p.trait].desc}</p>` : ''}
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
@@ -1123,6 +1219,8 @@ async function enterFlow() {
   renderLegend();
   // 2. 이번 시즌 내 장수가 없으면 → 7. 장수 생성
   if (!me()) { showCreate(); return; }
+  // 2.5 특성을 아직 안 골랐으면 → 금낭 (2026-10-27)
+  if (!me().trait) { showTrait(); return; }
   // 3. 소속 세력이 없으면 → 4. 세력 선택
   if (!me().faction) { showJoin(); return; }
   enterGame(); // 5. 메인 화면
