@@ -1257,7 +1257,9 @@ $('#tAge').onchange = $('#tAgree').onchange = updateGoogleBtn;
 $('#tNickBox').onsubmit = e => { e.preventDefault(); submitNick(); };
 $('#tNickCancel').onclick = logout;
 // 제목줄 '땅' 낙관·'땅국지' 로고: 로그인한 채로 첫 화면으로 (2026-10-27)
-document.querySelectorAll('.toTitle').forEach(el => { el.onclick = () => { if (ME && ME.nickname && $('#title').hidden) showTitle(); }; });
+const goMain = () => { if (ME && ME.nickname && $('#title').hidden) showTitle(); };
+document.querySelectorAll('.toTitle').forEach(el => { el.onclick = goMain; });
+$('#toMain').onclick = goMain; // 상단 바 [메인] 단추: 로고를 누르는 것과 같다
 $('#tEnter').onclick = () => enterFlow();
 $('#tLogout').onclick = logout;
 $('#tWithdraw').onclick = withdraw;
