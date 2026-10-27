@@ -7,7 +7,7 @@
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261027213523">
+<link rel="stylesheet" href="style.css?v=20261027213804">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -47,6 +47,7 @@
     </form>
     <p id="tPrep" class="center hi" hidden></p><!-- 시즌 준비 중: 관리자 말고는 로그인 단추를 숨긴다 -->
     <p class="center"><button id="tEnter" class="btn big" hidden>⚔ 게임으로 들어가기</button></p><!-- 로그인한 채로 첫 화면에 왔을 때 -->
+    <p class="center"><button id="tLogout" hidden>로그아웃</button></p><!-- 로그인한 채로 첫 화면에서도 로그아웃 (2026-10-27) -->
     <p id="tMsg" class="center" hidden></p>
     <div id="notes"></div><!-- 패치노트 (patchnotes.js, 2026-10-27) -->
     <div id="hof"></div><!-- 시즌별 명예의 전당 (로그인 전에도 보인다) -->
@@ -137,15 +138,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261027213523"></script>
-  <script src="mapcore.js?v=20261027213523"></script>
-  <script src="data/map.js?v=20261027213523"></script>
-  <script src="rules.js?v=20261027213523"></script>
-  <script src="faces.js?v=20261027213523"></script>
-  <script src="patchnotes.js?v=20261027213523"></script>
-  <script src="mapbg.js?v=20261027213523"></script>
-  <script src="map.js?v=20261027213523"></script>
-  <script src="engine.js?v=20261027213523"></script>
-  <script src="game.js?v=20261027213523"></script>
+  <script src="server.js?v=20261027213804"></script>
+  <script src="mapcore.js?v=20261027213804"></script>
+  <script src="data/map.js?v=20261027213804"></script>
+  <script src="rules.js?v=20261027213804"></script>
+  <script src="faces.js?v=20261027213804"></script>
+  <script src="patchnotes.js?v=20261027213804"></script>
+  <script src="mapbg.js?v=20261027213804"></script>
+  <script src="map.js?v=20261027213804"></script>
+  <script src="engine.js?v=20261027213804"></script>
+  <script src="game.js?v=20261027213804"></script>
 </body>
 </html>

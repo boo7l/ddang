@@ -664,6 +664,7 @@ function showTitle(msg) {
   // 로그인한 채로 첫 화면에 왔으면 (제목줄 낙관·로고를 눌러서) 로그인 대신 "게임으로 들어가기" (2026-10-27)
   const inGame = !!(ME && ME.nickname);
   $('#tEnter').hidden = !inGame;
+  $('#tLogout').hidden = !inGame;
   if (inGame) $('#tGoogleBox').hidden = true;
   applyLoginGate();
   let agreed = false;
@@ -1257,6 +1258,7 @@ $('#tNickCancel').onclick = logout;
 // 제목줄 '땅' 낙관·'땅국지' 로고: 로그인한 채로 첫 화면으로 (2026-10-27)
 document.querySelectorAll('.toTitle').forEach(el => { el.onclick = () => { if (ME && ME.nickname && $('#title').hidden) showTitle(); }; });
 $('#tEnter').onclick = () => enterFlow();
+$('#tLogout').onclick = logout;
 $('#withdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
