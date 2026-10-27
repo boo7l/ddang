@@ -1020,6 +1020,10 @@ function statBar(base, eff, max) {
   return `<span class="bar stat"><span style="width:${w(Math.min(base, eff))}%"></span><span class="item" style="width:${w(Math.max(0, eff - base))}%"></span></span>`;
 }
 
+// 장수 창의 세력·개인 특성 칸: 접고 펼 수 있다. 처음엔 펼친 채, 고른 상태는 이 브라우저에 기억한다 (2026-10-28)
+const TRAITS_KEY = 'ddang-traits-open';
+let traitsOpen = true;
+try { traitsOpen = localStorage.getItem(TRAITS_KEY) !== '0'; } catch (e) { /* 저장소를 못 쓰면 늘 펼친 채 */ }
 function renderGeneral() {
   const p = me(), f = factionById(p.faction), city = cityById(p.city);
   $('#general').innerHTML = `
@@ -1039,13 +1043,16 @@ function renderGeneral() {
         <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
       </table>
     </div></div>
+    <details id="gTraits" class="traitFold"${traitsOpen ? ' open' : ''}><summary>특성</summary>
     ${traitOf(f.id).name ? `<p class="traitLine"><span class="tTag">세력</span> <b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
     ${p.trait && GENERAL_TRAITS[p.trait] ? `<p class="traitLine myTrait"><span class="tTag">개인</span> <b>${GENERAL_TRAITS[p.trait].name}</b><br>${GENERAL_TRAITS[p.trait].desc}</p>` : ''}
+    </details>
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
     </table>`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
+  $('#gTraits').ontoggle = e => { traitsOpen = e.target.open; try { localStorage.setItem(TRAITS_KEY, traitsOpen ? '1' : '0'); } catch (err) { /* 저장 못 해도 이번엔 그대로 */ } };
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
 }
