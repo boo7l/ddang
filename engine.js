@@ -156,11 +156,17 @@ function addGeneral(id, { name, face, stats }) {
 const rejoinLeft = (g, fid) => (g.leftFaction && g.leftFaction.id === fid ? Math.max(0, g.leftFaction.until - S.turn) : 0);
 
 // 금낭: 장수 특성 TRAIT_DRAW개를 겹치지 않게 무작위로 (다시 뽑을 때는 방금 나온 것을 되도록 빼고)
+// 티어마다 뽑힐 비율이 다르다: 상이 가장 드물고 하가 가장 흔하다 (TRAIT_TIER_WEIGHT, 2026-10-28)
 function drawTraits(prev = []) {
   let pool = Object.keys(GENERAL_TRAITS).filter(k => !prev.includes(k));
   if (pool.length < TRAIT_DRAW) pool = Object.keys(GENERAL_TRAITS);
+  const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const out = [];
-  while (out.length < TRAIT_DRAW && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  while (out.length < TRAIT_DRAW && pool.length) {
+    let r = Math.random() * pool.reduce((s, k) => s + weight(k), 0), i = 0;
+    while (i < pool.length - 1 && (r -= weight(pool[i])) >= 0) i++;
+    out.push(pool.splice(i, 1)[0]);
+  }
   return out;
 }
 function joinFaction(g, fid, cityId) {
