@@ -15,6 +15,7 @@ const factionOf = c => MAP.factions.find(f => f.id === c.faction);
 //   opts.focusFaction: 이 세력 성만 밝게   opts.onClick(c): 성을 눌렀을 때
 function drawMap(el, opts = {}) {
   el.style.gridTemplateColumns = `repeat(${MAP.cols}, var(--cell))`;
+  el.style.setProperty('--cols', MAP.cols); // 휴대폰에서 칸 크기를 화면 너비 ÷ 칸 수로 (style.css)
   const sel = opts.selectedId && MAP.cities.find(c => c.id === opts.selectedId);
   const near = sel ? neighbors(sel).map(c => c.id) : [];
   el.innerHTML = '';

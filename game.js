@@ -621,6 +621,7 @@ function showScreen(id) {
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   $('#who').hidden = id === 'title';
+  $('#mTabs').hidden = id !== 'game'; // 휴대폰 아래 탭은 게임 화면에서만
   if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; $('#nowScenario').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
 }
@@ -843,8 +844,17 @@ async function pickFaction() {
 }
 
 // ===== 5. 메인 화면 =====
+// 휴대폰: 게임 화면을 탭(지도·장수·명령·예약·채팅) 하나씩 보여 준다. 넓은 화면에서는 탭이 숨겨져 네 칸이 다 보인다 (2026-10-27)
+function setTab(t) {
+  $('#game').dataset.tab = t;
+  document.querySelectorAll('#mTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
+
 function enterGame() {
   showScreen('game');
+  if (!$('#game').dataset.tab) setTab('map');
   selected = null;
   slot = 0;
   render();

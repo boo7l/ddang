@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- 휴대폰에서 화면 너비에 맞춘다 (2026-10-27) -->
   <title>땅국지 - 땅따먹기 대소동</title>
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
@@ -112,6 +113,9 @@
       <div id="chat" class="win"></div><!-- 세력 채팅 -->
     </aside>
   </main>
+
+  <!-- 휴대폰: 게임 화면 아래 탭 (넓은 화면에서는 숨김, 2026-10-27) -->
+  <nav id="mTabs" hidden><button data-tab="map">지도</button><button data-tab="gen">장수</button><button data-tab="cmd">명령</button><button data-tab="queue">예약·채팅</button></nav>
 
   <!-- 출진·수송·이동 대화 상자 -->
   <div id="modal" hidden><div id="modalBox" class="win"></div></div>
