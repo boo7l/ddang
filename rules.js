@@ -250,7 +250,7 @@ const GENERAL_TRAITS = {
   haggle: { tier: '하', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
   schemer: { tier: '하', name: '책사', desc: '계략(파괴·유언·첩보) 성공 확률 +5%p', plot: 0.05 },
   charisma: { tier: '하', name: '인망', desc: '징병 +5% 더 모임', draft: 0.05 }, // 2026-10-28 +10%에서
-  frail: { tier: '상', name: '병약미', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
+  frail: { tier: '상', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
   chadol: { tier: '상', name: '차돌애호가', desc: '지력 경험치 -5%, 통솔·무력 경험치 +10%', exp: { lea: 0.10, war: 0.10, int: -0.05 } }, // 2026-10-28 -10%·+20%에서
   discipline: { tier: '중', name: '규율', desc: '머무는 성의 치안이 매턴 +2 (같은 성에 여럿이어도 +2)', peaceTurn: 2 },
   scholar: { tier: '하', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
@@ -310,7 +310,7 @@ const attackPower = (a, d) => {
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
     * warBonus(a)
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1)
-    * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 병약미
+    * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
 };
 // 수비력: 성 방어 보정을 받는다
 // 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
@@ -318,7 +318,7 @@ const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + wall / RULES.wallDivisor) * (1 + (t.defense || 0)) * warBonus(d)
     * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1)
-    * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 철벽, 병약미
+    * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 철벽, 뼈에게 닿기를
 };
 
 // 훈련: 한 번에 오르는 훈련도 (임시: 통솔 10마다 1씩 더)
