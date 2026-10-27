@@ -529,10 +529,14 @@ details.fold > summary:hover h2 { color: var(--title); }
   #who button { padding: 2px 6px; }
 
   /* 게임 화면: 탭 하나만 */
-  #game { display: block; }
+  #game { display: flex; flex-direction: column; gap: 0; }
   #game > .col, #game > aside { display: none; width: auto; }
   #game[data-tab="map"] > .col, #game[data-tab="gen"] > aside.mid,
-  #game[data-tab="cmd"] > aside.cmdCol:not(.queueCol), #game[data-tab="queue"] > aside.queueCol { display: block; }
+  #game[data-tab="cmd"] > aside.cmdCol, #game[data-tab="chat"] > aside.queueCol { display: block; }
+  /* 명령 탭: 예약표(위) + 명령 단추(아래)를 함께. 채팅 탭: 채팅만 */
+  #game[data-tab="cmd"] > aside.queueCol { order: -1; }
+  #game[data-tab="cmd"] #chat, #game[data-tab="chat"] #queueBox { display: none; }
+  #game[data-tab="cmd"] .queue { max-height: 200px; }
   #game .col > .map { width: auto; }
   #game .win, #join .win, #create.win, #title.win { padding: 10px 10px; }
   #info .stats tbody { grid-template-columns: repeat(2, 1fr); column-gap: 10px; }
