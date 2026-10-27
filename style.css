@@ -118,8 +118,9 @@ h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left
 .link { color: var(--title); text-decoration: none; cursor: pointer; }
 .link:hover { color: var(--panel-dark); background: var(--title); }
 
-#loader { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+#loader { display: flex; align-items: center; justify-content: center; min-height: 60vh; } /* 상단 바는 먼저 보이고, 그 아래에 */
 #loader[hidden] { display: none; }
+body.loading .hdrRight, body.loading h1 small, body.loading .titlebar .era { visibility: hidden; } /* 로딩 중: 상단 바는 낙관·로고 그림만 (글꼴 받기 전이라 글자가 빈칸으로 보이지 않게) */
 .ldAnim { width: 320px; height: 168px; background: url("img/loading.png") 0 0 / 960px 168px no-repeat; image-rendering: pixelated; animation: ldFrames .6s steps(3) infinite; } /* 160×84 세 장을 2배로, 0.2초마다 다음 장 */
 @keyframes ldFrames { to { background-position: -960px 0; } }
 

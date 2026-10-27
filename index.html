@@ -7,11 +7,9 @@
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261027210857">
+<link rel="stylesheet" href="style.css?v=20261027211114">
 </head>
-<body>
-  <!-- 처음 켤 때: 첫 화면과 글꼴이 준비될 때까지 "로딩 중..." (도트 그림 3장을 넘기며, 2026-10-27. tools/make_loading.html) -->
-  <div id="loader"><div class="ldAnim" role="img" aria-label="로딩 중"></div></div>
+<body class="loading">
   <header class="win titlebar">
     <img class="seal toTitle" src="img/seal.png" alt="땅" title="첫 화면으로">
     <h1><img src="img/logo.png" alt="땅국지" class="logoTop toTitle" title="첫 화면으로"> <small>땅따먹기 대소동</small></h1>
@@ -24,6 +22,8 @@
       <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim wideOnly" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="logout">로그아웃</button><button id="withdraw" class="mini danger" title="계정과 장수 정보를 지워요">탈퇴</button></div>
     </div>
   </header>
+  <!-- 처음 켤 때: 상단 바 아래에 "로딩 중..." (첫 화면과 글꼴이 준비되면 걷힌다, 도트 그림 3장, 2026-10-27. tools/make_loading.html) -->
+  <div id="loader"><div class="ldAnim" role="img" aria-label="로딩 중"></div></div>
 
   <!-- 1. 메인 / 로그인: 아이디·비밀번호. 계정 만들기도 여기서 (6번 가입 화면을 합침) -->
   <section id="title" class="win" hidden>
@@ -136,14 +136,14 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261027210857"></script>
-  <script src="mapcore.js?v=20261027210857"></script>
-  <script src="data/map.js?v=20261027210857"></script>
-  <script src="rules.js?v=20261027210857"></script>
-  <script src="faces.js?v=20261027210857"></script>
-  <script src="mapbg.js?v=20261027210857"></script>
-  <script src="map.js?v=20261027210857"></script>
-  <script src="engine.js?v=20261027210857"></script>
-  <script src="game.js?v=20261027210857"></script>
+  <script src="server.js?v=20261027211114"></script>
+  <script src="mapcore.js?v=20261027211114"></script>
+  <script src="data/map.js?v=20261027211114"></script>
+  <script src="rules.js?v=20261027211114"></script>
+  <script src="faces.js?v=20261027211114"></script>
+  <script src="mapbg.js?v=20261027211114"></script>
+  <script src="map.js?v=20261027211114"></script>
+  <script src="engine.js?v=20261027211114"></script>
+  <script src="game.js?v=20261027211114"></script>
 </body>
 </html>

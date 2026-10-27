@@ -621,10 +621,10 @@ let loaderDone = false;
 function hideLoader() {
   if (loaderDone) return;
   loaderDone = true;
-  const off = () => { $('#loader').hidden = true; };
+  const off = () => { $('#loader').hidden = true; document.body.classList.remove('loading'); };
   Promise.race([document.fonts.load('16px DungGeunMo'), new Promise(ok => setTimeout(ok, 10000))]).then(off, off);
 }
-setTimeout(() => { $('#loader').hidden = true; }, 15000); // 혹시 첫 화면을 못 정해도 덮개가 영영 남지 않게
+setTimeout(() => { $('#loader').hidden = true; document.body.classList.remove('loading'); }, 15000); // 혹시 첫 화면을 못 정해도 덮개가 영영 남지 않게
 
 function showScreen(id) {
   hideLoader();
