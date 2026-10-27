@@ -509,13 +509,20 @@ details.fold > summary:hover h2 { color: var(--title); }
 
 /* 첫 화면: 명예의 전당 (작게) */
 #hof { margin-top: 18px; text-align: left; font-size: 16px; /* 둥근모꼴은 16px에서만 또렷하다 (14px 등은 글자가 깨져 보임) */ }
-#hof .hofTitle { margin: 0 0 6px; font-size: 16px; font-weight: normal; color: var(--title); text-align: center; border-top: 1px dotted var(--gold-dark); padding-top: 12px; }
-#hof .hofSeason { margin: 4px 0; padding: 4px 8px; background: var(--panel-dark); border: 1px solid var(--gold-dark); }
-#hof .hofSeason > summary { cursor: pointer; color: var(--label); }
+#hof .hofTitle, #notes .hofTitle { margin: 0 0 6px; font-size: 16px; font-weight: normal; color: var(--title); text-align: center; border-top: 1px dotted var(--gold-dark); padding-top: 12px; }
+#hof .hofSeason, #notes .hofSeason { margin: 4px 0; padding: 4px 8px; background: var(--panel-dark); border: 1px solid var(--gold-dark); }
+#hof .hofSeason > summary, #notes .hofSeason > summary { cursor: pointer; color: var(--label); }
 #hof .hofTable { width: 100%; margin-top: 4px; border-collapse: collapse; }
 #hof .hofTable td { padding: 1px 4px; }
 #hof .hofTable .num { text-align: right; }
 #hof .hofHeroes { margin: 6px 4px 2px; color: var(--title); }
+#notes { margin-top: 14px; text-align: left; } /* 패치노트 (2026-10-27): 명예의 전당과 같은 접는 칸 */
+#notes .hofTitle { text-align: center; }
+#notes .notes { padding-bottom: 6px; }
+#notes .noteHead { margin: 10px 4px 2px; color: var(--title); }
+#notes ul { margin: 0; padding: 0 4px 0 22px; }
+#notes li { margin: 3px 0; line-height: 1.4; word-break: keep-all; }
+#notes li b { color: var(--label); font-weight: normal; }
 .medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
 .createStats .medalCol { color: var(--title); text-align: center; padding-left: 8px; } /* 장수 만들기: 훈장 보너스 칸 */
 #hof .swatch { width: 12px; height: 12px; }

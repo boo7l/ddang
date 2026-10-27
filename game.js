@@ -643,9 +643,20 @@ function showScreen(id) {
 // 구글로 처음 들어온 사람은 게임 아이디를 정한다. 로그인해 두면 다음에 열 때 바로 들어간다
 const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가 미리 되어 있다 (이 브라우저에서만)
 
+// 첫 화면 패치노트 (patchnotes.js). 맨 앞(최신) 것만 펼쳐 둔다 (2026-10-27)
+function renderNotes() {
+  const box = $('#notes');
+  if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<h3 class="hofTitle">📜 패치노트</h3>` + PATCH_NOTES.map((n, i) => `
+    <details class="hofSeason notes"${i === 0 ? ' open' : ''}>
+      <summary>${n.title} <span class="dim">(${n.date})</span></summary>
+      ${n.groups.map(gr => `<p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')}
+    </details>`).join('');
+}
 function showTitle(msg) {
   showScreen('title');
   renderHof();
+  renderNotes();
   renderSeasonBadge();
   const needNick = !!(ME && !ME.nickname);
   $('#tGoogleBox').hidden = needNick;
