@@ -583,7 +583,8 @@ function helpDialog(page = 0) {
       ${RULES.features.siege ? '<li><b>병기</b>: 금으로 충차·정란·벽력거를 만들어요. 공격할 때 힘이 돼요.</li>' : ''}</ul>
       <p class="sub">계략 <span class="dim">(지력이 높을수록 잘 돼요)</span></p><ul>
       <li><b>파괴</b>: 이웃 적 성의 방어를 깎아요.</li>
-      <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li></ul>
+      <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
+      ${cmdOn('spy') ? `<li><b>첩보</b>: 이웃 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
       <p class="sub">기타</p><ul>
       ${RULES.features.explore ? `<li><b>탐색</b>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·능력치를 얻거나, 가끔 도적을 만나요.</li>` : ''}
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
