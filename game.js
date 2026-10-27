@@ -622,6 +622,7 @@ function showScreen(id) {
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   $('#who').hidden = id === 'title';
   $('#mTabs').hidden = id !== 'game'; // 휴대폰 아래 탭은 게임 화면에서만
+  document.body.classList.toggle('inGame', id === 'game'); // 휴대폰: 게임 화면은 앱처럼 (화면 고정, 가운데만 스크롤)
   if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; $('#nowScenario').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
 }
@@ -848,7 +849,7 @@ async function pickFaction() {
 function setTab(t) {
   $('#game').dataset.tab = t;
   document.querySelectorAll('#mTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  window.scrollTo(0, 0);
+  $('#game').scrollTop = 0;
   if (t === 'chat') { const ul = $('#chat .chatList'); if (ul) ul.scrollTop = ul.scrollHeight; } // 숨어 있다 나오면 맨 아래(새 글)로
 }
 document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
