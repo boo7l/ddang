@@ -79,7 +79,7 @@ body {
 .titlebar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px 18px 22px; }
 /* 상단 바: 글자는 꺾지 않고, 자리가 모자라면 오른쪽 단추 묶음이 통째로 아랫줄로 (2026-10-26) */
 .titlebar > *, .titlebar button, #who > * { white-space: nowrap; flex-shrink: 0; }
-@media (max-width: 1250px) { .titlebar h1 small, .wideOnly { display: none; } } /* 좁으면 부제목·"처음이세요?"·"계정" 글자를 숨긴다 */
+@media (max-width: 1250px) { .titlebar h1 small, .wideOnly { display: none; } } /* 좁으면 부제목·"계정" 글자를 숨긴다 */
 .titlebar::after {
   content: "";
   position: absolute;
