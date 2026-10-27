@@ -420,7 +420,7 @@ function shopDialog(msg = '') {
       <span class="r">${top ? `<span class="dim">${statName(it.stat)} 최고</span>` : `<button data-buy="${name}"${p.gold < price ? ' disabled' : ''}>금 ${fmt(price)}에 사기</button>`}</span></div>`;
   }).join('');
   openModal(`<h2>상점 <span class="dim small">· 바로 사요 (턴을 쓰지 않아요)</span></h2>
-    <p>하나 살 때마다 그 능력치가 ${SHOP.명검.bonus} 올라요. 여러 번 살 수 있지만, 같은 물건은 살 때마다 금 ${RULES.shopPrice.step}씩 비싸져요. (능력치 최대 ${RULES.statMax})</p>
+    <p>하나 살 때마다 그 능력치가 ${SHOP.명검.bonus} 올라요. 여러 번 살 수 있지만, 같은 물건은 살 때마다 비싸져요. (능력치 최대 ${RULES.statMax})</p>
     <p class="dim">지금 내 금 <b class="hi">${fmt(p.gold)}</b></p>
     <div class="opts">${rows}</div>
     ${msg ? `<p class="hi">${esc(msg)}</p>` : ''}
