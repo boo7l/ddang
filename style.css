@@ -250,6 +250,9 @@ aside.wide { width: 380px; }
 .gname { margin: 0 0 8px; font-size: 32px; line-height: 1.1; color: var(--title); }
 .gname .dim { font-size: 16px; }
 .statbars { border-collapse: collapse; width: 100%; margin-top: 8px; }
+#general .gHead { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px dotted var(--gold-dark); } /* 장수 창 세 부분(얼굴·정보 / 특성 / 능력치) 사이 구분선 (2026-10-27) */
+#general .statbars { margin-top: 8px; border-top: 1px dotted var(--gold-dark); }
+#general .statbars tr:first-child th, #general .statbars tr:first-child td { padding-top: 7px; }
 .statbars th { color: var(--label); font-weight: normal; text-align: left; width: 48px; padding: 2px 0; }
 .statbars .num { width: 40px; text-align: right; padding-right: 8px; }
 .statbars td:last-child { width: 30px; text-align: right; }
