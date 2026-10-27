@@ -747,14 +747,17 @@ function renderFacePick() {
 function renderCreateStats() {
   const base = draft.base;
   $('#cLeft').textContent = bonusLeft();
-  $('#cStats').innerHTML = STATS.map(st => {
+  // 개국공신 훈장: 개수만큼 통솔·무력·지력 +medalBonus (서버도 만들 때 똑같이 더한다). 숫자·합계에 미리 더해 보여 준다 (2026-10-27)
+  const medals = (S && S.myMedals) || 0, mb = medals * RULES.medalBonus;
+  const final = st => Math.min(RULES.statMax, base[st.key] + (draft.bonus[st.key] || 0) + mb);
+  $('#cStats').innerHTML = (mb ? `<tr><th></th><td></td><td></td><td></td><td class="medalCol"><span class="medal" title="개국공신 훈장 ${medals}개">${MEDAL}</span></td></tr>` : '') + STATS.map(st => {
     const b = draft.bonus[st.key] || 0;
     return `<tr><th>${st.name}</th>
-      <td class="num">${base[st.key] + b}</td>
+      <td class="num">${final(st)}</td>
       <td class="plus">${b ? `+${b}` : ''}</td>
       <td><button class="mini" data-k="${st.key}" data-d="-1"${b ? '' : ' disabled'}>−</button>
-          <button class="mini" data-k="${st.key}" data-d="1"${bonusLeft() ? '' : ' disabled'}>+</button></td></tr>`;
-  }).join('') + `<tr class="sum"><th>합계</th><td class="num">${STATS.reduce((s, st) => s + base[st.key] + (draft.bonus[st.key] || 0), 0)}</td><td></td><td></td></tr>`;
+          <button class="mini" data-k="${st.key}" data-d="1"${bonusLeft() ? '' : ' disabled'}>+</button></td>${mb ? `<td class="medalCol">+${mb}</td>` : ''}</tr>`;
+  }).join('') + `<tr class="sum"><th>합계</th><td class="num">${STATS.reduce((s, st) => s + final(st), 0)}</td><td></td><td></td>${mb ? '<td></td>' : ''}</tr>`;
   $('#cStats').querySelectorAll('button').forEach(b => {
     b.onclick = () => {
       const k = b.dataset.k, d = +b.dataset.d;
