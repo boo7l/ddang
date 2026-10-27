@@ -616,7 +616,18 @@ function helpDialog(page = 0) {
 
 // ===== 화면 전환 (기획서 12장 화면 흐름) =====
 // 7 장수 생성 → 4 세력 선택 → 5 메인 화면. 1·6 로그인·가입은 서버 단계에서 만든다.
+// 처음 켤 때 "로딩 중..." 덮개: 첫 화면이 정해지고 글꼴(둥근모)까지 받은 뒤에 걷는다. 아무리 늦어도 10초 뒤엔 걷는다 (2026-10-27)
+let loaderDone = false;
+function hideLoader() {
+  if (loaderDone) return;
+  loaderDone = true;
+  const off = () => { $('#loader').hidden = true; };
+  Promise.race([document.fonts.load('16px DungGeunMo'), new Promise(ok => setTimeout(ok, 10000))]).then(off, off);
+}
+setTimeout(() => { $('#loader').hidden = true; }, 15000); // 혹시 첫 화면을 못 정해도 덮개가 영영 남지 않게
+
 function showScreen(id) {
+  hideLoader();
   ['title', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다

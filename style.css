@@ -118,7 +118,10 @@ h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left
 .link { color: var(--title); text-decoration: none; cursor: pointer; }
 .link:hover { color: var(--panel-dark); background: var(--title); }
 
-#loader { margin: 60px auto; max-width: 560px; text-align: center; }
+#loader { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+#loader[hidden] { display: none; }
+.ldAnim { width: 320px; height: 168px; background: url("img/loading.png") 0 0 / 960px 168px no-repeat; image-rendering: pixelated; animation: ldFrames .6s steps(3) infinite; } /* 160×84 세 장을 2배로, 0.2초마다 다음 장 */
+@keyframes ldFrames { to { background-position: -960px 0; } }
 
 #game, #join { display: flex; gap: 16px; align-items: flex-start; }
 aside { width: 300px; flex: none; }

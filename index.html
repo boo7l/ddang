@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"><!-- 휴대폰에서 화면 너비에 맞춘다 (2026-10-27) -->
   <title>땅국지 - 땅따먹기 대소동</title>
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
+  <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261027204416">
+<link rel="stylesheet" href="style.css?v=20261027210857">
 </head>
 <body>
+  <!-- 처음 켤 때: 첫 화면과 글꼴이 준비될 때까지 "로딩 중..." (도트 그림 3장을 넘기며, 2026-10-27. tools/make_loading.html) -->
+  <div id="loader"><div class="ldAnim" role="img" aria-label="로딩 중"></div></div>
   <header class="win titlebar">
     <img class="seal toTitle" src="img/seal.png" alt="땅" title="첫 화면으로">
     <h1><img src="img/logo.png" alt="땅국지" class="logoTop toTitle" title="첫 화면으로"> <small>땅따먹기 대소동</small></h1>
@@ -133,14 +136,14 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261027204416"></script>
-  <script src="mapcore.js?v=20261027204416"></script>
-  <script src="data/map.js?v=20261027204416"></script>
-  <script src="rules.js?v=20261027204416"></script>
-  <script src="faces.js?v=20261027204416"></script>
-  <script src="mapbg.js?v=20261027204416"></script>
-  <script src="map.js?v=20261027204416"></script>
-  <script src="engine.js?v=20261027204416"></script>
-  <script src="game.js?v=20261027204416"></script>
+  <script src="server.js?v=20261027210857"></script>
+  <script src="mapcore.js?v=20261027210857"></script>
+  <script src="data/map.js?v=20261027210857"></script>
+  <script src="rules.js?v=20261027210857"></script>
+  <script src="faces.js?v=20261027210857"></script>
+  <script src="mapbg.js?v=20261027210857"></script>
+  <script src="map.js?v=20261027210857"></script>
+  <script src="engine.js?v=20261027210857"></script>
+  <script src="game.js?v=20261027210857"></script>
 </body>
 </html>
