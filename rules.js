@@ -258,7 +258,7 @@ const GENERAL_TRAITS = {
   medic: { tier: '중', name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
   persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 물러남', persuade: 0.04 }, // 2026-10-28 5%에서
   levy: { tier: '중', name: '이게 일상이야', desc: '기타 명령 "징수": 금 +10~500, 그 성 치안 -3 (5턴에 한 번)', levy: { min: 10, max: 500, peace: 3, cooldown: 5 } },
-  duelist: { tier: '중', name: '빠뜨롱 나와', desc: '일기토가 더 자주 벌어지고 (합마다 5 → 10%) 이길 확률 +10%p', duelChance: 0.05, duelWin: 0.10 },
+  duelist: { tier: '중', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
