@@ -350,6 +350,8 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .hdrRight { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 #who { display: flex; align-items: center; gap: 10px; }
 #who #whoName { color: var(--title); }
+#who .wideOnly { margin-left: 14px; } /* 도움말·순위·관리 단추와 계정 이름 사이를 조금 띄운다 (2026-10-27) */
+@media (max-width: 1250px) { #who #whoName { margin-left: 14px; } } /* 좁아서 "계정" 글자가 숨으면 이름 앞을 띄운다 */
 #logout { color: #ff8a70; border-color: #c8503a; } /* 로그아웃은 살짝 붉게 (2026-10-27) */
 #logout:hover { background: #c8503a; color: var(--text); }
 #title { max-width: 460px; margin: 60px auto; text-align: center; }
