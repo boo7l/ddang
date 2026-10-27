@@ -247,16 +247,16 @@ const GENERAL_TRAITS = {
   farm: { name: '둔전', desc: '농업 내정 +10%', dev: { agri: 0.10 } },
   build: { name: '장인', desc: '축성 내정 +10%', dev: { wall: 0.10 } },
   politic: { name: '전문정치팀', desc: '모든 내정 +5%', dev: { agri: 0.05, comm: 0.05, tech: 0.05, wall: 0.05, peace: 0.05 } },
-  haggle: { name: '협상가', desc: '상점 값 -5%', shop: -0.05 },
+  haggle: { name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
   schemer: { name: '책사', desc: '계략(파괴·유언·첩보) 성공 확률 +5%p', plot: 0.05 },
-  charisma: { name: '인망', desc: '징병 +10% 더 모임', draft: 0.10 },
+  charisma: { name: '인망', desc: '징병 +5% 더 모임', draft: 0.05 }, // 2026-10-28 +10%에서
   frail: { name: '병약미', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
-  chadol: { name: '차돌애호가', desc: '지력 경험치 -10%, 통솔·무력 경험치 +20%', exp: { lea: 0.20, war: 0.20, int: -0.10 } },
+  chadol: { name: '차돌애호가', desc: '지력 경험치 -5%, 통솔·무력 경험치 +10%', exp: { lea: 0.10, war: 0.10, int: -0.05 } }, // 2026-10-28 -10%·+20%에서
   discipline: { name: '규율', desc: '머무는 성의 치안이 매턴 +2 (같은 성에 여럿이어도 +2)', peaceTurn: 2 },
   scholar: { name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
   engineer: { name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
   medic: { name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
-  persuade: { name: '설득민수', desc: '수비할 때 불리하면 합마다 5% 확률로 상대가 물러남', persuade: 0.05 },
+  persuade: { name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 물러남', persuade: 0.04 }, // 2026-10-28 5%에서
   levy: { name: '이게 일상이야', desc: '기타 명령 "징수": 금 +10~500, 그 성 치안 -3 (5턴에 한 번)', levy: { min: 10, max: 500, peace: 3, cooldown: 5 } },
   duelist: { name: '빠뜨롱 나와', desc: '일기토가 더 자주 벌어지고 (합마다 5 → 10%) 이길 확률 +10%p', duelChance: 0.05, duelWin: 0.10 },
 };
