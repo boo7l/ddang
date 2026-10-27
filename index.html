@@ -7,7 +7,7 @@
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261027213942">
+<link rel="stylesheet" href="style.css?v=20261027214027">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -19,7 +19,7 @@
     <div id="check" hidden></div>
     <div class="hdrRight">
       <button id="helpBtn" class="main">📜 도움말</button>
-      <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim wideOnly" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="logout">로그아웃</button><button id="withdraw" class="mini danger" title="계정과 장수 정보를 지워요">탈퇴</button></div>
+      <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim wideOnly" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="logout">로그아웃</button></div>
     </div>
   </header>
   <!-- 처음 켤 때: 상단 바 아래에 "로딩 중..." (첫 화면과 글꼴이 준비되면 걷힌다, 도트 그림 3장, 2026-10-27. tools/make_loading.html) -->
@@ -52,7 +52,7 @@
     <div id="notes"></div><!-- 패치노트 (patchnotes.js, 2026-10-27) -->
     <div id="hof"></div><!-- 시즌별 명예의 전당 (로그인 전에도 보인다) -->
     <p class="center small legal"><a class="link" href="privacy.html" target="_blank">개인정보 처리방침</a> · <a class="link" href="terms.html" target="_blank">이용약관</a><br>문의 <a class="link" href="mailto:metal926@naver.com">metal926@naver.com</a></p><!-- 2026-10-26 -->
-    <p class="center"><button id="tWithdraw" class="mini danger" hidden title="계정과 장수 정보를 지워요">탈퇴</button></p><!-- 로그인한 채로 첫 화면에 왔을 때, 맨 아래 작게 (2026-10-27) -->
+    <p class="center"><button id="tWithdraw" class="mini danger" hidden title="계정과 장수 정보를 지워요">탈퇴</button></p><!-- 탈퇴는 여기서만 (로그인한 채로 첫 화면에 왔을 때 맨 아래 작게, 2026-10-27. 게임 화면 상단 바에서는 뺐다) -->
   </section>
 
   <!-- 7. 장수 생성 -->
@@ -139,15 +139,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261027213942"></script>
-  <script src="mapcore.js?v=20261027213942"></script>
-  <script src="data/map.js?v=20261027213942"></script>
-  <script src="rules.js?v=20261027213942"></script>
-  <script src="faces.js?v=20261027213942"></script>
-  <script src="patchnotes.js?v=20261027213942"></script>
-  <script src="mapbg.js?v=20261027213942"></script>
-  <script src="map.js?v=20261027213942"></script>
-  <script src="engine.js?v=20261027213942"></script>
-  <script src="game.js?v=20261027213942"></script>
+  <script src="server.js?v=20261027214027"></script>
+  <script src="mapcore.js?v=20261027214027"></script>
+  <script src="data/map.js?v=20261027214027"></script>
+  <script src="rules.js?v=20261027214027"></script>
+  <script src="faces.js?v=20261027214027"></script>
+  <script src="patchnotes.js?v=20261027214027"></script>
+  <script src="mapbg.js?v=20261027214027"></script>
+  <script src="map.js?v=20261027214027"></script>
+  <script src="engine.js?v=20261027214027"></script>
+  <script src="game.js?v=20261027214027"></script>
 </body>
 </html>

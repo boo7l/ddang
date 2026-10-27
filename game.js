@@ -1261,7 +1261,6 @@ document.querySelectorAll('.toTitle').forEach(el => { el.onclick = () => { if (M
 $('#tEnter').onclick = () => enterFlow();
 $('#tLogout').onclick = logout;
 $('#tWithdraw').onclick = withdraw;
-$('#withdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 $('#adminBtn').onclick = adminToolsDialog;
