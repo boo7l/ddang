@@ -88,7 +88,7 @@ body {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' shape-rendering='crispEdges'%3E%3Cpath fill='%23e8b23a' d='M0 0h12v2H2v4h6V4H6V2h4v6H0zM14 0h2v8h-2z'/%3E%3C/svg%3E") repeat-x;
 }
 .seal { /* 제목줄 "땅" 낙관: 직접 찍은 24×24 도트 그림을 2배로 (img/seal.png, tools/make_seal.html, 2026-10-27) */
-  width: 48px; height: 48px; image-rendering: pixelated;
+  width: 36px; height: 36px; image-rendering: pixelated; /* 2026-10-27 48px는 너무 커서 줄임 (기울여 그리므로 1.5배여도 티가 안 난다) */
   transform: rotate(-10deg);
 }
 h1 { margin: 0; font-size: 32px; font-weight: normal; color: var(--title); letter-spacing: 4px; text-shadow: 2px 2px 0 #000; }
