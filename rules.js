@@ -254,7 +254,7 @@ const GENERAL_TRAITS = {
   chadol: { tier: '중', name: '차돌애호가', desc: '지력 경험치 -3%, 통솔·무력 경험치 +5%', exp: { lea: 0.05, war: 0.05, int: -0.03 } }, // 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
   discipline: { tier: '중', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: '하', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
-  engineer: { tier: '중', name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
+  engineer: { tier: '중', name: '병기도 과학', desc: '병기 제작비 -15%', siegePrice: -0.15 }, // 2026-10-28 -20%에서
   medic: { tier: '중', name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
   persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 퇴각', persuade: 0.04 }, // 2026-10-28 5%에서
   levy: { tier: '상', name: '이게 일상이야', desc: "명령 '갈취' : 금 +10~400, 치안 -3 (쿨타임 5턴)", levy: { min: 10, max: 400, peace: 3, cooldown: 5 } }, // 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 (티어 중 → 상)
