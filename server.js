@@ -52,7 +52,8 @@ async function registerNickname(nickname) {
 // 게임 서버(Edge Function "game")에 요청한다. 돌려받는 것: { error, view, serverNow, admin }
 // error는 게임 규칙상 안 되는 이유(예: "이미 장수가 있어요"). 연결이 안 되면 예외를 던진다
 async function api(action, payload = {}) {
-  const { data, error } = await sb.functions.invoke('game', { body: { action, ...payload } });
+  // region: 서버 함수를 DB가 있는 시드니에서 돌린다 (가까운 곳에서 돌면 DB를 오갈 때마다 한국↔호주를 오가 느렸다, 2026-10-27)
+  const { data, error } = await sb.functions.invoke('game', { body: { action, ...payload }, region: 'ap-southeast-2' });
   if (error) {
     let msg = error.message;
     try { msg = (await error.context.json()).error || msg; } catch (e) { /* 그대로 */ }
