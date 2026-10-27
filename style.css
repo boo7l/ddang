@@ -563,6 +563,29 @@ details.fold > summary:hover h2 { color: var(--title); }
 @keyframes trRise { from { transform: translateY(-90px) scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes trUnfold { from { clip-path: inset(0 0 85% 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes trShow { from { opacity: 0; } to { opacity: 1; } }
+/* 티어별 종이 (2026-10-28): 하는 위의 보통 종이 그대로 */
+/* 중: 하늘색 고급 종이 (안쪽 흰 테두리를 한 줄 더) */
+.trSlip.tMid { background: #d5ebf7; border-color: #5d97bf; box-shadow: inset 0 0 0 3px #f4fbff, inset 0 0 0 5px #9cc6e2, 3px 3px 0 #000; }
+.trSlip.tMid:hover, .trSlip.tMid.on { background: #e6f4fc; border-color: #2f6f9c; }
+.trSlip.tMid b { color: #17476e; }
+.trSlip.tMid .trDesc { color: #1f3446; }
+/* 상: 금빛 종이가 빛난다 (바깥 빛이 깜빡이고, 빛줄기가 종이 위를 지나가고, 모서리에 반짝이) */
+.trSlip.tTop { background: linear-gradient(135deg, #fff6c8, #f6d873 55%, #f0c24a); border-color: #b88412;
+  box-shadow: inset 0 0 0 3px #fffbe3, 3px 3px 0 #000, 0 0 10px 2px #ffd84a; animation: trGlow 1.6s steps(4) infinite; }
+.trSlip.tTop:hover, .trSlip.tTop.on { background: linear-gradient(135deg, #fffbe0, #f9e08a 55%, #f3c95a); border-color: #8f6408; }
+.trSlip.tTop b { color: #7a3d00; }
+.trSlip.tTop .trDesc { color: #4a2a06; }
+.trSlip.tTop::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .75) 48%, rgba(255, 255, 255, .75) 52%, transparent 60%) no-repeat;
+  background-size: 300% 100%; animation: trShine 2.4s steps(12) infinite; }
+.trSlip.tTop::before { content: ''; position: absolute; top: 7px; left: 9px; width: 3px; height: 3px; background: #fff; pointer-events: none;
+  box-shadow: 3px 0 #fff, -3px 0 #fff, 0 3px #fff, 0 -3px #fff;
+  animation: trTwinkle 1.2s steps(2) infinite; }
+.trSlip.tTop.rise { animation: trRise .5s ease-out both, trUnfold .35s steps(4) both, trGlow 1.6s steps(4) infinite;
+  animation-delay: calc(var(--i) * .18s), calc(var(--i) * .18s + .45s), calc(var(--i) * .18s + .8s); }
+@keyframes trGlow { 0%, 100% { box-shadow: inset 0 0 0 3px #fffbe3, 3px 3px 0 #000, 0 0 8px 1px #ffd84a; } 50% { box-shadow: inset 0 0 0 3px #fffbe3, 3px 3px 0 #000, 0 0 18px 5px #ffe066; } }
+@keyframes trShine { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+@keyframes trTwinkle { 50% { opacity: 0; } }
 .trBtns { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 /* ===== 휴대폰 (너비 700px 이하, 2026-10-27) =====

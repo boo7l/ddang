@@ -876,7 +876,8 @@ function renderTrait(animate) {
   $('#trHint').textContent = open ? '종이 한 장을 골라 주세요. 고른 특성은 이 장수에게 영구로 남아요.' : '비단 주머니를 눌러 열어 보세요.';
   $('#trSlips').innerHTML = offer.map((id, i) => {
     const t = GENERAL_TRAITS[id] || { name: id, desc: '' };
-    return `<button class="trSlip${animate ? ' rise' : ''}${trChoice === id ? ' on' : ''}" data-id="${id}" style="--i:${i}">
+    const tierCls = { 상: ' tTop', 중: ' tMid' }[t.tier] || ''; // 티어마다 종이가 다르다: 하 보통 종이, 중 하늘색 고급 종이, 상 빛나는 금빛 종이
+    return `<button class="trSlip${tierCls}${animate ? ' rise' : ''}${trChoice === id ? ' on' : ''}" data-id="${id}" style="--i:${i}">
       <span class="trSeal">${pixelSvg(['RRR', 'RGR', 'RRR'])}</span>
       <b>${esc(t.name)}</b><span class="trDesc">${esc(t.desc)}</span></button>`;
   }).join('');
