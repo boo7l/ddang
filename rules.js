@@ -252,7 +252,7 @@ const GENERAL_TRAITS = {
   charisma: { tier: '하', name: '인망', desc: '징병 +5% 더 모임', draft: 0.05 }, // 2026-10-28 +10%에서
   frail: { tier: '상', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
   chadol: { tier: '상', name: '차돌애호가', desc: '지력 경험치 -5%, 통솔·무력 경험치 +10%', exp: { lea: 0.10, war: 0.10, int: -0.05 } }, // 2026-10-28 -10%·+20%에서
-  discipline: { tier: '중', name: '규율', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
+  discipline: { tier: '중', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: '하', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
   engineer: { tier: '중', name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
   medic: { tier: '중', name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },

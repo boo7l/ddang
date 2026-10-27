@@ -239,7 +239,7 @@ function advance() {
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     trimDefense();
-    // 개인 특성 규율 (2026-10-28): 규율 장수가 머무는 성은 매턴 치안 +2 (여럿이 있어도 성마다 한 번)
+    // 개인 특성 기강 잡기 (2026-10-28): 기강 잡기 장수가 머무는 성은 매턴 치안 +2 (여럿이 있어도 성마다 한 번)
     const drilled = new Set();
     for (const g of allGenerals()) if (g.faction && g.city && gTrait(g).peaceTurn && !drilled.has(g.city)) {
       drilled.add(g.city);
