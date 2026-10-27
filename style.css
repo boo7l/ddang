@@ -238,7 +238,7 @@ aside.wide { width: 380px; }
 .city.home::before {
   content: "";
   position: absolute;
-  top: 3px; left: 3px;
+  top: -4px; left: -4px; z-index: 3; /* 귀퉁이 밖으로 걸쳐 성 이름을 가리지 않게 (2026-10-27) */
   width: 10px; height: 10px;
   background: var(--seal);
   border: 2px solid var(--title);
