@@ -720,6 +720,15 @@ function runExplore(g) {
       }
       break;
     }
+    case 'master': { // 레어 (2026-10-27): 달인에게 가르침을 받아 무작위 능력치 +2 (이미 최고인 능력치는 빼고 고른다)
+      const open = STATS.filter(s => g.stats[s.key] < RULES.statMax);
+      if (!open.length) { text = '달인을 만났지만, 이미 더 배울 것이 없었다.'; break; }
+      const st = open[randInt(0, open.length - 1)];
+      const n = Math.min(e.gain, RULES.statMax - g.stats[st.key]);
+      g.stats[st.key] += n;
+      text = `★★ 달인을 만나 가르침을 얻었다! ${st.name} +${n} (${g.stats[st.key]})`;
+      break;
+    }
     case 'bandit': {
       if (g.troops > 0) {
         const n = Math.max(1, Math.floor(g.troops * (e.minRate + Math.random() * (e.maxRate - e.minRate))));
