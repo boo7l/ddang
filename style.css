@@ -557,6 +557,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #game > .col, #join { container-type: inline-size; } /* 지도 칸 크기를 화면이 아니라 지도가 든 칸의 실제 너비에 맞춘다 */
   .map { --cell: calc((100vw - 36px) / var(--cols, 8)); padding: 8px; }
   #game .map, #join .map { --cell: calc((100cqw - 24px) / var(--cols, 8)); }
+  .city.home::before { top: -4px; left: -4px; width: 8px; height: 8px; z-index: 3; } /* 내 성 깃발: 칸이 작으니 귀퉁이 밖으로 빼서 성 이름을 가리지 않게 */
 
   /* 아래 탭 */
   #mTabs { flex: none; display: flex; gap: 0; margin: 0 -6px; padding-bottom: env(safe-area-inset-bottom); /* 화면 맨 아래 칸 (떠 있지 않고 자리를 차지한다) */
