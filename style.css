@@ -525,7 +525,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 .trPouch { width: 168px; height: 147px; padding: 0; border: 0; background: none; box-shadow: none; cursor: pointer; }
 .trPouch svg { width: 100%; height: 100%; display: block; }
 .trPouch:hover:not(:disabled) { background: none; transform: translateY(-3px); }
-.trPouch:disabled, .trPouch:disabled:hover { cursor: default; opacity: 1; background: none; border: 0; box-shadow: none; filter: none; }
+.trPouch:disabled, .trPouch:disabled:hover { cursor: default; opacity: 1; filter: none; }
+.trPouch, .trPouch:hover, .trPouch:active, .trPouch:focus, .trPouch:disabled { background: none !important; border: 0; box-shadow: none !important; outline: none; } /* 단추 바탕·눌림 그림자가 기울 때 검게 비치지 않게 */
 .trPouch.open { width: 112px; height: 98px; } /* 열리면 작아지고 종이가 앞으로 */
 .trPouch.shake { animation: trShake .45s steps(6); }
 @keyframes trShake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-8deg); } 40% { transform: rotate(7deg); } 60% { transform: rotate(-5deg); } 80% { transform: rotate(4deg); } }
