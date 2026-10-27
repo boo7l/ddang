@@ -520,13 +520,12 @@ details.fold > summary:hover h2 { color: var(--title); }
 #hof .hofTable td { padding: 1px 4px; }
 #hof .hofTable .num { text-align: right; }
 #hof .hofHeroes { margin: 6px 4px 2px; color: var(--title); }
-#notes { margin-top: 14px; text-align: left; } /* 패치노트 (2026-10-27): 명예의 전당과 같은 접는 칸 */
+#notes { margin-top: 14px; text-align: left; } /* 패치노트 (2026-10-27): 2026-10-28부터 업데이트마다 단추, 누르면 팝업 */
 #notes .hofTitle { text-align: center; }
-#notes .notes { padding-bottom: 6px; }
-#notes .noteHead { margin: 10px 4px 2px; color: var(--title); }
-#notes ul { margin: 0; padding: 0 4px 0 22px; }
-#notes li { margin: 3px 0; line-height: 1.4; word-break: keep-all; }
-#notes li b { color: var(--label); font-weight: normal; }
+#notes .noteBtn { display: block; width: 100%; margin: 4px 0; }
+.notesPop .noteHead { margin: 12px 0 2px; color: var(--title); }
+.notesPop .noteHead:first-child { margin-top: 0; }
+.notesPop li { line-height: 1.4; word-break: keep-all; }
 .medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
 .createStats .medalCol { color: var(--title); text-align: center; padding-left: 8px; } /* 장수 만들기: 훈장 보너스 칸 */
 #hof .swatch { width: 12px; height: 12px; }

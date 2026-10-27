@@ -643,15 +643,20 @@ function showScreen(id) {
 // 구글로 처음 들어온 사람은 게임 아이디를 정한다. 로그인해 두면 다음에 열 때 바로 들어간다
 const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가 미리 되어 있다 (이 브라우저에서만)
 
-// 첫 화면 패치노트 (patchnotes.js). 모두 접어 두고, 제목을 누르면 펼친다 (2026-10-27)
+// 첫 화면 패치노트 (patchnotes.js). 업데이트마다 단추 하나, 누르면 도움말처럼 팝업으로 내용이 뜬다 (2026-10-28, 처음엔 접는 칸)
 function renderNotes() {
   const box = $('#notes');
   if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
   box.innerHTML = `<h3 class="hofTitle">📜 패치노트</h3>` + PATCH_NOTES.map((n, i) => `
-    <details class="hofSeason notes">
-      <summary>${n.title} <span class="dim">(${n.date})</span></summary>
-      ${n.groups.map(gr => `<p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')}
-    </details>`).join('');
+    <button class="noteBtn" data-note="${i}">${n.title} <span class="dim">(${n.date})</span></button>`).join('');
+  box.querySelectorAll('[data-note]').forEach(b => { b.onclick = () => noteDialog(PATCH_NOTES[+b.dataset.note]); });
+}
+function noteDialog(n) {
+  openModal(`
+    <h2>📜 ${n.title} <span class="dim small">(${n.date})</span></h2>
+    <div class="help notesPop">${n.groups.map(gr => `<p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')}</div>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+  $('#modalBox').classList.add('wideBox');
 }
 function showTitle(msg) {
   showScreen('title');
