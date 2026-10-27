@@ -257,7 +257,7 @@ const GENERAL_TRAITS = {
   engineer: { tier: '중', name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
   medic: { tier: '중', name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
   persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 물러남', persuade: 0.04 }, // 2026-10-28 5%에서
-  levy: { tier: '중', name: '이게 일상이야', desc: '기타 명령 "갈취": 금 +10~500, 그 성 치안 -3 (5턴에 한 번)', levy: { min: 10, max: 500, peace: 3, cooldown: 5 } },
+  levy: { tier: '중', name: '이게 일상이야', desc: '기타 명령 "갈취": 금 +10~400, 그 성 치안 -3 (6턴에 한 번)', levy: { min: 10, max: 400, peace: 3, cooldown: 6 } }, // 2026-10-28 10~500·5턴에서
   duelist: { tier: '중', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
