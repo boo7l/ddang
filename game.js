@@ -382,7 +382,7 @@ function spyDialog() {
       <span class="r dim">${until ? `${dateText(until)} 전까지 알고 있음` : '모름'}</span></label>`;
   }).join('');
   pickDialog('첩보', `<p>${esc(from.name)}의 이웃한 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(spySuccessRate(int) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
 }
 
 function trainDialog() {
@@ -400,7 +400,7 @@ function siegeDialog() {
   const opts = Object.entries(SIEGE).map(([t, w]) => {
     const have = p.siege && p.siege[t];
     return `<label class="opt"><input type="radio" name="tgt" value="${t}"${have ? ' disabled' : ''}>
-      <b>${t}</b> <span class="dim">금 ${fmt(w.price)}</span>
+      <b>${t}</b> <span class="dim">금 ${fmt(siegePrice(p, t))}</span>
       <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc}</span></label>`;
   }).join('');
   pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 50% 확률로 부서져요.</p>
@@ -452,7 +452,7 @@ function plotDialog(kind) {
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
     : `성공하면 그 성의 <b>치안</b>을 약 ${Math.floor(int * PLOT.rumor.peacePerInt)}, 농업·상업을 약 ${Math.floor(int * PLOT.rumor.devPerInt)}씩 낮춰요.`;
   pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 ${PLOT.critMul}배!</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round(PLOT.successRate(int) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`,
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((PLOT.successRate(int) + (gTrait(p).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`,
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
 
@@ -537,10 +537,10 @@ async function deleteGeneralDialog() {
 
 function moveDialog() {
   const from = cityAtSlot(me(), slot);
-  const opts = linkedOwnCities(from.id, me().faction, RULES.moveRange).map(c =>
+  const opts = linkedOwnCities(from.id, me().faction, moveRangeOf(me())).map(c =>
     `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>
       <span class="r dim">${GRADE_NAME[c.grade]} · 군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
-  pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 우리 땅으로 ${RULES.moveRange}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
+  pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 우리 땅으로 ${moveRangeOf(me())}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
     opts, '예약', v => reserve({ cmd: 'move', to: v }));
 }
 
@@ -1069,7 +1069,8 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
   const etc = [btn('explore', '탐색', cost('explore')),
-    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기')].join('');
+    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
+    gTrait(p).levy ? btn('levy', '징수', levyLeft(p) ? `${levyLeft(p)}턴 뒤 가능` : `금 ${gTrait(p).levy.min}~${gTrait(p).levy.max} · 치안 -${gTrait(p).levy.peace}`) : ''].join(''); // 개인 특성 이게 일상이야
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>

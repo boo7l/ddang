@@ -23,7 +23,9 @@ const foodPrice = () => (S && S.foodPrice) || RULES.foodBuy.start;
 // 세력 특성 (rules.js의 FACTION_TRAITS). 세력이 없거나 특성이 없으면 빈 것
 const traitOf = fid => { const f = fid && factionById(fid); return (f && FACTION_TRAITS[f.name]) || {}; };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
-const traitExp = (g, key, amount) => { const t = traitOf(g.faction); return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0))); };
+const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}; return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0))); }; // 개인 특성 차돌애호가
+// 이동 거리: 보통 2칸, 개인 특성 병약미는 3칸 (군량 수송은 그대로 2칸)
+const moveRangeOf = g => gTrait(g).moveRange || RULES.moveRange;
 // 시각은 언제나 한국 시간으로 적는다 (서버는 다른 나라 시간일 수 있다)
 const kst = t => new Date(t + 9 * HOUR);
 const fmtTime = t => { const d = kst(t); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
@@ -108,6 +110,9 @@ function fixWorld() {
     if (g.log && g.log.length > RULES.logMax) g.log.length = RULES.logMax; // 기록 줄 수를 줄였을 때
     g.queue = (g.queue || []).slice(0, RULES.queueSize).map(o => (o && COMMANDS[o.cmd] ? o : null)); // 없어진 명령은 비운다
     while (g.queue.length < RULES.queueSize) g.queue.push(null);
+    // 장수 특성 목록을 바꿔서 없어진 특성이면 다시 뽑게 한다 (2026-10-28 임시 목록 → 기획자 목록)
+    if (g.trait && !GENERAL_TRAITS[g.trait]) delete g.trait;
+    if (g.traitOffer && g.traitOffer.some(k => !GENERAL_TRAITS[k])) { delete g.traitOffer; delete g.traitRerolls; }
     // 지도를 고쳐서 내 세력이 사라졌으면 세력 없는 장수가 된다
     if (g.faction && !citiesOfFaction(g.faction).length) {
       g.faction = null;
@@ -228,6 +233,13 @@ function advance() {
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     trimDefense();
+    // 개인 특성 규율 (2026-10-28): 규율 장수가 머무는 성은 매턴 치안 +2 (여럿이 있어도 성마다 한 번)
+    const drilled = new Set();
+    for (const g of allGenerals()) if (g.faction && g.city && gTrait(g).peaceTurn && !drilled.has(g.city)) {
+      drilled.add(g.city);
+      const cs = S.cities[g.city];
+      cs.peace = Math.min(devMax(cityById(g.city).grade, 'peace'), cs.peace + gTrait(g).peaceTurn);
+    }
     // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26)
     for (const c of MAP.cities) if (hasGuard(c)) { const cs = S.cities[c.id]; cs.guard = Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen); }
     // 세력마다 몸담은 턴 수 (명예의 전당 소속 = 가장 오래 있었던 세력)
@@ -347,7 +359,7 @@ function runDomestic(g, key) {
   const city = cityById(g.city), c = S.cities[g.city], d = DOMESTIC[key];
   const max = devMax(city.grade, key);
   if (c[key] >= max) return `${josa(d.label, '이가')} 이미 최대치`;
-  const t = traitOf(g.faction), bonus = key === 'comm' ? t.comm || 0 : 0; // 도겸: 상업 내정 +5%
+  const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const gain = Math.min(Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus)), max - c[key]);
   c[key] += gain;
   addLog(g, `${city.name}: ${VERB[key]}. ${d.label} +${gain} (${c[key]}/${max})`);
@@ -370,7 +382,7 @@ function runDraft(g, o) {
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   if (g.troops <= 0) g.training = 0; // 병사가 없을 때 모으면 새 부대
   const t = traitOf(g.faction);
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0))), troopsMax(g) - g.troops); // 원소: 더 모인다
+  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (gTrait(g).draft || 0))), troopsMax(g) - g.troops); // 원소·인망: 더 모인다
   if (g.troops > 0) g.training = dilutedTraining(g.training, g.troops, gain);
   g.unitType = type;
   g.troops += gain;
@@ -435,7 +447,7 @@ function trimDefense() {
 
 // ----- 출진 -----
 // 장수의 부대 (전투 계산용). ref는 전투가 끝난 뒤 병력을 되돌려 적을 장수
-const unitOf = g => ({ name: g.name, faction: g.faction, troops: g.troops, stats: effStats(g), type: g.unitType, training: g.training, siege: g.siege || {}, player: true, ref: g });
+const unitOf = g => ({ name: g.name, faction: g.faction, trait: g.trait, troops: g.troops, stats: effStats(g), type: g.unitType, training: g.training, siege: g.siege || {}, player: true, ref: g });
 
 // 성을 지키는 부대들. 병력이 많은 순서로 나서서 요격한다.
 //   - 수비대장: 유저가 없는 세력의 성
@@ -517,6 +529,16 @@ function capture(g, to, oldFaction, lines) {
   g.city = to.id;
 }
 
+// 개인 특성 너 치료된 거야: 잃은 병력(lost)의 일부가 확률로 돌아온다 (최대 병력까지). 보고서 한 줄을 더한다
+function healAfter(x, lost, lines) {
+  const h = gTrait(x).heal;
+  if (!h || lost <= 0 || !x.unitType || Math.random() >= h.chance) return;
+  const back = Math.min(Math.floor(lost * h.rate), troopsMax(x) - x.troops);
+  if (back <= 0) return;
+  x.troops += back;
+  lines.push(`🩹 ${x.name}: 너 치료된 거야! 다친 병사 ${fmt(back)}명이 돌아왔다. (병력 ${fmt(x.troops)})`);
+}
+
 // 턴이 오면 출진해서 바로 싸운다 (기획서 7장).
 //  1. 공백지: 주인이 없어 그냥 들어간다 (금 없음)
 //  2. 수비 부대가 있으면 최대 5합. 병력 많은 순서로 하나씩 상대하고, 합이 남으면 다음 부대와 이어서 싸운다
@@ -568,7 +590,7 @@ function runAttack(g, o, mark) {
   // 2. 수비 부대와 싸움
   const att = unitOf(g);
   let left = RULES.roundsMax, atkLost = 0, defLost = 0;
-  const dealtBy = new Map();
+  const dealtBy = new Map(), lostBy = new Map();
   lines.push(`⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`);
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
@@ -578,6 +600,7 @@ function runAttack(g, o, mark) {
     left -= r.used;
     atkLost += r.atkLost;
     if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 공적)
+    if (d.ref) lostBy.set(d.ref, (lostBy.get(d.ref) || 0) + r.defLost); // 수비 장수가 잃은 병력 (치료 특성)
     defLost += r.defLost;
     lines.push(...r.lines);
     if (d.guard) cs.guard = d.troops;
@@ -587,6 +610,7 @@ function runAttack(g, o, mark) {
       if (d.schemes) gainStatExp(d.ref, 'int', RULES.scheme.statExp * d.schemes); // 책략을 쓰면 지력 경험치
     }
     if (d.troops <= 0) lines.push(`${d.name} 부대 전멸!`);
+    if (att.persuaded) break; // 설득민수: 출진이 여기서 끝난다
   }
   g.troops = att.troops;
   const standing = defs.filter(x => x.troops > 0);
@@ -595,6 +619,8 @@ function runAttack(g, o, mark) {
   let captured = false, wallDmg = 0;
   if (g.troops <= 0) {
     lines.push(`${g.name}의 부대가 전멸했다… ${josa(from.name, '으로')} 홀로 돌아왔다.`);
+  } else if (att.persuaded) {
+    lines.push(`설득에 넘어가 싸움을 멈추고 ${josa(from.name, '으로')} 돌아왔다.`);
   } else if (standing.length) {
     lines.push(`${RULES.roundsMax}합이 끝났지만 승부가 나지 않아 ${josa(from.name, '으로')} 돌아왔다.`);
   } else {
@@ -622,6 +648,9 @@ function runAttack(g, o, mark) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
+  // 개인 특성 너 치료된 거야: 전투 뒤 50% 확률로 잃은 병력의 25%가 돌아온다 (공격한 장수와 수비 장수 모두)
+  healAfter(g, atkLost, lines);
+  for (const [x, lost] of lostBy) healAfter(x, lost, lines);
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
   // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 200명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
@@ -667,7 +696,7 @@ function runMove(g, o) {
   if (!to) return '없는 성';
   if (to.id === from.id) return `이미 ${to.name}에 있음`;
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
-  if (!linkedOwnCities(from.id, g.faction, RULES.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
+  if (!linkedOwnCities(from.id, g.faction, moveRangeOf(g)).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${moveRangeOf(g)}칸 안에 이어져 있지 않음`;
   g.city = to.id;
   capDefense(g);
   addLog(g, `${from.name}에서 ${josa(to.name, '으로')} 옮겨 갔다. (병력 ${fmt(g.troops)})`);
@@ -765,7 +794,7 @@ function runSpy(g, o) {
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다)
   if (why) return why;
   addMerit(g, RULES.merit.plot);
-  if (Math.random() >= spySuccessRate(effStats(g).int)) {
+  if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0)) { // 책사 +5%p
     addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
     return '';
   }
@@ -789,7 +818,7 @@ function runPlot(g, kind, o) {
   if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다, 2026-10-26)
   if (why) return why;
-  const int = effStats(g).int, r = rollPlot(int);
+  const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +5%p
   if (r === 'fail') {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
     return '';
@@ -815,7 +844,7 @@ function runTrain(g, o) {
   const free = traitOf(g.faction).freeTrain; // 왕랑: 수련에 금이 들지 않는다
   const why = free ? '' : pay(g, 'train');
   if (why) return why;
-  const gain = traitExp(g, o.stat, Math.round(randInt(RULES.statExp.train.min, RULES.statExp.train.max) * (1 + (traitOf(g.faction).trainExp || 0)))); // 왕랑: 수련 경험치 +20%
+  const gain = traitExp(g, o.stat, Math.round(randInt(RULES.statExp.train.min, RULES.statExp.train.max) * (1 + (traitOf(g.faction).trainExp || 0) + (gTrait(g).trainExp || 0)))); // 왕랑: 수련 경험치 +20%, 학구열 +10%
   const up = addStatExp(g, o.stat, gain);
   addLog(g, `${st.name} 수련: 경험 +${gain}` + (free ? '' : ` · 내 금 -${RULES.myGoldCost.train}`) +
     (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[o.stat]})` : ` (${g.statExp[o.stat]}/${expNeed(g.stats[o.stat])})`));
@@ -828,13 +857,14 @@ function runSiege(g, o) {
   if (!w) return '없는 병기';
   g.siege = g.siege || {};
   if (g.siege[o.type]) return `${josa(o.type, '은는')} 이미 가지고 있음`;
-  if (g.gold < w.price) return `내 금 부족 (필요 ${w.price}, 있음 ${fmt(g.gold)})`;
-  g.gold -= w.price;
+  const price = siegePrice(g, o.type);
+  if (g.gold < price) return `내 금 부족 (필요 ${fmt(price)}, 있음 ${fmt(g.gold)})`;
+  g.gold -= price;
   // 부대마다 병기는 하나만. 다른 병기를 가지고 있었으면 버린다
   const old = Object.keys(g.siege).find(t => g.siege[t]);
   g.siege = { [o.type]: true };
   addMerit(g, RULES.merit.siege);
-  addLog(g, `${city.name}: ${josa(o.type, '을를')} 만들어 부대에 갖췄다! (${w.desc}) 내 금 -${fmt(w.price)}` + (old ? ` · 가지고 있던 ${josa(old, '은는')} 버렸다` : ''));
+  addLog(g, `${city.name}: ${josa(o.type, '을를')} 만들어 부대에 갖췄다! (${w.desc}) 내 금 -${fmt(price)}` + (old ? ` · 가지고 있던 ${josa(old, '은는')} 버렸다` : ''));
   return '';
 }
 
@@ -852,6 +882,21 @@ function buyItem(g, item) {
   g.gear = g.gear || {};
   g.gear[o.item] = gearCount(g, o.item) + 1;
   addLog(g, `상점에서 ${josa(o.item, '을를')} 샀다! ${st.name} +${it.bonus} (지금 ${effStats(g)[it.stat]}, ${o.item} ${g.gear[o.item]}개) · 내 금 -${fmt(price)}`);
+  return '';
+}
+
+// ----- 징수 (개인 특성 이게 일상이야, 2026-10-28) -----
+// 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 공적·경험치 없음
+const levyLeft = g => { const L = gTrait(g).levy; return L && g.levyTurn ? Math.max(0, g.levyTurn + L.cooldown - S.turn) : 0; };
+function runLevy(g) {
+  const L = gTrait(g).levy;
+  if (!L) return '징수는 "이게 일상이야" 특성이 있어야 해요';
+  if (levyLeft(g)) return `징수는 ${levyLeft(g)}턴 뒤에 다시 쓸 수 있음`;
+  const city = cityById(g.city), cs = S.cities[g.city];
+  const got = earnGold(g, randInt(L.min, L.max)), drop = Math.min(cs.peace, L.peace);
+  cs.peace -= drop;
+  g.levyTurn = S.turn;
+  addLog(g, `${josa(city.name, '은는')} 이게 일상이야.. 백성에게서 금을 거두었다. 내 금 +${fmt(got)} · 치안 -${drop} (${cs.peace})`);
   return '';
 }
 
@@ -931,6 +976,7 @@ const COMMANDS = {
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 제작 (${o.type})`, run: runSiege },
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
+  levy: { label: () => '징수', run: runLevy },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');

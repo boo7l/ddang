@@ -238,27 +238,35 @@ const UNIT_TYPES = {
   궁병: { stat: 'int', beats: '기병' },
 };
 
-// ===== 세력 특성 (기획서 "세력 특성"): 역사에 근거한 작은 패시브. 세력 이름으로 찾는다 =====
-// 숫자는 비율 (0.05 = 5%). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 traitOf(세력id)로 읽는다
 // ===== 장수 특성 (2026-10-27, 금낭: 장수를 만든 뒤 비단 주머니에서 3장을 뽑아 하나를 영구로 고른다. 다시 뽑기 1번) =====
-// [미정] 목록은 기획자가 정한다. 지금은 임시 목록이고, 효과는 아직 게임에 붙이지 않았다 (보여 주기만)
+// 2026-10-28 기획자 목록 18개 (뽑힐 확률은 모두 같다). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 gTrait(장수 또는 부대)로 읽는다
 const GENERAL_TRAITS = {
-  brave: { name: '용맹', desc: '출진 공격 전투력 +3%' },
-  wall: { name: '철벽', desc: '수비 전투력 +3%' },
-  rider: { name: '기마술', desc: '기병일 때 전투력 +3%' },
-  spear: { name: '창술', desc: '보병일 때 전투력 +3%' },
-  archer: { name: '궁술', desc: '궁병일 때 전투력 +3%' },
-  farm: { name: '둔전', desc: '농업 내정 +10%' },
-  trade: { name: '상재', desc: '상업 내정 +10%' },
-  build: { name: '축성가', desc: '축성 내정 +10%' },
-  charisma: { name: '인망', desc: '징병 +5% 더 모임' },
-  thrift: { name: '절약', desc: '병사 군량 소비 -10%' },
-  schemer: { name: '책사', desc: '계략 성공률 +5%p' },
-  scholar: { name: '학구열', desc: '수련 경험치 +10%' },
+  brave: { name: '용맹', desc: '출진 공격 전투력 +3%', attack: 0.03 },
+  wall: { name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
+  trade: { name: '상재', desc: '상업 내정 +10%', dev: { comm: 0.10 } },
+  farm: { name: '둔전', desc: '농업 내정 +10%', dev: { agri: 0.10 } },
+  build: { name: '장인', desc: '축성 내정 +10%', dev: { wall: 0.10 } },
+  politic: { name: '전문정치팀', desc: '모든 내정 +5%', dev: { agri: 0.05, comm: 0.05, tech: 0.05, wall: 0.05, peace: 0.05 } },
+  haggle: { name: '협상가', desc: '상점 값 -5%', shop: -0.05 },
+  schemer: { name: '책사', desc: '계략(파괴·유언·첩보) 성공 확률 +5%p', plot: 0.05 },
+  charisma: { name: '인망', desc: '징병 +10% 더 모임', draft: 0.10 },
+  frail: { name: '병약미', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
+  chadol: { name: '차돌애호가', desc: '지력 경험치 -10%, 통솔·무력 경험치 +20%', exp: { lea: 0.20, war: 0.20, int: -0.10 } },
+  discipline: { name: '규율', desc: '머무는 성의 치안이 매턴 +2 (같은 성에 여럿이어도 +2)', peaceTurn: 2 },
+  scholar: { name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
+  engineer: { name: '병기도 과학', desc: '병기 만드는 값 -20%', siegePrice: -0.20 },
+  medic: { name: '너 치료된 거야', desc: '전투 뒤 50% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.5, rate: 0.25 } },
+  persuade: { name: '설득민수', desc: '수비할 때 불리하면 합마다 5% 확률로 상대가 물러남', persuade: 0.05 },
+  levy: { name: '이게 일상이야', desc: '기타 명령 "징수": 금 +10~500, 그 성 치안 -3 (5턴에 한 번)', levy: { min: 10, max: 500, peace: 3, cooldown: 5 } },
+  duelist: { name: '빠뜨롱 나와', desc: '일기토가 더 자주 벌어지고 (8 → 12%) 이길 확률 +10%p', duelChance: 0.04, duelWin: 0.10 },
 };
+// 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
+const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
 const TRAIT_DRAW = 3;     // 주머니에서 나오는 종이 수
 const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 
+// ===== 세력 특성 (기획서 "세력 특성"): 역사에 근거한 작은 패시브. 세력 이름으로 찾는다 =====
+// 숫자는 비율 (0.05 = 5%). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 traitOf(세력id)로 읽는다
 const FACTION_TRAITS = {
   마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
   공손찬: { name: '백마의종', desc: '기병으로 수비할 때 전투력 +10%', cavalryDefense: 0.10 },
@@ -300,14 +308,16 @@ const attackPower = (a, d) => {
   const t = traitOf(a.faction);
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
     * warBonus(a)
-    * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1);
+    * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1)
+    * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 병약미
 };
 // 수비력: 성 방어 보정을 받는다
 // 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
 const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + wall / RULES.wallDivisor) * (1 + (t.defense || 0)) * warBonus(d)
-    * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1);
+    * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1)
+    * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 철벽, 병약미
 };
 
 // 훈련: 한 번에 오르는 훈련도 (임시: 통솔 10마다 1씩 더)
@@ -333,11 +343,19 @@ function fightRounds(att, def, wall, left) {
   }
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
+    // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 5% 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
+    if (gTrait(def).persuade && defensePower(def, wall, att) < attackPower(att, def) && Math.random() < gTrait(def).persuade) {
+      att.persuaded = true;
+      lines.push(`${used}합: 🗣 ${def.name}의 설득에 ${att.name}의 마음이 흔들렸다! ${att.name} 부대가 물러난다.`);
+      break;
+    }
     // 일기토: 양쪽 무력이 기준 이상이면 낮은 확률로. 이긴 쪽은 피해 없이, 진 쪽 부대만 크게 다친다
-    const D = RULES.duel;
-    if (!att.dueled && att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < D.chance) {
+    // 개인 특성 빠뜨롱 나와: 어느 한쪽이라도 가지고 있으면 더 자주 벌어지고, 가진 쪽이 이길 확률 +10%p
+    const D = RULES.duel, duelChance = D.chance + Math.max(gTrait(att).duelChance || 0, gTrait(def).duelChance || 0);
+    if (!att.dueled && att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < duelChance) {
       att.dueled = true; // 이번 출진에서는 더 일어나지 않는다
-      const aWin = Math.random() < duelWinRate(att.stats.war, def.stats.war);
+      const aRate = Math.min(0.95, Math.max(0.05, duelWinRate(att.stats.war, def.stats.war) + (gTrait(att).duelWin || 0) - (gTrait(def).duelWin || 0)));
+      const aWin = Math.random() < aRate;
       const w = aWin ? att : def, l = aWin ? def : att;
       const loss = Math.ceil(l.troops * D.loserLoss);
       l.troops -= loss;
@@ -381,8 +399,8 @@ const PLOT = {
   exp: 40, critExp: 60,                // 성공하면 지력 경험치 (대성공이면 60, 2026-10-27 30·50에서)
 };
 // 'fail' | 'ok' | 'crit'
-function rollPlot(int) {
-  if (Math.random() >= PLOT.successRate(int)) return 'fail';
+function rollPlot(int, bonus = 0) { // bonus: 개인 특성 책사 +5%p (최대치 위로도 더한다)
+  if (Math.random() >= PLOT.successRate(int) + bonus) return 'fail';
   return Math.random() < PLOT.critRate(int) ? 'crit' : 'ok';
 }
 
@@ -446,6 +464,8 @@ const SIEGE = {
   정란: { price: 2000, desc: '수비 부대와 싸울 때 공격력 +15%' },
   벽력거: { price: 4000, desc: '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)' },
 };
+// 병기 만드는 값: 개인 특성 병기도 과학은 -20%
+const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (gTrait(g).siegePrice || 0)));
 // 병기 효과 (임시값)
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
@@ -463,7 +483,7 @@ const SHOP = {
   서적: { stat: 'int', bonus: 1 },
 };
 const gearCount = (g, name) => Number((g.gear || {})[name]) || 0; // 예전 저장의 true는 1개
-const shopPrice = (g, name) => Math.round((RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name)) * (1 + (traitOf(g.faction).shop || 0))); // 원술 할인
+const shopPrice = (g, name) => Math.round((RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name)) * (1 + (traitOf(g.faction).shop || 0) + (gTrait(g).shop || 0))); // 원술 할인, 개인 특성 협상가
 
 // 장수의 실제 능력치: 기본 능력치 + 가진 상점 물건 (최대치 120을 넘지 않는다)
 function effStats(g) {
