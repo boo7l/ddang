@@ -1009,8 +1009,8 @@ function renderGeneral() {
         <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
       </table>
     </div></div>
-    ${traitOf(f.id).name ? `<p class="traitLine"><b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
-    ${p.trait && GENERAL_TRAITS[p.trait] ? `<p class="traitLine myTrait"><b>🧧 ${GENERAL_TRAITS[p.trait].name}</b> <span class="dim">(내 특성)</span><br>${GENERAL_TRAITS[p.trait].desc}</p>` : ''}
+    ${traitOf(f.id).name ? `<p class="traitLine"><span class="dim">[세력]</span> <b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
+    ${p.trait && GENERAL_TRAITS[p.trait] ? `<p class="traitLine myTrait"><span class="dim">[개인]</span> <b>${GENERAL_TRAITS[p.trait].name}</b><br>${GENERAL_TRAITS[p.trait].desc}</p>` : ''}
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
