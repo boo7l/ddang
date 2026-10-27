@@ -849,6 +849,7 @@ function setTab(t) {
   $('#game').dataset.tab = t;
   document.querySelectorAll('#mTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   window.scrollTo(0, 0);
+  if (t === 'chat') { const ul = $('#chat .chatList'); if (ul) ul.scrollTop = ul.scrollHeight; } // 숨어 있다 나오면 맨 아래(새 글)로
 }
 document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
 
