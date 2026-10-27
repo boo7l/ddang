@@ -300,13 +300,13 @@ function runOrders(mark) {
 
 // ===== 예약표 =====
 // i번 칸에 명령을 넣는다 (null이면 비운다). 같은 턴에 같은 성을 친 장수들은 예약한 순서(orderedAt)대로 싸운다
-// 징수(이게 일상이야)를 i번 칸에 넣을 수 없는 이유. 쿨타임 안에 들어가는 칸은 예약 때 막는다 (2026-10-28, 실패로 턴을 버리지 않게)
-// i번 칸은 S.turn + 1 + i턴에 실행된다. 마지막 징수 뒤 cooldown턴 안이거나, 다른 칸의 징수와 cooldown칸 안이면 안 된다
+// 갈취(이게 일상이야)를 i번 칸에 넣을 수 없는 이유. 쿨타임 안에 들어가는 칸은 예약 때 막는다 (2026-10-28, 실패로 턴을 버리지 않게)
+// i번 칸은 S.turn + 1 + i턴에 실행된다. 마지막 갈취 뒤 cooldown턴 안이거나, 다른 칸의 갈취와 cooldown칸 안이면 안 된다
 function levyBlocked(g, i) {
   const L = gTrait(g).levy;
-  if (!L) return '징수는 "이게 일상이야" 특성이 있어야 해요.';
-  if (g.levyTurn && g.levyTurn + L.cooldown > S.turn + 1 + i) return `징수는 ${L.cooldown}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.levyTurn + L.cooldown).month}월 칸부터 가능)`;
-  if (g.queue.some((o, j) => j !== i && o && o.cmd === 'levy' && Math.abs(i - j) < L.cooldown)) return `징수는 ${L.cooldown}턴에 한 번이라, 앞뒤 ${L.cooldown - 1}칸 안에 징수가 있으면 넣을 수 없어요.`;
+  if (!L) return '갈취는 "이게 일상이야" 특성이 있어야 해요.';
+  if (g.levyTurn && g.levyTurn + L.cooldown > S.turn + 1 + i) return `갈취는 ${L.cooldown}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.levyTurn + L.cooldown).month}월 칸부터 가능)`;
+  if (g.queue.some((o, j) => j !== i && o && o.cmd === 'levy' && Math.abs(i - j) < L.cooldown)) return `갈취는 ${L.cooldown}턴에 한 번이라, 앞뒤 ${L.cooldown - 1}칸 안에 갈취가 있으면 넣을 수 없어요.`;
   return '';
 }
 function setOrder(g, i, order) {
@@ -322,7 +322,7 @@ function fillOrders(g, order) {
   if (!order) return '채울 수 없는 명령이에요.';
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
-    if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 징수는 쿨타임이 끝난 칸에만 채운다
+    if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 갈취는 쿨타임이 끝난 칸에만 채운다
     const why = setOrder(g, i, order);
     if (why) return why;
   }
@@ -902,13 +902,13 @@ function buyItem(g, item) {
   return '';
 }
 
-// ----- 징수 (개인 특성 이게 일상이야, 2026-10-28) -----
+// ----- 갈취 (개인 특성 이게 일상이야, 2026-10-28) -----
 // 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 공적·경험치 없음
 const levyLeft = g => { const L = gTrait(g).levy; return L && g.levyTurn ? Math.max(0, g.levyTurn + L.cooldown - S.turn) : 0; };
 function runLevy(g) {
   const L = gTrait(g).levy;
-  if (!L) return '징수는 "이게 일상이야" 특성이 있어야 해요';
-  if (levyLeft(g)) return `징수는 ${levyLeft(g)}턴 뒤에 다시 쓸 수 있음`;
+  if (!L) return '갈취는 "이게 일상이야" 특성이 있어야 해요';
+  if (levyLeft(g)) return `갈취는 ${levyLeft(g)}턴 뒤에 다시 쓸 수 있음`;
   const city = cityById(g.city), cs = S.cities[g.city];
   const got = earnGold(g, randInt(L.min, L.max)), drop = Math.min(cs.peace, L.peace);
   cs.peace -= drop;
@@ -993,7 +993,7 @@ const COMMANDS = {
   train: { label: o => `수련 (${(STATS.find(s => s.key === o.stat) || { name: '?' }).name})`, run: runTrain },
   siege: { label: o => `병기 제작 (${o.type})`, run: runSiege },
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
-  levy: { label: () => '징수', run: runLevy },
+  levy: { label: () => '갈취', run: runLevy },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');
