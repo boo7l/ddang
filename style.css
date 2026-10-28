@@ -361,7 +361,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
   padding: 10px; background: var(--panel-dark); border: 2px solid var(--gold); box-shadow: 3px 3px 0 #000; }
 .menuOpen #who #whoName { display: block; order: -1; margin: 0 0 2px; text-align: center; color: var(--title); } /* 메뉴 맨 위에 계정 이름 */
 /* ☰ 메뉴 [📊 정보] → 내 장수 기록 창 (2026-10-28) */
-#modalBox.recBox { width: 340px; }
+#modalBox.recBox { width: 280px; }
 .recTable { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
 .recTable tr { border-bottom: 1px dotted var(--gold-dark); }
 .recTable th { text-align: left; color: var(--label); font-weight: normal; padding: 4px 16px 4px 0; white-space: nowrap; }
