@@ -348,13 +348,19 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 
 /* 로그인(1번) 화면과 오른쪽 위 접속 정보 */
 .hdrRight { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-#who { display: flex; align-items: center; gap: 10px; }
-#who #whoName { color: var(--title); }
-#menuBtn { display: none; } /* 휴대폰에서만 보인다 (아래 @media) */
+/* 제목줄 ☰ 메뉴 (2026-10-28, 처음엔 휴대폰만 → 같은 날 PC도): [도움말] [☰]. 계정 이름·순위·관리·메인·로그아웃(휴대폰은 PC 버전 보기도)은 ☰ 안에 */
+.titlebar { position: relative; }
+#who { display: none; }
+#menuBtn { display: none; padding: 2px 10px; }
+#who:not([hidden]) ~ #menuBtn { display: inline-block; }
+.menuOpen #menuBtn { background: var(--title); color: var(--panel-dark); }
+.menuOpen #who:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; gap: 6px; position: absolute; top: calc(100% - 12px); right: 18px; z-index: 50;
+  padding: 10px; background: var(--panel-dark); border: 2px solid var(--gold); box-shadow: 3px 3px 0 #000; }
+.menuOpen #who #whoName { display: block; order: -1; margin: 0 0 2px; text-align: center; color: var(--title); } /* 메뉴 맨 위에 계정 이름 */
+#who .wideOnly { display: none; }
+#who button { padding: 4px 12px; }
 #pcBtn, #mobileBtn { display: none; } /* PC 버전 보기는 휴대폰 ☰ 메뉴 안에서만, 모바일 버전 단추는 PC 버전으로 볼 때만 (2026-10-28) */
 .pcMode #mobileBtn { display: inline-block; }
-#who .wideOnly { margin-left: 14px; } /* 도움말·순위·관리 단추와 계정 이름 사이를 조금 띄운다 (2026-10-27) */
-@media (max-width: 1250px) { #who #whoName { margin-left: 14px; } } /* 좁아서 "계정" 글자가 숨으면 이름 앞을 띄운다 */
 #logout { color: #ff8a70; border-color: #c8503a; } /* 로그아웃은 살짝 붉게 (2026-10-27) */
 #logout:hover { background: #c8503a; color: var(--text); }
 #title { max-width: 460px; margin: 60px auto; text-align: center; }
@@ -609,19 +615,12 @@ details.fold > summary:hover h2 { color: var(--title); }
   body.inGame #game { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
   .titlebar { padding: 8px 10px 16px; gap: 4px 10px; }
   .titlebar h1 small, .season, .scenario { display: none; }
-  /* 제목줄 한 줄 (2026-10-28): 로고 · 날짜 · [도움말] [☰]. 순위·관리·메인·로그아웃은 ☰ 메뉴 안에 */
-  .titlebar { position: relative; flex-wrap: nowrap; gap: 4px 8px; }
+  /* 제목줄 한 줄 (2026-10-28): 로고 · 날짜 · [도움말] [☰] (☰ 메뉴는 위 공통 규칙) */
+  .titlebar { flex-wrap: nowrap; gap: 4px 8px; }
   .hdrRight { margin-left: auto; gap: 6px; }
   #helpBtn { padding: 2px 8px; }
-  #who:not([hidden]) ~ #menuBtn { display: inline-block; }
-  #who { display: none; }
-  .menuOpen #who:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; gap: 6px; position: absolute; top: calc(100% - 10px); right: 10px; z-index: 50;
-    padding: 10px; background: var(--panel-dark); border: 2px solid var(--gold); box-shadow: 3px 3px 0 #000; }
-  .menuOpen #who #whoName { display: block; order: -1; margin: 0 0 2px; text-align: center; } /* 메뉴 맨 위에 계정 이름 */
+  .menuOpen #who:not([hidden]) { right: 10px; top: calc(100% - 10px); }
   .menuOpen #who #pcBtn { display: block; }
-  #menuBtn { padding: 2px 10px; }
-  .menuOpen #menuBtn { background: var(--title); color: var(--panel-dark); }
-  #who button { padding: 4px 12px; }
 
   /* 게임 화면: 탭 하나만 */
   #game { display: flex; flex-direction: column; gap: 0; align-items: stretch; }
