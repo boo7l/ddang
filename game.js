@@ -770,7 +770,7 @@ function renderFacePick() {
   big.appendChild(faceCanvas(draft.face));
   const list = $('#cFaces');
   list.innerHTML = '';
-  FACES.forEach(f => {
+  [...FACES].sort((a, b) => (a.style === '문관' ? 0 : 1) - (b.style === '문관' ? 0 : 1)).forEach(f => { // 문관이 윗줄 (2026-10-28)
     const b = document.createElement('button');
     b.className = f.id === draft.face ? 'on' : '';
     b.title = f.name;
