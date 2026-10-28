@@ -246,8 +246,8 @@ function advance() {
       const cs = S.cities[g.city];
       cs.peace = Math.min(devMax(cityById(g.city).grade, 'peace'), cs.peace + gTrait(g).peaceTurn);
     }
-    // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26)
-    for (const c of MAP.cities) if (hasGuard(c)) { const cs = S.cities[c.id]; cs.guard = Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen); }
+    // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26). 한번 전멸(0)하면 다시 생기지 않는다 (2026-10-28)
+    for (const c of MAP.cities) if (hasGuard(c) && S.cities[c.id].guard > 0) { const cs = S.cities[c.id]; cs.guard = Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen); }
     // 세력마다 몸담은 턴 수 (명예의 전당 소속 = 가장 오래 있었던 세력)
     for (const g of allGenerals()) if (g.faction) { g.factionTurns = g.factionTurns || {}; g.factionTurns[g.faction] = (g.factionTurns[g.faction] || 0) + 1; }
     if (S.unified) { // 이번 턴에 통일했다
