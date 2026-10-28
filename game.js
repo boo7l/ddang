@@ -674,6 +674,7 @@ function showTitle(msg) {
   const inGame = !!(ME && ME.nickname);
   $('#tEnter').hidden = !inGame;
   $('#tLogout').hidden = !inGame;
+  $('#tAdmin').hidden = !(inGame && IS_ADMIN); // 관리자만 (2026-10-28)
   $('#tWithdraw').hidden = !inGame;
   if (inGame) $('#tGoogleBox').hidden = true;
   applyLoginGate();
@@ -1358,6 +1359,7 @@ const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); e
 $('#pcBtn').onclick = () => setPcMode(true);
 $('#mobileBtn').onclick = () => setPcMode(false);
 $('#adminBtn').onclick = adminToolsDialog;
+$('#tAdmin').onclick = async () => { if (!S) await call('state'); if (IS_ADMIN) adminToolsDialog(); }; // 첫 화면의 관리 단추 (세계를 아직 안 받았으면 먼저 받는다)
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = rankDialog;
