@@ -244,9 +244,9 @@ const UNIT_TYPES = {
 const GENERAL_TRAITS = {
   brave: { tier: 'N', name: '용맹', desc: '공격 전투력 +3%', attack: 0.03 },
   wall: { tier: 'N', name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
-  trade: { tier: 'N', name: '상재', desc: '상업 내정 +15%', dev: { comm: 0.15 } }, // 2026-10-28 +10%에서
-  farm: { tier: 'N', name: '둔전', desc: '농업 내정 +15%', dev: { agri: 0.15 } }, // 2026-10-28 +10%에서
-  build: { tier: 'N', name: '장인', desc: '축성 내정 +15%', dev: { wall: 0.15 } }, // 2026-10-28 +10%에서
+  trade: { tier: 'N', name: '상재', desc: '상업 내정 +20%', dev: { comm: 0.20 } }, // 2026-10-28 +10% → +15% → +20%
+  farm: { tier: 'N', name: '둔전', desc: '농업 내정 +20%', dev: { agri: 0.20 } }, // 2026-10-28 +10% → +15% → +20%
+  build: { tier: 'N', name: '장인', desc: '축성 내정 +20%', dev: { wall: 0.20 } }, // 2026-10-28 +10% → +15% → +20%
   politic: { tier: 'R', name: '전문정치팀', desc: '모든 내정 +10%', dev: { agri: 0.10, comm: 0.10, tech: 0.10, wall: 0.10, peace: 0.10 } }, // 2026-10-28 +5%에서
   haggle: { tier: 'N', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
   schemer: { tier: 'N', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
