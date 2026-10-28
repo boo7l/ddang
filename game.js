@@ -748,7 +748,7 @@ async function withdraw() {
 }
 
 // ===== 7. 장수 생성 화면 =====
-const draft = { face: FACES[0].id, base: null, bonus: {} }; // base: 주사위로 나온 통/무/지
+const draft = { face: 'c1', base: null, bonus: {} }; // base: 주사위로 나온 통/무/지. 처음 골라 둔 얼굴은 문관 1 (윗줄 첫째, 2026-10-28)
 const bonusLeft = () => RULES.startBonus - STATS.reduce((s, st) => s + (draft.bonus[st.key] || 0), 0);
 
 function showCreate() {
