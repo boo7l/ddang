@@ -625,8 +625,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #game > .col, #game > aside { display: none; width: auto; }
   #game[data-tab="map"] > .col, #game[data-tab="gen"] > aside.mid,
   #game[data-tab="cmd"] > aside.cmdCol, #game[data-tab="chat"] > aside.queueCol { display: block; }
-  /* 명령 탭: 예약표(위) + 명령 단추(아래)를 함께. 채팅 탭: 채팅만 */
-  #game[data-tab="cmd"] > aside.queueCol { order: -1; }
+  /* 명령 탭: 명령 단추(위) + 예약표(아래)를 함께 (2026-10-28 순서 바꿈, 그 전엔 예약표가 위). 채팅 탭: 채팅만 */
   #game[data-tab="cmd"] #chat, #game[data-tab="chat"] #queueBox { display: none; }
   #game[data-tab="cmd"] .queue { max-height: 200px; }
   #game .col > .map { width: auto; }
