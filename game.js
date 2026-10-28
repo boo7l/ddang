@@ -296,7 +296,7 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox'); }
+function closeModal() { $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 function pickDialog(title, intro, opts, okText, onOk, extra = '') {
@@ -1318,17 +1318,20 @@ $('#tWithdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
-$('#menuBtn').onclick = e => { e.stopPropagation(); renderRecord(); document.querySelector('header').classList.toggle('menuOpen'); };
-// ☰ 메뉴 맨 위 정보란 (2026-10-28): 내 장수의 기록 (서버가 g.record에 센다). 장수가 없으면 비운다
-function renderRecord() {
-  const g = S && me && me();
-  if (!g) { $('#myRecord').innerHTML = ''; return; }
+$('#menuBtn').onclick = e => { e.stopPropagation(); $('#recordBtn').hidden = !(S && me()); document.querySelector('header').classList.toggle('menuOpen'); };
+// ☰ 메뉴 맨 위 [📊 정보] (2026-10-28): 누르면 내 장수의 기록 창 (서버가 g.record에 센다). 장수가 없으면 단추를 숨긴다
+function recordDialog() {
+  const g = S && me();
+  if (!g) return;
   const r = g.record || {}, n = k => fmt(r[k] || 0);
   const rows = [['내정', `${n('domestic')}회`], ['징병', `${n('drafted')}명`], ['전투', `${n('battles')}회`], ['승전', `${n('wins')}회`], ['패전', `${n('losses')}회`],
     ['계략', `${n('plotOk')} / ${n('plotTry')}회 성공`], ['세력 변경', `${Math.max(0, (g.joins || 1) - 1)}회`], ['훈장', `${(S.myMedals || 0)}개`]];
-  $('#myRecord').innerHTML = `<p class="recName">${esc(g.name)}${medalOf(g.id)}</p>
-    <table class="recTable">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>`;
+  openModal(`<h2>📊 ${esc(g.name)}의 기록</h2>
+    <table class="recTable">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+  $('#modalBox').classList.add('recBox');
 }
+$('#recordBtn').onclick = recordDialog;
 document.addEventListener('click', () => document.querySelector('header').classList.remove('menuOpen'));
 // 휴대폰에서 PC 버전으로 보기 ↔ 모바일 버전으로 돌아오기 (2026-10-28). 고른 것은 이 브라우저에 기억하고 새로 연다 (index.html 맨 위에서 화면 너비를 정한다)
 const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); else localStorage.removeItem('ddang-pc'); } catch (e) { /* 저장 못 하면 이번만 */ } location.reload(); };

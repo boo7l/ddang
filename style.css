@@ -360,13 +360,12 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .menuOpen #who:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; gap: 6px; position: absolute; top: calc(100% - 12px); right: 18px; z-index: 50;
   padding: 10px; background: var(--panel-dark); border: 2px solid var(--gold); box-shadow: 3px 3px 0 #000; }
 .menuOpen #who #whoName { display: block; order: -1; margin: 0 0 2px; text-align: center; color: var(--title); } /* 메뉴 맨 위에 계정 이름 */
-/* ☰ 메뉴 맨 위 정보란: 내 장수 기록 (2026-10-28) */
-#myRecord { order: -2; }
-#myRecord:empty { display: none; }
-#myRecord .recName { margin: 0 0 4px; text-align: center; color: var(--title); }
-.recTable { width: 100%; border-collapse: collapse; margin-bottom: 4px; padding-bottom: 6px; border-bottom: 1px dotted var(--gold-dark); }
-.recTable th { text-align: left; color: var(--label); font-weight: normal; padding: 1px 16px 1px 0; white-space: nowrap; }
-.recTable td { text-align: right; padding: 1px 0; white-space: nowrap; }
+/* ☰ 메뉴 [📊 정보] → 내 장수 기록 창 (2026-10-28) */
+#modalBox.recBox { width: 340px; }
+.recTable { width: 100%; border-collapse: collapse; margin: 4px 0 10px; }
+.recTable tr { border-bottom: 1px dotted var(--gold-dark); }
+.recTable th { text-align: left; color: var(--label); font-weight: normal; padding: 4px 16px 4px 0; white-space: nowrap; }
+.recTable td { text-align: right; padding: 4px 0; white-space: nowrap; }
 #who .wideOnly { display: none; }
 #who button { padding: 4px 12px; }
 #pcBtn, #mobileBtn { display: none; } /* PC 버전 보기는 휴대폰 ☰ 메뉴 안에서만, 모바일 버전 단추는 PC 버전으로 볼 때만 (2026-10-28) */

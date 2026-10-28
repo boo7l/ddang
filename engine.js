@@ -282,8 +282,10 @@ function advance() {
 // 모든 장수의 예약표 맨 앞 칸 명령을 예약한 순서대로 실행하고, 예약표를 한 칸씩 당긴다. 빈 칸이면 대기
 // 이번 턴에 성마다 출진한 장수 id (runOrders가 턴마다 비운다)
 let turnAttackers = {};
+let turnCaptured = {}; // 이번 턴에 싸워서 함락한 성 → 함락한 세력 (승전 기록, 2026-10-28)
 function runOrders(mark) {
   turnAttackers = {};
+  turnCaptured = {};
   const todo = [];
   for (const g of allGenerals()) {
     const order = g.queue.shift();
@@ -579,6 +581,7 @@ function runAttack(g, o, mark) {
     g.city = to.id;
     capDefense(g);
     addLog(g, `${josa(to.name, '은는')} 이미 우리 성이라 싸우지 않고 그대로 들어갔다. (병력 ${fmt(g.troops)})`);
+    if (turnCaptured[to.id] === g.faction) addRecord(g, 'wins'); // 같은 턴에 동료가 함락시킨 성: 함께 공격한 것으로 승전
     addMerit(g, RULES.merit.move);
     return '';
   }
@@ -675,7 +678,7 @@ function runAttack(g, o, mark) {
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
   // 개인 특성 너 치료된 거야: 전투 뒤 50% 확률로 잃은 병력의 25%가 돌아온다 (공격한 장수와 수비 장수 모두)
-  if (captured) addRecord(g, 'wins'); // 승전 = 이 출진으로 성을 차지
+  if (captured) { addRecord(g, 'wins'); turnCaptured[to.id] = g.faction; } // 승전 = 이번 턴에 그 성을 차지 (함께 공격한 동료도, 아래)
   if (g.troops <= 0) addRecord(g, 'losses'); // 패전 = 내 부대 전멸 (치료로 돌아오기 전)
   healAfter(g, atkLost, lines);
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
@@ -706,6 +709,7 @@ function runAttack(g, o, mark) {
       const x = S.generals[id];
       if (!x || x === g || x.faction !== g.faction) continue;
       gainStatExp(x, 'lea', RULES.statExp.capture); // 함락에 기여한 장수 모두 점령 경험치 (2026-10-27)
+      addRecord(x, 'wins'); // 같은 턴에 함께 공격한 동료도 승전 (2026-10-28)
       if (x.city === to.id) continue;
       x.city = to.id;
       capDefense(x);
