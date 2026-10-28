@@ -157,15 +157,22 @@ const rejoinLeft = (g, fid) => (g.leftFaction && g.leftFaction.id === fid ? Math
 
 // 금낭: 장수 특성 TRAIT_DRAW개를 겹치지 않게 무작위로 (다시 뽑을 때는 방금 나온 것을 되도록 빼고)
 // 티어마다 뽑힐 비율이 다르다: 상이 가장 드물고 하가 가장 흔하다 (TRAIT_TIER_WEIGHT, 2026-10-28)
-function drawTraits(prev = []) {
+// sure: 이 티어들 중 하나는 꼭 나오게 한다 (탐색 특성 주머니는 중 이상 1장 보장, 2026-10-28). 안 나왔으면 무작위 한 장을 그 티어에서 다시 뽑아 바꾼다
+function drawTraits(prev = [], sure = null) {
   let pool = Object.keys(GENERAL_TRAITS).filter(k => !prev.includes(k));
   if (pool.length < TRAIT_DRAW) pool = Object.keys(GENERAL_TRAITS);
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
+  const pick = list => { // 티어 비율대로 하나 (뽑은 것은 list에서 뺀다)
+    let r = Math.random() * list.reduce((s, k) => s + weight(k), 0), i = 0;
+    while (i < list.length - 1 && (r -= weight(list[i])) >= 0) i++;
+    return list.splice(i, 1)[0];
+  };
   const out = [];
-  while (out.length < TRAIT_DRAW && pool.length) {
-    let r = Math.random() * pool.reduce((s, k) => s + weight(k), 0), i = 0;
-    while (i < pool.length - 1 && (r -= weight(pool[i])) >= 0) i++;
-    out.push(pool.splice(i, 1)[0]);
+  while (out.length < TRAIT_DRAW && pool.length) out.push(pick(pool));
+  const good = k => sure.includes(GENERAL_TRAITS[k].tier);
+  if (sure && !out.some(good)) {
+    const better = pool.filter(good);
+    if (better.length) out[Math.floor(Math.random() * out.length)] = pick(better);
   }
   return out;
 }
@@ -791,7 +798,7 @@ function runExplore(g) {
       break;
     }
     case 'pouch': { // 레어 (2026-10-28): 특성 주머니. 지금 특성을 뺀 3장을 뽑아 두고, 장수가 하나로 바꾸거나 그대로 둔다 (다시 뽑기 없음)
-      g.traitFound = drawTraits(g.trait ? [g.trait] : []);
+      g.traitFound = drawTraits(g.trait ? [g.trait] : [], ['상', '중']); // 중 이상 1장은 꼭
       text = '★★ 길가에서 비단 주머니를 주웠다! 특성 3장 중 하나로 바꿀 수 있다. (장수 창에서 열어 보세요)';
       break;
     }
