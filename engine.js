@@ -45,7 +45,7 @@ const playable = () => MAP.factions.filter(f => !RULES.npcOnly.includes(f.name) 
 
 // 세력에 소속된 장수(계정) 수
 const memberCount = fid => allGenerals().filter(g => g.faction === fid).length;
-// 수비대장이 지키는 성인지: 세력 성인데 소속원이 아무도 없을 때
+// 유저가 없는 세력의 성인지: 수비대장이 매달 병력을 되찾는다 (유저가 있으면 수비대장은 남은 병력으로 지키기만 하고 회복하지 않는다, 2026-10-28)
 const hasGuard = c => !!c.faction && memberCount(c.faction) === 0;
 
 // 기록은 장수마다 따로. 여러 줄이어도 된다 (전투 보고서)
@@ -467,12 +467,12 @@ function trimDefense() {
 const unitOf = g => ({ name: g.name, faction: g.faction, trait: g.trait, troops: g.troops, stats: effStats(g), type: g.unitType, training: g.training, siege: g.siege || {}, player: true, ref: g });
 
 // 성을 지키는 부대들. 병력이 많은 순서로 나서서 요격한다.
-//   - 수비대장: 유저가 없는 세력의 성
+//   - 수비대장: 세력 성에 병력이 남아 있으면 (2026-10-28부터 유저가 들어온 세력에서도 남아서 지킨다. 회복은 유저 없는 세력만)
 //   - 장수: 그 성에 머무는 같은 세력 장수 가운데 방어 모드를 켰고 병력이 있는 사람
 function defendersOf(c) {
   const list = [];
   const cs = S.cities[c.id];
-  if (hasGuard(c) && cs.guard > 0) {
+  if (c.faction && cs.guard > 0) {
     const st = RULES.guardStat;
     list.push({ name: '수비대장', troops: cs.guard, stats: { lea: st, war: st, int: st },
       type: RULES.guardUnit.type, training: RULES.guardUnit.training, guard: true, faction: c.faction });
