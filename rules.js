@@ -250,7 +250,7 @@ const GENERAL_TRAITS = {
   haggle: { tier: '하', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
   schemer: { tier: '하', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
   charisma: { tier: '하', name: '인망', desc: '징병 +5% 더 모임', draft: 0.05 }, // 2026-10-28 +10%에서
-  frail: { tier: '상', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 3칸까지', power: -0.02, moveRange: 3 },
+  frail: { tier: '상', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 4칸까지', power: -0.02, moveRange: 4 }, // 2026-10-28 3칸 → 4칸
   chadol: { tier: '중', name: '차돌애호가', desc: '지력 경험치 -3%, 통솔·무력 경험치 +5%', exp: { lea: 0.05, war: 0.05, int: -0.03 } }, // 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
   discipline: { tier: '중', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: '하', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
