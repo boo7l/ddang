@@ -938,7 +938,7 @@ function renderTrait(animate) {
   $('#trPouch').innerHTML = pixelSvg(open ? POUCH_OPEN : POUCH_CLOSED);
   $('#trPouch').classList.toggle('open', open);
   $('#trPouch').disabled = open;
-  $('#trHint').textContent = open ? '종이 한 장을 골라 주세요. 고른 특성은 이 장수에게 영구로 남아요.' : '비단 주머니를 눌러 열어 보세요.';
+  $('#trHint').textContent = open ? '종이 한 장을 골라 주세요. 고른 특성은 이 장수에게 부여돼요.' : '비단 주머니를 눌러 열어 보세요.';
   $('#trSlips').innerHTML = offer.map((id, i) => slipHtml(id, i, animate, trChoice === id)).join('');
   $('#trSlips').querySelectorAll('.trSlip').forEach(b => { b.onclick = () => { trChoice = b.dataset.id; renderTrait(false); }; });
   $('#trReroll').hidden = !open;
@@ -959,7 +959,7 @@ $('#trReroll').onclick = async () => {
 };
 $('#trPick').onclick = async () => {
   const t = GENERAL_TRAITS[trChoice];
-  if (!t || !confirm(`「${t.name}」 특성으로 정할까요? 이 장수에게 영구로 남아요.\n(${t.desc})`)) return;
+  if (!t || !confirm(`「${t.name}」 특성으로 정할까요? 이 장수에게 부여돼요.\n(${t.desc})`)) return;
   if (await call('traitPick', { id: trChoice })) showJoin();
 };
 
