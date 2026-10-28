@@ -416,7 +416,8 @@ const EXPLORE = [
   { key: 'troops', weight: 15, min: 500, max: 1500 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
   { key: 'item', weight: 10 },                         // 능력치 하나 +1
   { key: 'bandit', weight: 10, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20%
-  { key: 'master', weight: 5, gain: 2 },                // 레어: 달인을 만나 가르침을 얻었다! 무작위 능력치 +2 (2026-10-27)
+  { key: 'master', weight: 3, gain: 2 },                // 레어: 달인을 만나 가르침을 얻었다! 무작위 능력치 +2 (2026-10-27, 2026-10-28 5 → 3%)
+  { key: 'pouch', weight: 2 },                          // 레어: 특성 주머니 발견 (2026-10-28). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 없음
 ];
 
 // 아이템: 발견하면 해당 능력치 +1

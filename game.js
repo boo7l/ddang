@@ -866,6 +866,44 @@ const POUCH_OPEN = [
 ];
 const pixelSvg = rows => `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges">${rows.map((row, y) => [...row].map((ch, x) => POUCH_COLORS[ch] ? `<rect x="${x}" y="${y}" width="1" height="1" fill="${POUCH_COLORS[ch]}"/>` : '').join('')).join('')}</svg>`;
 
+// 특성 종이 한 장. 티어마다 종이가 다르다: 하 보통 종이, 중 하늘색 고급 종이, 상 빛나는 금빛 종이
+function slipHtml(id, i, animate, on) {
+  const t = GENERAL_TRAITS[id] || { name: id, desc: '' };
+  const tierCls = { 상: ' tTop', 중: ' tMid' }[t.tier] || '';
+  return `<button class="trSlip${tierCls}${animate ? ' rise' : ''}${on ? ' on' : ''}" data-id="${id}" style="--i:${i}">
+      <span class="trSeal">${pixelSvg(['RRR', 'RGR', 'RRR'])}</span>
+      <b>${esc(t.name)}</b><span class="trDesc">${esc(t.desc)}</span></button>`;
+}
+
+// 탐색에서 주운 특성 주머니 (2026-10-28): 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 없음.
+// 주운 뒤 처음 화면을 그릴 때 한 번 저절로 뜨고, 고르기 전까지는 장수 창의 단추로 다시 열 수 있다
+let pouchShown = '';
+function pouchDialog(pick = null, animate = true) {
+  const g = me(), offer = g.traitFound || [];
+  if (!offer.length) return;
+  pouchShown = offer.join();
+  const now = GENERAL_TRAITS[g.trait];
+  openModal(`
+    <h2>🧧 특성 주머니를 열었다!</h2>
+    <p>3장 중 하나로 특성을 바꾸거나, 지금 특성을 그대로 둘 수 있어요. 다시 뽑기는 없어요.</p>
+    ${now ? `<p class="traitLine myTrait"><span class="tTag">지금</span> <b>${esc(now.name)}</b><br>${esc(now.desc)}</p>` : ''}
+    <div class="trSlips">${offer.map((id, i) => slipHtml(id, i, animate, pick === id)).join('')}</div>
+    <div class="modalBtns"><button data-close>나중에</button><button id="pfKeep">지금 특성 유지</button>
+      <button id="pfPick" class="main"${pick ? '' : ' disabled'}>이 특성으로 바꾸기</button></div>`, box => {
+    box.querySelectorAll('.trSlip').forEach(b => { b.onclick = () => pouchDialog(b.dataset.id, false); });
+    $('#pfKeep').onclick = async () => {
+      if (!confirm('지금 특성을 그대로 둘까요? 주머니는 사라져요.')) return;
+      if (await call('traitFound', {})) { closeModal(); renderAll(); }
+    };
+    $('#pfPick').onclick = async () => {
+      const t = GENERAL_TRAITS[pick];
+      if (!t || !confirm(`「${t.name}」 특성으로 바꿀까요?${now ? ` 지금 특성 「${now.name}」은 사라져요.` : ''}\n(${t.desc})`)) return;
+      if (await call('traitFound', { id: pick })) { closeModal(); renderAll(); }
+    };
+  });
+  $('#modalBox').classList.add('wideBox');
+}
+
 let trChoice = null; // 고른 종이 (특성 id)
 function showTrait() {
   showScreen('trait');
@@ -880,13 +918,7 @@ function renderTrait(animate) {
   $('#trPouch').classList.toggle('open', open);
   $('#trPouch').disabled = open;
   $('#trHint').textContent = open ? '종이 한 장을 골라 주세요. 고른 특성은 이 장수에게 영구로 남아요.' : '비단 주머니를 눌러 열어 보세요.';
-  $('#trSlips').innerHTML = offer.map((id, i) => {
-    const t = GENERAL_TRAITS[id] || { name: id, desc: '' };
-    const tierCls = { 상: ' tTop', 중: ' tMid' }[t.tier] || ''; // 티어마다 종이가 다르다: 하 보통 종이, 중 하늘색 고급 종이, 상 빛나는 금빛 종이
-    return `<button class="trSlip${tierCls}${animate ? ' rise' : ''}${trChoice === id ? ' on' : ''}" data-id="${id}" style="--i:${i}">
-      <span class="trSeal">${pixelSvg(['RRR', 'RGR', 'RRR'])}</span>
-      <b>${esc(t.name)}</b><span class="trDesc">${esc(t.desc)}</span></button>`;
-  }).join('');
+  $('#trSlips').innerHTML = offer.map((id, i) => slipHtml(id, i, animate, trChoice === id)).join('');
   $('#trSlips').querySelectorAll('.trSlip').forEach(b => { b.onclick = () => { trChoice = b.dataset.id; renderTrait(false); }; });
   $('#trReroll').hidden = !open;
   $('#trReroll').disabled = !(g.traitRerolls > 0);
@@ -1000,6 +1032,8 @@ function renderAll() {
   renderLog();
   renderChat();
   if (S.unified && !celebrated) { celebrated = true; unifyDialog(); }
+  // 탐색에서 특성 주머니를 주웠으면 한 번 저절로 연다 (다른 창이 떠 있으면 다음에)
+  if (me().traitFound && pouchShown !== me().traitFound.join() && $('#modal').hidden) pouchDialog();
 }
 
 // 우리 세력 장수: 누가 어디에 얼마나 있는지 (공적 순). 남의 예약·금은 서버가 보내 주지 않는다
@@ -1047,12 +1081,14 @@ function renderGeneral() {
     <details id="gTraits" class="traitFold"${traitsOpen ? ' open' : ''}><summary>특성</summary>
     ${traitOf(f.id).name ? `<p class="traitLine"><span class="tTag">세력</span> <b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
     ${p.trait && GENERAL_TRAITS[p.trait] ? `<p class="traitLine myTrait"><span class="tTag">개인</span> <b>${GENERAL_TRAITS[p.trait].name}</b><br>${GENERAL_TRAITS[p.trait].desc}</p>` : ''}
+    ${p.traitFound ? '<p><button id="gPouch" class="main">🧧 특성 주머니 열기</button></p>' : ''}
     </details>
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
     </table>`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
+  if ($('#gPouch')) $('#gPouch').onclick = () => pouchDialog();
   $('#gTraits').ontoggle = e => { traitsOpen = e.target.open; try { localStorage.setItem(TRAITS_KEY, traitsOpen ? '1' : '0'); } catch (err) { /* 저장 못 해도 이번엔 그대로 */ } };
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();

@@ -775,6 +775,11 @@ function runExplore(g) {
       text = `★★ 달인을 만나 가르침을 얻었다! ${st.name} +${n} (${g.stats[st.key]})`;
       break;
     }
+    case 'pouch': { // 레어 (2026-10-28): 특성 주머니. 지금 특성을 뺀 3장을 뽑아 두고, 장수가 하나로 바꾸거나 그대로 둔다 (다시 뽑기 없음)
+      g.traitFound = drawTraits(g.trait ? [g.trait] : []);
+      text = '★★ 길가에서 비단 주머니를 주웠다! 특성 3장 중 하나로 바꿀 수 있다. (장수 창에서 열어 보세요)';
+      break;
+    }
     case 'bandit': {
       if (g.troops > 0) {
         const n = Math.max(1, Math.floor(g.troops * (e.minRate + Math.random() * (e.maxRate - e.minRate))));
