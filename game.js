@@ -959,7 +959,7 @@ $('#trReroll').onclick = async () => {
 };
 $('#trPick').onclick = async () => {
   const t = GENERAL_TRAITS[trChoice];
-  if (!t || !confirm(`「${t.name}」 특성으로 정할까요? 이 장수에게 부여돼요.\n(${t.desc})`)) return;
+  if (!t || !confirm(`「${t.name}」 특성으로 정할까요?\n(${t.desc})`)) return;
   if (await call('traitPick', { id: trChoice })) showJoin();
 };
 
