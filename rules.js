@@ -256,7 +256,7 @@ const GENERAL_TRAITS = {
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
   engineer: { tier: 'R', name: '병기도 과학', desc: '병기 제작비 -15%', siegePrice: -0.15 }, // 2026-10-28 -20%에서
-  medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 20%가 돌아옴', heal: { chance: 0.3, rate: 0.2 } }, // 2026-10-28 50%·25%에서
+  medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.3, rate: 0.25 } }, // 2026-10-28 50%·25% → 30%·25%
   persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 금 +30~300, 치안 -3 (쿨타임 5턴)", levy: { min: 30, max: 300, peace: 3, cooldown: 5 } }, // 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
   duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
