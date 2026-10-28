@@ -625,7 +625,9 @@ details.fold > summary:hover h2 { color: var(--title); }
   #game > .col, #game > aside { display: none; width: auto; }
   #game[data-tab="map"] > .col, #game[data-tab="gen"] > aside.mid,
   #game[data-tab="cmd"] > aside.cmdCol, #game[data-tab="chat"] > aside.queueCol { display: block; }
-  /* 명령 탭: 명령 단추(위) + 예약표(아래)를 함께 (2026-10-28 순서 바꿈, 그 전엔 예약표가 위). 채팅 탭: 채팅만 */
+  /* 명령 탭: 명령 단추(위) + 예약표 + 하야·장수 삭제(맨 아래)를 함께 (2026-10-28 순서 바꿈, 그 전엔 예약표가 위). 채팅 탭: 채팅만 */
+  #game[data-tab="cmd"] > aside.cmdCol:not(.queueCol) { display: contents; } /* 명령 칸을 풀어서 하야 줄만 따로 맨 아래로 보낸다 */
+  #game[data-tab="cmd"] .resignRow { order: 1; }
   #game[data-tab="cmd"] #chat, #game[data-tab="chat"] #queueBox { display: none; }
   #game[data-tab="cmd"] .queue { max-height: 200px; }
   #game .col > .map { width: auto; }
