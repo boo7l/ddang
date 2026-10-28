@@ -625,7 +625,7 @@ function runAttack(g, o, mark) {
   // 2. 수비 부대와 싸움
   const att = unitOf(g);
   let left = RULES.roundsMax, atkLost = 0, defLost = 0;
-  const dealtBy = new Map(), lostBy = new Map();
+  const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map();
   lines.push(`⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`);
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
@@ -636,6 +636,7 @@ function runAttack(g, o, mark) {
     atkLost += r.atkLost;
     if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 공적)
     if (d.ref) lostBy.set(d.ref, (lostBy.get(d.ref) || 0) + r.defLost); // 수비 장수가 잃은 병력 (치료 특성)
+    if (d.ref) eventBy.set(d.ref, (eventBy.get(d.ref) || 0) + (d.duelWins || 0) * RULES.merit.duel + (d.schemes || 0) * RULES.merit.scheme); // 일기토 승리·책략 성공 공적 (2026-10-28)
     defLost += r.defLost;
     lines.push(...r.lines);
     if (d.guard) cs.guard = d.troops;
@@ -693,12 +694,13 @@ function runAttack(g, o, mark) {
   // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 200명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
-  const meritText = `공적 +${base + hitMerit + wallMerit}`; // 합계만 적는다
+  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 25씩 (2026-10-28)
+  const meritText = `공적 +${base + hitMerit + wallMerit + eventMerit}`; // 합계만 적는다
   if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · ${meritText}`); }
   else lines.push(`${g.name} ${meritText}`);
-  addMerit(g, base + hitMerit + wallMerit);
+  addMerit(g, base + hitMerit + wallMerit + eventMerit);
   for (const [x, dealt] of dealtBy) {
-    const m = Math.floor(dealt / RULES.meritPerKill);
+    const m = Math.floor(dealt / RULES.meritPerKill) + (eventBy.get(x) || 0);
     if (m > 0) { addMerit(x, m); lines.push(`${x.name} 공적 +${m}`); }
   }
   const text = lines.join('\n');
@@ -848,6 +850,7 @@ function runSpy(g, o) {
   S.intel[g.faction] = S.intel[g.faction] || {};
   S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
   addRecord(g, 'plotOk');
+  addMerit(g, RULES.merit.plotOk); // 첩보 성공 공적 +20 (시도 10과 합쳐 30, 2026-10-28)
   addLog(g, `첩보 성공! ${c.name}: 농업 ${cs.agri} · 상업 ${cs.comm} · 방어 ${cs.wall} · 치안 ${cs.peace} · 군량 ${fmt(cs.food)}\n(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`);
   gainStatExp(g, 'int', PLOT.exp);
   return '';
@@ -867,6 +870,7 @@ function runPlot(g, kind, o) {
   const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +5%p
   addRecord(g, 'plotTry');
   if (r !== 'fail') addRecord(g, 'plotOk');
+  addMerit(g, RULES.merit.plot); // 계략은 시도만 해도 공적 10, 성공하면 20 더 (2026-10-28)
   if (r === 'fail') {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
     return '';
@@ -880,7 +884,7 @@ function runPlot(g, kind, o) {
     ? [cut('wall', int * PLOT.destroy.wallPerInt)]
     : [cut('peace', int * PLOT.rumor.peacePerInt), cut('agri', int * PLOT.rumor.devPerInt), cut('comm', int * PLOT.rumor.devPerInt)];
   addLog(g, `${head} ${c.name}: ${kind === 'destroy' ? '성벽 곳곳을 무너뜨렸다' : '흉흉한 소문을 퍼뜨렸다'}. ${what.join(' · ')}`);
-  addMerit(g, RULES.merit.plot);
+  addMerit(g, RULES.merit.plotOk); // 성공 공적 +20 (시도 10과 합쳐 30)
   gainStatExp(g, 'int', r === 'crit' ? PLOT.critExp : PLOT.exp);
   return '';
 }

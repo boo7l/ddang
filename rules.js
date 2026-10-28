@@ -43,7 +43,7 @@ const RULES = {
   transportMax: 5000,       // 군량 수송 한 번에 옮길 수 있는 최대량 (플레이어가 1~5,000 사이에서 정한다)
   battleReward: 500,        // 임시: 전투에 이기면 들어오는 금 (명령으로 금을 더 얻는 길. 기획서 [미정])
   // 공적: 수련을 뺀 모든 명령에 붙는다. 순위를 매기는 점수 (임시값)
-  merit: { domestic: 10, draft: 10, buy: 10, transport: 10, siege: 10, explore: 10, move: 5, plot: 10, win: 50, lose: 10 },
+  merit: { domestic: 10, draft: 10, buy: 10, transport: 10, siege: 10, explore: 10, move: 5, plot: 10, plotOk: 20, win: 50, lose: 10, duel: 25, scheme: 25 }, // 2026-10-28 계략은 시도 10 + 성공 20, 일기토 승리·책략 성공 25
   meritPerKill: 200,        // 피해 공적: 전투에서 없앤 적 병력 200명당 공적 1 (공격·수비 모두, 2026-10-26)
   meritPerWall: 30,         // 성벽 공적: 성벽 공격으로 깎은 방어 30당 공적 1 (2026-10-26)
   isolatedLoss: 0.5,        // 고립된 성(이웃에 우리 성 없음)이 함락되면 그 성 장수는 가장 가까운 우리 성으로 가되 병력 50%를 잃는다 (2026-10-26)
