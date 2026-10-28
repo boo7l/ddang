@@ -905,6 +905,23 @@ function pouchDialog(pick = null, animate = true) {
   $('#modalBox').classList.add('wideBox');
 }
 
+// 특성 확률표 (2026-10-28): 등급·이름·성능·확률을 모두 공개. 확률은 종이 한 장에 그 특성이 나올 확률 (TRAIT_TIER_WEIGHT로 계산)
+function traitOddsDialog() {
+  const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
+  const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
+  const order = { 상: 0, 중: 1, 하: 2 };
+  const rows = ids.sort((a, b) => order[GENERAL_TRAITS[a].tier] - order[GENERAL_TRAITS[b].tier]).map(k => {
+    const t = GENERAL_TRAITS[k];
+    return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
+  }).join('');
+  openModal(`<h2>📋 특성 확률표</h2>
+    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.</p>
+    <table class="oddsTable"><tr><th>등급</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+  $('#modalBox').classList.add('wideBox');
+}
+$('#trOdds').onclick = traitOddsDialog;
+
 let trChoice = null; // 고른 종이 (특성 id)
 function showTrait() {
   showScreen('trait');

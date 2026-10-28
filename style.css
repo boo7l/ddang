@@ -610,6 +610,18 @@ details.fold > summary:hover h2 { color: var(--title); }
 @keyframes trShine { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 @keyframes trTwinkle { 50% { opacity: 0; } }
 .trBtns { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.trOddsRow { margin: 18px 0 2px; } /* 확률표 단추와 안내 (2026-10-28) */
+.trNote { margin: 4px 0 0; word-break: keep-all; }
+.oddsTable { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+.oddsTable tr { border-bottom: 1px dotted var(--gold-dark); }
+.oddsTable th, .oddsTable td { padding: 4px 6px; text-align: left; vertical-align: top; }
+.oddsTable th { color: var(--label); font-weight: normal; white-space: nowrap; }
+.oddsTable .num { text-align: right; white-space: nowrap; }
+.oddsTable td.dim { word-break: keep-all; }
+.oddsTier { text-align: center !important; white-space: nowrap; }
+.oddsTier.t0 { color: #ffd84a; } /* 상: 금빛 */
+.oddsTier.t1 { color: #8cc8f0; } /* 중: 하늘색 */
+.oddsTier.t2 { color: var(--text); } /* 하: 보통 */
 
 /* ===== 휴대폰 (너비 700px 이하, 2026-10-27) =====
    넓은 화면은 그대로 두고, 좁으면 게임 화면 네 칸을 아래 탭으로 하나씩 보여 준다. 글자는 16px 그대로 */
@@ -688,6 +700,8 @@ details.fold > summary:hover h2 { color: var(--title); }
   .trSlips { flex-direction: column; align-items: center; }
   .trSlip { width: 100%; max-width: 360px; min-height: 0; flex-direction: row; justify-content: flex-start; padding: 12px 34px 12px 12px; text-align: left; } /* 휴대폰: 종이를 세로로 쌓는다 */
 
+  .oddsTable th, .oddsTable td { padding: 4px 3px; } /* 확률표: 좁으니 이름도 줄바꿈 */
+  .oddsTable th { white-space: normal; word-break: keep-all; }
   /* 대화 상자: 화면을 거의 다 쓴다 */
   #modalBox, #modalBox.wideBox, #modalBox.adminBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); }
 }
