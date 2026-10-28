@@ -12,6 +12,7 @@ const fmtLeft = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${M
 // 세계는 서버에 있다. 무슨 일을 하든 서버에 요청하고, 서버가 돌려준 "내가 볼 수 있는 세계"로 화면을 다시 그린다.
 let ORIGIN = null;  // 지도 파일에 적힌 처음 성 주인 (새 시즌이면 여기로 되돌린다)
 let lastFetch = 0;  // 마지막으로 서버에서 받아 온 시각
+let turnWait = 1000; // 턴이 넘어간 뒤 몇 ms 기다렸다 받아 올지: 1~6초 무작위 (2026-10-28 흩어 묻기: 모두가 같은 1초에 몰리지 않게)
 let busy = false;   // 서버 요청 중
 
 function applyView(d) {
@@ -24,6 +25,7 @@ function applyView(d) {
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
   ACCOUNTS = d.accounts || {};
   lastFetch = Date.now();
+  turnWait = 1000 + Math.random() * 5000; // 다음 턴에 받아 올 때 기다릴 시간 (사람마다 다르게)
   if (!ORIGIN) ORIGIN = MAP.cities.map(c => c.faction);
   MAP.cities.forEach((c, i) => { c.faction = ORIGIN[i]; });
   if (S) applyOwners();
@@ -1362,10 +1364,10 @@ $('#rankBtn').onclick = rankDialog;
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
 
-// 1초마다: 남은 시간·시계 갱신. 턴이 넘어갔거나 1분이 지났으면 서버에서 새로 받아 온다
+// 1초마다: 남은 시간·시계 갱신. 턴이 넘어가고 1~6초 뒤(사람마다 무작위)이거나 1분이 지났으면 서버에서 새로 받아 온다
 setInterval(() => {
   if (!S || $('#game').hidden) return;
-  const turnPassed = nextTurn(lastFetch + S.timeOffset) <= now() - 1000; // 서버가 턴을 처리할 1초 여유
+  const turnPassed = nextTurn(lastFetch + S.timeOffset) <= now() - turnWait; // 서버가 턴을 처리할 1초 여유 + 흩어 묻기 0~5초
   if (!busy && !document.hidden && (turnPassed || Date.now() - lastFetch > 60 * 1000)) { refresh(); return; }
   updateTurn();
 }, 1000);
