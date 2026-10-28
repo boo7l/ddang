@@ -487,7 +487,7 @@ function buyFoodDialog() {
   });
 }
 
-// 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~5,000 직접 입력 (빠른 단추도)
+// 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~transportMax(10,000) 직접 입력 (빠른 단추도)
 function transportDialog() {
   const p = me(), at = cityAtSlot(p, slot), here = S.cities[at.id];
   const opts = linkedOwnCities(at.id, p.faction, RULES.moveRange).map(c => {
@@ -502,7 +502,7 @@ function transportDialog() {
       <label class="opt"><input type="radio" name="dir" value="fetch"> 가져오기 <span class="dim">(고른 성 → ${esc(at.name)})</span></label></p>
     <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
     <p><input type="number" id="tAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
-      ${[500, 1000, 2000, max].map(n => `<button type="button" class="mini" data-amt="${n}">${fmt(n)}</button>`).join(' ')}</p>`;
+      ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-amt="${n}">${fmt(n)}</button>`).join(' ')}</p>`;
   pickDialog('군량 수송', `<p>${esc(josa(at.name, '과와'))} 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성 사이에서 군량을 옮겨요. 가는 동안 줄지 않아요.</p>
     <p class="dim">${esc(at.name)} 군량 ${fmt(here.food)} / ${fmt(foodMax(at.grade))} · 실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요</p>`,
   opts, '예약', (v, box) => {
