@@ -920,8 +920,8 @@ function traitOddsDialog() {
   }).join('');
   openModal(`<h2>📋 특성 확률표</h2>
     <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.</p>
-    <table class="oddsTable"><tr><th>등급</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
-    <p class="dim center trNote">높은 등급이라도 무조건 좋은 성능을 보장하지 않아요!<br>대신 더 '재밌는' 플레이를 할 수 있어요.</p>
+    <table class="oddsTable"><tr><th>희귀</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
+    <p class="dim center trNote">희귀도가 높아도 무조건 좋은 성능을 보장하지 않아요!<br>대신 더 '재밌는' 플레이를 할 수 있어요.</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
   $('#modalBox').classList.add('wideBox');
 }
