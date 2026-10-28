@@ -874,7 +874,7 @@ const pixelSvg = rows => `<svg viewBox="0 0 ${rows[0].length} ${rows.length}" sh
 // 특성 종이 한 장. 티어마다 종이가 다르다: 하 보통 종이, 중 하늘색 고급 종이, 상 빛나는 금빛 종이
 function slipHtml(id, i, animate, on) {
   const t = GENERAL_TRAITS[id] || { name: id, desc: '' };
-  const tierCls = { 최상: ' tBest', 상: ' tTop', 중: ' tMid' }[t.tier] || ''; // 최상은 보랏빛 (2026-10-28)
+  const tierCls = { SSR: ' tBest', SR: ' tTop', R: ' tMid' }[t.tier] || ''; // SSR은 보랏빛 (2026-10-28)
   return `<button class="trSlip${tierCls}${animate ? ' rise' : ''}${on ? ' on' : ''}" data-id="${id}" style="--i:${i}">
       <span class="trSeal">${pixelSvg(['RRR', 'RGR', 'RRR'])}</span>
       <b>${esc(t.name)}</b><span class="trDesc">${esc(t.desc)}</span></button>`;
@@ -913,7 +913,7 @@ function pouchDialog(pick = null, animate = true) {
 function traitOddsDialog() {
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
-  const order = { 최상: 0, 상: 1, 중: 2, 하: 3 };
+  const order = { SSR: 0, SR: 1, R: 2, N: 3 };
   const rows = ids.sort((a, b) => order[GENERAL_TRAITS[a].tier] - order[GENERAL_TRAITS[b].tier]).map(k => {
     const t = GENERAL_TRAITS[k];
     return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
