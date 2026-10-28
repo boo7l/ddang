@@ -351,10 +351,10 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 /* 제목줄 ☰ 메뉴 (2026-10-28, 처음엔 휴대폰만 → 같은 날 PC도): [도움말] [☰]. 계정 이름·순위·관리·메인·로그아웃(휴대폰은 PC 버전 보기도)은 ☰ 안에 */
 .titlebar { position: relative; }
 #who { display: none; }
-#menuBtn { display: none; padding: 2px 16px; vertical-align: middle; } /* PC는 가로로 넓게 (휴대폰은 아래 @media에서 좁게) */
+#menuBtn { display: none; padding: 2px 14px; vertical-align: middle; } /* PC는 가로로 넓게 (휴대폰은 아래 @media에서 좁게) */
 /* ☰ 모양: 글자 대신 막대 3개 (버튼 폭에 맞춰 길게, 2026-10-28) */
-#menuBtn .hb { display: flex; flex-direction: column; justify-content: center; gap: 4px; height: 22px; }
-#menuBtn .hb i { display: block; width: 26px; height: 3px; background: currentColor; }
+#menuBtn .hb { display: flex; flex-direction: column; justify-content: center; gap: 3px; height: 20px; }
+#menuBtn .hb i { display: block; width: 20px; height: 3px; background: currentColor; }
 #who:not([hidden]) ~ #menuBtn { display: inline-block; }
 .menuOpen #menuBtn { background: var(--title); color: var(--panel-dark); }
 .menuOpen #who:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; gap: 6px; position: absolute; top: calc(100% - 12px); right: 18px; z-index: 50;
