@@ -609,6 +609,20 @@ details.fold > summary:hover h2 { color: var(--title); }
 @keyframes trGlow { 0%, 100% { box-shadow: inset 0 0 0 3px #fffbe3, 3px 3px 0 #000, 0 0 8px 1px #ffd84a; } 50% { box-shadow: inset 0 0 0 3px #fffbe3, 3px 3px 0 #000, 0 0 18px 5px #ffe066; } }
 @keyframes trShine { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 @keyframes trTwinkle { 50% { opacity: 0; } }
+/* 최상: 보랏빛 종이 (2026-10-28). 상의 금빛 연출(빛·빛줄기·반짝이)을 보라·분홍으로, 빛은 조금 더 세게 */
+.trSlip.tBest { background: linear-gradient(135deg, #fbefff, #dcb4ff 50%, #c08cf4 80%, #f0b8e8); border-color: #7a3fc0;
+  box-shadow: inset 0 0 0 3px #fdf6ff, 3px 3px 0 #000, 0 0 12px 3px #c48cff; animation: trGlowP 1.4s steps(4) infinite; }
+.trSlip.tBest:hover, .trSlip.tBest.on { background: linear-gradient(135deg, #fff8ff, #e6c6ff 50%, #cc9cf8 80%, #f6c8ee); border-color: #5a2a98; }
+.trSlip.tBest b { color: #4a1580; }
+.trSlip.tBest .trDesc { color: #2e0f50; }
+.trSlip.tBest::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, .8) 48%, rgba(255, 255, 255, .8) 52%, transparent 60%) no-repeat;
+  background-size: 300% 100%; animation: trShine 1.8s steps(12) infinite; }
+.trSlip.tBest::before { content: ''; position: absolute; top: 7px; left: 9px; width: 3px; height: 3px; background: #fff; pointer-events: none;
+  box-shadow: 3px 0 #fff, -3px 0 #fff, 0 3px #fff, 0 -3px #fff; animation: trTwinkle .9s steps(2) infinite; }
+.trSlip.tBest.rise { animation: trRise .5s ease-out both, trUnfold .35s steps(4) both, trGlowP 1.4s steps(4) infinite;
+  animation-delay: calc(var(--i) * .18s), calc(var(--i) * .18s + .45s), calc(var(--i) * .18s + .8s); }
+@keyframes trGlowP { 0%, 100% { box-shadow: inset 0 0 0 3px #fdf6ff, 3px 3px 0 #000, 0 0 10px 2px #b47cff; } 50% { box-shadow: inset 0 0 0 3px #fdf6ff, 3px 3px 0 #000, 0 0 22px 7px #e0a8ff; } }
 .trBtns { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .trOddsRow { margin: 18px 0 2px; } /* 확률표 단추와 안내 (2026-10-28) */
 #modalBox .trNote { margin: 24px 0 10px; word-break: keep-all; } /* 확률표 아래 안내: 표와 한 줄쯤 띄운다 */
@@ -619,9 +633,10 @@ details.fold > summary:hover h2 { color: var(--title); }
 .oddsTable .num { text-align: right; white-space: nowrap; }
 .oddsTable td.dim { word-break: keep-all; }
 .oddsTier { text-align: center !important; white-space: nowrap; }
-.oddsTier.t0 { color: #ffd84a; } /* 상: 금빛 */
-.oddsTier.t1 { color: #8cc8f0; } /* 중: 하늘색 */
-.oddsTier.t2 { color: var(--text); } /* 하: 보통 */
+.oddsTier.t0 { color: #d9a8ff; } /* 최상: 보랏빛 */
+.oddsTier.t1 { color: #ffd84a; } /* 상: 금빛 */
+.oddsTier.t2 { color: #8cc8f0; } /* 중: 하늘색 */
+.oddsTier.t3 { color: var(--text); } /* 하: 보통 */
 
 /* ===== 휴대폰 (너비 700px 이하, 2026-10-27) =====
    넓은 화면은 그대로 두고, 좁으면 게임 화면 네 칸을 아래 탭으로 하나씩 보여 준다. 글자는 16px 그대로 */

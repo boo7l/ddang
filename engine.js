@@ -798,7 +798,7 @@ function runExplore(g) {
       break;
     }
     case 'pouch': { // 레어 (2026-10-28): 특성 주머니. 지금 특성을 뺀 3장을 뽑아 두고, 장수가 하나로 바꾸거나 그대로 둔다 (다시 뽑기 없음)
-      g.traitFound = drawTraits(g.trait ? [g.trait] : [], ['상', '중']); // 중 이상 1장은 꼭
+      g.traitFound = drawTraits(g.trait ? [g.trait] : [], ['최상', '상', '중']); // 중 이상 1장은 꼭
       text = '★★ 길가에서 비단 주머니를 주웠다! 특성 3장 중 하나로 바꿀 수 있다. (장수 창에서 열어 보세요)';
       break;
     }
@@ -871,7 +871,9 @@ function runPlot(g, kind, o) {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
     return '';
   }
-  const x = r === 'crit' ? PLOT.critMul : 1, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
+  // 개인 특성 침착 (2026-10-28): 그 성에 침착 장수가 머물면 계략 피해 -40% (여럿이어도 한 번만)
+  const calm = allGenerals().some(x => x.city === c.id && x.faction === c.faction && gTrait(x).calm) ? 1 - GENERAL_TRAITS.calm.calm : 1;
+  const x = (r === 'crit' ? PLOT.critMul : 1) * calm, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
   // 남은 수치는 적지 않는다 (다른 세력 성의 농업·상업·방어·치안은 비공개, 2026-10-26 방어도)
   const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}`; };
   const what = kind === 'destroy'

@@ -259,10 +259,11 @@ const GENERAL_TRAITS = {
   persuade: { tier: '상', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
   levy: { tier: '상', name: '이게 일상이야', desc: "명령 '갈취' : 금 +10~400, 치안 -3 (쿨타임 5턴)", levy: { min: 10, max: 400, peace: 3, cooldown: 5 } }, // 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 (티어 중 → 상)
   duelist: { tier: '중', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
+  calm: { tier: '최상', name: '침착', desc: '일기토·책략 피해 -40%, 머무는 성의 계략 피해 -40%', calm: 0.40 }, // 2026-10-28 최상 (같은 성에 여럿이어도 계략 경감은 한 번만)
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
-const TRAIT_TIER_WEIGHT = { 상: 2, 중: 5, 하: 7 }; // 특성 하나가 뽑힐 비율 (2026-10-28: 상 3·중 6·하 9개라 하나당 상 2.0% · 중 5.1% · 하 7.1%. 처음 1:2:3)
+const TRAIT_TIER_WEIGHT = { 최상: 1, 상: 2, 중: 5, 하: 7 }; // 특성 하나가 뽑힐 비율 (2026-10-28: 최상 1·상 3·중 6·하 9개라 합이 100, 하나당 최상 1% · 상 2% · 중 5% · 하 7%. 처음 1:2:3)
 const TRAIT_DRAW = 3;     // 주머니에서 나오는 종이 수
 const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 
@@ -358,7 +359,7 @@ function fightRounds(att, def, wall, left) {
       const aRate = Math.min(0.95, Math.max(0.05, duelWinRate(att.stats.war, def.stats.war) + (gTrait(att).duelWin || 0) - (gTrait(def).duelWin || 0)));
       const aWin = Math.random() < aRate;
       const w = aWin ? att : def, l = aWin ? def : att;
-      const loss = Math.ceil(l.troops * D.loserLoss);
+      const loss = Math.ceil(l.troops * D.loserLoss * (1 - (gTrait(l).calm || 0))); // 침착: 진 쪽 피해 -40%
       l.troops -= loss;
       w.duelWins = (w.duelWins || 0) + 1;
       lines.push(`${used}합: ⚡ 일기토! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${loss.toLocaleString('ko-KR')}`);
@@ -371,7 +372,7 @@ function fightRounds(att, def, wall, left) {
     if (sch && !att.schemed && Math.random() < sch[0].stats.int * C.chancePerInt) {
       att.schemed = true; // 책략도 출진 한 번(5합)에 최대 1번 (어느 쪽이 쓰든)
       const [me, foe, gap] = sch;
-      const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow(gap / C.ref, C.exp)));
+      const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow(gap / C.ref, C.exp) * (1 - (gTrait(foe).calm || 0)))); // 침착: 책략 피해 -40%
       foe.troops -= loss;
       me.schemes = (me.schemes || 0) + 1;
       const kind = C.kinds[Math.floor(Math.random() * C.kinds.length)];
