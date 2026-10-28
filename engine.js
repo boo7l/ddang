@@ -369,8 +369,13 @@ function earnGold(g, n) {
 }
 
 // 공적: 수련을 뺀 명령마다 쌓이는 점수. 순위를 매기는 데 쓴다
+// 한 턴에 얻는 공적은 장수마다 최대 RULES.meritTurnMax (2026-10-28: 이벤트가 겹쳐도 100까지). 실제로 더한 양을 돌려준다
 function addMerit(g, n) {
-  g.merit += n;
+  if (g.meritTurn !== S.turn) { g.meritTurn = S.turn; g.meritThisTurn = 0; }
+  const got = Math.max(0, Math.min(n, RULES.meritTurnMax - g.meritThisTurn));
+  g.meritThisTurn += got;
+  g.merit += got;
+  return got;
 }
 // 장수 기록 (☰ 메뉴의 정보란, 2026-10-28): 내정 횟수·징병 인원·전투·승전·패전·계략 시도/성공을 센다
 function addRecord(g, key, n = 1) {
@@ -695,13 +700,13 @@ function runAttack(g, o, mark) {
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
   const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 25씩 (2026-10-28)
-  const meritText = `공적 +${base + hitMerit + wallMerit + eventMerit}`; // 합계만 적는다
+  const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
   if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · ${meritText}`); }
   else lines.push(`${g.name} ${meritText}`);
-  addMerit(g, base + hitMerit + wallMerit + eventMerit);
   for (const [x, dealt] of dealtBy) {
     const m = Math.floor(dealt / RULES.meritPerKill) + (eventBy.get(x) || 0);
-    if (m > 0) { addMerit(x, m); lines.push(`${x.name} 공적 +${m}`); }
+    const got = m > 0 ? addMerit(x, m) : 0;
+    if (got > 0) lines.push(`${x.name} 공적 +${got}`);
   }
   const text = lines.join('\n');
   addLog(g, text);
