@@ -254,7 +254,7 @@ const GENERAL_TRAITS = {
   frail: { tier: 'SR', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 4칸까지', power: -0.02, moveRange: 4 }, // 2026-10-28 3칸 → 4칸
   chadol: { tier: 'R', name: '차돌애호가', desc: '지력 경험치 -3%, 통솔·무력 경험치 +5%', exp: { lea: 0.05, war: 0.05, int: -0.03 } }, // 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
-  scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +10%', trainExp: 0.10 },
+  scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15 }, // 2026-10-28 +10%에서
   engineer: { tier: 'R', name: '병기도 과학', desc: '병기 제작비 -15%', siegePrice: -0.15 }, // 2026-10-28 -20%에서
   medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 25%가 돌아옴', heal: { chance: 0.3, rate: 0.25 } }, // 2026-10-28 50%·25% → 30%·25%
   persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
