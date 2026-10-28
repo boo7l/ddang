@@ -363,6 +363,11 @@ function earnGold(g, n) {
 function addMerit(g, n) {
   g.merit += n;
 }
+// 장수 기록 (☰ 메뉴의 정보란, 2026-10-28): 내정 횟수·징병 인원·전투·승전·패전·계략 시도/성공을 센다
+function addRecord(g, key, n = 1) {
+  g.record = g.record || {};
+  g.record[key] = (g.record[key] || 0) + n;
+}
 
 // 능력치 경험치를 쌓는다. 다 차서 능력치가 오르면 기록에 남긴다
 function gainStatExp(g, key, amount) {
@@ -378,6 +383,7 @@ function runDomestic(g, key) {
   if (c[key] >= max) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const gain = Math.min(Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus)), max - c[key]);
+  addRecord(g, 'domestic');
   c[key] += gain;
   addLog(g, `${city.name}: ${VERB[key]}. ${d.label} +${gain} (${c[key]}/${max})`);
   addMerit(g, RULES.merit.domestic);
@@ -403,6 +409,7 @@ function runDraft(g, o) {
   if (g.troops > 0) g.training = dilutedTraining(g.training, g.troops, gain);
   g.unitType = type;
   g.troops += gain;
+  addRecord(g, 'drafted', gain);
   capDefense(g); // 병사가 처음 생겼는데 이 성 수비가 꽉 찼으면 방어 모드는 꺼진 채로
   const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
   cs.peace -= drop;
@@ -600,6 +607,7 @@ function runAttack(g, o, mark) {
   }
 
   const defs = defendersOf(to);
+  addRecord(g, 'battles'); // 주인 있는 성을 친 출진은 모두 전투 (공백지는 빼고)
   // 공격받은 성에 있던 옛 세력 장수들은 보고서를 받는다 (물러나기 전에 적어 둔다). 나머지 세력 장수들은 알림만
   const victims = allGenerals().filter(x => x.city === to.id && x.faction === oldFaction);
   const others = allGenerals().filter(x => x.faction === oldFaction && !victims.includes(x));
@@ -627,6 +635,7 @@ function runAttack(g, o, mark) {
       if (d.schemes) gainStatExp(d.ref, 'int', RULES.scheme.statExp * d.schemes); // 책략을 쓰면 지력 경험치
     }
     if (d.troops <= 0) lines.push(`${d.name} 부대 전멸!`);
+    if (d.ref && (r.used || r.defLost)) { addRecord(d.ref, 'battles'); if (d.troops <= 0) addRecord(d.ref, 'losses'); } // 수비 장수도 전투·패전을 센다
     if (att.persuaded) break; // 설득민수: 출진이 여기서 끝난다
   }
   g.troops = att.troops;
@@ -666,6 +675,8 @@ function runAttack(g, o, mark) {
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
   // 개인 특성 너 치료된 거야: 전투 뒤 50% 확률로 잃은 병력의 25%가 돌아온다 (공격한 장수와 수비 장수 모두)
+  if (captured) addRecord(g, 'wins'); // 승전 = 이 출진으로 성을 차지
+  if (g.troops <= 0) addRecord(g, 'losses'); // 패전 = 내 부대 전멸 (치료로 돌아오기 전)
   healAfter(g, atkLost, lines);
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
@@ -816,6 +827,7 @@ function runSpy(g, o) {
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다)
   if (why) return why;
   addMerit(g, RULES.merit.plot);
+  addRecord(g, 'plotTry');
   if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0)) { // 책사 +5%p
     addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
     return '';
@@ -824,6 +836,7 @@ function runSpy(g, o) {
   S.intel = S.intel || {};
   S.intel[g.faction] = S.intel[g.faction] || {};
   S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
+  addRecord(g, 'plotOk');
   addLog(g, `첩보 성공! ${c.name}: 농업 ${cs.agri} · 상업 ${cs.comm} · 방어 ${cs.wall} · 치안 ${cs.peace} · 군량 ${fmt(cs.food)}\n(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`);
   gainStatExp(g, 'int', PLOT.exp);
   return '';
@@ -841,6 +854,8 @@ function runPlot(g, kind, o) {
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다, 2026-10-26)
   if (why) return why;
   const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +5%p
+  addRecord(g, 'plotTry');
+  if (r !== 'fail') addRecord(g, 'plotOk');
   if (r === 'fail') {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
     return '';
