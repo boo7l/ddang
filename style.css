@@ -611,7 +611,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 @keyframes trTwinkle { 50% { opacity: 0; } }
 .trBtns { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .trOddsRow { margin: 18px 0 2px; } /* 확률표 단추와 안내 (2026-10-28) */
-.trNote { margin: 0 0 10px; word-break: keep-all; } /* 확률표 아래 안내 */
+#modalBox .trNote { margin: 24px 0 10px; word-break: keep-all; } /* 확률표 아래 안내: 표와 한 줄쯤 띄운다 */
 .oddsTable { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
 .oddsTable tr { border-bottom: 1px dotted var(--gold-dark); }
 .oddsTable th, .oddsTable td { padding: 4px 6px; text-align: left; vertical-align: top; }
