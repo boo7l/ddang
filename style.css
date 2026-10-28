@@ -76,7 +76,7 @@ body {
 .win h2::before { content: "◆ "; color: var(--seal); }
 
 /* 제목줄: 낙관 도장 + 게임 이름, 아래에 번개무늬(回) 띠 */
-header.titlebar { --panel: #2a0a07; } /* 상단 바만 한 단계 짙은 옻칠 (2026-10-29 시안 A: 아래 창들과 구분되게) */
+header.titlebar { --panel: #380c08; } /* 상단 바만 조금 짙은 옻칠 (2026-10-29 시안 A #2a0a07에서 한 단계 밝게. 창 바탕 #4a0e0a보다는 어둡다) */
 .titlebar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px 18px 22px; }
 /* 상단 바: 글자는 꺾지 않고, 자리가 모자라면 오른쪽 단추 묶음이 통째로 아랫줄로 (2026-10-26) */
 .titlebar > *, .titlebar button, #who > * { white-space: nowrap; flex-shrink: 0; }
