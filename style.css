@@ -643,7 +643,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #game > .col, #join { container-type: inline-size; } /* 지도 칸 크기를 화면이 아니라 지도가 든 칸의 실제 너비에 맞춘다 */
   .map { --cell: calc((min(100vw, 440px) - 36px) / var(--cols, 8)); padding: 8px; }
   #game .map, #join .map { --cell: calc((100cqw - 24px) / var(--cols, 8)); }
-  .city.home::before { top: -2px; left: -2px; width: 8px; height: 8px; z-index: 3; } /* 내 성 표시: 칸이 작으니 귀퉁이에 걸쳐서 성 이름을 가리지 않게 (2026-10-28 -4px에서 안쪽으로 2px: 옆 성 것처럼 보여서) */
+  .city.home::before { top: -2px; left: -2px; width: 7px; height: 7px; z-index: 3; } /* 내 성 표시: 칸이 작으니 귀퉁이에 걸쳐서 성 이름을 가리지 않게 (2026-10-28 -4px에서 안쪽으로 2px: 옆 성 것처럼 보여서, 크기 8 → 7px: 글자에 덜 걸리게) */
 
   /* 아래 탭 */
   #mTabs { flex: none; display: flex; gap: 0; margin: 0 -6px; padding-bottom: env(safe-area-inset-bottom); /* 화면 맨 아래 칸 (떠 있지 않고 자리를 차지한다) */
