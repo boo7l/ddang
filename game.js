@@ -87,7 +87,7 @@ function adminDialog(tab = 'users', fid = null) {
     // 예약은 앞에서부터 10개만 (나머지는 "외 N개")
     const queueText = g => { const os = (g.queue || []).filter(Boolean); return os.slice(0, 10).map(o => esc(orderLabel(o))).join(', ') + (os.length > 10 ? ` <span class="dim">외 ${os.length - 10}개</span>` : ''); };
     const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
-    const rows = gens.filter(g => (g.faction || '') === pick).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td>${esc(g.name)}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
+    const rows = gens.filter(g => (g.faction || '') === pick).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
       <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>
       <td>${queueText(g) || '<span class="dim">없음</span>'}</td></tr>`).join('');
@@ -106,6 +106,7 @@ function adminDialog(tab = 'users', fid = null) {
     box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
+    box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
   });
   $('#modalBox').classList.add('adminBox');
 }
@@ -1341,14 +1342,55 @@ $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 �
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 $('#menuBtn').onclick = e => { e.stopPropagation(); $('#recordBtn').hidden = !(S && me()); document.querySelector('header').classList.toggle('menuOpen'); };
 // ☰ 메뉴 맨 위 [📊 정보] (2026-10-28): 누르면 내 장수의 기록 창 (서버가 g.record에 센다). 장수가 없으면 단추를 숨긴다
+// 장수 기록 표의 줄 (내 기록 창·관리자 장수 창이 같이 쓴다). medals = 훈장 개수
+const recordRows = (g, medals) => {
+  const r = g.record || {}, n = k => fmt(r[k] || 0);
+  return [['내정', `${n('domestic')}회`], ['징병', `${n('drafted')}명`], ['전투', `${n('battles')}회`], ['승전', `${n('wins')}회`], ['패전', `${n('losses')}회`],
+    ['계략', `${n('plotOk')} / ${n('plotTry')}회 성공`], ['세력 변경', `${Math.max(0, (g.joins || 1) - 1)}회`], ['훈장', `${medals}개`]]
+    .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+};
+// 관리자: 장수 한 명의 정보와 제재 (2026-10-28). 관리자 보기 → 유저 목록에서 장수 이름을 누른다. back = 돌아갈 목록 (탭, 세력)
+function playerDialog(id, backTab = 'users', backF = null) {
+  const g = S.generals[id];
+  if (!g) return;
+  const until = map => ((map || {})[id] > Date.now() ? map[id] : 0);
+  const mute = until(S.mutes), ban = until(S.bans), t = GENERAL_TRAITS[g.trait];
+  const st = STATS.map(s => `${s.name} ${effStats(g)[s.key]}`).join(' · ');
+  const queue = (g.queue || []).filter(Boolean).map(o => esc(orderLabel(o))).join(', ') || '<span class="dim">없음</span>';
+  const act = async (action, body, msg) => { if (!confirm(msg)) return; if (await call(action, { id, ...body })) playerDialog(id, backTab, backF); };
+  openModal(`<h2>🛠 ${esc(g.name)}${medalOf(g.id)} <span class="dim small">· 아이디 ${esc(ACCOUNTS[id] || '?')}</span></h2>
+    <table class="stats">
+      <tr><th>세력</th><td>${g.faction ? esc(factionById(g.faction).name) : '재야'} · ${g.city ? esc(cityById(g.city).name) : '-'}</td></tr>
+      <tr><th>능력치</th><td>${st}</td></tr>
+      <tr><th>특성</th><td>${t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '-'}</td></tr>
+      <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)} · 금 ${fmt(g.gold || 0)} · 공적 ${fmt(g.merit)}</td></tr>
+      <tr><th>예약</th><td>${queue}</td></tr>
+      <tr><th>제재</th><td>${mute ? `🔇 채팅 금지 ${fmtTime(mute)}까지` : ''}${mute && ban ? '<br>' : ''}${ban ? `⛔ 계정 정지 ${ban - Date.now() > 5 * 365 * 24 * HOUR ? '영구' : fmtTime(ban) + '까지'}` : ''}${mute || ban ? '' : '<span class="dim">없음</span>'}</td></tr>
+    </table>
+    <p class="sub">기록</p>
+    <table class="recTable">${recordRows(g, (S.medals || {})[id] || 0)}</table>
+    <p class="sub">제재 <span class="dim">(받은 사람의 기록에도 남아요)</span></p>
+    <p><button id="pWarn">⚠ 경고</button> <button id="pKick"${g.faction ? '' : ' disabled'}>강제 하야</button></p>
+    <p>채팅 금지: <button data-mute="1">1시간</button> <button data-mute="24">하루</button> <button data-mute="168">7일</button>${mute ? ' <button data-mute="0">풀기</button>' : ''}</p>
+    <p>계정 정지: <button data-ban="1" class="danger">하루</button> <button data-ban="7" class="danger">7일</button> <button data-ban="3650" class="danger">영구</button>${ban ? ' <button data-ban="0">풀기</button>' : ''}</p>
+    <div class="modalBtns"><button id="pBack">◀ 목록</button><button data-close class="main">닫기</button></div>`, box => {
+    $('#pBack').onclick = () => adminDialog(backTab, backF);
+    $('#pWarn').onclick = async () => {
+      const text = prompt(`${g.name}에게 보낼 경고 (100자까지, 그 장수의 기록에 남아요)`, '비매너 행위로 경고합니다.');
+      if (text && text.trim() && await call('adminWarn', { id, text })) playerDialog(id, backTab, backF);
+    };
+    $('#pKick').onclick = () => act('adminKick', {}, `${g.name}을(를) 세력에서 쫓아낼까요?\n하야처럼 병력은 흩어지고, 그 세력에는 한동안 다시 못 들어가요.`);
+    box.querySelectorAll('[data-mute]').forEach(b => { b.onclick = () => act('adminMute', { hours: +b.dataset.mute }, +b.dataset.mute ? `${g.name}의 채팅을 ${b.textContent} 동안 막을까요?` : '채팅 금지를 풀까요?'); });
+    box.querySelectorAll('[data-ban]').forEach(b => { b.onclick = () => act('adminBan', { days: +b.dataset.ban }, +b.dataset.ban ? `${g.name}의 계정을 ${b.textContent} 정지할까요?\n정지되는 동안 아예 접속할 수 없어요.` : '계정 정지를 풀까요?'); });
+  });
+  $('#modalBox').classList.add('wideBox');
+}
+
 function recordDialog() {
   const g = S && me();
   if (!g) return;
-  const r = g.record || {}, n = k => fmt(r[k] || 0);
-  const rows = [['내정', `${n('domestic')}회`], ['징병', `${n('drafted')}명`], ['전투', `${n('battles')}회`], ['승전', `${n('wins')}회`], ['패전', `${n('losses')}회`],
-    ['계략', `${n('plotOk')} / ${n('plotTry')}회 성공`], ['세력 변경', `${Math.max(0, (g.joins || 1) - 1)}회`], ['훈장', `${(S.myMedals || 0)}개`]];
   openModal(`<h2>📊 ${esc(g.name)}의 기록</h2>
-    <table class="recTable">${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>
+    <table class="recTable">${recordRows(g, S.myMedals || 0)}</table>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
   $('#modalBox').classList.add('recBox');
 }

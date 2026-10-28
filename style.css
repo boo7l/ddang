@@ -117,6 +117,7 @@ h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left
 .btn:hover { background: var(--gold); color: var(--panel-dark); }
 .link { color: var(--title); text-decoration: none; cursor: pointer; }
 .link:hover { color: var(--panel-dark); background: var(--title); }
+button.link { background: none; border: 0; box-shadow: none; padding: 0; font: inherit; text-decoration: underline dotted; } /* 글자처럼 보이는 단추 (관리자 유저 목록의 장수 이름, 2026-10-28) */
 
 #loader { display: flex; align-items: center; justify-content: center; min-height: 60vh; } /* 상단 바는 먼저 보이고, 그 아래에 */
 #loader[hidden] { display: none; }
