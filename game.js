@@ -957,7 +957,7 @@ function renderJoinInfo() {
     <p class="sub">시작할 성 <span class="dim">(지도에서 눌러도 돼요)</span></p>
     <div class="picks" id="jCities">${cities.map(c =>
       `<button class="pick${c.id === joinCity ? ' on' : ''}" data-c="${esc(c.id)}">${esc(c.name)} <span class="grade">${'★'.repeat(c.grade)}</span></button>`).join('')}</div>
-    <p class="dim">소속해도 수비대장은 남은 병력으로 성을 지켜요. 다만 더는 병력을 되찾지 않으니, 쓰러진 뒤엔 소속원들이 지켜야 해요.</p>
+    <p class="dim">소속해도 수비대장은 없어지지 않아요.</p>
     ${rejoinLeft(me(), f.id)
       ? `<p class="bad">얼마 전에 하야한 세력이라 ${rejoinLeft(me(), f.id)}턴 뒤(${dateText(me().leftFaction.until)})부터 다시 들어갈 수 있어요.</p>
     <button id="jOk" class="btn big" disabled>${esc(f.name)} 세력에 소속하기</button>`
