@@ -1319,6 +1319,10 @@ $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 �
 // 휴대폰 제목줄 ☰ 메뉴 (2026-10-28): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 $('#menuBtn').onclick = e => { e.stopPropagation(); document.querySelector('header').classList.toggle('menuOpen'); };
 document.addEventListener('click', () => document.querySelector('header').classList.remove('menuOpen'));
+// 휴대폰에서 PC 버전으로 보기 ↔ 모바일 버전으로 돌아오기 (2026-10-28). 고른 것은 이 브라우저에 기억하고 새로 연다 (index.html 맨 위에서 화면 너비를 정한다)
+const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); else localStorage.removeItem('ddang-pc'); } catch (e) { /* 저장 못 하면 이번만 */ } location.reload(); };
+$('#pcBtn').onclick = () => setPcMode(true);
+$('#mobileBtn').onclick = () => setPcMode(false);
 $('#adminBtn').onclick = adminToolsDialog;
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;

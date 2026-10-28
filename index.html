@@ -2,12 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- 휴대폰에서 화면 너비에 맞춘다 (2026-10-27) -->
+  <meta name="viewport" id="vp" content="width=device-width, initial-scale=1"><!-- 휴대폰에서 화면 너비에 맞춘다 (2026-10-27) -->
+  <script>/* 휴대폰 "PC 버전 보기" (2026-10-28): 켜 두면 화면을 PC 너비(1280)로 그리고 손가락으로 확대해서 본다. 이 브라우저에만 기억 */
+    try { if (localStorage.getItem('ddang-pc') === '1') { document.getElementById('vp').content = 'width=1280'; document.documentElement.classList.add('pcMode'); } } catch (e) { /* 저장소를 못 쓰면 늘 휴대폰 화면 */ }</script>
   <title>땅국지 - 땅따먹기 대소동</title>
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261028201759">
+<link rel="stylesheet" href="style.css?v=20261028201927">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -19,7 +21,7 @@
     <div id="check" hidden></div>
     <div class="hdrRight">
       <button id="helpBtn" class="main">📜 도움말</button>
-      <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim wideOnly" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="toMain" title="로그인한 채로 첫 화면으로">메인</button><button id="logout">로그아웃</button></div>
+      <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim wideOnly" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="toMain" title="로그인한 채로 첫 화면으로">메인</button><button id="pcBtn">🖥 PC 버전 보기</button><button id="logout">로그아웃</button></div><button id="mobileBtn">📱 모바일 버전</button>
       <button id="menuBtn" title="메뉴">☰</button><!-- 휴대폰: 순위·관리·메인·로그아웃을 이 메뉴 안에 (2026-10-28) -->
     </div>
   </header>
@@ -139,15 +141,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261028201759"></script>
-  <script src="mapcore.js?v=20261028201759"></script>
-  <script src="data/map.js?v=20261028201759"></script>
-  <script src="rules.js?v=20261028201759"></script>
-  <script src="faces.js?v=20261028201759"></script>
-  <script src="patchnotes.js?v=20261028201759"></script>
-  <script src="mapbg.js?v=20261028201759"></script>
-  <script src="map.js?v=20261028201759"></script>
-  <script src="engine.js?v=20261028201759"></script>
-  <script src="game.js?v=20261028201759"></script>
+  <script src="server.js?v=20261028201927"></script>
+  <script src="mapcore.js?v=20261028201927"></script>
+  <script src="data/map.js?v=20261028201927"></script>
+  <script src="rules.js?v=20261028201927"></script>
+  <script src="faces.js?v=20261028201927"></script>
+  <script src="patchnotes.js?v=20261028201927"></script>
+  <script src="mapbg.js?v=20261028201927"></script>
+  <script src="map.js?v=20261028201927"></script>
+  <script src="engine.js?v=20261028201927"></script>
+  <script src="game.js?v=20261028201927"></script>
 </body>
 </html>

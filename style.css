@@ -351,6 +351,8 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 #who { display: flex; align-items: center; gap: 10px; }
 #who #whoName { color: var(--title); }
 #menuBtn { display: none; } /* 휴대폰에서만 보인다 (아래 @media) */
+#pcBtn, #mobileBtn { display: none; } /* PC 버전 보기는 휴대폰 ☰ 메뉴 안에서만, 모바일 버전 단추는 PC 버전으로 볼 때만 (2026-10-28) */
+.pcMode #mobileBtn { display: inline-block; }
 #who .wideOnly { margin-left: 14px; } /* 도움말·순위·관리 단추와 계정 이름 사이를 조금 띄운다 (2026-10-27) */
 @media (max-width: 1250px) { #who #whoName { margin-left: 14px; } } /* 좁아서 "계정" 글자가 숨으면 이름 앞을 띄운다 */
 #logout { color: #ff8a70; border-color: #c8503a; } /* 로그아웃은 살짝 붉게 (2026-10-27) */
@@ -616,6 +618,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   .menuOpen #who:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; gap: 6px; position: absolute; top: calc(100% - 10px); right: 10px; z-index: 50;
     padding: 10px; background: var(--panel-dark); border: 2px solid var(--gold); box-shadow: 3px 3px 0 #000; }
   .menuOpen #who #whoName { display: block; order: -1; margin: 0 0 2px; text-align: center; } /* 메뉴 맨 위에 계정 이름 */
+  .menuOpen #who #pcBtn { display: block; }
   #menuBtn { padding: 2px 10px; }
   .menuOpen #menuBtn { background: var(--title); color: var(--panel-dark); }
   #who button { padding: 4px 12px; }
