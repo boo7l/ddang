@@ -656,6 +656,8 @@ details.fold > summary:hover h2 { color: var(--title); }
   .titlebar { flex-wrap: nowrap; gap: 4px 6px; }
   .hdrRight { margin-left: auto; gap: 4px; }
   #helpBtn { padding: 2px 8px; }
+  .titlebar .seal { width: 30px; height: 30px; } /* 휴대폰: "땅" 낙관과 로고를 조금 작게 (2026-10-28, 휴대폰 화면은 촘촘해서 도트가 그대로 또렷하다) */
+  .logoTop { width: 86px; height: 29px; }
   #menuBtn { padding: 2px 6px; }
   #menuBtn .hb { gap: 3px; height: 20px; }
   #menuBtn .hb i { width: 14px; }
