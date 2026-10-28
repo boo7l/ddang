@@ -7,7 +7,7 @@
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261028200240">
+<link rel="stylesheet" href="style.css?v=20261028200608">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -20,6 +20,7 @@
     <div class="hdrRight">
       <button id="helpBtn" class="main">📜 도움말</button>
       <div id="who" hidden><button id="rankBtn">🏆 순위</button><button id="adminBtn" hidden>🛠 관리</button><span class="dim wideOnly" title="계정 닉네임 (장수 이름과 따로예요)">계정</span><span id="whoName"></span><button id="toMain" title="로그인한 채로 첫 화면으로">메인</button><button id="logout">로그아웃</button></div>
+      <button id="menuBtn" title="메뉴">☰</button><!-- 휴대폰: 순위·관리·메인·로그아웃을 이 메뉴 안에 (2026-10-28) -->
     </div>
   </header>
   <!-- 처음 켤 때: 상단 바 아래에 "로딩 중..." (첫 화면과 글꼴이 준비되면 걷힌다, 도트 그림 3장, 2026-10-27. tools/make_loading.html) -->
@@ -138,15 +139,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261028200240"></script>
-  <script src="mapcore.js?v=20261028200240"></script>
-  <script src="data/map.js?v=20261028200240"></script>
-  <script src="rules.js?v=20261028200240"></script>
-  <script src="faces.js?v=20261028200240"></script>
-  <script src="patchnotes.js?v=20261028200240"></script>
-  <script src="mapbg.js?v=20261028200240"></script>
-  <script src="map.js?v=20261028200240"></script>
-  <script src="engine.js?v=20261028200240"></script>
-  <script src="game.js?v=20261028200240"></script>
+  <script src="server.js?v=20261028200608"></script>
+  <script src="mapcore.js?v=20261028200608"></script>
+  <script src="data/map.js?v=20261028200608"></script>
+  <script src="rules.js?v=20261028200608"></script>
+  <script src="faces.js?v=20261028200608"></script>
+  <script src="patchnotes.js?v=20261028200608"></script>
+  <script src="mapbg.js?v=20261028200608"></script>
+  <script src="map.js?v=20261028200608"></script>
+  <script src="engine.js?v=20261028200608"></script>
+  <script src="game.js?v=20261028200608"></script>
 </body>
 </html>

@@ -1280,6 +1280,9 @@ $('#tLogout').onclick = logout;
 $('#tWithdraw').onclick = withdraw;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
+// 휴대폰 제목줄 ☰ 메뉴 (2026-10-28): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
+$('#menuBtn').onclick = e => { e.stopPropagation(); document.querySelector('header').classList.toggle('menuOpen'); };
+document.addEventListener('click', () => document.querySelector('header').classList.remove('menuOpen'));
 $('#adminBtn').onclick = adminToolsDialog;
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
