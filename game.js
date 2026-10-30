@@ -360,8 +360,15 @@ function unitAtSlot(p, i) {
   return d ? d.unit : p.unitType;
 }
 
+// '병과 고정' 스위치 (2026-10-30): 켜 두면 징병을 누르자마자 그 칸 때의 병종으로 예약 (병종 고르는 창 없이). 이 브라우저에 기억
+const DRAFT_LOCK_KEY = 'ddang-draft-lock';
+let draftLock = false;
+try { draftLock = localStorage.getItem(DRAFT_LOCK_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 꺼진 채 */ }
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
+  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft');
+  const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
+  if (draftLock && lockUnit) { reserve({ cmd: 'draft', unit: lockUnit }); return; }
   const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
   const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
@@ -1157,6 +1164,9 @@ function renderCommands() {
       <span class="what">${o ? esc(orderLabel(o)) : '대기'}</span>
       ${o ? `<button class="mini x" data-x="${i}" title="이 칸 비우기">✕</button>` : ''}</li>`).join('');
   const at = cityAtSlot(me(), slot);
+  // 이 칸 때 가지고 있을 병종: 앞 칸에 징병 예약이 있으면 그 병종, 없으면 지금 병사가 있을 때만 지금 병종 ('병과 고정'은 이때만 보인다)
+  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft');
+  const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
   const etc = [btn('explore', '탐색', cost('explore')),
@@ -1176,9 +1186,9 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 넣을 명령 <span class="dim">(이때 ${esc(at.name)}에 있을 예정)</span></p>
     <p class="sub">내정</p>
     <div class="cmds">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
-    <p class="sub">군사</p>
+    <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
     <div class="cmds">
-      ${btn('draft', '징병', `통솔 · ${cost('draft')}`)}
+      ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정 · ${cost('draft')}` : `통솔 · ${cost('draft')}`)}
       ${btn('drill', '훈련', '통솔')}
       ${btn('attack', '출진', `이웃 성 공격 · ${cost('attack')}`)}
       ${btn('move', '이동', '아군 성으로')}
@@ -1190,6 +1200,11 @@ function renderCommands() {
     <div class="cmds">${etc}</div>` : ''}
 `;
   const dialogs = { buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  if ($('#draftLock')) $('#draftLock').onchange = e => {
+    draftLock = e.target.checked;
+    try { localStorage.setItem(DRAFT_LOCK_KEY, draftLock ? '1' : '0'); } catch (err) { /* 이번만 */ }
+    renderCommands();
+  };
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));

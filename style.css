@@ -229,6 +229,10 @@ button:disabled, button:disabled:hover {
 .hi { color: var(--title); }
 .sub { color: var(--label); margin: 10px 0 6px; }
 .sub:first-child { margin-top: 0; }
+.subRow { display: flex; align-items: center; justify-content: space-between; } /* 제목 줄 오른쪽에 작은 스위치 (2026-10-30 병과 고정) */
+.lockSw { color: var(--dim); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.lockSw input { accent-color: var(--title); margin: 0; cursor: pointer; }
+.lockSw:has(input:checked) { color: var(--title); }
 
 /* ===== 게임 화면 배치: 지도+기록 | 장수+명령 | 성 정보+세력 ===== */
 #game .col { flex: none; }
