@@ -186,6 +186,7 @@ function joinFaction(g, fid, cityId) {
   const home = picked && picked.faction === f.id ? picked : startCity(f.id);
   g.faction = f.id;
   g.joins = (g.joins || 0) + 1; // 세력에 들어간 횟수 (개국공신은 한 번만 들어간 장수)
+  delete g.fallen; // 멸망 알림은 새 세력에 들어가면 끝
   g.city = home.id;
   capDefense(g);
   addLog(g, `${g.name}, ${f.name} 세력에 몸을 담다. ${home.name}에서 첫발을 내딛는다.`);
@@ -527,7 +528,8 @@ function nearestOwnCities(c, fid) {
   }
   return [];
 }
-function retreatFrom(c, oldFaction) {
+// byFid: 성을 빼앗은 세력 (세력이 멸망했을 때 알림에 쓴다)
+function retreatFrom(c, oldFaction, byFid) {
   const out = [];
   for (const g of allGenerals()) {
     if (g.city !== c.id || g.faction !== oldFaction) continue;
@@ -535,7 +537,11 @@ function retreatFrom(c, oldFaction) {
     const far = near.length ? [] : nearestOwnCities(c, oldFaction);
     const list = near.length ? near : far;
     const to = list.length ? list[randInt(0, list.length - 1)] : null;
-    if (!to) { g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…`); continue; }
+    if (!to) { // 마지막 성까지 빼앗겼다: 세력 멸망. 다음 접속 때 화면이 멸망 알림을 띄운다 (2026-10-30, 세력에 다시 들어가면 지운다)
+      const old = factionById(oldFaction), by = byFid && factionById(byFid);
+      g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn };
+      g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…`); continue;
+    }
     g.city = to.id;
     if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
       const lost = Math.ceil(g.troops * RULES.isolatedLoss);
@@ -563,7 +569,7 @@ function capture(g, to, oldFaction, lines) {
   const cut = captureDamage(cs);
   cs.wall = RULES.captureWall[to.grade];
   lines.push(`함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다`);
-  lines.push(...retreatFrom(to, oldFaction));
+  lines.push(...retreatFrom(to, oldFaction, g.faction));
   g.city = to.id;
 }
 

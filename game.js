@@ -974,6 +974,18 @@ function showJoin() {
   joinPick = null;
   joinCity = null;
   renderJoin();
+  fallenDialog();
+}
+// 내 세력이 멸망해서 세력 선택으로 왔으면 알려 준다 (2026-10-30). 서버가 g.fallen에 적어 두고, 새 세력에 들어가면 지운다. 한 번 열면 이번 접속에서는 다시 안 띄운다
+let fallenShown = false;
+function fallenDialog() {
+  const f = S && me() && me().fallen;
+  if (!f || fallenShown) return;
+  fallenShown = true;
+  openModal(`<h2>⚔ ${esc(f.faction)} 세력 멸망</h2>
+    <p>${dateText(f.turn)}, 마지막 성 <b>${esc(f.city)}</b>${f.by ? `${josa(f.city, '이가').slice(-1)} <b>${esc(f.by)}</b> 세력에게 함락되어` : `${josa(f.city, '을를').slice(-1)} 잃어`}${esc(f.faction)} 세력이 멸망했어요.</p>
+    <p>새 세력을 골라 다시 천하를 노려 보세요.</p>
+    <div class="modalBtns"><button data-close class="main">세력 고르기</button></div>`);
 }
 
 function renderJoin() {
