@@ -953,13 +953,15 @@ function buyItem(g, item) {
 
 // ----- 갈취 (개인 특성 이게 일상이야, 2026-10-28) -----
 // 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 공적·경험치 없음
+// 갈취로 받는 금의 범위: 무력 × 1~5배 (2026-10-30). [최소, 최대]
+const levyRange = g => { const L = gTrait(g).levy, w = effStats(g).war; return [w * L.warMin, w * L.warMax]; };
 const levyLeft = g => { const L = gTrait(g).levy; return L && g.levyTurn ? Math.max(0, g.levyTurn + L.cooldown - S.turn) : 0; };
 function runLevy(g) {
   const L = gTrait(g).levy;
   if (!L) return '갈취는 "이게 일상이야" 특성이 있어야 해요';
   if (levyLeft(g)) return `갈취는 ${levyLeft(g)}턴 뒤에 다시 쓸 수 있음`;
   const city = cityById(g.city), cs = S.cities[g.city];
-  const got = earnGold(g, randInt(L.min, L.max)), drop = Math.min(cs.peace, L.peace);
+  const [lo, hi] = levyRange(g), got = earnGold(g, randInt(lo, hi)), drop = Math.min(cs.peace, L.peace);
   cs.peace -= drop;
   g.levyTurn = S.turn;
   addLog(g, `${josa(city.name, '은는')} 이게 일상이야.. 백성에게서 금을 거두었다. 내 금 +${fmt(got)} · 치안 -${drop} (${cs.peace})`);
