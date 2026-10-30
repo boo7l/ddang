@@ -944,8 +944,8 @@ function renderTrait(animate) {
   $('#trSlips').innerHTML = offer.map((id, i) => slipHtml(id, i, animate, trChoice === id)).join('');
   $('#trSlips').querySelectorAll('.trSlip').forEach(b => { b.onclick = () => { trChoice = b.dataset.id; renderTrait(false); }; });
   $('#trReroll').hidden = !open;
-  $('#trReroll').disabled = !(g.traitRerolls > 0);
-  $('#trReroll').textContent = g.traitRerolls > 0 ? `🔄 다시 뽑기 (${g.traitRerolls}번 남음)` : '다시 뽑기를 썼어요';
+  $('#trReroll').disabled = !(IS_ADMIN || g.traitRerolls > 0); // 관리자는 무제한 (2026-10-30)
+  $('#trReroll').textContent = IS_ADMIN ? '🔄 다시 뽑기 (관리자: 무제한)' : g.traitRerolls > 0 ? `🔄 다시 뽑기 (${g.traitRerolls}번 남음)` : '다시 뽑기를 썼어요';
   $('#trPick').hidden = !open;
   $('#trPick').disabled = !trChoice;
 }
@@ -955,7 +955,7 @@ $('#trPouch').onclick = async () => {
   setTimeout(() => { $('#trPouch').classList.remove('shake'); if (ok) renderTrait(true); }, 450);
 };
 $('#trReroll').onclick = async () => {
-  if (!confirm('종이 3장을 다시 뽑을까요? 다시 뽑기는 한 번뿐이에요.')) return;
+  if (!IS_ADMIN && !confirm('종이 3장을 다시 뽑을까요? 다시 뽑기는 한 번뿐이에요.')) return; // 관리자는 묻지 않고 바로
   trChoice = null;
   if (await call('traitReroll')) renderTrait(true);
 };
