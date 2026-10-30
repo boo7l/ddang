@@ -1048,7 +1048,7 @@ document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setT
 
 function enterGame() {
   showScreen('game');
-  if (!$('#game').dataset.tab) setTab('map');
+  setTab('map'); // 휴대폰: 게임 화면에 들어올 때는 언제나 지도 탭부터 (2026-10-30, 그 전엔 같은 페이지에서 마지막 탭을 기억)
   selected = null;
   slot = 0;
   render();
