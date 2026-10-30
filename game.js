@@ -1230,7 +1230,8 @@ const medalOf = id => { const n = (S && S.medals && S.medals[id]) || 0; return n
 const chatWho = m => {
   const g = allGenerals().find(x => x.name === m.name); // 훈장도 지금 장수에서 찾는다
   const c = cityById(m.city || (g && g.city));
-  return esc(m.name) + (g ? medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
+  const f = g && FACES.find(x => x.id === g.face); // 닉네임은 장수 얼굴 색 (2026-10-30). 장수를 못 찾으면 기본 색
+  return (f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name)) + (g ? medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
 };
 async function sendChat(text) {
   text = text.trim().slice(0, CHAT_LEN);
