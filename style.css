@@ -556,6 +556,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 #hof .swatch { width: 12px; height: 12px; }
 #hof .hofTable th { color: var(--label); font-weight: normal; text-align: left; padding: 1px 4px; } #hof .hofTable th.num { text-align: right; }
 #title .tSeason { margin: 10px 0 0; padding: 4px 8px; display: inline-block; color: var(--title); border: 1px solid var(--gold-dark); background: var(--panel-dark); } #title .tSeason:empty { display: none; }
+#title .tSeason .tNext { display: inline-block; margin-top: 4px; color: var(--text); } /* 다음 시즌 예고 (2026-10-31) */
 .resignRow { margin: -4px 0 10px; text-align: right; } /* 명령 창 바로 아래, 창 밖 */
 .traitFold { margin: 2px 0 6px; } /* 특성 칸 접기 (2026-10-28) */
 .traitFold > summary { list-style: none; cursor: pointer; color: var(--label); }

@@ -198,6 +198,8 @@ function applyLoginGate() {
   $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 열리면 다시 들어와 주세요.` : '';
   if (closed) $('#tGoogleBox').hidden = $('#tNickBox').hidden = true;
 }
+// 다음 시즌 예고 (2026-10-31): 시즌이 끝나 있는 동안 첫 화면 시즌 표시 아래에 보인다. 비워 두면 안 보인다
+const NEXT_SEASON_NOTE = '📢 시즌 4 · 11월 1일(일) 저녁 7시 시작 예정';
 async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
@@ -205,7 +207,7 @@ async function renderSeasonBadge() {
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
-    el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일`
+    el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일` + (NEXT_SEASON_NOTE ? `<br><span class="tNext">${NEXT_SEASON_NOTE}</span>` : '')
       : s.preparing ? `🛠 시즌 ${s.season} · 준비 중`
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
       : `⚔ 시즌 ${s.season} · 진행 중`; // 첫 장수를 기다리는 중이어도 "진행 중"으로 보인다
