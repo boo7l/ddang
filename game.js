@@ -316,8 +316,9 @@ function pickDialog(title, intro, opts, okText, onOk, extra = '') {
 }
 
 // 성의 수비 부대 글: 우리 세력 성이면 모두 보여 주고, 다른 세력 성이면 수비대장만 자세히, 장수는 있는지만
+// 첩보가 유효한 성은 수비 장수도 이름·병종·병력까지 (2026-10-30)
 function defenseText(c, defs, sep) {
-  const ours = c.faction === me().faction;
+  const ours = c.faction === me().faction || !!(S.cities[c.id] || {}).spied;
   const out = defs.filter(d => ours || d.guard).map(d => `${esc(d.name)} · ${d.type} ${fmt(d.troops)}`);
   if (!ours && defs.some(d => !d.guard)) out.push('장수 수비 있음');
   return out.join(sep);
@@ -329,7 +330,7 @@ function attackDialog() {
     const f = factionById(c.faction);
     const defs = defendersOf(c);
     const d = defs[0];
-    const hidden = defs.some(x => !x.guard); // 장수가 지키면 병력을 몰라 예상할 수 없다
+    const hidden = defs.some(x => !x.guard) && !(S.cities[c.id] || {}).spied; // 장수가 지키면 병력을 몰라 예상할 수 없다 (첩보가 유효하면 안다, 2026-10-30)
     // 다른 세력 성의 방어는 첩보가 있어야 안다 (2026-10-26)
     const wall = c.faction ? S.cities[c.id].wall : 0, seen = wall !== undefined;
     // 맨 앞에서 요격할 부대와 맞붙었을 때를 비교한다 (상성 포함, 지금 기준. 수비대장만 있을 때)
