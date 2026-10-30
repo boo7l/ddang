@@ -156,10 +156,20 @@ function paintBg(kind, w, h) {
 }
 
 // 지도 칸 영역에 배경을 깐다. 같은 크기면 한 번 그린 그림을 다시 쓴다
+// 칸 크기는 화면에 실제로 그려진 지도 너비에서 잰다 (2026-10-30: 휴대폰은 --cell이 화면 너비로 계산되는 식이라 숫자로 읽히지 않아 PC 크기 58로 그려져 어긋났다).
+// 지도 크기가 바뀌면(탭 전환·화면 돌리기·창 크기) 다시 깐다
 const bgCache = {};
 function applyMapBg(el) {
-  const cellPx = parseFloat(getComputedStyle(el).getPropertyValue('--cell')) || 58;
+  if (!el._bgWatch && typeof ResizeObserver === 'function') {
+    el._bgWatch = new ResizeObserver(() => applyMapBg(el));
+    el._bgWatch.observe(el);
+  }
+  const plain = el.querySelector('.cell:not(.city)'); // 성이 아닌 빈칸은 테두리·여백 없이 딱 한 칸 크기
+  const cellPx = plain ? plain.getBoundingClientRect().width : 0;
+  if (!(cellPx > 0)) return; // 숨겨진 탭이라 아직 크기가 없다: 보일 때 다시 온다
   const w = cellPx * MAP.cols, h = cellPx * MAP.rows, key = `${MAP_BG_TONE}:${w}x${h}`;
+  if (el._bgKey === key) return; // 이미 이 크기로 깔려 있다
+  el._bgKey = key;
   if (!bgCache[key]) bgCache[key] = paintBg(MAP_BG_TONE, w, h);
   el.classList.add('bg');
   el.style.backgroundImage = `url(${bgCache[key]})`;
