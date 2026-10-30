@@ -3,7 +3,7 @@
 const PATCH_NOTES = [
   {
     title: '시즌 3 주요 업데이트',
-    date: '10월 31일',
+    date: '10월 30일',
     groups: [
       { head: '🔧 시스템', items: [
         '게임 이름이 <b>땅국지</b>로 바뀌었어요<br>(주소 boo7l.github.io/ddang)',
