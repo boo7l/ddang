@@ -887,15 +887,21 @@ function pouchDialog(pick = null, animate = true) {
   const g = me(), offer = g.traitFound || [];
   if (!offer.length) return;
   pouchShown = offer.join();
+  const rerolls = IS_ADMIN ? 1 : g.traitFoundRerolls || 0; // 다시 뽑기 남은 수 (2026-10-30, 관리자는 무제한)
   const now = GENERAL_TRAITS[g.trait];
   openModal(`
     <h2>🧧 특성 주머니를 열었다!</h2>
-    <p>3장 중 하나로 특성을 바꾸거나, 지금 특성을 그대로 둘 수 있어요. 다시 뽑기는 없어요.</p>
+    <p>3장 중 하나로 특성을 바꾸거나, 지금 특성을 그대로 둘 수 있어요. 다시 뽑기는 1번이에요.</p>
     ${now ? `<p class="traitLine myTrait"><span class="tTag">지금</span> <b>${esc(now.name)}</b><br>${esc(now.desc)}</p>` : ''}
     <div class="trSlips">${offer.map((id, i) => slipHtml(id, i, animate, pick === id)).join('')}</div>
+    <p class="center"><button id="pfReroll"${rerolls ? '' : ' disabled'}>${IS_ADMIN ? '🔄 다시 뽑기 (관리자: 무제한)' : rerolls ? `🔄 다시 뽑기 (${rerolls}번 남음)` : '다시 뽑기를 썼어요'}</button></p>
     <div class="modalBtns"><button data-close>나중에</button><button id="pfKeep">지금 특성 유지</button>
       <button id="pfPick" class="main"${pick ? '' : ' disabled'}>이 특성으로 바꾸기</button></div>`, box => {
     box.querySelectorAll('.trSlip').forEach(b => { b.onclick = () => pouchDialog(b.dataset.id, false); });
+    $('#pfReroll').onclick = async () => {
+      if (!IS_ADMIN && !confirm('종이 3장을 다시 뽑을까요? 다시 뽑기는 한 번뿐이에요.')) return;
+      if (await call('traitFoundReroll', {})) pouchDialog();
+    };
     $('#pfKeep').onclick = async () => {
       if (!confirm('지금 특성을 그대로 둘까요? 주머니는 사라져요.')) return;
       if (await call('traitFound', {})) { closeModal(); renderAll(); }

@@ -812,6 +812,7 @@ function runExplore(g) {
     }
     case 'pouch': { // 레어 (2026-10-28): 특성 주머니. 지금 특성을 뺀 3장을 뽑아 두고, 장수가 하나로 바꾸거나 그대로 둔다 (다시 뽑기 없음)
       g.traitFound = drawTraits(g.trait ? [g.trait] : [], ['SSR', 'SR', 'R']); // R 이상 1장은 꼭
+      g.traitFoundRerolls = TRAIT_REROLLS; // 다시 뽑기 1번 (2026-10-30)
       text = '★★ 길가에서 비단 주머니를 주웠다! 특성 3장 중 하나로 바꿀 수 있다. (장수 창에서 열어 보세요)';
       break;
     }
