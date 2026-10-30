@@ -199,7 +199,7 @@ function applyLoginGate() {
   if (closed) $('#tGoogleBox').hidden = $('#tNickBox').hidden = true;
 }
 // 다음 시즌 예고 (2026-10-31): 시즌이 끝나 있는 동안 첫 화면 시즌 표시 아래에 보인다. 비워 두면 안 보인다
-const NEXT_SEASON_NOTE = '📢 시즌 4 · 11월 1일(일) 저녁 7시 시작 예정';
+const NEXT_SEASON_NOTE = '📢 시즌 4 · 11월 1일(일) 저녁 8시 시작 예정';
 async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
