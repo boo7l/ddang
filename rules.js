@@ -101,6 +101,7 @@ const RULES = {
   battleRandom: 0.05,       // 합마다 전투력에 ±5% 무작위
   wallDivisor: 2500,        // 수비 보정 = 1 + 방어 × 0.0004 (방어 100마다 +4%, 방어 1,000이면 1.4배. 2026-10-26 병기가 생겨 3% → 5% → 4%)
   captureCut: 0.10,         // 함락된 성의 농업·상업·치안이 지금 값에서 10% 깎인다 (2026-10-26 20% → 15%, 2026-10-27 격전지가 너무 처참하다는 의견으로 10%. 방어는 아래 captureWall로 다시 세운다)
+  captureCutLow: { under: 100, rate: 0.05 }, // 함락 때 농업·상업이 100 미만이면 5%만 깎인다 (2026-10-31, 치안은 그대로 10%)
   // 성벽 공격 (기획서 7장): 지키는 부대가 없거나 모두 쓰러뜨리면, 남은 병력의 3~5%만큼 성의 방어를 깎고, 깎은 양의 3배(siegeLoss)만큼 병력을 잃는다.
   // 방어가 0이 되어야 점령. 점령하면 방어를 성 크기만큼 다시 세운다
   siegeRate: { min: 0.03, max: 0.05 },
@@ -183,10 +184,12 @@ const marchFood = troops => Math.ceil(troops * RULES.marchFoodRate);
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
 const troopsMax = g => effStats(g).lea * RULES.troopsPerLea;
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
+// 농업·상업이 RULES.captureCutLow.under 미만이면 덜 깎인다 (2026-10-31: 100 미만이면 10% 대신 5%. 이미 약한 성을 거듭 빼앗겨도 바닥나지 않게)
 function captureDamage(cs) {
   const out = {};
   for (const k of ['agri', 'comm', 'peace']) {
-    out[k] = Math.floor(cs[k] * RULES.captureCut);
+    const low = k !== 'peace' && cs[k] < RULES.captureCutLow.under;
+    out[k] = Math.floor(cs[k] * (low ? RULES.captureCutLow.rate : RULES.captureCut));
     cs[k] -= out[k];
   }
   return out;
