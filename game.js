@@ -1312,7 +1312,6 @@ function cityDetailRows(c) {
     `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
   if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.food === undefined ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
-  else if (cs.hidden) rows.push('<tr class="wide"><td colspan="2" class="dim">첩보로 농업·상업·방어·치안·군량을 알아볼 수 있어요</td></tr>');
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
 
