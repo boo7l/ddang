@@ -322,6 +322,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .opt:has(input:checked) { border-color: var(--title); background: #5e1a10; }
 .opt input { accent-color: var(--title); margin: 0; }
 .opt .r { margin-left: auto; font-size: 14px; }
+.opt > b, .opt > .dim { white-space: nowrap; flex-shrink: 0; } /* 이름·값은 줄바꿈하지 않고 설명이 줄을 바꾼다 (2026-10-30: PC 병기 창에서 "벽력/거"로 잘렸다) */
 .g-유리, .g-무혈입성 { color: var(--ok); }
 .g-비슷 { color: var(--title); }
 .g-불리 { color: var(--bad); }
