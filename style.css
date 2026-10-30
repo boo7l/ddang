@@ -716,6 +716,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   .hdrRight button { padding: 2px 6px; }
   #cFaceBig { display: none; } /* 얼굴은 아래 목록에서 고른 칸이 표시된다 */
   #trait { margin: 8px auto; }
+  .trPouch:not(.open) { width: 144px; height: 126px; } /* 휴대폰: 열기 전 주머니를 조금 작게 (7배 → 6배, 2026-10-30) */
   .trSlips { flex-direction: column; align-items: center; }
   .trSlip { width: 100%; max-width: 360px; min-height: 0; flex-direction: row; justify-content: flex-start; padding: 12px 34px 12px 12px; text-align: left; } /* 휴대폰: 종이를 세로로 쌓는다 */
   .trSlip b { flex-shrink: 0; white-space: nowrap; } /* 휴대폰: 특성 이름은 한 줄로 (설명이 줄을 바꾼다) */
