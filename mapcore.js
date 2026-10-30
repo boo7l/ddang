@@ -10,7 +10,10 @@ function adjacent(map, a, b) {
   return map.adjacency === 4 ? dx + dy === 1 : dx <= 1 && dy <= 1;
 }
 
-const neighborsOf = (map, c) => map.cities.filter(o => adjacent(map, c, o));
+// 떨어져 있어도 이웃인 두 성 (2026-10-31): 지도 파일의 links = [[성id, 성id], ...]. 양방향
+const linked = (map, a, b) => (map.links || []).some(([p, q]) => (p === a.id && q === b.id) || (p === b.id && q === a.id));
+
+const neighborsOf = (map, c) => map.cities.filter(o => adjacent(map, c, o) || linked(map, c, o));
 
 // 모든 성이 하나로 이어져 있는지 검사. 떨어진 성 목록을 돌려준다.
 function findIsolated(map) {
