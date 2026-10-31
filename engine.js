@@ -307,7 +307,7 @@ function runOrders(mark) {
     const fail = COMMANDS[order.cmd] && cmdOn(order.cmd) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
   }
-  // 장군뒹굴 (2026-10-31): 세력 소속이면 모든 능력치 경험치 +1. 다른 경험치 보너스는 붙지 않고, 능력치가 오를 때만 기록에 남긴다
+  // 장군뒹굴 (2026-10-31): 세력 소속이면 모든 능력치 경험치가 idleExp만큼 오른다. 다른 경험치 보너스는 붙지 않고, 능력치가 오를 때만 기록에 남긴다
   for (const g of idle) {
     if (S.unified || !g.faction) continue;
     for (const st of STATS) if (addStatExp(g, st.key, gTrait(g).idleExp)) addLog(g, `🛌 뒹굴뒹굴… ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[st.key]})`);
