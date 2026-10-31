@@ -172,6 +172,85 @@ function beep(freq, dur, type = "square", vol = 0.05, slide = 0) {
   } catch (e) {}
 }
 
+/* ── 배경음악: 파일 없이 코드로 합성하는 8비트 곡. 8분음표 8개가 한 마디, 16마디 반복 ── */
+const BPM = 140;             // 빠르기
+const MUSIC_VOL = 0.8;       // 음악 전체 크기 (효과음은 그대로)
+const A_PART = [
+  "A4 . A4 C5 D5 - C5 A4", "G4 - A4 C5 A4 - - .",
+  "A4 . A4 C5 D5 - E5 G5", "E5 - D5 C5 D5 - - .",
+];
+const B_PART = [
+  "E5 - G5 E5 D5 - C5 D5", "E5 - D5 C5 A4 - - .",
+  "C5 - D5 C5 A4 - G4 A4", "C5 D5 E5 G5 A5 - - .",
+];
+const C_PART = [
+  "E5 - G5 E5 D5 - C5 D5", "E5 - D5 C5 A4 - - .",
+  "C5 - A4 C5 D5 - C5 D5", "A4 - - - A4 . . .",
+];
+const LEAD = [...A_PART, ...B_PART, ...A_PART, ...C_PART].join(" ").split(" ");
+const A_BASS = ["A2", "G2", "A2", "D3"];
+const BASS = [...A_BASS, "C3", "A2", "F2", "G2", ...A_BASS, "C3", "A2", "F2", "A2"];
+const noteFreq = n => {
+  const semi = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[n[0]] + (+n[1] + 1) * 12;
+  return 440 * Math.pow(2, (semi - 69) / 12);
+};
+let musicTimer = null, musicStep = 0, musicAt = 0, musicOut = null, noiseBuf = null;
+function tone(type, freq, at, dur, vol, slide) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, at);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, at + dur);
+  g.gain.setValueAtTime(0, 0); g.gain.setValueAtTime(vol, at); g.gain.setValueAtTime(vol, at + dur * .7); g.gain.linearRampToValueAtTime(0, at + dur);
+  o.connect(g); g.connect(musicOut); o.start(at); o.stop(at + dur);
+}
+function hat(at, vol) {
+  const n = ac.createBufferSource(), g = ac.createGain();
+  n.buffer = noiseBuf; g.gain.setValueAtTime(0, 0); g.gain.setValueAtTime(vol, at); g.gain.linearRampToValueAtTime(0, at + .04);
+  n.connect(g); g.connect(musicOut); n.start(at); n.stop(at + .04);
+}
+function playStep(i, at, len) {
+  const note = LEAD[i];
+  if (note !== "." && note !== "-") {
+    let hold = 1; while (LEAD[(i + hold) % LEAD.length] === "-") hold++;
+    tone("square", noteFreq(note), at, len * hold * .92, .035);
+  }
+  const root = noteFreq(BASS[Math.floor(i / 8)]);       // 베이스: 근음과 한 옥타브 위를 번갈아
+  tone("triangle", i % 2 ? root * 2 : root, at, len * .8, .07);
+  if (i % 4 === 0) tone("triangle", 150, at, .09, .1, 45);  // 큰북
+  if (i % 4 === 2) hat(at, .05);                             // 작은 소리의 잡음 타악기
+}
+function musicTick() {
+  const len = 60 / BPM / 2;
+  while (musicAt < ac.currentTime + .25) {
+    playStep(musicStep, musicAt, len);
+    musicStep = (musicStep + 1) % LEAD.length; musicAt += len;
+  }
+}
+function startMusic() {
+  stopMusic();
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+    if (!noiseBuf) {
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * .1, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    musicOut = ac.createGain(); musicOut.gain.value = MUSIC_VOL; musicOut.connect(ac.destination);
+    musicStep = 0; musicAt = ac.currentTime + .05;
+    musicTick(); musicTimer = setInterval(musicTick, 50);
+  } catch (e) {}
+}
+function stopMusic() {
+  if (musicTimer) clearInterval(musicTimer);
+  musicTimer = null;
+  if (musicOut) { musicOut.disconnect(); musicOut = null; }  // 예약해 둔 음도 함께 끊긴다
+}
+// 다른 탭으로 가면 음악도 쉰다
+document.addEventListener("visibilitychange", () => {
+  if (!ac) return;
+  if (document.hidden) ac.suspend(); else ac.resume();
+});
+
 /* ── 게임 상태 ─────────────────────────────────────── */
 let state = "title";   // title | play | over
 let t = 0, score = 0, overAt = 0, shake = 0;
@@ -185,6 +264,7 @@ function reset() {
   el("score").textContent = 0;
   el("msg").hidden = true;
   state = "play";
+  startMusic();
 }
 
 // 어떤 적이 나올지 고른다. 뒤로 갈수록 빠른 적과 느린 적이 많아진다.
@@ -295,6 +375,7 @@ function strike(side) {
 
 function gameOver(text) {
   state = "over"; overAt = performance.now(); overText = text; shake = 4;
+  stopMusic();
   beep(150, .4, "sawtooth", .06, 50);
   const isBest = score > best;
   if (isBest) { best = score; el("best").textContent = best; try { localStorage.setItem("ilgi_best", best); } catch (e) {} }
@@ -433,6 +514,7 @@ addEventListener("pointerdown", e => {
 });
 el("sound").addEventListener("click", e => {
   soundOn = !soundOn;
+  if (soundOn && state === "play") startMusic(); else if (!soundOn) stopMusic();
   e.target.textContent = soundOn ? "♪" : "×";
   e.target.blur();
 });
