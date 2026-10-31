@@ -1192,7 +1192,7 @@ function renderCommands() {
     <div class="cmds">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정 · ${cost('draft')}` : `통솔 · ${cost('draft')}`)}
       ${btn('drill', '훈련', '통솔')}
-      ${btn('attack', '출진', `이웃 성 공격 · ${cost('attack')}`)}
+      ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : `이웃 성 공격 · ${cost('attack')}`)}
       ${btn('move', '이동', '아군 성으로')}
       ${btn('siege', '병기', '충차·정란·벽력거')}
     </div>

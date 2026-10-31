@@ -319,10 +319,18 @@ function levyBlocked(g, i) {
   if (g.queue.some((o, j) => j !== i && o && o.cmd === 'levy' && Math.abs(i - j) < L.cooldown)) return `갈취는 ${L.cooldown}턴에 한 번이라, 앞뒤 ${L.cooldown - 1}칸 안에 갈취가 있으면 넣을 수 없어요.`;
   return '';
 }
+// 출진을 i번 칸에 넣을 수 없는 이유. 출진은 attackCooldown턴에 한 번 (2026-10-31, 예약 때 막아서 실패로 턴을 버리지 않게)
+function attackBlocked(g, i) {
+  const cd = RULES.attackCooldown;
+  if (g.attackTurn && g.attackTurn + cd > S.turn + 1 + i) return `출진은 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.attackTurn + cd).month}월 칸부터 가능)`;
+  if (g.queue.some((o, j) => j !== i && o && o.cmd === 'attack' && Math.abs(i - j) < cd)) return `출진은 ${cd}턴에 한 번이라, 앞뒤 ${cd - 1}칸 안에 출진이 있으면 넣을 수 없어요.`;
+  return '';
+}
 function setOrder(g, i, order) {
   if (!Number.isInteger(i) || i < 0 || i >= RULES.queueSize) return '없는 칸이에요.';
   if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd))) return '쓸 수 없는 명령이에요.';
   if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
+  if (order && order.cmd === 'attack') { const why = attackBlocked(g, i); if (why) return why; }
   g.queue[i] = order ? { ...order, orderedAt: now() } : null;
   return '';
 }
@@ -333,6 +341,7 @@ function fillOrders(g, order) {
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
     if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 갈취는 쿨타임이 끝난 칸에만 채운다
+    if (order.cmd === 'attack' && attackBlocked(g, i)) continue; // 출진도 쿨타임이 끝난 칸에만 채운다
     const why = setOrder(g, i, order);
     if (why) return why;
   }
@@ -604,11 +613,14 @@ function runAttack(g, o, mark) {
     return '';
   }
   if (g.troops <= 0) return '병력이 없음';
+  const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
+  if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
   const food = marchFood(g.troops);
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
   const why = pay(g, 'attack'); // 출진은 금 50 (2026-10-26. 군량이 모자라 못 나가면 들지 않는다)
   if (why) return why;
   home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
+  g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
 
   const oldFaction = to.faction, owner = factionById(oldFaction), myF = factionById(g.faction);
