@@ -548,8 +548,10 @@ function retreatFrom(c, oldFaction, byFid) {
     const to = list.length ? list[randInt(0, list.length - 1)] : null;
     if (!to) { // 마지막 성까지 빼앗겼다: 세력 멸망. 다음 접속 때 화면이 멸망 알림을 띄운다 (2026-10-30, 세력에 다시 들어가면 지운다)
       const old = factionById(oldFaction), by = byFid && factionById(byFid);
-      g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn };
-      g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…`); continue;
+      const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
+      g.merit -= meritLost;
+      g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost };
+      g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…${meritLost ? ` 공적 -${fmt(meritLost)}` : ''}`); continue;
     }
     g.city = to.id;
     if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
