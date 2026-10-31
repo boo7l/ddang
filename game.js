@@ -1054,10 +1054,11 @@ function pouchDialog(pick = null, animate = true) {
     <p>3장 중 하나로 특성을 바꾸거나, 지금 특성을 그대로 둘 수 있어요. 다시 뽑기는 1번이에요.</p>
     ${now ? `<p class="traitLine myTrait"><span class="tTag">지금</span> <b>${esc(now.name)}</b><br>${esc(now.desc)}</p>` : ''}
     <div class="trSlips">${offer.map((id, i) => slipHtml(id, i, animate, pick === id)).join('')}</div>
-    <p class="center"><button id="pfReroll"${rerolls ? '' : ' disabled'}>${IS_ADMIN ? '🔄 다시 뽑기 (관리자: 무제한)' : rerolls ? `🔄 다시 뽑기 (${rerolls}번 남음)` : '다시 뽑기를 썼어요'}</button></p>
+    <p class="center"><button id="pfReroll"${rerolls ? '' : ' disabled'}>${IS_ADMIN ? '🔄 다시 뽑기 (관리자: 무제한)' : rerolls ? `🔄 다시 뽑기 (${rerolls}번 남음)` : '다시 뽑기를 썼어요'}</button> <button id="pfOdds">📋 확률표</button></p>
     <div class="modalBtns"><button data-close>나중에</button><button id="pfKeep">지금 특성 유지</button>
       <button id="pfPick" class="main"${pick ? '' : ' disabled'}>이 특성으로 바꾸기</button></div>`, box => {
     box.querySelectorAll('.trSlip').forEach(b => { b.onclick = () => pouchDialog(b.dataset.id, false); });
+    $('#pfOdds').onclick = () => traitOddsDialog(() => pouchDialog(pick, false)); // 돌아오면 고른 종이는 그대로
     $('#pfReroll').onclick = async () => {
       if (!IS_ADMIN && !confirm('종이 3장을 다시 뽑을까요? 다시 뽑기는 한 번뿐이에요.')) return;
       if (await call('traitFoundReroll', {})) pouchDialog();
@@ -1076,7 +1077,8 @@ function pouchDialog(pick = null, animate = true) {
 }
 
 // 특성 확률표 (2026-10-28): 등급·이름·성능·확률을 모두 공개. 확률은 종이 한 장에 그 특성이 나올 확률 (TRAIT_TIER_WEIGHT로 계산)
-function traitOddsDialog() {
+// back: 특성 주머니에서 열었을 때 돌아갈 곳 (2026-10-31). 주머니는 R 이상 1장이 꼭 나온다
+function traitOddsDialog(back = null) {
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
   const order = { SSR: 0, SR: 1, R: 2, N: 3 };
@@ -1085,13 +1087,15 @@ function traitOddsDialog() {
     return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
   }).join('');
   openModal(`<h2>📋 특성 확률표</h2>
-    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.</p>
+    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${back ? ' 특성 주머니는 지금 특성이 나오지 않고, R 이상이 적어도 1장은 나와요.' : ''}</p>
     <table class="oddsTable"><tr><th>등급</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
     <p class="dim center trNote">높은 등급이라도 무조건 좋은 성능을 보장하지 않아요!<br>대신 더 '재밌는' 플레이를 할 수 있어요.</p>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+    <div class="modalBtns">${back ? '<button id="oddsBack" class="main">◀ 주머니로</button>' : '<button data-close class="main">닫기</button>'}</div>`, box => {
+    if (back) box.querySelector('#oddsBack').onclick = back;
+  });
   $('#modalBox').classList.add('wideBox');
 }
-$('#trOdds').onclick = traitOddsDialog;
+$('#trOdds').onclick = () => traitOddsDialog();
 
 let trChoice = null; // 고른 종이 (특성 id)
 function showTrait() {
