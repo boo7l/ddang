@@ -185,7 +185,7 @@ function adminToolsDialog() {
     <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button>
        <button data-skip="1">+1턴</button> <button data-skip="5">+5턴</button> <button data-skip="12">+12턴</button></p>
     <p class="sub">보기</p>
-    <p><button id="aView">👁 관리자 보기</button> <button id="aUnify">통일 미리 보기</button></p>
+    <p><button id="aView">👁 관리자 보기</button></p>
     <p class="sub">시즌·계정</p>
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
@@ -193,10 +193,6 @@ function adminToolsDialog() {
     box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
-    $('#aUnify').onclick = () => {
-      const fid = (me() && me().faction) || (playable()[0] && playable()[0].id);
-      unifyDialog({ faction: fid, turn: S.turn });
-    };
     $('#aDoor').onclick = async () => {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
       await call('door'); afterAdmin();
