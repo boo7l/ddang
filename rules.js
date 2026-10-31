@@ -426,15 +426,15 @@ function rollPlot(int, bonus = 0) { // bonus: 개인 특성 책사 +5%p (최대�
 // weight: 일어날 확률(%) — 합계 100
 // 탐색 사건 (확률 = weight%, 합 100). 2026-10-25 기획자 수치
 const EXPLORE = [
-  { key: 'none', weight: 10 }, // 2026-10-27 15 → 10 (줄인 5는 달인)
-  // jackpot: 발견했을 때 그중 이 확률로 대박
-  { key: 'gold', weight: 30, min: 100, max: 250, jackpot: { rate: 0.2, min: 500, max: 700 } },
-  { key: 'food', weight: 20, min: 500, max: 700, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
-  { key: 'troops', weight: 15, min: 500, max: 1500 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
+  { key: 'none', weight: 8 }, // 2026-10-27 15 → 10, 2026-10-31 8
+  // jackpot: 발견했을 때 그중 이 확률로 대박 (2026-10-31 금·군량·의병 양을 올림)
+  { key: 'gold', weight: 30, min: 200, max: 500, jackpot: { rate: 0.2, min: 700, max: 1000 } },
+  { key: 'food', weight: 20, min: 500, max: 1000, jackpot: { rate: 0.2, min: 1500, max: 3000 } },
+  { key: 'troops', weight: 15, min: 1000, max: 2000 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
   { key: 'item', weight: 10 },                         // 능력치 하나 +1
-  { key: 'bandit', weight: 10, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20%
-  { key: 'master', weight: 3, gain: 2 },                // 레어: 달인을 만나 가르침을 얻었다! 무작위 능력치 +2 (2026-10-27, 2026-10-28 5 → 3%)
-  { key: 'pouch', weight: 2 },                          // 레어: 특성 주머니 발견 (2026-10-28). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 없음
+  { key: 'bandit', weight: 8, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20% (2026-10-31 10 → 8%)
+  { key: 'master', weight: 5, gain: 2 },                // 레어: 달인을 만나 가르침을 얻었다! 무작위 능력치 +2 (2026-10-27, 2026-10-28 5 → 3%, 2026-10-31 5%)
+  { key: 'pouch', weight: 4 },                          // 레어: 특성 주머니 발견 (2026-10-28, 2026-10-31 2 → 4%). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 1번
 ];
 
 // 아이템: 발견하면 해당 능력치 +1
