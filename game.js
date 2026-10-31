@@ -133,7 +133,6 @@ function adminToolsDialog() {
     <p class="sub">시즌·계정</p>
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
-    <p><a class="link" href="editor.html">▶ 지도 편집기 (내 컴퓨터에서만)</a></p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
