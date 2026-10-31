@@ -293,6 +293,15 @@ const FACTION_TRAITS = {
   장로: { name: '오두미도', desc: '병사 군량 소비 -15%', food: -0.15 },
   엄백호: { name: '강동 호족', desc: '성벽 공격으로 깎는 방어 +15%', siege: 0.15 },
   왕랑: { name: '경학대가', desc: '수련에 금이 들지 않고 수련 경험치 +20%', freeTrain: true, trainExp: 0.20 }, // 2026-10-27 수련 경험치 +20% 더함
+  // 한국 지도 (2026-10-31)
+  고려: { name: '벽란도', desc: '금 수입 +5%', gold: 0.05 },
+  조선: { name: '신기전', desc: '병기 제작비 -20%', siegePrice: -0.20 },
+  고구려: { name: '개마무사', desc: '기병 전투력 +5%, 기병 징병 +5% 더 모임', cavalry: 0.05, cavalryDraft: 0.05 },
+  백제: { name: '오경박사', desc: '지력 경험치 +25%', expInt: 0.25 },
+  마한: { name: '삼한 소도', desc: '징병으로 떨어지는 치안 -50%', draftPeace: -0.50 },
+  신라: { name: '화랑도', desc: '수련 경험치 +20%', trainExp: 0.20 },
+  가야: { name: '철의 왕국', desc: '성벽 공격으로 깎는 방어 +15%', siege: 0.15 },
+  탐라: { name: '절해고도', desc: '수비 전투력 +5%', defense: 0.05 },
 };
 
 // ===== 전투 =====
@@ -475,7 +484,7 @@ const SIEGE = {
   벽력거: { price: 4000, desc: '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)' },
 };
 // 병기 만드는 값: 개인 특성 병기도 과학은 -20%
-const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (gTrait(g).siegePrice || 0)));
+const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.faction).siegePrice || 0) + (gTrait(g).siegePrice || 0))); // 조선 신기전, 개인 특성 병기도 과학
 // 병기 효과 (임시값)
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
