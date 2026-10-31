@@ -550,6 +550,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 #notes .hofTitle { text-align: center; }
 #notes .titleBtns { display: flex; gap: 6px; }
 #notes .titleBtns button { flex: 1; margin: 4px 0; }
+#notes .newMark { color: #ff4a3a; font-size: 12px; margin-left: 2px; vertical-align: 1px; }
 /* 게시판 (2026-10-31) */
 .boardWrite { display: flex; gap: 6px; align-items: stretch; margin-bottom: 10px; }
 .boardWrite select { flex: none; }
