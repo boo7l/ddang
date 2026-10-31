@@ -677,6 +677,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   .modalBtns:has(.btnLeft) { flex-wrap: wrap; } /* 단추가 많으면 글자를 세로로 누르지 않고 줄을 바꾼다 */
   .modalBtns:has(.btnLeft) button { padding: 6px 10px; white-space: nowrap; }
   #game[data-tab="chat"] ~ #refreshBtn { display: none; } /* 채팅 탭에서는 보내기 단추를 가리지 않게 숨긴다 */
+  body.inGame #game:not([data-tab="chat"]) { padding-bottom: 56px; } /* 맨 아래까지 내리면 새로고침 단추에 가리지 않게 여백 (장수 삭제 단추 등) */
   html, body { overflow-x: hidden; } /* 옆으로 밀리지 않게 */
   body { padding: 6px; max-width: 440px; margin: 0 auto; box-sizing: border-box; } /* 휴대폰 모드 너비는 최대 440px (창을 줄였다 늘였다 해도 지도·성 정보 너비가 계속 바뀌지 않게) */
   /* 게임 화면은 앱처럼: 화면 높이에 딱 맞추고, 제목줄과 아래 탭 사이(#game)만 스크롤한다.
