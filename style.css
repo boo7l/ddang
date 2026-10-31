@@ -676,6 +676,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #mTabs { display: none; }
 @media (max-width: 700px) {
   #refreshBtn { right: 10px; bottom: calc(54px + env(safe-area-inset-bottom)); } /* 아래 탭 바로 위 */
+  #hof .hofTable th, #hof .hofTable td { padding: 1px 2px; white-space: nowrap; } /* 명예의 전당: 세력·제목이 두 줄로 꺾이지 않게. 아주 긴 이름만 줄을 바꾼다 (2026-10-31) */
+  #hof .hofTable td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; }
   .helpNav { gap: 4px; align-items: center; justify-content: space-between; } /* 도움말 아래 줄: 글자가 세로로 눌리지 않게 (2026-10-31) */
   .helpNav button { padding: 6px 8px; white-space: nowrap; }
   .helpNav .helpPage { margin: 0; white-space: nowrap; }
