@@ -633,8 +633,8 @@ function runAttack(g, o, mark) {
   if (!oldFaction) {
     lines.push(`⚔ ${to.name} (${fmtClock(mark)}): 주인 없는 땅이라 ${josa(to.name, '을를')} 손쉽게 차지했다.`);
     capture(g, to, oldFaction, lines);
-    lines.push(`공적 +${RULES.merit.win}`);
-    addMerit(g, RULES.merit.win);
+    lines.push(`공적 +${RULES.merit.blank}`);
+    addMerit(g, RULES.merit.blank);
     addLog(g, lines.join('\n'));
     gainStatExp(g, statKey, RULES.statExp.battle);
     gainStatExp(g, 'lea', RULES.statExp.capture); // 성 점령은 통솔 경험치
@@ -716,10 +716,10 @@ function runAttack(g, o, mark) {
   healAfter(g, atkLost, lines);
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
-  // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 200명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
+  // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
-  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 25씩 (2026-10-28)
+  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 공적 (2026-10-28)
   const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
   if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · ${meritText}`); }
   else lines.push(`${g.name} ${meritText}`);
