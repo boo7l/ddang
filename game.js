@@ -654,7 +654,7 @@ function helpDialog(page = 0) {
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li></ul>`],
     ['💡 작은 팁', `<ul>
-      <li>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요.</li>
+      <li>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></li>
       <li><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</li>
       <li>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</li>
       <li><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</li>
@@ -677,6 +677,8 @@ function helpDialog(page = 0) {
     if (!last) $('#helpNext').onclick = () => helpDialog(page + 1);
     const ex = box.querySelector('#helpExplore');
     if (ex) ex.onclick = () => exploreOddsDialog(page);
+    const to = box.querySelector('#helpTraitOdds');
+    if (to) to.onclick = () => traitOddsDialog(() => helpDialog(page), '도움말');
   });
   $('#modalBox').classList.add('wideBox');
 }
@@ -1078,8 +1080,8 @@ function pouchDialog(pick = null, animate = true) {
 }
 
 // 특성 확률표 (2026-10-28): 등급·이름·성능·확률을 모두 공개. 확률은 종이 한 장에 그 특성이 나올 확률 (TRAIT_TIER_WEIGHT로 계산)
-// back: 특성 주머니에서 열었을 때 돌아갈 곳 (2026-10-31). 주머니는 R 이상 1장이 꼭 나온다
-function traitOddsDialog(back = null) {
+// back: 돌아갈 곳, backName: 돌아가기 단추에 쓸 이름 (2026-10-31). 특성 주머니는 R 이상 1장이 꼭 나온다
+function traitOddsDialog(back = null, backName = '주머니') {
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
   const order = { SSR: 0, SR: 1, R: 2, N: 3 };
@@ -1091,7 +1093,7 @@ function traitOddsDialog(back = null) {
     <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${back ? ' 특성 주머니는 지금 특성이 나오지 않고, R 이상이 적어도 1장은 나와요.' : ''}</p>
     <div class="oddsScroll"><table class="oddsTable"><tr><th>등급</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
     <p class="dim center trNote">높은 등급이라도 무조건 좋은 성능을 보장하지 않아요!<br>대신 더 '재밌는' 플레이를 할 수 있어요.</p></div>
-    <div class="modalBtns">${back ? '<button id="oddsBack" class="main">◀ 주머니로</button>' : '<button data-close class="main">닫기</button>'}</div>`, box => {
+    <div class="modalBtns">${back ? `<button id="oddsBack" class="main">◀ ${backName}로</button>` : '<button data-close class="main">닫기</button>'}</div>`, box => {
     if (back) box.querySelector('#oddsBack').onclick = back;
   });
   $('#modalBox').classList.add('wideBox');
