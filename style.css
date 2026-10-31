@@ -777,6 +777,5 @@ details.fold > summary:hover h2 { color: var(--title); }
 #miniWrap iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
 #miniWrap .miniClose { position: absolute; top: -24px; right: 8px; width: 32px; height: 32px; padding: 0; z-index: 1; }
 @media (max-height: 590px), (max-width: 700px) { #miniWrap .miniClose { top: 0; right: 0; } }
-#miniLink, #miniLink:hover { display: block; margin: 0 auto 24px; padding: 4px 8px; background: none; border: 0; box-shadow: none; color: #6e5a48; cursor: pointer; }
-#miniLink:hover { color: #a08868; }
+#miniLink { display: block; margin: 0 auto 24px; }
 #miniLink[hidden] { display: none; }
