@@ -572,6 +572,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .notesPop .noteHead:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .notesPop li { line-height: 1.4; word-break: keep-all; }
 .medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
+.medal small { font-size: 20px; line-height: 1; margin-left: 1px; color: var(--title); } /* 훈장 3개부터 ×개수. 16px은 숫자가 작아 보여서 20px (2026-10-31) */
 .createStats .medalCol { color: var(--title); text-align: center; padding-left: 8px; } /* 장수 만들기: 훈장 보너스 칸 */
 #hof .swatch { width: 12px; height: 12px; }
 #hof .hofTable th { color: var(--label); font-weight: normal; text-align: left; padding: 1px 4px; } #hof .hofTable th.num { text-align: right; }
