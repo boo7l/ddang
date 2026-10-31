@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261031105231">
+<link rel="stylesheet" href="style.css?v=20261031105841">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -113,7 +113,6 @@
     <div class="col">
       <div id="info" class="win"></div>
       <div id="map" class="win map"></div>
-      <div id="log" class="win"></div>
     </div>
     <!-- 둘째 칸: 장수 · 세력 · 개발자 도구 -->
     <aside class="mid">
@@ -121,6 +120,7 @@
       <!-- 접었다 펼 수 있는 창 (처음엔 접힘): 제목을 누르면 열린다 -->
       <details class="win fold"><summary><h2>우리 세력 장수 <span class="dim" id="membersTitle"></span></h2></summary><div id="members"></div></details>
       <details class="win fold"><summary><h2>세력</h2></summary><ul id="legend"></ul><p id="legendTrait" class="traitLine"></p></details>
+      <div id="log" class="win"></div>
     </aside>
     <!-- 셋째 칸: 명령 버튼 -->
     <aside class="cmdCol">
@@ -145,15 +145,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261031105231"></script>
-  <script src="mapcore.js?v=20261031105231"></script>
-  <script src="data/map.js?v=20261031105231"></script>
-  <script src="rules.js?v=20261031105231"></script>
-  <script src="faces.js?v=20261031105231"></script>
-  <script src="patchnotes.js?v=20261031105231"></script>
-  <script src="mapbg.js?v=20261031105231"></script>
-  <script src="map.js?v=20261031105231"></script>
-  <script src="engine.js?v=20261031105231"></script>
-  <script src="game.js?v=20261031105231"></script>
+  <script src="server.js?v=20261031105841"></script>
+  <script src="mapcore.js?v=20261031105841"></script>
+  <script src="data/map.js?v=20261031105841"></script>
+  <script src="rules.js?v=20261031105841"></script>
+  <script src="faces.js?v=20261031105841"></script>
+  <script src="patchnotes.js?v=20261031105841"></script>
+  <script src="mapbg.js?v=20261031105841"></script>
+  <script src="map.js?v=20261031105841"></script>
+  <script src="engine.js?v=20261031105841"></script>
+  <script src="game.js?v=20261031105841"></script>
 </body>
 </html>

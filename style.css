@@ -239,7 +239,7 @@ button:disabled, button:disabled:hover {
 aside.wide { width: 380px; }
 .row2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; margin-top: 12px; align-items: start; width: 0; min-width: 100%; } /* 지도 너비에 맞춘다 */
 .row2 .win { margin-bottom: 0; }
-#log { max-height: 260px; overflow-y: auto; margin-top: 12px; }
+#log { max-height: 260px; overflow-y: auto; }
 #log ul { list-style: none; margin: 0; padding: 0; }
 #log li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); }
 #log .t { color: var(--dim); margin-right: 10px; }
@@ -463,11 +463,11 @@ aside.cmdCol { width: 310px; }
 #game .win h2, #join .win h2, #create h2 { margin-bottom: 9px; padding-bottom: 5px; }
 #game, #join { gap: 12px; }
 .map { --cell: 58px; padding: 10px; }
-aside.mid { width: 318px; }
+aside.mid { width: 360px; } /* 2026-10-31 기록 창이 이 칸으로 오면서 318px에서 넓힘 */
 aside.cmdCol { width: 292px; }
 aside.cmdCol.queueCol { width: 370px; } /* 예약표: "출진 → 낙양" 같은 긴 명령도 한 줄에 */
 #info { min-height: 190px; }
-#log { max-height: 236px; }
+#log { max-height: 380px; } /* 2026-10-31 지도 아래에서 가운데 칸으로 옮기며 236px에서 늘림 */
 .cmds { gap: 5px; }
 .cmds button { padding: 4px 3px; }
 .queue li { min-height: 23px; padding: 1px 7px; }
