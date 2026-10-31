@@ -707,7 +707,7 @@ async function boardDialog(page = 0, kind = '') {
   if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
   if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
   const canWrite = d.me && !d.me.banned;
-  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${x.medals ? `<span class="medal" title="개국공신 ${x.medals}회">${MEDAL.repeat(x.medals)}</span>` : ''}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
+  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${medalBadge(x.medals)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
   const delBtn = (x, what) => (x.del ? ` <button class="mini x" data-bdel="${esc(x.id)}" data-what="${what}" title="지우기">✕</button>` : '');
   const items = d.posts.map(p => `<li class="boardPost">
       <p class="boardHead"><span class="tTag">${esc(p.kind)}</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
@@ -1351,7 +1351,9 @@ const chatOf = fid => (S.chat && S.chat[fid]) || [];
 // 개국공신 훈장 (2026-10-27): 그 계정이 받은 횟수만큼 🎖 (서버가 S.medals에 { 계정 id: 개수 }로 준다)
 // 훈장 그림: 금메달 + 빨강·흰색·파랑 끈 (8×9 도트, 2026-10-27 기획자가 고름)
 const MEDAL = '<svg viewBox="0 0 8 9" shape-rendering="crispEdges"><rect x="1" y="0" width="2" height="3" fill="#c0392b"/><rect x="3" y="0" width="2" height="3" fill="#f0e0b0"/><rect x="5" y="0" width="2" height="3" fill="#2c4a8a"/><rect x="2" y="3" width="4" height="1" fill="#8a5a10"/><rect x="1" y="4" width="6" height="4" fill="#f2c230"/><rect x="2" y="8" width="4" height="1" fill="#b07a10"/><rect x="3" y="5" width="2" height="2" fill="#fff3a0"/><rect x="6" y="5" width="1" height="3" fill="#c08a10"/></svg>';
-const medalOf = id => { const n = (S && S.medals && S.medals[id]) || 0; return n ? `<span class="medal" title="개국공신 ${n}회">${MEDAL.repeat(n)}</span>` : ''; };
+// 훈장 표시: 2개까지는 그림 그대로, 3개부터는 그림 하나에 ×개수 (자리를 덜 차지하게, 2026-10-31)
+const medalBadge = n => (n ? `<span class="medal" title="개국공신 ${n}회">${n >= 3 ? `${MEDAL}<small>×${n}</small>` : MEDAL.repeat(n)}</span>` : '');
+const medalOf = id => medalBadge((S && S.medals && S.medals[id]) || 0);
 // 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
 const chatWho = m => {
   const g = allGenerals().find(x => x.name === m.name); // 훈장도 지금 장수에서 찾는다
