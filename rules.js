@@ -65,7 +65,7 @@ const RULES = {
   // 내정 1회로 오르는 양 = 쓰는 능력치 × 무작위 비율 (농업·상업·축성 0.2~0.4, 치안 0.15~0.2)
   domesticRate: { agri: [0.3, 0.4], comm: [0.3, 0.4], tech: [0.2, 0.4], wall: [0.3, 0.4], peace: [0.15, 0.2] },
   peaceStart: 80,           // 치안 처음 값 (모든 성)
-  // 치안 구간 (기획서 9장): 50 이상은 그대로, 20~49는 수입·징병 10% 줄고, 20 미만은 수입 75%에 징병 불가
+  // 치안 구간 (기획서 9장): 50 이상은 그대로, 20~49는 수입·징병 15% 줄고, 20 미만은 수입 75%에 징병 불가
   peaceOk: 50, peaceLow: 20,
   draftPerLea: { min: 15, max: 25 }, // 징병 1회 = 통솔 × 15~25명 (무작위. 2026-10-25 15~20에서 올림)
   draftPerMerit: 0.1,       // 징병에 공적 × 0.1명이 더 모인다 (2026-10-25)
@@ -169,7 +169,7 @@ const devMax = (grade, key) => RULES.devMax[key][grade];
 const foodMax = grade => RULES.foodMax[grade];
 
 // 치안 보정: 금·군량 수입에 곱한다
-const peaceIncome = v => (v >= RULES.peaceOk ? 1 : v >= RULES.peaceLow ? 0.9 : 0.75);
+const peaceIncome = v => (v >= RULES.peaceOk ? 1 : v >= RULES.peaceLow ? 0.85 : 0.75); // 2026-10-31 0.9 → 0.85
 // 치안 보정: 징병으로 모이는 병력에 곱한다. 0이면 징병할 수 없다
 const peaceDraft = v => (v >= RULES.peaceOk ? 1 : v >= RULES.peaceLow ? 0.85 : 0); // 치안 불안이면 15% 덜 모인다
 
