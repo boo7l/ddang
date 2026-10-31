@@ -572,7 +572,7 @@ function retreatFrom(c, oldFaction, byFid) {
 
 // 점령: 성 주인을 바꾸고, 군량 일부를 차지하고, 함락된 성의 수치가 깎인다. 방어는 성 크기만큼 다시 세운다.
 // 공백지는 싸움 없이 들어가므로 농업·상업·치안·방어·군량이 모두 그대로다 (2026-10-25)
-// 보고서 줄을 lines에 더한다
+// 보고서 줄을 lines에 더한다 (공격 쪽만 보는 줄은 { a: 문구 }, runAttack의 reportFor)
 function capture(g, to, oldFaction, lines) {
   const cs = S.cities[to.id];
   setOwner(to, g.faction);
@@ -582,10 +582,10 @@ function capture(g, to, oldFaction, lines) {
     g.city = to.id;
     return;
   }
-  lines.push(seize(cs));
+  lines.push({ a: seize(cs) });
   const cut = captureDamage(cs);
   cs.wall = RULES.captureWall[to.grade];
-  lines.push(`함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다`);
+  lines.push({ a: `함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다` });
   lines.push(...retreatFrom(to, oldFaction, g.faction));
   g.city = to.id;
 }
@@ -632,7 +632,9 @@ function runAttack(g, o, mark) {
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
 
   const oldFaction = to.faction, owner = factionById(oldFaction), myF = factionById(g.faction);
+  // 보고서 한 줄: 문자열은 양쪽 다, { a, d }는 공격 쪽과 수비 쪽 문구가 다른 줄 (없는 쪽은 그 줄을 안 본다, 2026-10-31)
   const lines = [];
+  const reportFor = side => lines.map(l => (typeof l === 'string' ? l : l[side])).filter(Boolean).join('\n');
   const statKey = UNIT_TYPES[g.unitType].stat; // 병종에 맞는 능력치 경험치
 
   // 1. 공백지
@@ -641,7 +643,7 @@ function runAttack(g, o, mark) {
     capture(g, to, oldFaction, lines);
     lines.push(`공적 +${RULES.merit.blank}`);
     addMerit(g, RULES.merit.blank);
-    addLog(g, lines.join('\n'));
+    addLog(g, reportFor('a'));
     gainStatExp(g, statKey, RULES.statExp.battle);
     gainStatExp(g, 'lea', RULES.statExp.capture); // 성 점령은 통솔 경험치
     return '';
@@ -657,7 +659,10 @@ function runAttack(g, o, mark) {
   const att = unitOf(g);
   let left = RULES.roundsMax, atkLost = 0, defLost = 0, pierced = 0;
   const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map();
-  lines.push(`⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`);
+  lines.push({
+    a: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`,
+    d: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 쳐들어왔다!`,
+  });
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
     const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다…` : '';
@@ -688,13 +693,15 @@ function runAttack(g, o, mark) {
   // 3. 성벽 공격 → 4. 점령 또는 돌아옴
   let captured = false, wallDmg = 0;
   if (g.troops <= 0) {
-    lines.push(`${g.name}의 부대가 전멸했다… ${josa(from.name, '으로')} 홀로 돌아왔다.`);
+    lines.push({ a: `${g.name}의 부대가 전멸했다… ${josa(from.name, '으로')} 홀로 돌아왔다.`, d: `${g.name}의 부대가 전멸해 물러갔다!` });
   } else if (att.persuaded) {
-    lines.push(`설득에 넘어가 싸움을 멈추고 ${josa(from.name, '으로')} 돌아왔다.`);
+    lines.push({ a: `설득에 넘어가 싸움을 멈추고 ${josa(from.name, '으로')} 돌아왔다.`, d: '적이 설득에 넘어가 싸움을 멈추고 물러갔다.' });
   } else if (standing.length) {
-    lines.push(`${RULES.roundsMax}합이 끝났지만 승부가 나지 않아 ${josa(from.name, '으로')} 돌아왔다.`);
+    lines.push({ a: `${RULES.roundsMax}합이 끝났지만 승부가 나지 않아 ${josa(from.name, '으로')} 돌아왔다.`, d: `${RULES.roundsMax}합이 끝났지만 승부가 나지 않아 적이 물러갔다.` });
   } else {
-    lines.push(defs.length ? '수비 부대를 모두 물리치고 성벽으로 달려들었다!' : '막는 부대가 없어 곧장 성벽으로 달려들었다!');
+    lines.push(defs.length
+      ? { a: '수비 부대를 모두 물리치고 성벽으로 달려들었다!', d: '수비 부대가 모두 무너지고 적이 성벽으로 달려들었다!' }
+      : { a: '막는 부대가 없어 곧장 성벽으로 달려들었다!', d: '막는 부대가 없어 적이 곧장 성벽으로 달려들었다!' });
     const sr = RULES.siegeRate, rate = sr.min + Math.random() * (sr.max - sr.min);
     const base = Math.max(1, Math.floor(g.troops * rate));
     const boost = 1 + (traitOf(g.faction).siege || 0) + (g.siege && g.siege.충차 ? SIEGE_EFFECT.ramWall : 0); // 엄백호·충차: 같은 손실로 더 깎는다
@@ -707,10 +714,10 @@ function runAttack(g, o, mark) {
     lines.push(`🏯 성벽 공격${g.siege && g.siege.충차 ? ' (충차)' : ''}: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(loss)}`);
     if (cs.wall <= 0) {
       captured = true;
-      lines.push(`${g.name}의 승리! 성벽이 무너져 ${josa(to.name, '을를')} 점령했다. (${owner.name} 세력에게서 빼앗음)`);
+      lines.push({ a: `${g.name}의 승리! 성벽이 무너져 ${josa(to.name, '을를')} 점령했다. (${owner.name} 세력에게서 빼앗음)`, d: `성벽이 무너져 ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}에게 함락되었다!` });
       capture(g, to, oldFaction, lines);
     } else {
-      lines.push(`성벽을 다 무너뜨리지 못하고 ${josa(from.name, '으로')} 돌아왔다.`);
+      lines.push({ a: `성벽을 다 무너뜨리지 못하고 ${josa(from.name, '으로')} 돌아왔다.`, d: '적이 성벽을 다 무너뜨리지 못하고 물러갔다.' });
     }
   }
   // 전투에서 전멸한 부대의 병기는 50% 확률로 부서진다 (공격한 장수와 수비 장수 모두)
@@ -729,16 +736,16 @@ function runAttack(g, o, mark) {
   const base = captured ? RULES.merit.win : RULES.merit.lose;
   const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 공적 (2026-10-28)
   const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
-  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push(`${g.name} 보상: 금 +${got} · ${meritText}`); }
-  else lines.push(`${g.name} ${meritText}`);
+  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push({ a: `${g.name} 보상: 금 +${got} · ${meritText}` }); }
+  else lines.push({ a: `${g.name} ${meritText}` });
   for (const [x, dealt] of dealtBy) {
     const m = Math.floor(dealt / RULES.meritPerKill) + (eventBy.get(x) || 0);
     const got = m > 0 ? addMerit(x, m) : 0;
     if (got > 0) lines.push(`${x.name} 공적 +${got}`);
   }
-  const text = lines.join('\n');
-  addLog(g, text);
-  victims.forEach(v => addLog(v, text));
+  addLog(g, reportFor('a'));
+  const defText = reportFor('d');
+  victims.forEach(v => addLog(v, defText));
   if (!captured) refillDefense(to, defs.filter(d => d.ref && d.troops <= 0).length); // 쓰러진 수비 장수 자리를 채운다
   others.forEach(x => addLog(x, captured
     ? `⚠ ${josa(to.name, '을를')} ${myF.name} 세력 ${g.name}에게 빼앗겼다!`
