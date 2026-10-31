@@ -568,8 +568,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #modalBox .notesPop { height: 480px; max-height: 60vh; overflow-y: auto; } /* 패치마다 길이가 달라도 넘기는 단추가 들썩이지 않게 (2026-10-31) */
 .notePager { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
 .notePager button { padding: 8px 12px; min-width: 110px; }
-.notesPop .noteHead { margin: 12px 0 2px; color: var(--title); }
-.notesPop .noteHead:first-child { margin-top: 0; }
+.notesPop .noteHead { margin: 16px 0 4px; padding-top: 12px; border-top: 1px solid var(--gold-dark); color: var(--title); } /* 파트 사이 실선과 여백 (2026-10-31) */
+.notesPop .noteHead:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .notesPop li { line-height: 1.4; word-break: keep-all; }
 .medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
 .createStats .medalCol { color: var(--title); text-align: center; padding-left: 8px; } /* 장수 만들기: 훈장 보너스 칸 */
