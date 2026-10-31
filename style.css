@@ -547,7 +547,22 @@ details.fold > summary:hover h2 { color: var(--title); }
 #hof .hofHeroes { margin: 6px 4px 2px; color: var(--title); }
 #notes { margin-top: 14px; text-align: left; } /* 패치노트 (2026-10-27): 2026-10-28부터 업데이트마다 단추, 누르면 팝업 */
 #notes .hofTitle { text-align: center; }
-#notes .noteBtn { display: block; width: 100%; margin: 4px 0; }
+#notes .titleBtns { display: flex; gap: 6px; }
+#notes .titleBtns button { flex: 1; margin: 4px 0; }
+/* 게시판 (2026-10-31) */
+.boardWrite { display: flex; gap: 6px; align-items: stretch; margin-bottom: 10px; }
+.boardWrite select { flex: none; }
+.boardWrite textarea { flex: 1; min-width: 0; font: inherit; resize: vertical; padding: 4px 6px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold-dark); }
+.boardList { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow-y: auto; }
+.boardPost { padding: 8px 4px; border-bottom: 1px dotted var(--gold-dark); }
+.boardHead { margin: 0 0 4px; }
+.boardText { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.boardList .who { color: var(--label); }
+.boardList .boardAdmin { color: var(--title); }
+.boardComments { list-style: none; margin: 6px 0 0 12px; padding: 0 0 0 8px; border-left: 2px solid var(--gold-dark); }
+.boardComments li { padding: 2px 0; overflow-wrap: anywhere; }
+.boardReply { display: flex; gap: 6px; margin-top: 6px; }
+.boardReply input { flex: 1; min-width: 0; font-size: 16px; padding: 2px 6px; }
 #modalBox .notesPop { height: 480px; max-height: 60vh; overflow-y: auto; } /* 패치마다 길이가 달라도 넘기는 단추가 들썩이지 않게 (2026-10-31) */
 .notePager { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
 .notePager button { padding: 8px 12px; min-width: 110px; }

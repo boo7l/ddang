@@ -37,8 +37,9 @@ async function call(action, payload = {}) {
   busy = true;
   try {
     const d = await api(action, payload);
-    // 시즌 준비 중이라 서버가 들여보내지 않으면 로그아웃하고 첫 화면으로 (관리자는 예외)
-    if (d.preparing) { await logout(); sayTitle(d.error); return null; }
+    // 정지된 계정은 로그아웃. 시즌 준비 중이면 로그인한 채로 첫 화면으로: 게임은 못 들어가도 게시판은 쓴다 (관리자는 들어온다, 2026-10-31)
+    if (d.banned) { await logout(); sayTitle(d.error); return null; }
+    if (d.preparing) { IS_ADMIN = false; showTitle(); return null; }
     applyView(d);
     if (d.error) { alert(d.error); return false; }
     return true;
@@ -192,14 +193,13 @@ function rankDialog() {
 }
 
 // 첫 화면: 지금 시즌 상태 (로그인 없이 서버에 물어본다)
-// 시즌이 끝나고 새 시즌을 시작하기 전에는 관리자만 들어온다 (2026-10-27). 관리자는 주소 끝에 ?admin을 붙여 로그인 단추를 연다
+// 시즌이 끝나고 새 시즌을 시작하기 전에는 관리자만 게임에 들어온다 (2026-10-27). 로그인과 아이디 정하기는 그때도 된다: 게시판을 쓸 수 있게 (2026-10-31)
 let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
-const ADMIN_DOOR = new URLSearchParams(location.search).has('admin');
 function applyLoginGate() {
-  const closed = preparing && !ADMIN_DOOR && !(ME && ME.nickname); // 로그인한 채 들어와 있으면(관리자) 안내는 안 띄운다
+  const closed = preparing && !IS_ADMIN;
   $('#tPrep').hidden = !closed;
-  $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 열리면 다시 들어와 주세요.` : '';
-  if (closed) $('#tGoogleBox').hidden = $('#tNickBox').hidden = true;
+  $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 그동안 게시판은 이용할 수 있어요.` : '';
+  if (closed) $('#tEnter').hidden = true; // 관리자가 아니면 들어갈 수 없다
 }
 // 다음 시즌 예고 (2026-10-31): 시즌이 끝나 있는 동안 첫 화면 시즌 표시 아래에 보인다. 비워 두면 안 보인다
 const NEXT_SEASON_NOTE = '📢 시즌 4 · 11월 1일(일) 저녁 8시 시작 예정';
@@ -693,8 +693,70 @@ const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가
 function renderNotes() {
   const box = $('#notes');
   if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
-  box.innerHTML = `<button class="noteBtn">📜 패치노트</button>`;
+  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트</button><button class="boardBtn">💬 게시판</button></div>`;
   box.querySelector('.noteBtn').onclick = () => noteDialog(0);
+  box.querySelector('.boardBtn').onclick = () => boardDialog();
+}
+// ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
+// kind: '' 전체, '건의', '자유'. 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
+async function boardDialog(page = 0, kind = '') {
+  openModal('<h2>💬 게시판</h2><p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>');
+  $('#modalBox').classList.add('wideBox');
+  let d;
+  try { d = await api('boardList', { page, kind }); } catch (e) { d = { error: e.message }; }
+  if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
+  if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
+  const canWrite = d.me && !d.me.banned;
+  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
+  const delBtn = (x, what) => (x.del ? ` <button class="mini x" data-bdel="${esc(x.id)}" data-what="${what}" title="지우기">✕</button>` : '');
+  const items = d.posts.map(p => `<li class="boardPost">
+      <p class="boardHead"><span class="tTag">${esc(p.kind)}</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
+      <p class="boardText">${esc(p.text)}</p>
+      ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li>${who(c)} <span class="boardText">${esc(c.text)}</span> <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</li>`).join('')}</ul>` : ''}
+      ${canWrite ? `<form class="boardReply" data-post="${esc(p.id)}" autocomplete="off"><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
+    </li>`).join('') || '<li class="dim center">아직 글이 없어요. 첫 글을 남겨 보세요.</li>';
+  const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
+  const kinds = [['', '전체'], ['건의', '건의'], ['자유', '자유']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
+  openModal(`<h2>💬 게시판</h2>
+    <div class="helpTabs">${kinds}</div>
+    ${canWrite ? `<form class="boardWrite" autocomplete="off">
+      <select aria-label="말머리"><option>건의</option><option>자유</option></select>
+      <textarea maxlength="${d.postMax}" rows="2" placeholder="${esc(d.me.name)}(으)로 글 남기기 (${d.postMax}자까지)"></textarea>
+      <button type="submit" class="main">글쓰기</button></form>` : `<p class="dim">${d.me ? '정지된 계정은 글을 쓸 수 없어요.' : '로그인하면 글과 댓글을 쓸 수 있어요.'}</p>`}
+    <ul class="boardList">${items}</ul>
+    <div class="notePager">
+      <button id="boardPrev"${page > 0 ? '' : ' disabled'}>◀ 이전</button>
+      <span class="dim">${page + 1} / ${pages}</span>
+      <button id="boardNext"${page + 1 < pages ? '' : ' disabled'}>다음 ▶</button>
+    </div>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    box.querySelector('#boardPrev').onclick = () => boardDialog(page - 1, kind);
+    box.querySelector('#boardNext').onclick = () => boardDialog(page + 1, kind);
+    box.querySelectorAll('[data-kind]').forEach(b => { b.onclick = () => boardDialog(0, b.dataset.kind); });
+    // 쓰기: 실패하면 쓰던 글을 그대로 두고 이유만 알려 준다
+    const send = async (action, payload, btn, after) => {
+      btn.disabled = true;
+      try {
+        const r = await api(action, payload);
+        if (r.error) alert(r.error); else await after();
+      } catch (e) { alert(e.message); }
+      btn.disabled = false;
+    };
+    const write = box.querySelector('.boardWrite');
+    if (write) write.onsubmit = e => {
+      e.preventDefault();
+      send('boardPost', { kind: write.querySelector('select').value, text: write.querySelector('textarea').value }, write.querySelector('button'), () => boardDialog(0, kind));
+    };
+    box.querySelectorAll('.boardReply').forEach(f => { f.onsubmit = e => {
+      e.preventDefault();
+      send('boardComment', { post: f.dataset.post, text: f.querySelector('input').value }, f.querySelector('button'), () => boardDialog(page, kind));
+    }; });
+    box.querySelectorAll('[data-bdel]').forEach(b => { b.onclick = () => {
+      if (!confirm('지울까요? 되돌릴 수 없어요.')) return;
+      send('boardDel', { id: b.dataset.bdel, what: b.dataset.what }, b, () => boardDialog(page, kind));
+    }; });
+  });
+  $('#modalBox').classList.add('wideBox');
 }
 // i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
 function noteDialog(i) {
