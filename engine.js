@@ -989,10 +989,12 @@ function runLevy(g) {
   if (!L) return '갈취는 "이게 일상이야" 특성이 있어야 해요';
   if (levyLeft(g)) return `갈취는 ${levyLeft(g)}턴 뒤에 다시 쓸 수 있음`;
   const city = cityById(g.city), cs = S.cities[g.city];
-  const [lo, hi] = levyRange(g), got = earnGold(g, randInt(lo, hi)), drop = Math.min(cs.peace, L.peace);
+  // 이스터에그 (2026-10-31): 대한민국 시나리오의 안산에서는 갈취해도 치안이 줄지 않는다
+  const ansan = MAP.scenario === '대한민국' && city.name === '안산';
+  const [lo, hi] = levyRange(g), got = earnGold(g, randInt(lo, hi)), drop = ansan ? 0 : Math.min(cs.peace, L.peace);
   cs.peace -= drop;
   g.levyTurn = S.turn;
-  addLog(g, `${josa(city.name, '은는')} 이게 일상이야.. 백성에게서 금을 거두었다. 내 금 +${fmt(got)} · 치안 -${drop} (${cs.peace})`);
+  addLog(g, `${josa(city.name, '은는')} 이게 일상이야.. 백성에게서 금을 거두었다. 내 금 +${fmt(got)} · ${ansan ? '왜인지 치안이 줄지 않았다!' : `치안 -${drop} (${cs.peace})`}`);
   return '';
 }
 
