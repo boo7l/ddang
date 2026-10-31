@@ -118,7 +118,7 @@ const MAP_DATA = {
    "y": 2,
    "name": "성남",
    "faction": "gr",
-   "grade": 1
+   "grade": 2
   },
   {
    "id": "c12",
