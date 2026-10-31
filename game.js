@@ -835,7 +835,7 @@ function openMinigame() {
   closeMinigame();
   const w = document.createElement('div');
   w.id = 'miniWrap';
-  w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html" title="미니게임"></iframe></div>';
+  w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html?t=' + Date.now() + '" title="미니게임"></iframe></div>';
   w.querySelector('.miniClose').onclick = closeMinigame;
   const f = w.querySelector('iframe');
   f.onload = () => f.contentWindow.focus(); // 바로 화살표 키가 먹게
