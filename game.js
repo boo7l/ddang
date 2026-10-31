@@ -1090,7 +1090,7 @@ function traitOddsDialog(back = null, backName = '주머니') {
     return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
   }).join('');
   openModal(`<h2>📋 특성 확률표</h2>
-    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${back ? ' 특성 주머니는 지금 특성이 나오지 않고, R 이상이 적어도 1장은 나와요.' : ''}</p>
+    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${back ? '<br>탐색으로 발견한 특성 주머니는 R 이상이 적어도 1장은 나와요.' : ''}</p>
     <div class="oddsScroll"><table class="oddsTable"><tr><th>등급</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
     <p class="dim center trNote">높은 등급이라도 무조건 좋은 성능을 보장하지 않아요!<br>대신 더 '재밌는' 플레이를 할 수 있어요.</p></div>
     <div class="modalBtns">${back ? `<button id="oddsBack" class="main">◀ ${backName}로</button>` : '<button data-close class="main">닫기</button>'}</div>`, box => {
