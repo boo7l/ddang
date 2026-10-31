@@ -334,6 +334,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .amounts input { width: 100px; }
 .modalBtns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .modalBtns button { padding: 6px 18px; }
+.modalBtns .btnLeft { margin-right: auto; } /* 대화 상자 아래 줄에서 왼쪽 끝으로 */
 
 /* 출진 중 표시, 전투 보고서 */
 .marching { margin: 0 0 8px; padding: 6px 8px; background: var(--seal); color: var(--text); border: 2px solid var(--title); }
@@ -673,6 +674,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #mTabs { display: none; }
 @media (max-width: 700px) {
   #refreshBtn { right: 10px; bottom: calc(54px + env(safe-area-inset-bottom)); } /* 아래 탭 바로 위 */
+  .modalBtns:has(.btnLeft) { flex-wrap: wrap; } /* 단추가 많으면 글자를 세로로 누르지 않고 줄을 바꾼다 */
+  .modalBtns:has(.btnLeft) button { padding: 6px 10px; white-space: nowrap; }
   #game[data-tab="chat"] ~ #refreshBtn { display: none; } /* 채팅 탭에서는 보내기 단추를 가리지 않게 숨긴다 */
   html, body { overflow-x: hidden; } /* 옆으로 밀리지 않게 */
   body { padding: 6px; max-width: 440px; margin: 0 auto; box-sizing: border-box; } /* 휴대폰 모드 너비는 최대 440px (창을 줄였다 늘였다 해도 지도·성 정보 너비가 계속 바뀌지 않게) */

@@ -1054,8 +1054,8 @@ function pouchDialog(pick = null, animate = true) {
     <p>3장 중 하나로 특성을 바꾸거나, 지금 특성을 그대로 둘 수 있어요. 다시 뽑기는 1번이에요.</p>
     ${now ? `<p class="traitLine myTrait"><span class="tTag">지금</span> <b>${esc(now.name)}</b><br>${esc(now.desc)}</p>` : ''}
     <div class="trSlips">${offer.map((id, i) => slipHtml(id, i, animate, pick === id)).join('')}</div>
-    <p class="center"><button id="pfReroll"${rerolls ? '' : ' disabled'}>${IS_ADMIN ? '🔄 다시 뽑기 (관리자: 무제한)' : rerolls ? `🔄 다시 뽑기 (${rerolls}번 남음)` : '다시 뽑기를 썼어요'}</button> <button id="pfOdds">📋 확률표</button></p>
-    <div class="modalBtns"><button data-close>나중에</button><button id="pfKeep">지금 특성 유지</button>
+    <p class="center"><button id="pfReroll"${rerolls ? '' : ' disabled'}>${IS_ADMIN ? '🔄 다시 뽑기 (관리자: 무제한)' : rerolls ? `🔄 다시 뽑기 (${rerolls}번 남음)` : '다시 뽑기를 썼어요'}</button></p>
+    <div class="modalBtns"><button id="pfOdds" class="btnLeft">📋 확률표</button><button data-close>나중에</button><button id="pfKeep">지금 특성 유지</button>
       <button id="pfPick" class="main"${pick ? '' : ' disabled'}>이 특성으로 바꾸기</button></div>`, box => {
     box.querySelectorAll('.trSlip').forEach(b => { b.onclick = () => pouchDialog(b.dataset.id, false); });
     $('#pfOdds').onclick = () => traitOddsDialog(() => pouchDialog(pick, false)); // 돌아오면 고른 종이는 그대로
