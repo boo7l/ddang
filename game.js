@@ -1329,7 +1329,8 @@ function renderCommands() {
   const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
   const etc = [btn('explore', '탐색', cost('explore')),
     btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
-    gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${levyRange(p).map(fmt).join('~')} · 치안 -${gTrait(p).levy.peace}`) : ''].join(''); // 개인 특성 이게 일상이야
+    gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${levyRange(p).map(fmt).join('~')} · 치안 -${gTrait(p).levy.peace}`) : '', // 개인 특성 이게 일상이야
+    IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   $('#queueBox').innerHTML = `
     <h2>명령 예약</h2>
@@ -1357,7 +1358,7 @@ function renderCommands() {
     ${etc ? `<p class="sub">기타</p>
     <div class="cmds">${etc}</div>` : ''}
 `;
-  const dialogs = { buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
     draftLock = e.target.checked;
     try { localStorage.setItem(DRAFT_LOCK_KEY, draftLock ? '1' : '0'); } catch (err) { /* 이번만 */ }
