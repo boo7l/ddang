@@ -707,7 +707,7 @@ async function boardDialog(page = 0, kind = '') {
   if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
   if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
   const canWrite = d.me && !d.me.banned;
-  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
+  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${x.medals ? `<span class="medal" title="개국공신 ${x.medals}회">${MEDAL.repeat(x.medals)}</span>` : ''}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
   const delBtn = (x, what) => (x.del ? ` <button class="mini x" data-bdel="${esc(x.id)}" data-what="${what}" title="지우기">✕</button>` : '');
   const items = d.posts.map(p => `<li class="boardPost">
       <p class="boardHead"><span class="tTag">${esc(p.kind)}</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
