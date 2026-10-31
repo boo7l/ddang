@@ -267,7 +267,7 @@ function advance() {
     if (RULES.goldMonths.includes(month)) {
       for (const g of allGenerals()) {
         if (!g.faction) continue;
-        const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit) * (1 + (traitOf(g.faction).gold || 0))));
+        const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
         addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${cityById(g.city).name} 상업 ${cs.comm}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 치안 ${cs.peace}으로 줄어듦` : ''})`);
       }
     }
