@@ -82,14 +82,15 @@ async function membersDialog() {
   const banText = t => (t > Date.now() ? `⛔ ${t - Date.now() > 5 * 365 * 24 * HOUR ? '영구' : fmtTime(t).split(' ')[0] + '까지'}` : '');
   const rows = list.map(m => {
     const g = S && S.generals[m.id];
-    return `<tr data-name="${esc(m.name.toLowerCase())}"><td>${esc(m.name)}</td><td>${m.at ? fmtTime(m.at).split(' ')[0] : '-'}</td>
+    const prev = m.prev || []; // 예전 아이디 (최근 것부터). 옛 아이디로 검색해도 찾아진다
+    return `<tr data-name="${esc([m.name, ...prev.map(h => h.name)].join(' ').toLowerCase())}"><td>${esc(m.name)}</td><td>${prev.length ? prev.map(h => `${esc(h.name)} <span class="dim small">(${fmtTime(h.t).split(' ')[0]}까지)</span>`).join('<br>') : '<span class="dim">-</span>'}</td><td>${m.at ? fmtTime(m.at).split(' ')[0] : '-'}</td>
       <td>${g ? `<button class="link" data-pid="${esc(m.id)}" title="정보 · 제재">${esc(g.name)}</button>` : '<span class="dim">없음</span>'}</td>
       <td>${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
       <td>${m.admin ? '' : `<button class="mini" data-mban="${esc(m.id)}">정지</button>`}</td></tr>`;
   }).join('');
   openModal(`<h2>👁 관리자 보기</h2>${adminTabs('members')}
     ${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
-    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>가입일</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}
+    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입일</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
@@ -840,6 +841,7 @@ function showTitle(msg) {
   $('#tLogout').hidden = !inGame;
   $('#tAdmin').hidden = !(inGame && IS_ADMIN); // 관리자만 (2026-10-28)
   $('#tWithdraw').hidden = !inGame;
+  $('#tRename').hidden = !inGame;
   if (inGame) $('#tGoogleBox').hidden = true;
   applyLoginGate();
   let agreed = false;
@@ -899,6 +901,39 @@ async function logout() {
   S = null;
   syncChatChannel(); // 채팅 채널을 끊는다
   showTitle();
+}
+
+// 아이디 변경 (2026-10-31): 30일에 1번. 규칙 검사는 서버가 다시 한다
+function renameDialog() {
+  openModal(`<h2>아이디 변경</h2>
+    <p>지금 아이디: <b class="hi">${esc(ME.nickname)}</b></p>
+    <form id="renameForm" autocomplete="off">
+      <p><input type="text" id="renameInput" maxlength="8" placeholder="새 아이디 (2~8자)"></p>
+      <p class="dim">30일에 1번만 바꿀 수 있어요. 지금 아이디는 30일 동안 다른 사람이 쓸 수 없고, 이미 쓴 게시판 글은 예전 아이디로 남아요.</p>
+      <p id="renameMsg" class="hi" hidden></p>
+      <div class="modalBtns"><button type="submit" id="renameGo" class="main">바꾸기</button> <button type="button" data-close>취소</button></div>
+    </form>`, box => {
+    const say = t => { const m = box.querySelector('#renameMsg'); m.textContent = t; m.hidden = false; };
+    box.querySelector('#renameForm').onsubmit = async e => {
+      e.preventDefault();
+      const nick = box.querySelector('#renameInput').value.trim();
+      if (!ID_RULE.test(nick)) { say('아이디는 2~8자의 한글·영문·숫자로 정해 주세요.'); return; }
+      if (!confirm(`아이디를 '${nick}'(으)로 바꿀까요?\n앞으로 30일 동안 다시 바꿀 수 없어요.`)) return;
+      const go = box.querySelector('#renameGo');
+      go.disabled = true;
+      try {
+        const d = await api('rename', { nickname: nick });
+        if (d.error) { say(d.error); return; }
+        ME.nickname = d.name;
+        closeModal();
+        showTitle(`아이디를 '${d.name}'(으)로 바꿨어요.`);
+      } catch (err) {
+        say('바꾸지 못했어요: ' + (err.message || err));
+      } finally {
+        go.disabled = false;
+      }
+    };
+  });
 }
 
 // 회원 탈퇴: 장수와 계정을 지운다 (되돌릴 수 없음). 이미 쓴 채팅은 처리방침대로 3개월 뒤 지워진다
@@ -1538,6 +1573,7 @@ $('#toMain').onclick = goMain; // 상단 바 [메인] 단추: 로고를 누르�
 $('#tEnter').onclick = () => enterFlow();
 $('#tLogout').onclick = logout;
 $('#tWithdraw').onclick = withdraw;
+$('#tRename').onclick = renameDialog;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
