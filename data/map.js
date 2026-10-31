@@ -24,27 +24,27 @@ const MAP_DATA = {
   {
    "id": "bj",
    "name": "백제",
-   "color": "#3a8c92"
+   "color": "#3e6fa3"
   },
   {
    "id": "mh",
    "name": "마한",
-   "color": "#425d28"
+   "color": "#384a26"
   },
   {
    "id": "sl",
    "name": "신라",
-   "color": "#bc9a29"
+   "color": "#be9719"
   },
   {
    "id": "gy",
    "name": "가야",
-   "color": "#ab5821"
+   "color": "#7940bf"
   },
   {
    "id": "tr",
    "name": "탐라",
-   "color": "#2742b0"
+   "color": "#e66f00"
   }
  ],
  "cities": [
@@ -447,5 +447,4 @@ const MAP_DATA = {
    "c1793375185369"
   ]
  ]
-}
-;
+};
