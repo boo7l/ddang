@@ -8,13 +8,13 @@ const MAP_BG_DIM = 0.3;     // 배경 위에 덮는 어두운 막 (0 = 그대로
 // 한 도트 = P 화면 픽셀
 const P = 6;
 const PALETTES = {
-  dark:  { sea: '#0d1a2e', sea2: '#12233d', foam: '#1e3656', river: '#2c5e8e', north: '#2e1d10', north2: '#352213', south: '#1d2410', south2: '#232c13',
+  dark:  { road: '#a58c5e', roadEdge: '#20150b', route: '#7f9fc4', sea: '#0d1a2e', sea2: '#12233d', foam: '#1e3656', river: '#2c5e8e', north: '#2e1d10', north2: '#352213', south: '#1d2410', south2: '#232c13',
            sand: '#3d2f17', sand2: '#463619', mount: '#4a3a2a', mountHi: '#6b5844', snow: '#8a7c6a', wall: '#7a6a50',
            tree: '#1f3a14', treeHi: '#2f5420', trunk: '#3a2410', roof: '#7a2a1a', roofHi: '#9a3a22', house: '#8a7458', field: '#4a3a16', field2: '#5a4a1c' },
-  old:   { sea: '#7d9aa6', sea2: '#8aa7b0', foam: '#a9c0c4', river: '#5f8ea6', north: '#cdb488', north2: '#c5aa7c', south: '#b9b57f', south2: '#afaa74',
+  old:   { road: '#8a6a42', roadEdge: '#6b4f33', route: '#efe6d0', sea: '#7d9aa6', sea2: '#8aa7b0', foam: '#a9c0c4', river: '#5f8ea6', north: '#cdb488', north2: '#c5aa7c', south: '#b9b57f', south2: '#afaa74',
            sand: '#dcc794', sand2: '#e3cf9e', mount: '#8f7553', mountHi: '#a88c66', snow: '#efe6d0', wall: '#6b4f33',
            tree: '#5f7a3a', treeHi: '#7a9450', trunk: '#6b4f33', roof: '#a8432a', roofHi: '#c25a3a', house: '#efe2c0', field: '#d9c27a', field2: '#c8b066' },
-  green: { sea: '#1f4a7a', sea2: '#24548a', foam: '#3d6fa6', river: '#4f8fd0', north: '#7a6a3a', north2: '#837341', south: '#3f6a2f', south2: '#467536',
+  green: { road: '#c8ae74', roadEdge: '#4a3018', route: '#a9c8e8', sea: '#1f4a7a', sea2: '#24548a', foam: '#3d6fa6', river: '#4f8fd0', north: '#7a6a3a', north2: '#837341', south: '#3f6a2f', south2: '#467536',
            sand: '#b59a5c', sand2: '#bea566', mount: '#6a5a48', mountHi: '#8a7860', snow: '#e8e4dc', wall: '#5a4630',
            tree: '#244a1c', treeHi: '#356a28', trunk: '#4a3018', roof: '#9a3020', roofHi: '#b84430', house: '#d8cbb0', field: '#a08a3a', field2: '#b09a44' },
 };
@@ -76,6 +76,26 @@ function mountainness(u, v) {
   if (v > 8.3 && u < 2.9) m = Math.max(m, 0.5);                                    // 운귀 고원
   if (u > 4.9 && u < 6.9 && v > 7.9 && v < 9.8) m = Math.max(m, 0.45);            // 무이산
   return m;
+}
+
+// 지도 파일의 연결(links)을 도트 길로 그린다 (2026-10-31). 땅에서는 어두운 테두리가 있는 도로, 물 위에서는 띄엄띄엄 뱃길.
+// 배경에 그리므로 성 칸 아래로 지나간다. isWater(u, v): 그 자리가 물인지 (칸 좌표)
+function paintRoads(g, pal, cell, isWater) {
+  const center = id => { const c = MAP.cities.find(o => o.id === id); return c && [Math.floor((c.x + 0.5) * cell / P), Math.floor((c.y + 0.5) * cell / P)]; };
+  const paths = (MAP.links || []).map(([a, b]) => [center(a), center(b)]).filter(([p, q]) => p && q).map(([p, q]) => {
+    const n = Math.max(Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])), dots = [];
+    for (let k = 0; k <= n; k++) dots.push([Math.round(p[0] + (q[0] - p[0]) * k / n), Math.round(p[1] + (q[1] - p[1]) * k / n)]);
+    return dots;
+  });
+  const water = ([i, j]) => isWater((i + 0.5) * P / cell, (j + 0.5) * P / cell);
+  g.fillStyle = pal.roadEdge; // 테두리를 먼저 다 그려서 길끼리 만나는 곳이 끊기지 않게
+  for (const dots of paths) for (const d of dots) if (!water(d)) g.fillRect((d[0] - 1) * P, (d[1] - 1) * P, P * 3, P * 3);
+  for (const dots of paths) dots.forEach((d, k) => {
+    const sea = water(d);
+    if (sea && k % 3 === 2) return; // 뱃길은 두 칸 그리고 한 칸 띄운다
+    g.fillStyle = sea ? pal.route : pal.road;
+    g.fillRect(d[0] * P, d[1] * P, P, P);
+  });
 }
 
 // ===== 한국 지도 배경 (2026-10-31, data/map_kor.json) =====
@@ -159,6 +179,7 @@ function paintKorBg(kind, w, h) {
       else if (r < 0.05) put(korMountain(u, v) ? 'pine' : 'tree', i, j);
     }
   }
+  paintRoads(g, pal, cell, (u, v) => !korLand(u, v));
   if (MAP_BG_DIM) { g.fillStyle = `rgba(8, 3, 1, ${MAP_BG_DIM})`; g.fillRect(0, 0, w, h); }
   return cv.toDataURL();
 }
@@ -237,6 +258,7 @@ function paintBg(kind, w, h) {
       }
     }
   }
+  paintRoads(g, pal, cell, (u, v) => u > coastX(v));
   if (MAP_BG_DIM) { g.fillStyle = `rgba(8, 3, 1, ${MAP_BG_DIM})`; g.fillRect(0, 0, w, h); } // 전체를 살짝 어둡게
   return cv.toDataURL();
 }
