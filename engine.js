@@ -710,7 +710,7 @@ function runAttack(g, o, mark) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
-  // 개인 특성 너 치료된 거야: 전투 뒤 50% 확률로 잃은 병력의 25%가 돌아온다 (공격한 장수와 수비 장수 모두)
+  // 개인 특성 너 치료된 거야: 전투 뒤 확률로 잃은 병력의 일부가 돌아온다 (공격한 장수와 수비 장수 모두)
   if (captured) { addRecord(g, 'wins'); turnCaptured[to.id] = g.faction; } // 승전 = 이번 턴에 그 성을 차지 (함께 공격한 동료도, 아래)
   if (g.troops <= 0) addRecord(g, 'losses'); // 패전 = 내 부대 전멸 (치료로 돌아오기 전)
   healAfter(g, atkLost, lines);
@@ -901,7 +901,7 @@ function runPlot(g, kind, o) {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
     return '';
   }
-  // 개인 특성 침착 (2026-10-28): 그 성에 침착 장수가 머물면 계략 피해 -40% (여럿이어도 한 번만)
+  // 개인 특성 침착 (2026-10-28): 그 성에 침착 장수가 머물면 계략 피해가 줄어든다 (여럿이어도 한 번만)
   const calm = allGenerals().some(x => x.city === c.id && x.faction === c.faction && gTrait(x).calm) ? 1 - GENERAL_TRAITS.calm.calm : 1;
   const x = (r === 'crit' ? PLOT.critMul : 1) * calm, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
   // 남은 수치는 적지 않는다 (다른 세력 성의 농업·상업·방어·치안은 비공개, 2026-10-26 방어도)
@@ -967,7 +967,7 @@ function buyItem(g, item) {
 
 // ----- 갈취 (개인 특성 이게 일상이야, 2026-10-28) -----
 // 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 공적·경험치 없음
-// 갈취로 받는 금의 범위: 무력 × 1~5배 (2026-10-30). [최소, 최대]
+// 갈취로 받는 금의 범위: 무력 × 2~5배 (2026-10-31). [최소, 최대]
 const levyRange = g => { const L = gTrait(g).levy, w = effStats(g).war; return [w * L.warMin, w * L.warMax]; };
 const levyLeft = g => { const L = gTrait(g).levy; return L && g.levyTurn ? Math.max(0, g.levyTurn + L.cooldown - S.turn) : 0; };
 function runLevy(g) {
