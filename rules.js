@@ -82,7 +82,7 @@ const RULES = {
   goldMonths: [1, 4, 7, 10], // 금 수입이 들어오는 달
   harvestMonths: [4, 10],   // 군량 수확이 들어오는 달 (먹는 것은 매달)
   // 수입 (임시값)
-  goldPerComm: 1,           // 임시: 금 수입 = 장수가 있는 성의 상업 × 1 × (1 + 공적 × meritIncome) (× 치안 보정)
+  goldBase: 100, goldPerComm: 0.8, // 금 수입 = (100 + 장수가 있는 성의 상업 × 0.8) × (1 + 공적 × meritIncome) × 치안 보정 (2026-10-31, 그 전엔 상업 × 1. 저점을 올리고 고점을 낮춤)
   meritIncome: 0.0001,      // 공적 보너스: 공적 100마다 수입 1% 더 (1,000이면 10%. 2026-10-25 0.0001 → 0.0002, 2026-10-31 다시 0.0001)
   foodPerAgri: 3.3,         // 임시: 수확 군량 = 그 성의 농업 × 3.3 (× 치안 보정. 2026-10-25 3 → 3.5, 2026-10-26 기본 500을 더한 만큼 3.3으로)
   foodBase: 500,            // 수확마다 성마다 기본으로 더 들어오는 군량: 수확 = (농업 × 3.3 + 500) × 치안 보정 (2026-10-25, 농업 낮은 성 보완)
@@ -215,7 +215,7 @@ function turnAfter(t, i) {
 
 // 금 수입(1·4·7·10월): 장수가 있는 성의 상업에 따라 정해진다
 // 장수의 금 수입: 있는 성의 상업에 공적 보너스와 치안 보정을 곱한다
-const goldIncome = (cs, merit = 0) => Math.floor(cs.comm * RULES.goldPerComm * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
+const goldIncome = (cs, merit = 0) => Math.floor((RULES.goldBase + cs.comm * RULES.goldPerComm) * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
 // 수확(4·10월): 그 성의 농업에 따라 군량이 들어온다 (상한까지만)
 function harvestFood(cs, grade) {
   cs.food = Math.min(foodMax(grade), cs.food + Math.floor((cs.agri * RULES.foodPerAgri + RULES.foodBase) * peaceIncome(cs.peace)));
