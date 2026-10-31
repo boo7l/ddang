@@ -299,7 +299,7 @@ const FACTION_TRAITS = {
   고구려: { name: '개마무사', desc: '기병 전투력 +5%, 기병 징병 +5% 더 모임', cavalry: 0.05, cavalryDraft: 0.05 },
   백제: { name: '오경박사', desc: '지력 경험치 +25%', expInt: 0.25 },
   마한: { name: '삼한 소도', desc: '징병으로 떨어지는 치안 -50%', draftPeace: -0.50 },
-  신라: { name: '화랑도', desc: '수련 경험치 +20%', trainExp: 0.20 },
+  신라: { name: '화랑도', desc: '수련에 금이 들지 않고 수련 경험치 +20%', freeTrain: true, trainExp: 0.20 },
   가야: { name: '철의 왕국', desc: '성벽 공격으로 깎는 방어 +15%', siege: 0.15 },
   탐라: { name: '절해고도', desc: '수비 전투력 +5%', defense: 0.05 },
 };
