@@ -710,7 +710,7 @@ async function boardDialog(page = 0, kind = '') {
   const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${medalBadge(x.medals)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
   const delBtn = (x, what) => (x.del ? ` <button class="mini x" data-bdel="${esc(x.id)}" data-what="${what}" title="지우기">✕</button>` : '');
   const items = d.posts.map(p => `<li class="boardPost">
-      <p class="boardHead"><span class="tTag">${esc(p.kind)}</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
+      <p class="boardHead"><span class="tTag">[${esc(p.kind)}]</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
       <p class="boardText">${esc(p.text)}</p>
       ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li>${who(c)} <span class="boardText">${esc(c.text)}</span> <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</li>`).join('')}</ul>` : ''}
       ${canWrite ? `<form class="boardReply" data-post="${esc(p.id)}" autocomplete="off"><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
