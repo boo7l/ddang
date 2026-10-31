@@ -676,6 +676,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 #mTabs { display: none; }
 @media (max-width: 700px) {
   #refreshBtn { right: 10px; bottom: calc(54px + env(safe-area-inset-bottom)); } /* 아래 탭 바로 위 */
+  .helpNav { gap: 4px; align-items: center; justify-content: space-between; } /* 도움말 아래 줄: 글자가 세로로 눌리지 않게 (2026-10-31) */
+  .helpNav button { padding: 6px 8px; white-space: nowrap; }
+  .helpNav .helpPage { margin: 0; white-space: nowrap; }
   .modalBtns:has(.btnLeft) { flex-wrap: wrap; } /* 단추가 많으면 글자를 세로로 누르지 않고 줄을 바꾼다 */
   .modalBtns:has(.btnLeft) button { padding: 6px 10px; white-space: nowrap; }
   #game[data-tab="chat"] ~ #refreshBtn { display: none; } /* 채팅 탭에서는 보내기 단추를 가리지 않게 숨긴다 */
