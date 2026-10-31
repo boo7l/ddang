@@ -740,17 +740,9 @@ const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가
 function renderNotes() {
   const box = $('#notes');
   if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
-  // 빨간 NEW: 이 브라우저에서 최신 패치노트를 아직 안 열었으면 보인다 (2026-10-31)
-  const latest = PATCH_NOTES[0].title;
-  let seen = '';
-  try { seen = localStorage.getItem('sam-note-seen') || ''; } catch (e) { /* 저장소를 못 쓰면 늘 보인다 */ }
-  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${seen === latest ? '' : ' <span class="newMark">NEW</span>'}</button><button class="boardBtn">💬 게시판</button></div>`;
-  box.querySelector('.noteBtn').onclick = () => {
-    try { localStorage.setItem('sam-note-seen', latest); } catch (e) { /* 이번만 */ }
-    const mark = box.querySelector('.newMark');
-    if (mark) mark.remove();
-    noteDialog(0);
-  };
+  // 빨간 NEW: 최신 패치노트에 isNew: true가 있는 동안 항상 보인다. 내릴 때는 patchnotes.js에서 지운다 (2026-10-31)
+  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${PATCH_NOTES[0].isNew ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button></div>`;
+  box.querySelector('.noteBtn').onclick = () => noteDialog(0);
   box.querySelector('.boardBtn').onclick = () => boardDialog();
 }
 // ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
