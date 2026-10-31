@@ -440,18 +440,11 @@ const EXPLORE = [
   { key: 'gold', weight: 20, min: 200, max: 500, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
   { key: 'food', weight: 20, min: 500, max: 1000, jackpot: { rate: 0.2, min: 2000, max: 4000 } },
   { key: 'troops', weight: 15, min: 1000, max: 3000 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
-  { key: 'item', weight: 10 },                         // 능력치 하나 +1
+  { key: 'item', weight: 10 },                         // 장비 발견: 상점 장비 하나를 얻는다 (2026-10-31)
   { key: 'feast', weight: 8, peace: 10, min: 30, max: 50 }, // 마을 잔치 (2026-10-31): 그 성 치안 +10, 농업·상업 각각 +30~50 (최대치까지)
   { key: 'bandit', weight: 8, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20% (2026-10-31 10 → 8%)
   { key: 'master', weight: 4, gain: 2 },                // 레어: 달인을 만나 가르침을 얻었다! 무작위 능력치 +2 (2026-10-27, 2026-10-28 5 → 3%, 2026-10-31 4%)
   { key: 'pouch', weight: 5 },                          // 레어: 특성 주머니 발견 (2026-10-28, 2026-10-31 2 → 5%). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 1번
-];
-
-// 아이템: 발견하면 해당 능력치 +1
-const ITEMS = [
-  { name: '병법서', stat: 'lea' },
-  { name: '보검', stat: 'war' }, // 상점의 명검과 헷갈리지 않게
-  { name: '고서', stat: 'int' },
 ];
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));

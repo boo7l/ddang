@@ -813,14 +813,13 @@ function runExplore(g) {
       break;
     }
     case 'item': {
-      const it = ITEMS[randInt(0, ITEMS.length - 1)];
-      const st = STATS.find(s => s.key === it.stat);
-      if (g.stats[it.stat] < RULES.statMax) {
-        g.stats[it.stat]++;
-        text = `★ 「${it.name}」${josa(it.name, '을를').slice(-1)} 손에 넣었다! ${st.name} +1 (${g.stats[it.stat]})`;
-      } else {
-        text = `「${it.name}」${josa(it.name, '을를').slice(-1)} 손에 넣었지만, 이미 ${josa(st.name, '이가')} 최고라 도움이 되지 않았다.`;
-      }
+      // 장비 발견 (2026-10-31, 그 전엔 기본 능력치 +1): 상점 장비를 공짜로 얻는다. 이미 최고인 능력치의 장비는 빼고 고른다. 가진 수가 늘어 상점 값도 오른다
+      const names = Object.keys(SHOP), open = names.filter(n => effStats(g)[SHOP[n].stat] < RULES.statMax);
+      if (!open.length) { text = '좋은 장비를 찾았지만, 이미 능력치가 모두 최고라 두고 왔다.'; break; }
+      const name = open[randInt(0, open.length - 1)], st = STATS.find(s => s.key === SHOP[name].stat);
+      g.gear = g.gear || {};
+      g.gear[name] = gearCount(g, name) + 1;
+      text = `★ 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${SHOP[name].bonus} (지금 ${effStats(g)[SHOP[name].stat]}, ${name} ${g.gear[name]}개)`;
       break;
     }
     case 'feast': { // 마을 잔치 (2026-10-31): 그 성의 치안·농업·상업이 오른다 (최대치까지)

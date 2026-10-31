@@ -649,7 +649,7 @@ function helpDialog(page = 0) {
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
       ${cmdOn('spy') ? `<li><b>첩보</b>: 이웃 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
       <p class="sub">기타</p><ul>
-      ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·능력치를 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
+      ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·능력치를 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li></ul>`],
@@ -689,14 +689,14 @@ function exploreOddsDialog(from) {
     gold: e => `금 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
     food: e => `그 성 군량 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
     troops: e => `병력 +${range(e)} <span class="dim">(지금 병종, 없으면 보병)</span>`,
-    item: () => '능력치 하나 +1',
+    item: () => '장비 하나 (명마·명검·서적) 획득',
     feast: e => `그 성 치안 +${e.peace}, 농업·상업 각각 +${e.min}~${e.max}`,
     none: () => '아무 일 없음',
     bandit: e => `병사가 있으면 병력 -${Math.round(e.minRate * 100)}~${Math.round(e.maxRate * 100)}%<br>없으면 금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%`,
     master: e => `무작위 능력치 +${e.gain}`,
     pouch: () => '특성 3장 중 하나로 바꾸거나 지금 특성 유지',
   };
-  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '아이템 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '★ 특성 주머니' };
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '★ 특성 주머니' };
   const rows = [...EXPLORE].sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   openModal(`
     <h2>탐색 확률표</h2>
