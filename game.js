@@ -835,15 +835,12 @@ function openMinigame() {
   const w = document.createElement('div');
   w.id = 'miniWrap';
   w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html" title="미니게임"></iframe></div>';
-  w.onclick = e => { if (e.target === w) closeMinigame(); };
   w.querySelector('.miniClose').onclick = closeMinigame;
   const f = w.querySelector('iframe');
   f.onload = () => f.contentWindow.focus(); // 바로 화살표 키가 먹게
   document.body.appendChild(w);
 }
 $('#miniLink').onclick = openMinigame;
-window.addEventListener('message', e => { if (e.data === 'minigame-close') closeMinigame(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMinigame(); });
 
 function showTitle(msg) {
   showScreen('title');

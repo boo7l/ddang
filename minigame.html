@@ -347,7 +347,6 @@ function restart() {
 }
 addEventListener("keydown", e => {
   if (["ArrowLeft", "ArrowRight", "Space", "Enter"].includes(e.code)) e.preventDefault();
-  if (e.code === "Escape" && parent !== window) parent.postMessage("minigame-close", "*");
   if (e.repeat) return;   // 누르고 있어도 한 번만 휘두른다.
   if (e.code === "ArrowLeft") { if (state === "play") strike(-1); }
   else if (e.code === "ArrowRight") { if (state === "play") strike(1); }
