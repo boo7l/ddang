@@ -648,6 +648,7 @@ function showScreen(id) {
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   $('#who').hidden = id === 'title';
   $('#mTabs').hidden = id !== 'game'; // 휴대폰 아래 탭은 게임 화면에서만
+  $('#refreshBtn').hidden = id !== 'game'; // 새로고침 단추도 게임 화면에서만
   document.body.classList.toggle('inGame', id === 'game'); // 휴대폰: 게임 화면은 앱처럼 (화면 고정, 가운데만 스크롤)
   if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; $('#nowScenario').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
@@ -1061,6 +1062,12 @@ function setTab(t) {
   if (t === 'chat') { const ul = $('#chat .chatList'); if (ul) ul.scrollTop = ul.scrollHeight; } // 숨어 있다 나오면 맨 아래(새 글)로
 }
 document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
+// 새로고침 단추: 페이지를 다시 열지 않고 서버에서 최신 상태만 받아 온다 (2026-10-31)
+$('#refreshBtn').onclick = async () => {
+  const b = $('#refreshBtn');
+  b.disabled = true;
+  try { await refresh(); } finally { b.disabled = false; }
+};
 
 function enterGame() {
   showScreen('game');

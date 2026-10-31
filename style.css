@@ -646,10 +646,16 @@ details.fold > summary:hover h2 { color: var(--title); }
 .oddsTier.t2 { color: #8cc8f0; } /* 중: 하늘색 */
 .oddsTier.t3 { color: var(--text); } /* 하: 보통 */
 
+/* 새로고침 단추: 게임 화면 오른쪽 아래에 고정 (2026-10-31). 대화 상자(z-index 50)보다는 아래 */
+#refreshBtn { position: fixed; right: 16px; bottom: 16px; z-index: 40; width: 44px; height: 44px; padding: 0; margin: 0; font-size: 22px; line-height: 1; }
+#refreshBtn[hidden] { display: none; }
+
 /* ===== 휴대폰 (너비 700px 이하, 2026-10-27) =====
    넓은 화면은 그대로 두고, 좁으면 게임 화면 네 칸을 아래 탭으로 하나씩 보여 준다. 글자는 16px 그대로 */
 #mTabs { display: none; }
 @media (max-width: 700px) {
+  #refreshBtn { right: 10px; bottom: calc(54px + env(safe-area-inset-bottom)); } /* 아래 탭 바로 위 */
+  #game[data-tab="chat"] ~ #refreshBtn { display: none; } /* 채팅 탭에서는 보내기 단추를 가리지 않게 숨긴다 */
   html, body { overflow-x: hidden; } /* 옆으로 밀리지 않게 */
   body { padding: 6px; max-width: 440px; margin: 0 auto; box-sizing: border-box; } /* 휴대폰 모드 너비는 최대 440px (창을 줄였다 늘였다 해도 지도·성 정보 너비가 계속 바뀌지 않게) */
   /* 게임 화면은 앱처럼: 화면 높이에 딱 맞추고, 제목줄과 아래 탭 사이(#game)만 스크롤한다.
