@@ -353,6 +353,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .gHead > div { flex: 1; min-width: 0; }
 .gHead .gname { font-size: 24px; margin: 0 0 4px; }
 .gHead .face { width: 96px; height: 120px; flex: none; }
+.gHead .gFaceCol { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; } /* 초상화와 그 아래 훈장 (2026-10-31) */
 
 /* 로그인(1번) 화면과 오른쪽 위 접속 정보 */
 .hdrRight { margin-left: auto; display: flex; align-items: center; gap: 12px; }

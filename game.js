@@ -1276,8 +1276,8 @@ function renderGeneral() {
   const p = me(), f = factionById(p.faction), city = cityById(p.city);
   $('#general').innerHTML = `
     <h2>장수</h2>
-    <div class="gHead"><span id="gFace"></span><div>
-      <p class="gname">${esc(p.name)}${medalOf(p.id)}</p>
+    <div class="gHead"><div class="gFaceCol"><span id="gFace"></span>${medalOf(p.id)}</div><div>
+      <p class="gname">${esc(p.name)}</p>
       <table class="stats">
         <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
