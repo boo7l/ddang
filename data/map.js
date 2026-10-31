@@ -262,7 +262,7 @@ const MAP_DATA = {
    "y": 7,
    "name": "구미",
    "faction": "",
-   "grade": 1
+   "grade": 2
   },
   {
    "id": "c1793375174961",
@@ -447,4 +447,5 @@ const MAP_DATA = {
    "c1793375185369"
   ]
  ]
-};
+}
+;
