@@ -744,7 +744,8 @@ function renderNotes() {
   const box = $('#notes');
   if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
   // 빨간 NEW: 최신 패치노트에 isNew: true가 있는 동안 항상 보인다. 내릴 때는 patchnotes.js에서 지운다 (2026-10-31)
-  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${PATCH_NOTES[0].isNew ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button></div>`;
+  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${PATCH_NOTES[0].isNew ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button><button class="miniBtn">🗡 미니게임</button></div>`;
+  box.querySelector('.miniBtn').onclick = openMinigame;
   box.querySelector('.noteBtn').onclick = () => noteDialog(0);
   box.querySelector('.boardBtn').onclick = () => boardDialog();
 }
@@ -827,6 +828,22 @@ function noteDialog(i) {
   });
   $('#modalBox').classList.add('wideBox');
 }
+// 미니게임 일기당천: 첫 화면 팝업. 게임 본체와 분리된 minigame.html을 띄우고, 서버와 주고받는 것은 없다 (2026-11-01)
+function closeMinigame() { const w = $('#miniWrap'); if (w) w.remove(); }
+function openMinigame() {
+  closeMinigame();
+  const w = document.createElement('div');
+  w.id = 'miniWrap';
+  w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html" title="미니게임"></iframe></div>';
+  w.onclick = e => { if (e.target === w) closeMinigame(); };
+  w.querySelector('.miniClose').onclick = closeMinigame;
+  const f = w.querySelector('iframe');
+  f.onload = () => f.contentWindow.focus(); // 바로 화살표 키가 먹게
+  document.body.appendChild(w);
+}
+window.addEventListener('message', e => { if (e.data === 'minigame-close') closeMinigame(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMinigame(); });
+
 function showTitle(msg) {
   showScreen('title');
   renderHof();

@@ -770,3 +770,10 @@ details.fold > summary:hover h2 { color: var(--title); }
   #modalBox, #modalBox.wideBox, #modalBox.adminBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); }
 }
 @media (max-width: 380px) { .titlebar .seal { display: none; } } /* 아주 좁은 휴대폰: 제목줄 한 줄을 지키려고 "땅" 낙관을 숨긴다 (로고를 눌러도 첫 화면으로 간다) */
+
+/* 미니게임 팝업 (2026-11-01) */
+#miniWrap { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .7); }
+#miniWrap .miniBox { position: relative; width: min(724px, 100vw); height: min(524px, 100vh); }
+#miniWrap iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+#miniWrap .miniClose { position: absolute; top: -24px; right: 8px; width: 32px; height: 32px; padding: 0; z-index: 1; }
+@media (max-height: 590px), (max-width: 700px) { #miniWrap .miniClose { top: 0; right: 0; } }

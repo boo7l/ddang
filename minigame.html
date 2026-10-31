@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>일기당천</title>
+<style>
+@font-face {
+  font-family: "DungGeunMo";
+  src: url("fonts/DungGeunMo.woff") format("woff"), url("fonts/DungGeunMo.ttf") format("truetype");
+}
+* { box-sizing: border-box; }
+html.embed, html.embed body { background: transparent; }
+html, body { margin: 0; height: 100%; background: #120604; }
+body {
+  display: flex; align-items: center; justify-content: center;
+  font: 16px "DungGeunMo", monospace; color: #f4e3b5;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+  overflow: hidden;
+}
+/* 팝업 창 */
+#box {
+  position: relative; line-height: 0; overflow: hidden;
+  box-shadow: 0 0 0 4px #c9a24a, 0 0 0 8px #4a0e0a, 0 12px 40px 12px rgba(0, 0, 0, .7);
+}
+canvas { display: block; image-rendering: pixelated; }
+#hud {
+  position: absolute; left: 0; right: 0; top: 12px; padding: 0 16px;
+  display: flex; justify-content: space-between; line-height: 36px; font-size: 32px;
+  text-shadow: 2px 2px 0 #120604; pointer-events: none;
+}
+.small #hud { font-size: 16px; line-height: 20px; top: 8px; padding: 0 10px; }
+#msg {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  line-height: 22px; text-align: center; padding: 12px;
+  background: rgba(18, 6, 4, .72); pointer-events: none;
+}
+#msg[hidden] { display: none; }
+#msg b { font-weight: normal; color: #ffd75e; }
+#msg .big { font-size: 48px; line-height: 56px; color: #ffd75e; text-shadow: 3px 3px 0 #7e1a12; }
+.small #msg .big { font-size: 32px; line-height: 36px; }
+#msg .red { color: #ff7a5c; }
+body:not(.small) #msg { padding-bottom: 170px; }
+.small .wide { display: none; }
+body:not(.small) .narrow { display: none; }
+#sound {
+  position: absolute; right: 10px; bottom: 10px; width: 32px; height: 32px; padding: 0;
+  font: 16px "DungGeunMo", monospace; color: #f4e3b5;
+  background: #2a0604; border: 2px solid #c9a24a; cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div id="box">
+  <canvas id="c"></canvas>
+  <div id="hud"><span>처치 <b id="score">0</b></span><span>최고 <b id="best">0</b></span></div>
+  <div id="msg"></div>
+  <button id="sound" aria-label="소리 켜기/끄기">♪</button>
+</div>
+
+<script>
+"use strict";
+/* ── 조정용 숫자 ───────────────────────────────────── */
+const W = 234, H = 167;      // 게임 그림 크기(도트 단위). 화면에는 3배로 커진다
+const POPUP_W = 700, POPUP_H = 500;   // 팝업 크기
+const BG_TOP = 45;           // 정사각형 배경에서 위쪽을 잘라내는 양
+const CX = W / 2;            // 장군 위치
+const GROUND = 150;          // 발이 닿는 높이
+const REACH = 40;            // 칼이 닿는 거리 (이 안에 적이 있어야 처치)
+const TOUCH = 10;            // 적의 창끝이 여기까지 오면 게임오버
+const EDGE = 125;            // 적이 나타나는 거리
+const CALM = 6;              // 처음 이만큼은 같은 속도, 같은 간격
+const FIRST_GAP = 1.15;      // 처음 적 사이 간격(초)
+const MIN_GAP = 0.30;        // 가장 어려울 때 적 사이 간격(초)
+const GAP_SHRINK = 0.975;    // 적 하나마다 간격이 줄어드는 비율
+const TYPES = {              // 속도: 초당 도트 수
+  foot:  { speed: 38 },
+  heavy: { speed: 34 },
+  horse: { speed: 84 },
+};
+const FOOT_RAMP = 0.8;        // 점수 1점마다 창병이 빨라지는 양 (CALM점부터)
+const FOOT_MAX = 72;         // 창병 최고 속도
+const HEAVY_HP_MIN = 2;      // 중장병을 쓰러뜨리는 데 필요한 타수 (이 사이에서 무작위)
+const HEAVY_HP_MAX = 5;
+const KNOCK = 32;            // 맞았을 때 밀려나는 거리 (칼 범위 밖으로 나갈 만큼)
+const KNOCK_FAR = 105;       // 가장 멀리 밀려날 수 있는 곳
+const KNOCK_SPEED = 320;     // 밀려나는 속도
+const RETURN = 1.2;          // 맞은 중장병이 다시 닿기까지 걸리는 대략의 시간(초)
+const HOLE = 0.35;           // 그 앞뒤로 다른 적이 오지 않게 비우는 시간(초)
+const HORIZON = EDGE / TYPES.heavy.speed + 0.2; // 미리 짜 두는 시간
+
+/* ── 그림 불러오기 ─────────────────────────────────── */
+// 장군 그림 왼쪽 끝에서 발 가운데까지의 거리 (장군을 가운데 세우는 기준)
+const GENERAL_FOOT = { general0: 18, general1: 22, general2: 17 };
+const ART = {
+  general0: {}, general1: {}, general2: {},
+  foot0: {}, foot1: {}, heavy0: {}, heavy1: {}, horse0: {}, horse1: {}, bg: {},
+};
+for (const name in ART) {
+  const im = new Image();
+  im.onload = () => {
+    const a = ART[name];
+    a.r = im; a.w = im.width; a.h = im.height;
+    const f = document.createElement("canvas");   // 좌우 뒤집은 그림
+    f.width = im.width; f.height = im.height;
+    const x = f.getContext("2d"); x.translate(im.width, 0); x.scale(-1, 1); x.drawImage(im, 0, 0);
+    a.l = f;
+    a.foot = GENERAL_FOOT[name];
+    a.flash = whiteCopy(im);
+  };
+  im.src = "img/minigame/" + name + ".png";
+}
+// 맞은 적을 하얗게 번쩍이게 할 그림
+function whiteCopy(im) {
+  const c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
+  const x = c.getContext("2d"); x.drawImage(im, 0, 0);
+  x.globalCompositeOperation = "source-in"; x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+
+/* ── 화면 ──────────────────────────────────────────── */
+if (parent !== window) document.documentElement.classList.add("embed");  // 첫 화면 팝업 안에서 열림
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+cv.width = W; cv.height = H; ctx.imageSmoothingEnabled = false;
+const el = id => document.getElementById(id);
+function fit() {
+  // 창이 넉넉하면 800x800, 작으면 도트가 많이 뭉개지지 않는 선에서 줄인다.
+  const s = Math.max(1, Math.min(3, Math.floor(Math.min((innerWidth - 24) / (POPUP_W / 3), (innerHeight - 24) / (POPUP_H / 3)) * 4) / 4));
+  cv.style.width = W * s + "px"; cv.style.height = H * s + "px";
+  el("box").style.width = POPUP_W / 3 * s + "px"; el("box").style.height = POPUP_H / 3 * s + "px";
+  document.body.classList.toggle("small", POPUP_W / 3 * s < 480);
+}
+addEventListener("resize", fit); fit();
+
+let best = 0;
+try { best = +localStorage.getItem("ilgi_best") || 0; } catch (e) {}
+el("best").textContent = best;
+
+/* ── 소리 ──────────────────────────────────────────── */
+let ac = null, soundOn = true;
+function beep(freq, dur, type = "square", vol = 0.05, slide = 0) {
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.linearRampToValueAtTime(slide, t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.linearRampToValueAtTime(0, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur);
+  } catch (e) {}
+}
+
+/* ── 게임 상태 ─────────────────────────────────────── */
+let state = "title";   // title | play | over
+let t = 0, score = 0, overAt = 0, shake = 0;
+let enemies = [], pending = [], bits = [], dead = [], planned = 0, lastArrive = 0, gap = FIRST_GAP;
+let swing = null, face = 1, overText = "", holes = [];
+
+function reset() {
+  t = 0; score = 0; shake = 0; enemies = []; pending = []; bits = []; dead = []; holes = [];
+  planned = 0; gap = FIRST_GAP; swing = null; face = 1;
+  lastArrive = HORIZON;
+  el("score").textContent = 0;
+  el("msg").hidden = true;
+  state = "play";
+}
+
+// 어떤 적이 나올지 고른다. 뒤로 갈수록 빠른 적과 느린 적이 많아진다.
+function pickType(n) {
+  if (n < CALM) return "foot";
+  const p = Math.min(1, (n - CALM) / 30);
+  const r = Math.random();
+  if (r < 0.08 + 0.32 * p) return "horse";
+  if (r < 0.20 + 0.40 * p) return "heavy";
+  return "foot";
+}
+
+function footSpeed() {
+  return Math.min(FOOT_MAX, TYPES.foot.speed + Math.max(0, score - CALM) * FOOT_RAMP);
+}
+
+// 밀려난 적이 다시 닿을 시각을 다른 적과 겹치지 않게 잡는다. 겹치면 그만큼 비틀거리다 출발한다.
+function knockBack(e) {
+  const natural = t + KNOCK / KNOCK_SPEED + (e.d + KNOCK - TOUCH) / e.speed;
+  const others = [...enemies, ...pending].filter(o => o !== e).map(o => o.arrive).sort((a, b) => a - b);
+  let slot = natural;
+  for (const a of others) if (Math.abs(a - slot) < MIN_GAP || (a > slot && a - slot < MIN_GAP)) slot = a + MIN_GAP;
+  // 기다릴 시간이 있으면 멈춰 서는 대신 더 멀리 밀려나게 하고, 그래도 남으면 그만큼만 멈춘다.
+  const wait = slot - natural;
+  const extra = Math.min(wait / (1 / KNOCK_SPEED + 1 / e.speed), Math.max(0, KNOCK_FAR - e.d - KNOCK));
+  e.kb = KNOCK + extra; e.stun = wait - extra * (1 / KNOCK_SPEED + 1 / e.speed); e.arrive = slot;
+  lastArrive = Math.max(lastArrive, slot);
+}
+
+// 적은 "장군에게 닿는 시각"을 먼저 정하고 거꾸로 출발 시각을 잡는다.
+// 그래서 속도가 달라도 두 적이 동시에 닿아 막을 수 없는 일은 생기지 않는다.
+function plan() {
+  while (lastArrive < t + HORIZON) {
+    const n = planned++;
+    if (n >= CALM) gap = Math.max(MIN_GAP, gap * GAP_SHRINK);
+    const wobble = n < CALM ? 1 : 0.8 + Math.random() * 0.6 * Math.min(1, (n - CALM) / 15 + 0.3);
+    let arrive = lastArrive + Math.max(MIN_GAP, gap * wobble);
+    // 중장병이 밀려났다 돌아올 자리는 비워 둔다.
+    for (const h of holes) if (arrive > h.from && arrive < h.to) arrive = h.to;
+    const type = pickType(n);
+    const speed = type === "foot" ? footSpeed() : TYPES[type].speed;
+    const hp = type !== "heavy" ? 1 : HEAVY_HP_MIN + Math.floor(Math.random() * (HEAVY_HP_MAX - HEAVY_HP_MIN + 1));
+    const side = n < CALM && n % 3 !== 2 ? (n % 2 ? 1 : -1) : (Math.random() < 0.5 ? -1 : 1);
+    pending.push({ type, side, speed, hp, arrive, spawn: arrive - (EDGE - TOUCH) / speed });
+    // 한 번 맞을 때마다 약 1.2초 뒤에 돌아오므로 그때를 비운다.
+    for (let k = 1; k < hp; k++) holes.push({ from: arrive + RETURN * k - HOLE, to: arrive + RETURN * k + HOLE });
+    holes = holes.filter(h => h.to > t);
+    lastArrive = arrive;
+  }
+}
+
+function step(dt) {
+  t += dt;
+  if (state === "play") {
+    plan();
+    pending = pending.filter(p => {
+      if (t < p.spawn) return true;
+      enemies.push({ ...p, d: EDGE - (t - p.spawn) * p.speed });
+      return false;
+    });
+    for (const e of enemies) {
+      if (e.kb > 0) { const m = Math.min(e.kb, KNOCK_SPEED * dt); e.d += m; e.kb -= m; continue; }
+      if (e.stun > 0) { e.stun -= dt; continue; }
+      e.d -= e.speed * dt;
+      if (e.d <= TOUCH) { gameOver("적에게 당했습니다!"); break; }
+    }
+  }
+  bits = bits.filter(b => {
+    b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 240 * dt; b.life -= dt;
+    return b.life > 0 && b.y < GROUND + 4;
+  });
+  dead = dead.filter(e => {
+    e.d += 90 * dt; e.lift += dt; return e.lift < 0.28;
+  });
+  if (swing && t - swing.at > 0.2) swing = null;
+  shake = Math.max(0, shake - dt * 14);
+}
+
+function strike(side) {
+  face = side; swing = { at: t, side };
+  // 그쪽에서 가장 가까운 적을 벤다.
+  let hit = null;
+  for (const e of enemies) if (e.side === side && !(e.kb > 0) && e.d <= REACH && (!hit || e.d < hit.d)) hit = e;
+  if (!hit) { beep(180, .16, "sawtooth", .05, 70); gameOver("허공을 베었습니다!"); return; }
+  if (hit.hp > 1) {   // 아직 안 죽음: 뒤로 밀려난다
+    hit.hp--; knockBack(hit);
+    shake = 1.5;
+    beep(300, .08, "square", .05, 500);
+    for (let i = 0; i < 8; i++) bits.push({
+      x: CX + side * (hit.d + 2), y: GROUND - 14 - Math.random() * 12,
+      vx: side * (10 + Math.random() * 50), vy: -30 - Math.random() * 60,
+      life: .35, c: i % 2 ? "#ffd75e" : "#ffffff",
+    });
+    return;
+  }
+  enemies.splice(enemies.indexOf(hit), 1);
+  dead.push({ type: hit.type, side, d: hit.d, lift: 0 });
+  score++; el("score").textContent = score;
+  shake = 2;
+  beep(620 + Math.min(score, 60) * 6, .07, "square", .05, 240);
+  const colors = { foot: "#3f6fb0", heavy: "#8c8c94", horse: "#7a4a24" };
+  for (let i = 0; i < 16; i++) bits.push({
+    x: CX + side * (hit.d + 6), y: GROUND - 10 - Math.random() * 16,
+    vx: side * (20 + Math.random() * 80), vy: -40 - Math.random() * 90,
+    life: .55, c: i % 3 ? "#e8e4d4" : colors[hit.type],
+  });
+}
+
+function gameOver(text) {
+  state = "over"; overAt = performance.now(); overText = text; shake = 4;
+  beep(150, .4, "sawtooth", .06, 50);
+  const isBest = score > best;
+  if (isBest) { best = score; el("best").textContent = best; try { localStorage.setItem("ilgi_best", best); } catch (e) {} }
+  showMsg(`<span class="red">${text}</span><span class="big">처치 ${score}</span>` +
+    (isBest && score > 0 ? "<b>최고 기록!</b>" : "") + "<span>스페이스 또는 터치로 다시 시작</span>");
+}
+function showMsg(html) { const m = el("msg"); m.innerHTML = html; m.hidden = false; }
+
+/* ── 그리기 ────────────────────────────────────────── */
+function drawEnemy(e, flash) {
+  const speedFrames = 5 + e.speed / 10;
+  const frame = e.kb > 0 || e.stun > 0 ? 0 : Math.floor(t * speedFrames) % 2;
+  const a = ART[e.type + frame];
+  if (!a.r) return;
+  // 창끝이 거리 d에 오도록 놓는다. 왼쪽 적은 그대로, 오른쪽 적은 뒤집어서 그린다.
+  const tip = Math.round(CX + e.side * e.d);
+  const x = e.side < 0 ? tip - a.w : tip;
+  const bob = !flash && e.type !== "horse" && frame ? 1 : 0;  // 걸을 때 살짝 들썩인다
+  const img = flash ? flipFlash(a, e.side) : (e.side < 0 ? a.r : a.l);
+  ctx.drawImage(img, x, GROUND - a.h - bob - (e.lift ? Math.round(e.lift * 40) : 0));
+}
+function flipFlash(a, side) {
+  if (side < 0) return a.flash;
+  if (!a.flashL) {
+    const c = document.createElement("canvas"); c.width = a.w; c.height = a.h;
+    const x = c.getContext("2d"); x.translate(a.w, 0); x.scale(-1, 1); x.drawImage(a.flash, 0, 0);
+    a.flashL = c;
+  }
+  return a.flashL;
+}
+function draw() {
+  const sx = shake ? Math.round((Math.random() - .5) * shake * 2) : 0;
+  const sy = shake ? Math.round((Math.random() - .5) * shake) : 0;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#2a0d0a"; ctx.fillRect(0, 0, W, H);
+  ctx.setTransform(1, 0, 0, 1, sx, sy);
+  if (ART.bg.r) ctx.drawImage(ART.bg.r, 0, -BG_TOP);
+  // 적 (먼 것부터)
+  for (const e of [...enemies].sort((a, b) => b.d - a.d)) drawEnemy(e, e.kb > 0);
+  // 벤 적은 하얗게 번쩍이며 밀려난다
+  for (const e of dead) if (Math.floor(e.lift * 30) % 2 === 0) drawEnemy({ ...e, speed: 0 }, true);
+  // 장군: 베는 순간 → 칼 거두기 → 대기
+  const pose = swing ? (t - swing.at < 0.13 ? "general2" : "general1") : "general0";
+  const g = ART[pose];
+  if (g.r) {
+    const gx = face > 0 ? CX - g.foot : CX - (g.w - g.foot);
+    ctx.drawImage(face > 0 ? g.r : g.l, gx, GROUND - g.h);
+  }
+  // 칼 궤적
+  if (swing && t - swing.at < 0.1) {
+    const s = swing.side, y = GROUND - 22;
+    const seg = (x0, len, yy, c) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(s > 0 ? CX + x0 : CX - x0 - len, yy, len, 1);
+    };
+    seg(16, REACH - 12, y, "#ffffff");
+    seg(16, REACH - 12, y + 1, "#ffffff");
+    seg(20, REACH - 18, y - 3, "#ffd75e");
+    seg(20, REACH - 18, y + 4, "#ffd75e");
+  }
+  // 튀는 조각
+  for (const b of bits) { ctx.fillStyle = b.c; ctx.fillRect(Math.round(b.x), Math.round(b.y), 2, 2); }
+}
+
+/* ── 입력 ──────────────────────────────────────────── */
+function restart() {
+  // 게임오버 직후 연타로 바로 다시 시작되는 일을 막는다.
+  if (state === "over" && performance.now() - overAt < 500) return;
+  beep(440, .08); reset();
+}
+addEventListener("keydown", e => {
+  if (["ArrowLeft", "ArrowRight", "Space", "Enter"].includes(e.code)) e.preventDefault();
+  if (e.code === "Escape" && parent !== window) parent.postMessage("minigame-close", "*");
+  if (e.repeat) return;   // 누르고 있어도 한 번만 휘두른다.
+  if (e.code === "ArrowLeft") { if (state === "play") strike(-1); }
+  else if (e.code === "ArrowRight") { if (state === "play") strike(1); }
+  else if ((e.code === "Space" || e.code === "Enter") && state !== "play") restart();
+});
+addEventListener("pointerdown", e => {
+  if (e.target.id === "sound") return;
+  e.preventDefault();
+  if (state === "play") strike(e.clientX < innerWidth / 2 ? -1 : 1);
+  else restart();
+});
+el("sound").addEventListener("click", e => {
+  soundOn = !soundOn;
+  e.target.textContent = soundOn ? "♪" : "×";
+  e.target.blur();
+});
+
+/* ── 시작 ──────────────────────────────────────────── */
+showMsg('<span class="big">일기당천</span>' +
+  '<span class="wide">← → 키 또는 화면 왼쪽·오른쪽 터치로 벱니다</span>' +
+  '<span class="narrow">좌우를 터치해 가까이 온 적을 베세요</span>' +
+  '<span class="wide">칼이 닿는 거리 안에 들어온 적만 벨 수 있습니다</span>' +
+  '<span class="wide">헛치거나 적이 닿으면 바로 끝납니다</span>' +
+  "<b>스페이스 또는 터치로 시작</b>");
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  step(dt); draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
