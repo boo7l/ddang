@@ -294,17 +294,23 @@ let turnCaptured = {}; // 이번 턴에 싸워서 함락한 성 → 함락한 �
 function runOrders(mark) {
   turnAttackers = {};
   turnCaptured = {};
-  const todo = [];
+  const todo = [], idle = [];
   for (const g of allGenerals()) {
     const order = g.queue.shift();
     g.queue.push(null);
     if (order && g.faction) todo.push({ g, order });
+    else if (!order && gTrait(g).idleExp) idle.push(g); // 개인 특성 장군뒹굴: 예약 칸이 빈 턴
   }
   todo.sort((a, b) => (a.order.orderedAt || 0) - (b.order.orderedAt || 0));
   for (const { g, order } of todo) {
     if (S.unified || !g.faction) continue; // 통일됐거나, 이번 턴에 앞서 세력을 잃었다
     const fail = COMMANDS[order.cmd] && cmdOn(order.cmd) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
+  }
+  // 장군뒹굴 (2026-10-31): 세력 소속이면 모든 능력치 경험치 +1. 다른 경험치 보너스는 붙지 않고, 능력치가 오를 때만 기록에 남긴다
+  for (const g of idle) {
+    if (S.unified || !g.faction) continue;
+    for (const st of STATS) if (addStatExp(g, st.key, gTrait(g).idleExp)) addLog(g, `🛌 뒹굴뒹굴… ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[st.key]})`);
   }
 }
 
