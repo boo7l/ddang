@@ -78,7 +78,93 @@ function mountainness(u, v) {
   return m;
 }
 
+// ===== 한국 지도 배경 (2026-10-31, data/map_kor.json) =====
+// 서·남·동 삼면이 바다. 지리는 대략만 맞추고, 해안선은 성 칸을 피해서 그린다. 좌표는 칸 단위
+const KOR = {
+  west: [[0, 0.75], [3.9, 0.7], [4.35, 1.6], [4.95, 0.75], [5.95, 0.75], [6.3, 1.7], [7.7, 1.7], [7.95, 0.75], [8.95, 0.75], [9.3, 1.6], [9.75, 1.6], [10, 0.75], [10.9, 0.75], [11, 0], [14, 0]], // 세로 v에서 이보다 왼쪽은 바다
+  east: [[0, 7.75], [3.9, 7.75], [4.2, 7.1], [6.8, 7.1], [7, 7.8], [7.95, 7.8], [8.05, 6.97], [14, 6.97]],       // 세로 v에서 이보다 오른쪽은 바다
+  south: [[0, 12], [1.85, 12], [1.95, 12.92], [3.05, 12.92], [3.15, 11.7], [3.9, 12], [4.95, 12], [5.05, 11.04], [8, 11.04]], // 가로 u에서 이보다 아래는 바다
+  islands: [[2, 13.5, 1.25, 0.47], [7.5, 5.3, 0.13, 0.11], [7.72, 5.42, 0.04, 0.04], [0.35, 2.45, 0.16, 0.12], [0.3, 6.6, 0.12, 0.1], [0.75, 9.5, 0.14, 0.1], [0.35, 12.5, 0.2, 0.13], [1.1, 12.45, 0.14, 0.1], [3.55, 12.5, 0.2, 0.14], [5.3, 11.6, 0.26, 0.16]], // 제주·울릉도·독도·서해와 남해의 섬 (가운데 u, v, 반지름 u, v)
+  rivers: [
+    { w: 0.12, pts: [[6.1, 1.2], [4.8, 1.5], [3.6, 1.55], [2.9, 2.2], [2.2, 2.45], [1.5, 2.2], [0.6, 2.1]] },         // 한강 (원주 위쪽 → 서울·수원 사이 → 서해)
+    { w: 0.1, pts: [[4.6, 8.6], [3.6, 8.4], [3.0, 8], [2.5, 7.55], [1.6, 7.6]] },                                      // 금강
+    { w: 0.13, pts: [[5.4, 5.3], [5.5, 6.5], [5.45, 7.6], [5.5, 8.8], [5.4, 9.6], [5.55, 11.1]] },                     // 낙동강
+    { w: 0.08, pts: [[1.8, 9.75], [1.3, 9.6], [0.9, 9.85]] },                                                          // 영산강
+  ],
+};
+const lerpLine = (line, t) => {
+  for (let i = 1; i < line.length; i++) if (t <= line[i][0]) {
+    const [a, x0] = line[i - 1], [b, x1] = line[i];
+    return x0 + (x1 - x0) * (t - a) / (b - a);
+  }
+  return line[line.length - 1][1];
+};
+function korLand(u, v) {
+  if (KOR.islands.some(([a, b, rx, ry]) => ((u - a) / rx) ** 2 + ((v - b) / ry) ** 2 < 1)) return true;
+  return u > lerpLine(KOR.west, v) && u < lerpLine(KOR.east, v) && v < lerpLine(KOR.south, u);
+}
+// 태백산맥(동쪽), 소백산맥(가운데), 지리산(남쪽), 한라산
+function korMountain(u, v) {
+  if (u > 5.9 && u < 7 && v > 0.6 && v < 5) return 0.8;
+  if (u > 4.1 && u < 5.95 && v > 4.2 && v < 7) return 0.6;
+  if (u > 2.95 && u < 4 && v > 8.1 && v < 9.95) return 0.7;
+  if (Math.abs(u - 2) < 0.3 && Math.abs(v - 13.5) < 0.3) return 0.5;
+  return 0;
+}
+function paintKorBg(kind, w, h) {
+  const pal = PALETTES[kind];
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const g = cv.getContext('2d');
+  const cell = w / MAP.cols, nx = Math.ceil(w / P), ny = Math.ceil(h / P), peaks = [], FOAM = 0.1;
+  const dot = (i, j, col) => { g.fillStyle = col; g.fillRect(i * P, j * P, P, P); };
+  const uv = (i, j) => [(i + 0.5) * P / cell, (j + 0.5) * P / cell];
+  const onKorRiver = (u, v, extra = 0) => KOR.rivers.some(rv => onRiver(u, v, rv, extra));
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const [u, v] = uv(i, j), r = hash(i, j);
+      const land = korLand(u, v + (hash(i, 11) - 0.5) * 0.06);
+      if (!land) {
+        const shore = [[FOAM, 0], [-FOAM, 0], [0, FOAM], [0, -FOAM]].some(([a, b]) => korLand(u + a, v + b));
+        dot(i, j, shore ? pal.foam : r < 0.15 ? pal.sea2 : pal.sea);
+      } else if (onKorRiver(u, v)) dot(i, j, pal.river);
+      else {
+        dot(i, j, r < 0.25 ? pal.south2 : pal.south);
+        const m = korMountain(u, v);
+        if (m && r < m * 0.05 && !onKorRiver(u, v, 0.12) && !peaks.some(([a, b]) => Math.abs(a - i) < 5 && Math.abs(b - j) < 4)) peaks.push([i, j]);
+      }
+    }
+  }
+  for (const [i, j] of peaks) { // 도트 3줄짜리 작은 봉우리
+    g.fillStyle = pal.mount; g.fillRect((i - 1) * P, (j + 1) * P, P * 3, P); g.fillRect(i * P, j * P, P, P);
+    g.fillStyle = pal.mountHi; g.fillRect((i - 1) * P, (j + 1) * P, P, P);
+    if (hash(j, i) < 0.4) dot(i, j, pal.snow);
+  }
+  // 깨알 요소: 서쪽 평야엔 논밭, 그 밖의 땅엔 나무
+  const used = new Set();
+  const put = (name, i, j) => {
+    const s = SPRITES[name], sh = s.rows.length;
+    for (let a = -1; a <= s.w; a++) for (let b = -1; b <= sh; b++) if (used.has(`${i + a},${j + b}`)) return;
+    for (let a = -1; a <= s.w; a++) for (let b = -1; b <= sh; b++) {
+      const [u, v] = uv(i + a, j + b);
+      if (!korLand(u, v) || onKorRiver(u, v, 0.04) || peaks.some(([p, q]) => Math.abs(p - i - a) < 2 && Math.abs(q - j - b) < 2)) return;
+    }
+    s.rows.forEach((row, b) => [...row].forEach((ch, a) => { if (ch !== '.') dot(i + a, j + b, pal[s.col[ch]]); }));
+    for (let a = 0; a < s.w; a++) for (let b = 0; b < sh; b++) used.add(`${i + a},${j + b}`);
+  };
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      const [u, v] = uv(i, j), r = hash(i + 101, j + 57);
+      if (u < 3.6 && v > 4 && v < 10 && r < 0.03) put('field', i, j);
+      else if (r < 0.05) put(korMountain(u, v) ? 'pine' : 'tree', i, j);
+    }
+  }
+  if (MAP_BG_DIM) { g.fillStyle = `rgba(8, 3, 1, ${MAP_BG_DIM})`; g.fillRect(0, 0, w, h); }
+  return cv.toDataURL();
+}
+
 function paintBg(kind, w, h) {
+  if (MAP.scenario === '대한민국') return paintKorBg(kind, w, h); // 지도마다 배경이 다르다
   const pal = PALETTES[kind];
   const cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
