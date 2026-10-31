@@ -110,7 +110,7 @@ const RULES = {
   siegeLoss: 3,             // 성벽 공격에서 잃는 병력 = 깎은 방어 × 3
   captureWall: { 1: 100, 2: 200, 3: 300 },
   // 일기토 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
-  duel: { minWar: 70, chance: 0.05, loserLoss: 0.25, exp: 50 }, // 일기토: 진 쪽 병력 25% 손실 (2026-10-31 30%에서). 양쪽 무력 70 이상이면 합마다 5% (2026-10-28 8%에서, 빠뜨롱 나와 특성은 10%),출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
+  duel: { minWar: 70, chance: 0.05, lossPerWar: [13, 20], exp: 50 }, // 일기토: 진 쪽 병력 손실 = 이긴 쪽 무력 × 13~20 (2026-10-31, 그 전엔 진 쪽 병력의 30% → 25%). 양쪽 무력 70 이상이면 합마다 5% (2026-10-28 8%에서, 빠뜨롱 나와 특성은 10%),출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
   // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 15)% 확률로 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (60~90) × 10 × (지력 차이 ÷ 10)^0.6 (2026-10-31 (50~100), 지수 0.7에서)
   scheme: { minInt: 70, chancePerInt: 1 / 1500, base: [60, 90], ref: 10, exp: 0.6, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 40 }, // 책략 한 번에 지력 경험치 40 (2026-10-27 30에서). 출진 한 번(5합)에 최대 1번
 
@@ -375,7 +375,7 @@ function fightRounds(att, def, wall, left) {
       const aRate = Math.min(0.95, Math.max(0.05, duelWinRate(att.stats.war, def.stats.war) + (gTrait(att).duelWin || 0) - (gTrait(def).duelWin || 0)));
       const aWin = Math.random() < aRate;
       const w = aWin ? att : def, l = aWin ? def : att;
-      const loss = Math.ceil(l.troops * D.loserLoss * (1 - (gTrait(l).calm || 0))); // 침착: 진 쪽 피해 감소
+      const loss = Math.min(l.troops, Math.ceil(w.stats.war * (D.lossPerWar[0] + Math.random() * (D.lossPerWar[1] - D.lossPerWar[0])) * (1 - (gTrait(l).calm || 0)))); // 침착: 진 쪽 피해 감소
       l.troops -= loss;
       w.duelWins = (w.duelWins || 0) + 1;
       lines.push(`${used}합: ⚡ 일기토! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${loss.toLocaleString('ko-KR')}`);
