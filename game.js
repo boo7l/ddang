@@ -99,7 +99,7 @@ function adminDialog(tab = 'users', fid = null) {
     fid = fid || (fs[0] && fs[0].id);
     const list = fid ? chatOf(fid) : [];
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
-      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${chatWho(m)}</span>${esc(m.text)}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
+      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${chatWho(m)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
   }
   openModal(`<h2>👁 관리자 보기 <span class="dim small">· 새 정보는 1분마다 받아 와요</span></h2>${tabs}${body}
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
@@ -107,6 +107,10 @@ function adminDialog(tab = 'users', fid = null) {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
+    box.querySelectorAll('[data-delchat]').forEach(b => { b.onclick = async () => { // 채팅 글 지우기 (2026-10-31)
+      if (!confirm('이 글을 지울까요? 되돌릴 수 없어요.')) return;
+      if (await call('adminDelChat', { id: b.dataset.delchat })) adminDialog('chat', fid);
+    }; });
   });
   $('#modalBox').classList.add('adminBox');
 }
