@@ -815,6 +815,12 @@ function runExplore(g) {
       }
       break;
     }
+    case 'feast': { // 마을 잔치 (2026-10-31): 그 성의 치안·농업·상업이 오른다 (최대치까지)
+      const up = (k, n) => { const got = Math.max(0, Math.min(n, devMax(city.grade, k) - cs[k])); cs[k] += got; return got; };
+      const p = up('peace', e.peace), a = up('agri', randInt(e.min, e.max)), c = up('comm', randInt(e.min, e.max));
+      text = p + a + c > 0 ? `🎉 마을 잔치에 초대받아 함께 즐겼다! 치안 +${p} · 농업 +${a} · 상업 +${c}` : '🎉 마을 잔치에 초대받았지만, 이미 더없이 풍요로운 성이었다.';
+      break;
+    }
     case 'master': { // 레어 (2026-10-27): 달인에게 가르침을 받아 무작위 능력치 +2 (이미 최고인 능력치는 빼고 고른다)
       const open = STATS.filter(s => g.stats[s.key] < RULES.statMax);
       if (!open.length) { text = '달인을 만났지만, 이미 더 배울 것이 없었다.'; break; }

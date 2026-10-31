@@ -548,6 +548,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 #notes { margin-top: 14px; text-align: left; } /* 패치노트 (2026-10-27): 2026-10-28부터 업데이트마다 단추, 누르면 팝업 */
 #notes .hofTitle { text-align: center; }
 #notes .noteBtn { display: block; width: 100%; margin: 4px 0; }
+#modalBox .notesPop { height: 480px; max-height: 60vh; overflow-y: auto; } /* 패치마다 길이가 달라도 넘기는 단추가 들썩이지 않게 (2026-10-31) */
+.notePager { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+.notePager button { padding: 8px 12px; min-width: 110px; }
 .notesPop .noteHead { margin: 12px 0 2px; color: var(--title); }
 .notesPop .noteHead:first-child { margin-top: 0; }
 .notesPop li { line-height: 1.4; word-break: keep-all; }

@@ -598,7 +598,7 @@ function helpDialog(page = 0) {
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
       ${cmdOn('spy') ? `<li><b>첩보</b>: 이웃 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
       <p class="sub">기타</p><ul>
-      ${RULES.features.explore ? `<li><b>탐색</b>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·능력치를 얻거나, 가끔 도적을 만나요.</li>` : ''}
+      ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·능력치를 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li></ul>`],
@@ -624,6 +624,33 @@ function helpDialog(page = 0) {
     box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog(+b.dataset.page); });
     $('#helpPrev').onclick = () => helpDialog(page - 1);
     if (!last) $('#helpNext').onclick = () => helpDialog(page + 1);
+    const ex = box.querySelector('#helpExplore');
+    if (ex) ex.onclick = () => exploreOddsDialog(page);
+  });
+  $('#modalBox').classList.add('wideBox');
+}
+// 도움말에서 들어가는 탐색 확률표 (2026-10-31). 숫자는 rules.js의 EXPLORE에서 읽는다. from: 돌아갈 도움말 쪽
+function exploreOddsDialog(from) {
+  const range = o => `${fmt(o.min)}~${fmt(o.max)}`;
+  const text = {
+    gold: e => `금 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
+    food: e => `그 성 군량 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
+    troops: e => `병력 +${range(e)} <span class="dim">(지금 병종, 없으면 보병)</span>`,
+    item: () => '능력치 하나 +1',
+    feast: e => `그 성 치안 +${e.peace}, 농업·상업 각각 +${e.min}~${e.max}`,
+    none: () => '아무 일 없음',
+    bandit: e => `병사가 있으면 병력 -${Math.round(e.minRate * 100)}~${Math.round(e.maxRate * 100)}%<br>없으면 금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%`,
+    master: e => `무작위 능력치 +${e.gain}`,
+    pouch: () => '특성 3장 중 하나로 바꾸거나 지금 특성 유지',
+  };
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '아이템 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '★ 특성 주머니' };
+  const rows = [...EXPLORE].sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
+  openModal(`
+    <h2>탐색 확률표</h2>
+    <p>금 ${RULES.myGoldCost.explore} · 1턴 · 공적 +${RULES.merit.explore}</p>
+    <table class="oddsTable">${rows}</table>
+    <div class="modalBtns"><button id="exploreBack" class="main">◀ 도움말로</button></div>`, box => {
+    box.querySelector('#exploreBack').onclick = () => helpDialog(from);
   });
   $('#modalBox').classList.add('wideBox');
 }
@@ -658,19 +685,29 @@ function showScreen(id) {
 // 구글로 처음 들어온 사람은 게임 아이디를 정한다. 로그인해 두면 다음에 열 때 바로 들어간다
 const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가 미리 되어 있다 (이 브라우저에서만)
 
-// 첫 화면 패치노트 (patchnotes.js). 업데이트마다 단추 하나, 누르면 도움말처럼 팝업으로 내용이 뜬다 (2026-10-28, 처음엔 접는 칸)
+// 첫 화면 패치노트 (patchnotes.js). 단추는 하나, 팝업에서 좌우로 넘겨 지난 업데이트를 본다 (2026-10-31, 그 전엔 업데이트마다 단추)
 function renderNotes() {
   const box = $('#notes');
   if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
-  box.innerHTML = `<h3 class="hofTitle">📜 패치노트</h3>` + PATCH_NOTES.map((n, i) => `
-    <button class="noteBtn" data-note="${i}">${n.title} <span class="dim">(${n.date})</span></button>`).join('');
-  box.querySelectorAll('[data-note]').forEach(b => { b.onclick = () => noteDialog(PATCH_NOTES[+b.dataset.note]); });
+  box.innerHTML = `<button class="noteBtn">📜 패치노트</button>`;
+  box.querySelector('.noteBtn').onclick = () => noteDialog(0);
 }
-function noteDialog(n) {
+// i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
+function noteDialog(i) {
+  const n = PATCH_NOTES[i], older = PATCH_NOTES[i + 1], newer = PATCH_NOTES[i - 1];
+  const short = x => x.title.replace(' 주요 업데이트', '');
   openModal(`
     <h2>📜 ${n.title} <span class="dim small">(${n.date})</span></h2>
     <div class="help notesPop">${n.groups.map(gr => `<p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')}</div>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+    <div class="notePager">
+      <button id="noteOlder"${older ? '' : ' disabled'}>◀ ${older ? short(older) : ''}</button>
+      <span class="dim">${PATCH_NOTES.length - i} / ${PATCH_NOTES.length}</span>
+      <button id="noteNewer"${newer ? '' : ' disabled'}>${newer ? short(newer) : ''} ▶</button>
+    </div>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    box.querySelector('#noteOlder').onclick = () => noteDialog(i + 1);
+    box.querySelector('#noteNewer').onclick = () => noteDialog(i - 1);
+  });
   $('#modalBox').classList.add('wideBox');
 }
 function showTitle(msg) {
