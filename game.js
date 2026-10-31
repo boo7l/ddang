@@ -853,7 +853,7 @@ async function logout() {
 
 // 회원 탈퇴: 장수와 계정을 지운다 (되돌릴 수 없음). 이미 쓴 채팅은 처리방침대로 3개월 뒤 지워진다
 async function withdraw() {
-  if (!confirm(`정말 탈퇴할까요?\n\n- 계정(구글 연결, 게임 아이디)과 이번 시즌 장수가 모두 지워져요.\n- 되돌릴 수 없어요.\n- 이미 쓴 세력 채팅은 작성일로부터 3개월 뒤 지워져요.`)) return;
+  if (!confirm(`정말 탈퇴할까요?\n\n- 계정(구글 연결, 게임 아이디)과 이번 시즌 장수가 모두 지워져요.\n- 되돌릴 수 없어요.\n- 이미 쓴 세력 채팅과 게시판 글은 작성일로부터 3개월 뒤 지워져요.`)) return;
   try {
     const d = await api('leave');
     if (d.error) { alert(d.error); return; }
