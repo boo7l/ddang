@@ -68,17 +68,68 @@ function unifyDialog(u = S.unified) {
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
+// 관리자 보기 탭: 유저 목록(이번 시즌 장수) · 세력 채팅 · 가입자(계정 전체)
+const adminTabs = tab => `<div class="helpTabs">${[['users', '유저 목록'], ['chat', '세력 채팅'], ['members', '가입자']].map(([k, t]) =>
+  `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+// 가입자 탭 (2026-10-31): 가입한 계정 전체. 장수가 없는 계정도 보이고 정지할 수 있다. 검색은 다시 그리지 않고 줄만 숨긴다 (한글 입력)
+async function membersDialog() {
+  openModal(`<h2>👁 관리자 보기</h2>${adminTabs('members')}<p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+  $('#modalBox').classList.add('adminBox');
+  let d;
+  try { d = await api('adminMembers'); } catch (e) { d = { error: e.message }; }
+  if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
+  const list = d.members || [];
+  const banText = t => (t > Date.now() ? `⛔ ${t - Date.now() > 5 * 365 * 24 * HOUR ? '영구' : fmtTime(t).split(' ')[0] + '까지'}` : '');
+  const rows = list.map(m => {
+    const g = S && S.generals[m.id];
+    return `<tr data-name="${esc(m.name.toLowerCase())}"><td>${esc(m.name)}</td><td>${m.at ? fmtTime(m.at).split(' ')[0] : '-'}</td>
+      <td>${g ? `<button class="link" data-pid="${esc(m.id)}" title="정보 · 제재">${esc(g.name)}</button>` : '<span class="dim">없음</span>'}</td>
+      <td>${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
+      <td>${m.admin ? '' : `<button class="mini" data-mban="${esc(m.id)}">정지</button>`}</td></tr>`;
+  }).join('');
+  openModal(`<h2>👁 관리자 보기</h2>${adminTabs('members')}
+    ${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
+    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>가입일</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
+    box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
+    box.querySelectorAll('[data-mban]').forEach(b => { b.onclick = () => memberBanDialog(list.find(m => m.id === b.dataset.mban)); });
+    const find = box.querySelector('#memberFind');
+    if (find) find.oninput = () => {
+      const q = find.value.trim().toLowerCase();
+      let n = 0;
+      box.querySelectorAll('tr[data-name]').forEach(tr => { const show = tr.dataset.name.includes(q); tr.hidden = !show; if (show) n++; });
+      box.querySelector('#memberCount').textContent = `${n}명`;
+    };
+  });
+  $('#modalBox').classList.add('adminBox');
+}
+function memberBanDialog(m) {
+  const banned = m.ban > Date.now();
+  openModal(`<h2>🛠 ${esc(m.name)} <span class="dim small">· 계정 정지</span></h2>
+    <p>정지되는 동안 아예 접속할 수 없어요.${banned ? ` 지금 정지 중이에요.` : ''}</p>
+    <p><button data-days="1" class="danger">하루</button> <button data-days="7" class="danger">7일</button> <button data-days="3650" class="danger">영구</button>${banned ? ' <button data-days="0">풀기</button>' : ''}</p>
+    <div class="modalBtns"><button id="mBack">◀ 목록</button><button data-close class="main">닫기</button></div>`, box => {
+    box.querySelector('#mBack').onclick = () => membersDialog();
+    box.querySelectorAll('[data-days]').forEach(b => { b.onclick = async () => {
+      const days = +b.dataset.days;
+      if (!confirm(days ? `${m.name}의 계정을 ${b.textContent} 정지할까요?` : '계정 정지를 풀까요?')) return;
+      if (await call('adminBan', { id: m.id, days })) membersDialog();
+    }; });
+  });
+}
+
 // ===== 관리자 보기 (개발자 도구) =====
 // 모든 장수의 자세한 정보(아이디·금·예약)와 모든 세력의 채팅. 서버가 관리자에게만 보내 준다
 let ACCOUNTS = {}; // 계정id → 아이디 (관리자만 받는다)
 function adminDialog(tab = 'users', fid = null) {
+  if (tab === 'members') { membersDialog(); return; }
   const gens = allGenerals().sort((a, b) => String(a.faction).localeCompare(String(b.faction)) || b.merit - a.merit);
   const fname = id => (id ? esc(factionById(id).name) : '<span class="dim">재야</span>');
   const swatch = id => (id ? `<span class="swatch" style="background:${factionById(id).color}"></span>` : '');
   const counts = {};
   gens.forEach(g => { counts[g.faction || ''] = (counts[g.faction || ''] || 0) + 1; });
-  const tabs = `<div class="helpTabs">${[['users', '유저 목록'], ['chat', '세력 채팅']].map(([k, t]) =>
-    `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+  const tabs = adminTabs(tab);
   let body;
   if (tab === 'users') {
     // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
