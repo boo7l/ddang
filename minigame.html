@@ -44,6 +44,26 @@ canvas { display: block; image-rendering: pixelated; }
 body:not(.small) #msg { padding-bottom: 170px; }
 .small .wide { display: none; }
 body:not(.small) .narrow { display: none; }
+.btns { display: flex; gap: 12px; justify-content: center; }
+.gbtn {
+  pointer-events: auto; min-width: 96px; height: 36px; padding: 0 12px; cursor: pointer;
+  font: 16px "DungGeunMo", monospace; color: #ffd75e;
+  background: #2a0604; border: 2px solid #c9a24a;
+}
+.gbtn:hover { background: #c9a24a; color: #2a0604; }
+.gbtn.tiny { min-width: 0; height: 24px; padding: 0 6px; color: #ff7a5c; border-color: #7e1a12; }
+#msg.rank { justify-content: flex-start; padding-bottom: 12px; background: rgba(18, 6, 4, .96); pointer-events: auto; overflow-y: auto; gap: 8px; }
+#msg.rank .big { font-size: 32px; line-height: 36px; }
+.rankList { width: min(420px, 100%); flex-shrink: 0; }
+.rankRow { display: flex; gap: 10px; align-items: center; min-height: 28px; padding: 0 8px; }
+.rankRow:nth-child(odd) { background: rgba(255, 215, 94, .07); }
+.rankRow .no { width: 28px; text-align: right; color: #c9a24a; }
+.rankRow .nm { flex: 1; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rankRow .sc { color: #ffd75e; }
+.rankRow.me .nm { color: #ffd75e; }
+body:not(.small) #msg.rank { padding-bottom: 12px; }
+#msg.rank > * { flex-shrink: 0; }
+.dim { color: #b39a78; }
 #sound {
   position: absolute; right: 10px; bottom: 10px; width: 32px; height: 32px; padding: 0;
   font: 16px "DungGeunMo", monospace; color: #f4e3b5;
@@ -279,9 +299,63 @@ function gameOver(text) {
   const isBest = score > best;
   if (isBest) { best = score; el("best").textContent = best; try { localStorage.setItem("ilgi_best", best); } catch (e) {} }
   showMsg(`<span class="red">${text}</span><span class="big">처치 ${score}</span>` +
-    (isBest && score > 0 ? "<b>최고 기록!</b>" : "") + "<span>스페이스 또는 터치로 다시 시작</span>");
+    (isBest && score > 0 ? "<b>최고 기록!</b>" : ""));
 }
-function showMsg(html) { const m = el("msg"); m.innerHTML = html; m.hidden = false; }
+const MENU = '<div class="btns"><button class="gbtn" data-act="start">시작</button><button class="gbtn" data-act="rank">랭킹</button></div>';
+let menuHtml = "", rankOpen = false;
+function showMsg(html) {
+  const m = el("msg"); menuHtml = html + MENU; rankOpen = false;
+  m.classList.remove("rank"); m.innerHTML = menuHtml; m.hidden = false;
+}
+
+/* ── 랭킹 (첫 화면 팝업 안에서만 서버와 통신) ──────── */
+function bridge() { try { return parent !== window ? parent.miniBridge : null; } catch (e) { return null; } }
+async function openRank(note = "") {
+  const m = el("msg"); rankOpen = true;
+  m.classList.add("rank"); m.innerHTML = '<span class="big">랭킹</span><span class="dim">불러오는 중…</span>';
+  const b = bridge();
+  let d = null, err = "";
+  if (!b) err = "게임 첫 화면에서 열어야 볼 수 있어요.";
+  else { try { d = await b.api("miniList"); if (d.error) err = d.error; } catch (e) { err = "랭킹을 불러오지 못했어요."; } }
+  if (!rankOpen) return;
+  m.innerHTML = "";
+  const add = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text !== undefined) x.textContent = text; return x; };
+  m.append(add("span", "big", "랭킹"));
+  if (err) m.append(add("span", "dim", err));
+  else {
+    const list = add("div", "rankList"), myName = b.name();
+    d.top.forEach((r, i) => {
+      const row = add("div", "rankRow" + (r.name === myName ? " me" : ""));
+      row.append(add("span", "no", i + 1), add("span", "nm", r.name), add("span", "sc", r.score));
+      if (d.admin) { const del = add("button", "gbtn tiny", "지움"); del.dataset.act = "del"; del.dataset.name = r.name; row.append(del); }
+      list.append(row);
+    });
+    if (!d.top.length) list.append(add("div", "dim", "아직 기록이 없어요."));
+    m.append(list);
+    if (note) m.append(add("span", "dim", note));
+    if (!d.loggedIn) m.append(add("span", "dim", "로그인하면 점수를 올릴 수 있어요."));
+    else if (best > d.mine) { const up = add("button", "gbtn", `내 최고 점수 ${best} 올리기`); up.dataset.act = "post"; m.append(up); }
+    else if (d.mine) m.append(add("span", "dim", `내가 올린 점수: ${d.mine}`));
+  }
+  const btns = add("div", "btns"), close = add("button", "gbtn", "닫기");
+  close.dataset.act = "close"; btns.append(close); m.append(btns);
+}
+el("msg").addEventListener("click", async e => {
+  const t = e.target.closest("[data-act]"); if (!t) return;
+  const act = t.dataset.act; t.blur();
+  if (act === "start") restart();
+  else if (act === "rank") openRank();
+  else if (act === "close") { rankOpen = false; const m = el("msg"); m.classList.remove("rank"); m.innerHTML = menuHtml; }
+  else if (act === "post" || act === "del") {
+    t.disabled = true;
+    let note = "";
+    try {
+      const d = await bridge().api(act === "post" ? "miniPost" : "miniDel", act === "post" ? { score: best } : { name: t.dataset.name });
+      note = d.error || (act === "post" ? "점수를 올렸어요!" : "지웠어요.");
+    } catch (err) { note = "요청에 실패했어요. 잠시 뒤에 다시 해 주세요."; }
+    if (rankOpen) openRank(note);
+  }
+});
 
 /* ── 그리기 ────────────────────────────────────────── */
 function drawEnemy(e, flash) {
@@ -343,20 +417,19 @@ function draw() {
 function restart() {
   // 게임오버 직후 연타로 바로 다시 시작되는 일을 막는다.
   if (state === "over" && performance.now() - overAt < 500) return;
-  beep(440, .08); reset();
+  beep(440, .08); rankOpen = false; el("msg").classList.remove("rank"); reset();
 }
 addEventListener("keydown", e => {
   if (["ArrowLeft", "ArrowRight", "Space", "Enter"].includes(e.code)) e.preventDefault();
   if (e.repeat) return;   // 누르고 있어도 한 번만 휘두른다.
   if (e.code === "ArrowLeft") { if (state === "play") strike(-1); }
   else if (e.code === "ArrowRight") { if (state === "play") strike(1); }
-  else if ((e.code === "Space" || e.code === "Enter") && state !== "play") restart();
+  else if ((e.code === "Space" || e.code === "Enter") && state !== "play" && !rankOpen) restart();
 });
 addEventListener("pointerdown", e => {
-  if (e.target.id === "sound") return;
+  if (state !== "play" || e.target.id === "sound") return;
   e.preventDefault();
-  if (state === "play") strike(e.clientX < innerWidth / 2 ? -1 : 1);
-  else restart();
+  strike(e.clientX < innerWidth / 2 ? -1 : 1);
 });
 el("sound").addEventListener("click", e => {
   soundOn = !soundOn;
@@ -369,8 +442,7 @@ showMsg('<span class="big">일기당천</span>' +
   '<span class="wide">← → 키 또는 화면 왼쪽·오른쪽 터치로 벱니다</span>' +
   '<span class="narrow">좌우를 터치해 가까이 온 적을 베세요</span>' +
   '<span class="wide">칼이 닿는 거리 안에 들어온 적만 벨 수 있습니다</span>' +
-  '<span class="wide">헛치거나 적이 닿으면 바로 끝납니다</span>' +
-  "<b>스페이스 또는 터치로 시작</b>");
+  '<span class="wide">헛치거나 적이 닿으면 바로 끝납니다</span>');
 
 let last = performance.now();
 function loop(now) {

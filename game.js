@@ -829,6 +829,7 @@ function noteDialog(i) {
   $('#modalBox').classList.add('wideBox');
 }
 // 미니게임 일기당천: 첫 화면 상자 아래의 작은 글자로 여는 팝업. 게임 본체와 분리된 minigame.html을 띄우고, 서버와 주고받는 것은 없다 (2026-11-01)
+window.miniBridge = { api: (a, p) => api(a, p), name: () => (ME && ME.nickname) || '' }; // 미니게임 창에서 랭킹을 부를 때 쓴다
 function closeMinigame() { const w = $('#miniWrap'); if (w) w.remove(); }
 function openMinigame() {
   closeMinigame();
