@@ -655,7 +655,7 @@ function runAttack(g, o, mark) {
 
   // 2. 수비 부대와 싸움
   const att = unitOf(g);
-  let left = RULES.roundsMax, atkLost = 0, defLost = 0;
+  let left = RULES.roundsMax, atkLost = 0, defLost = 0, pierced = 0;
   const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map();
   lines.push(`⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`);
   for (const d of defs) {
@@ -663,6 +663,8 @@ function runAttack(g, o, mark) {
     const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다…` : '';
     lines.push(`▶ ${d.name}(${d.type} ${fmt(d.troops)})과 맞붙었다${edge}`);
     const r = fightRounds(att, d, cs.wall, left);
+    cs.wall -= r.pierced; // 개인 특성 관통맨: 합 중에 깎은 방어. 0이 돼도 수비 부대를 쓰러뜨려야 점령한다
+    pierced += r.pierced;
     left -= r.used;
     atkLost += r.atkLost;
     if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 공적)
@@ -723,7 +725,7 @@ function runAttack(g, o, mark) {
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
   // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
-  const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor(wallDmg / RULES.meritPerWall);
+  const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor((wallDmg + pierced) / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
   const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 공적 (2026-10-28)
   const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)

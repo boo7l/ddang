@@ -264,6 +264,7 @@ const GENERAL_TRAITS = {
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15 }, // 2026-10-28 +10%에서
   engineer: { tier: 'R', name: '병기도 과학', desc: '병기 제작비 -15%', siegePrice: -0.15 }, // 2026-10-28 -20%에서
   medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 20%가 돌아옴', heal: { chance: 0.3, rate: 0.2 } }, // 2026-10-28 50%·25% → 30%·25%, 2026-10-31 30%·20%
+  pierce: { tier: 'SR', name: '관통맨', desc: '공격 시 합마다 25% 확률로 성벽 피해 (병력 ÷ 400)', pierce: { chance: 0.25, per: 400 } }, // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
   persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 무력의 2~5배만큼 금 획득, 치안 -3 (쿨타임 5턴)", levy: { warMin: 2, warMax: 5, peace: 3, cooldown: 5 } }, // 2026-10-31 금 = 무력 × 2~5. 2026-10-30 무력 × 1~5 (그 전 30~300). 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
   duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
@@ -272,7 +273,7 @@ const GENERAL_TRAITS = {
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
 // 특성 하나가 뽑힐 비율 (합이 100이라 그대로 %): 2026-10-29 SSR 1 → 0.8, R 5 → 4.5, 줄인 3.2를 N 9개에 나눔 (7 → 약 7.36). SR 2는 그대로
-const TRAIT_TIER_WEIGHT = { SSR: 0.8, SR: 2, R: 27 / 7, N: 6.62 }; // 2026-10-31 부호를 넣어 N이 10개 (약 7.36 → 6.62), 장군뒹굴을 넣어 R이 7개 (4.5 → 약 3.86). 합 100. // 등급 이름 2026-10-28 최상·상·중·하 → SSR·SR·R·N. // 특성 하나가 뽑힐 비율 (2026-10-28: 최상 1·상 3·중 6·하 9개라 합이 100, 하나당 최상 1% · 상 2% · 중 5% · 하 7%. 처음 1:2:3)
+const TRAIT_TIER_WEIGHT = { SSR: 0.8, SR: 1.5, R: 27 / 7, N: 6.62 }; // 2026-10-31 부호를 넣어 N이 10개 (약 7.36 → 6.62), 장군뒹굴을 넣어 R이 7개 (4.5 → 약 3.86), 관통맨을 넣어 SR이 4개 (2 → 1.5). 합 100. // 등급 이름 2026-10-28 최상·상·중·하 → SSR·SR·R·N. // 특성 하나가 뽑힐 비율 (2026-10-28: 최상 1·상 3·중 6·하 9개라 합이 100, 하나당 최상 1% · 상 2% · 중 5% · 하 7%. 처음 1:2:3)
 const TRAIT_DRAW = 3;     // 주머니에서 나오는 종이 수
 const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 
@@ -353,7 +354,7 @@ const duelWinRate = (myWar, theirWar) => Math.min(0.9, Math.max(0.1, 0.5 + (myWa
 function fightRounds(att, def, wall, left) {
   const luck = () => 1 + (Math.random() * 2 - 1) * RULES.battleRandom;
   const a0 = att.troops, d0 = def.troops, lines = [];
-  let used = 0;
+  let used = 0, pierced = 0; // pierced: 개인 특성 관통맨이 합 중에 깎은 방어
   // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
   if (att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
     att.struck = true;
@@ -404,8 +405,14 @@ function fightRounds(att, def, wall, left) {
     def.troops -= dLoss;
     att.troops -= aLoss;
     lines.push(`${used}합: ${att.name} -${aLoss.toLocaleString('ko-KR')} · ${def.name} -${dLoss.toLocaleString('ko-KR')}`);
+    // 개인 특성 관통맨 (2026-10-31): 보통 합에서 확률로 성벽에도 피해. 병력 손실이 없고, 다음 합부터 수비 보정이 줄어든다
+    const P = gTrait(att).pierce;
+    if (P && att.troops > 0 && wall > 0 && Math.random() < P.chance) {
+      const hit = Math.min(wall, Math.floor(att.troops / P.per));
+      if (hit > 0) { wall -= hit; pierced += hit; lines.push(`🔩 관통! 성벽 방어 -${hit.toLocaleString('ko-KR')}`); }
+    }
   }
-  return { used, lines, atkLost: a0 - att.troops, defLost: d0 - def.troops };
+  return { used, lines, atkLost: a0 - att.troops, defLost: d0 - def.troops, pierced };
 }
 
 // ===== 계략 (지력) =====
