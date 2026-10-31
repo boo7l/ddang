@@ -8,7 +8,7 @@ const MAP_BG_DIM = 0.3;     // 배경 위에 덮는 어두운 막 (0 = 그대로
 // 한 도트 = P 화면 픽셀
 const P = 6;
 const PALETTES = {
-  dark:  { road: '#a58c5e', roadEdge: '#20150b', route: '#7f9fc4', sea: '#0d1a2e', sea2: '#12233d', foam: '#1e3656', river: '#2c5e8e', north: '#2e1d10', north2: '#352213', south: '#1d2410', south2: '#232c13',
+  dark:  { road: '#e6c67a', roadEdge: '#20150b', route: '#b8d6f2', sea: '#0d1a2e', sea2: '#12233d', foam: '#1e3656', river: '#2c5e8e', north: '#2e1d10', north2: '#352213', south: '#1d2410', south2: '#232c13',
            sand: '#3d2f17', sand2: '#463619', mount: '#4a3a2a', mountHi: '#6b5844', snow: '#8a7c6a', wall: '#7a6a50',
            tree: '#1f3a14', treeHi: '#2f5420', trunk: '#3a2410', roof: '#7a2a1a', roofHi: '#9a3a22', house: '#8a7458', field: '#4a3a16', field2: '#5a4a1c' },
   old:   { road: '#8a6a42', roadEdge: '#6b4f33', route: '#efe6d0', sea: '#7d9aa6', sea2: '#8aa7b0', foam: '#a9c0c4', river: '#5f8ea6', north: '#cdb488', north2: '#c5aa7c', south: '#b9b57f', south2: '#afaa74',
@@ -179,8 +179,8 @@ function paintKorBg(kind, w, h) {
       else if (r < 0.05) put(korMountain(u, v) ? 'pine' : 'tree', i, j);
     }
   }
-  paintRoads(g, pal, cell, (u, v) => !korLand(u, v));
   if (MAP_BG_DIM) { g.fillStyle = `rgba(8, 3, 1, ${MAP_BG_DIM})`; g.fillRect(0, 0, w, h); }
+  paintRoads(g, pal, cell, (u, v) => !korLand(u, v)); // 길은 어두운 막 위에 그려서 밝게 (게임에서 중요하다)
   return cv.toDataURL();
 }
 
@@ -258,8 +258,8 @@ function paintBg(kind, w, h) {
       }
     }
   }
-  paintRoads(g, pal, cell, (u, v) => u > coastX(v));
   if (MAP_BG_DIM) { g.fillStyle = `rgba(8, 3, 1, ${MAP_BG_DIM})`; g.fillRect(0, 0, w, h); } // 전체를 살짝 어둡게
+  paintRoads(g, pal, cell, (u, v) => u > coastX(v)); // 길은 어두운 막 위에 그려서 밝게
   return cv.toDataURL();
 }
 
