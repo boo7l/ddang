@@ -207,7 +207,7 @@ async function renderSeasonBadge() {
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
     el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일` + (NEXT_SEASON_NOTE ? `<br><span class="tNext">${NEXT_SEASON_NOTE}</span>` : '')
-      : s.preparing ? `🛠 시즌 ${s.season} · 준비 중`
+      : s.preparing ? `🛠 시즌 ${s.season} · 준비 중` + (NEXT_SEASON_NOTE ? `<br><span class="tNext">${NEXT_SEASON_NOTE}</span>` : '')
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
       : `⚔ 시즌 ${s.season} · 진행 중`; // 첫 장수를 기다리는 중이어도 "진행 중"으로 보인다
   } catch (e) { el.innerHTML = ''; }
