@@ -551,7 +551,7 @@ function retreatFrom(c, oldFaction, byFid) {
       const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
       g.merit -= meritLost;
       g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost };
-      g.faction = null; g.city = null; out.push(`${josa(g.name, '은는')} 갈 곳을 잃었다…${meritLost ? ` 공적 -${fmt(meritLost)}` : ''}`); continue;
+      g.faction = null; g.city = null; continue;
     }
     g.city = to.id;
     if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
