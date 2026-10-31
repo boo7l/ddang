@@ -90,7 +90,7 @@ async function membersDialog() {
   }).join('');
   openModal(`<h2>👁 관리자 보기</h2>${adminTabs('members')}
     ${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
-    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입일</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}
+    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
