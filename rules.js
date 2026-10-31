@@ -428,8 +428,8 @@ function rollPlot(int, bonus = 0) { // bonus: 개인 특성 책사 +5%p (최대�
 const EXPLORE = [
   { key: 'none', weight: 8 }, // 2026-10-27 15 → 10, 2026-10-31 8
   // jackpot: 발견했을 때 그중 이 확률로 대박 (2026-10-31 금·군량·의병 양을 올림)
-  { key: 'gold', weight: 30, min: 200, max: 500, jackpot: { rate: 0.2, min: 700, max: 1000 } },
-  { key: 'food', weight: 20, min: 500, max: 1000, jackpot: { rate: 0.2, min: 1500, max: 3000 } },
+  { key: 'gold', weight: 25, min: 200, max: 500, jackpot: { rate: 0.2, min: 700, max: 1000 } },
+  { key: 'food', weight: 25, min: 500, max: 1000, jackpot: { rate: 0.2, min: 1500, max: 3000 } },
   { key: 'troops', weight: 15, min: 1000, max: 2000 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
   { key: 'item', weight: 10 },                         // 능력치 하나 +1
   { key: 'bandit', weight: 8, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20% (2026-10-31 10 → 8%)
