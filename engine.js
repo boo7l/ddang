@@ -1020,7 +1020,7 @@ function runBuyFood(g, o) {
   g.gold -= pay;
   cs.food += got;
   addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${fmt(pay)} · 시세 1:${perGold}`);
-  addMerit(g, RULES.merit.buy);
+  addMerit(g, Math.max(1, Math.floor(pay / RULES.meritBuyGold))); // 낸 금에 비례 (2026-11-02, 그 전엔 얼마를 사든 10)
   return '';
 }
 
