@@ -772,7 +772,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #miniWrap iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
 #miniWrap .miniClose { position: absolute; top: -24px; right: 8px; width: 32px; height: 32px; padding: 0; z-index: 1; }
 @media (max-height: 590px), (max-width: 700px) { #miniWrap .miniClose { top: 0; right: 0; } }
-#miniLink { display: block; margin: 20px auto 24px; }
+#miniLink { display: block; margin: 20px auto 24px; background: #38240e; color: #f0c674; border-color: #a87a34; } /* 고동색 (2026-11-01) */
+#miniLink:hover { background: #a87a34; color: var(--panel-dark); }
 #miniLink[hidden] { display: none; }
 
 /* 명예의 전당 하위 페이지 (2026-11-01) */
