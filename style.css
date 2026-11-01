@@ -389,8 +389,12 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .toTitle { cursor: pointer; } /* 누르면 첫 화면으로 */
 .center { text-align: center; }
 #title .btn.big { margin-top: 16px; }
-#title #tEnter { width: 240px; max-width: 100%; background: var(--gold-dark); color: var(--text); } /* 다른 단추와 살짝 구분되는 어두운 금색 (2026-11-01) */
-#title #tEnter:hover { background: var(--gold); color: var(--panel-dark); }
+/* 로고처럼 위에서 아래로 층층이 내려가는 차분한 금색 띠 (2026-11-01) */
+#title #tEnter { width: 240px; max-width: 100%; color: var(--text); text-shadow: 1px 1px 0 #4a2c08;
+  background: linear-gradient(#b88a28 0 25%, #a87a20 25% 50%, #986c1a 50% 75%, #8a5e14 75% 100%);
+  box-shadow: inset 0 2px 0 #d8a840, inset 0 -2px 0 #5e3c0c; }
+#title #tEnter:hover { filter: brightness(1.15); }
+#title #tEnter:active { box-shadow: inset 2px 2px 0 rgba(0, 0, 0, .5); }
 #title input { display: block; width: 240px; margin: 8px auto 0; text-align: center; }
 #title .tAuth { margin-top: 16px; }
 #title .agree { display: block; margin: 6px 0; cursor: pointer; } /* 구글 로그인 전 동의 체크 */
