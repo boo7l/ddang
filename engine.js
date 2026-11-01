@@ -876,7 +876,7 @@ function runExplore(g) {
 // 다른 세력 성의 농업·상업·방어·치안·군량은 보이지 않는다. 첩보에 성공하면 우리 세력 모두가 그 성의 수치를 RULES.spyTurns턴 동안 본다.
 // 성공 확률 = 지력 ÷ 100 + 5% (최대 90%). 금은 들지 않는다
 const spyTargetsFrom = (fromId, fid) => neighborsOf(MAP, cityById(fromId)).filter(c => c.faction && c.faction !== fid);
-const spySuccessRate = int => Math.min(RULES.spyMax, int / 100 + RULES.spyBase);
+const spySuccessRate = int => Math.min(RULES.spyMax, int / RULES.spyDiv + RULES.spyBase);
 // fid 세력이 c 성을 몇 턴까지 볼 수 있는지 (못 보면 0)
 const spiedUntil = (fid, c) => { const u = ((S.intel || {})[fid] || {})[c.id] || 0; return u > S.turn ? u : 0; };
 
