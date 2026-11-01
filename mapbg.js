@@ -80,11 +80,20 @@ function mountainness(u, v) {
 
 // 지도 파일의 연결(links)을 도트 길로 그린다 (2026-10-31). 땅에서는 어두운 테두리가 있는 도로, 물 위에서는 띄엄띄엄 뱃길.
 // 배경에 그리므로 성 칸 아래로 지나간다. isWater(u, v): 그 자리가 물인지 (칸 좌표)
+// 곧게 그리면 다른 성에 가려지는 길은 경유점을 거쳐 굽힌다 (2026-11-01). 지도 편집기가 저장해도 사라지지 않게 지도 파일이 아니라 여기에 둔다.
+// 열쇠: "성 이름-성 이름" (앞 성에서 뒤 성 쪽 순서), 값: 경유점 [가로, 세로] 칸 좌표
+const ROAD_BENDS = { '전주-대전': [[3.35, 9.0]] };
 function paintRoads(g, pal, cell, isWater) {
-  const center = id => { const c = MAP.cities.find(o => o.id === id); return c && [Math.floor((c.x + 0.5) * cell / P), Math.floor((c.y + 0.5) * cell / P)]; };
-  const paths = (MAP.links || []).map(([a, b]) => [center(a), center(b)]).filter(([p, q]) => p && q).map(([p, q]) => {
-    const n = Math.max(Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])), dots = [];
-    for (let k = 0; k <= n; k++) dots.push([Math.round(p[0] + (q[0] - p[0]) * k / n), Math.round(p[1] + (q[1] - p[1]) * k / n)]);
+  const cityOf = id => MAP.cities.find(o => o.id === id);
+  const toDot = (u, v) => [Math.floor(u * cell / P), Math.floor(v * cell / P)];
+  const center = c => toDot(c.x + 0.5, c.y + 0.5);
+  const paths = (MAP.links || []).map(([a, b]) => [cityOf(a), cityOf(b)]).filter(([p, q]) => p && q).map(([p, q]) => {
+    const bend = ROAD_BENDS[p.name + '-' + q.name] || (ROAD_BENDS[q.name + '-' + p.name] || []).slice().reverse();
+    const pts = [center(p), ...(bend || []).map(([u, v]) => toDot(u, v)), center(q)], dots = [];
+    for (let i = 1; i < pts.length; i++) {
+      const [s, e] = [pts[i - 1], pts[i]], n = Math.max(Math.abs(e[0] - s[0]), Math.abs(e[1] - s[1]));
+      for (let k = i === 1 ? 0 : 1; k <= n; k++) dots.push([Math.round(s[0] + (e[0] - s[0]) * k / n), Math.round(s[1] + (e[1] - s[1]) * k / n)]);
+    }
     return dots;
   });
   const water = ([i, j]) => isWater((i + 0.5) * P / cell, (j + 0.5) * P / cell);
