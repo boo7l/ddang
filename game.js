@@ -1509,11 +1509,14 @@ const MEDAL = '<svg viewBox="0 0 8 9" shape-rendering="crispEdges"><rect x="1" y
 const medalBadge = n => (n ? `<span class="medal" title="개국공신 ${n}회">${n >= 3 ? `${MEDAL}<small>×${n}</small>` : MEDAL.repeat(n)}</span>` : '');
 const medalOf = id => medalBadge((S && S.medals && S.medals[id]) || 0);
 // 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
-const chatWho = m => {
+// linkFaction을 주면, 그 세력에 이름이 같은 장수가 딱 한 명 있을 때만 이름을 눌러 정보 창을 볼 수 있다 (2026-11-01. 채팅에는 이름만 저장되어 있다)
+const chatWho = (m, linkFaction) => {
   const g = allGenerals().find(x => x.name === m.name); // 훈장도 지금 장수에서 찾는다
   const c = cityById(m.city || (g && g.city));
   const f = g && FACES.find(x => x.id === g.face); // 닉네임은 장수 얼굴 색 (2026-10-30). 장수를 못 찾으면 기본 색
-  return (f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name)) + (g ? medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
+  const nm = f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name);
+  const same = linkFaction ? allGenerals().filter(x => x.faction === linkFaction && x.name === m.name) : [];
+  return (same.length === 1 ? `<button class="link chatName" data-gid="${esc(same[0].id)}">${nm}</button>` : nm) + (g ? medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
 };
 async function sendChat(text) {
   text = text.trim().slice(0, CHAT_LEN);
@@ -1551,6 +1554,7 @@ function renderChat() {
         <button type="submit">보내기</button>
       </form>
       <p class="note">같은 세력 장수들끼리만 보여요. 새 글은 곧바로 떠요. (최근 ${CHAT_MAX}개)</p>`;
+    box.querySelector('.chatList').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
     box.querySelector('.chatForm').onsubmit = e => {
       e.preventDefault();
       const input = $('#chatInput');
@@ -1564,7 +1568,7 @@ function renderChat() {
 function renderChatList() {
   const ul = $('#chat .chatList'), p = me(), list = chatOf(p.faction);
   ul.innerHTML = list.length
-    ? list.map(m => `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m)}</span>${esc(m.text)}</li>`).join('')
+    ? list.map(m => `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m, p.faction)}</span>${esc(m.text)}</li>`).join('')
     : '<li class="empty">아직 아무 말도 없어요. 첫마디를 남겨 보세요.</li>';
   ul.scrollTop = ul.scrollHeight; // 새 글이 보이게 맨 아래로
 }

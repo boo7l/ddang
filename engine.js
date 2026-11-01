@@ -135,6 +135,8 @@ function addGeneral(id, { name, face, stats }) {
   name = String(name || '').trim();
   if (!name || name.length > 8) return '장수 이름은 1~8자로 적어 주세요.';
   if (S.generals[id]) return '이미 장수가 있어요.';
+  const nameKey = n => String(n || '').trim().toLowerCase(); // 앞뒤 공백과 영어 대소문자는 따지지 않는다 (2026-11-01)
+  if (allGenerals().some(g => nameKey(g.name) === nameKey(name))) return '이미 있는 장수 이름이에요.';
   if (!FACES.some(f => f.id === face)) return '얼굴을 골라 주세요.';
   const vals = STATS.map(st => stats && stats[st.key]);
   const sum = vals.reduce((s, v) => s + v, 0);
