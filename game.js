@@ -293,7 +293,7 @@ function hofRender() {
   const hasFaction = h.top.some(g => g.faction);
   // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
   const medals = g => g.medals ?? (isHero(g.name) ? 1 : 0);
-  $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
+  $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
     <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="개국공신">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
     ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}`;
 }
