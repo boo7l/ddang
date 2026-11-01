@@ -733,7 +733,7 @@ function runAttack(g, o, mark) {
   healAfter(g, atkLost, lines);
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
   lines.push(`공격 측 손실 ${fmt(atkLost)} · 수비 측 손실 ${fmt(defLost)} · ${g.name}의 남은 병력 ${fmt(g.troops)}`);
-  // 공적: 함락 50 / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
+  // 공적: 함락 30 (2026-11-02 50에서) / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor((wallDmg + pierced) / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
   const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme; // 일기토 승리·책략 성공 공적 (2026-10-28)
