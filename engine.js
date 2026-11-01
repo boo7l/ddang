@@ -898,7 +898,7 @@ function runSpy(g, o) {
   S.intel[g.faction] = S.intel[g.faction] || {};
   S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
   addRecord(g, 'plotOk');
-  addMerit(g, RULES.merit.plotOk); // 첩보 성공 공적 +20 (시도 10과 합쳐 30, 2026-10-28)
+  addMerit(g, RULES.merit.plotOk); // 첩보 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   addLog(g, `첩보 성공! ${c.name}: 농업 ${cs.agri} · 상업 ${cs.comm} · 방어 ${cs.wall} · 치안 ${cs.peace} · 군량 ${fmt(cs.food)}\n(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`);
   gainStatExp(g, 'int', PLOT.exp);
   return '';
@@ -932,7 +932,7 @@ function runPlot(g, kind, o) {
     ? [cut('wall', int * PLOT.destroy.wallPerInt)]
     : [cut('peace', int * PLOT.rumor.peacePerInt), cut('agri', int * PLOT.rumor.devPerInt), cut('comm', int * PLOT.rumor.devPerInt)];
   addLog(g, `${head} ${c.name}: ${kind === 'destroy' ? '성벽 곳곳을 무너뜨렸다' : '흉흉한 소문을 퍼뜨렸다'}. ${what.join(' · ')}`);
-  addMerit(g, RULES.merit.plotOk); // 성공 공적 +20 (시도 10과 합쳐 30)
+  addMerit(g, RULES.merit.plotOk); // 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   gainStatExp(g, 'int', r === 'crit' ? PLOT.critExp : PLOT.exp);
   return '';
 }
