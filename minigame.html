@@ -345,32 +345,39 @@ function step(dt) {
 
 function strike(side) {
   face = side; swing = { at: t, side };
-  // 그쪽에서 가장 가까운 적을 벤다.
-  let hit = null;
-  for (const e of enemies) if (e.side === side && !(e.kb > 0) && e.d <= REACH && (!hit || e.d < hit.d)) hit = e;
-  if (!hit) { beep(180, .16, "sawtooth", .05, 70); gameOver("허공을 베었습니다!"); return; }
-  if (hit.hp > 1) {   // 아직 안 죽음: 뒤로 밀려난다
-    hit.hp--; knockBack(hit);
-    shake = 1.5;
-    beep(300, .08, "square", .05, 500);
+  // 그쪽 칼 범위 안의 적을 모두 벤다. (이미 밀려나는 중인 적은 빼고)
+  const hits = enemies.filter(e => e.side === side && !(e.kb > 0) && e.d <= REACH);
+  if (!hits.length) { beep(180, .16, "sawtooth", .05, 70); gameOver("허공을 베었습니다!"); return; }
+  const killed = hits.filter(e => !(e.hp > 1)), hurt = hits.filter(e => e.hp > 1);
+  // 쓰러진 적을 먼저 치워야, 밀려난 적이 돌아올 시각을 잡을 때 그 적을 피하지 않는다.
+  const colors = { foot: "#3f6fb0", heavy: "#8c8c94", horse: "#7a4a24" };
+  for (const e of killed) {
+    enemies.splice(enemies.indexOf(e), 1);
+    dead.push({ type: e.type, side, d: e.d, lift: 0 });
+    score++;
+    for (let i = 0; i < 16; i++) bits.push({
+      x: CX + side * (e.d + 6), y: GROUND - 10 - Math.random() * 16,
+      vx: side * (20 + Math.random() * 80), vy: -40 - Math.random() * 90,
+      life: .55, c: i % 3 ? "#e8e4d4" : colors[e.type],
+    });
+  }
+  for (const e of hurt) {   // 아직 안 죽음: 뒤로 밀려난다
+    e.hp--; knockBack(e);
     for (let i = 0; i < 8; i++) bits.push({
-      x: CX + side * (hit.d + 2), y: GROUND - 14 - Math.random() * 12,
+      x: CX + side * (e.d + 2), y: GROUND - 14 - Math.random() * 12,
       vx: side * (10 + Math.random() * 50), vy: -30 - Math.random() * 60,
       life: .35, c: i % 2 ? "#ffd75e" : "#ffffff",
     });
-    return;
   }
-  enemies.splice(enemies.indexOf(hit), 1);
-  dead.push({ type: hit.type, side, d: hit.d, lift: 0 });
-  score++; el("score").textContent = score;
-  shake = 2;
-  beep(620 + Math.min(score, 60) * 6, .07, "square", .05, 240);
-  const colors = { foot: "#3f6fb0", heavy: "#8c8c94", horse: "#7a4a24" };
-  for (let i = 0; i < 16; i++) bits.push({
-    x: CX + side * (hit.d + 6), y: GROUND - 10 - Math.random() * 16,
-    vx: side * (20 + Math.random() * 80), vy: -40 - Math.random() * 90,
-    life: .55, c: i % 3 ? "#e8e4d4" : colors[hit.type],
-  });
+  // 소리와 흔들림은 한 번만
+  if (killed.length) {
+    el("score").textContent = score;
+    shake = 2;
+    beep(620 + Math.min(score, 60) * 6, .07, "square", .05, 240);
+  } else {
+    shake = 1.5;
+    beep(300, .08, "square", .05, 500);
+  }
 }
 
 function gameOver(text) {
