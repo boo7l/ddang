@@ -373,7 +373,7 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox'); }
+function closeModal() { $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 function pickDialog(title, intro, opts, okText, onOk, extra = '') {
@@ -1327,8 +1327,35 @@ function renderMembers() {
   const list = allGenerals().filter(g => g.faction === p.faction).sort((a, b) => b.merit - a.merit);
   $('#membersTitle').textContent = `· ${f.name} ${list.length}명`;
   $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>공적</th></tr>${list.map(g => `
-      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}">${esc(g.name)}${medalOf(g.id)}</td><td>${esc(cityById(g.city).name)}</td>
+      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>${medalOf(g.id)}</td><td>${esc(cityById(g.city).name)}</td>
         <td class="num">${g.unitType ? `${g.unitType[0]} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
+  $('#members').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
+}
+// 우리 세력 장수의 이름을 누르면 뜨는 정보 창 (2026-11-01). 금·예약·활동 기록은 보여 주지 않는다 (서버도 보내지 않는다)
+function memberDialog(id) {
+  const g = S.generals[id];
+  if (!g) return;
+  const f = factionById(g.faction), t = GENERAL_TRAITS[g.trait], none = '<span class="dim">없음</span>';
+  const tierNo = t ? { SSR: 0, SR: 1, R: 2, N: 3 }[t.tier] : 3; // 색은 특성 확률표(.oddsTier)와 같다
+  const eff = effStats(g);
+  const gear = Object.keys(SHOP).filter(k => gearCount(g, k)).map(k => `${k} ${gearCount(g, k)}`).join(' · ');
+  const siege = Object.keys(SIEGE).filter(k => g.siege && g.siege[k]).join(' · ');
+  const guarding = g.defense && g.troops > 0; // 장수 창과 같이 병력이 없으면 꺼짐
+  openModal(`<div class="mHead"><span id="mFace"></span><div><div class="mName">${esc(g.name)}</div><div><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</div></div></div>
+    <table class="mTable">
+      <tr><th>위치</th><td>${esc(cityById(g.city).name)}</td></tr>
+      <tr><th>특성</th><td>${t ? `<span class="oddsTier t${tierNo}">${esc(t.name)}</span> <span class="dim">(${t.tier})</span><span class="mDesc">${esc(t.desc)}</span>` : none}</td></tr>
+      <tr><th>능력치</th><td>${STATS.map(s => `${s.name} ${eff[s.key]}`).join(' · ')}</td></tr>
+      <tr><th>장비</th><td>${gear ? esc(gear) : none}</td></tr>
+      <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td></tr>
+      <tr><th>병기</th><td>${siege ? esc(siege) : none}</td></tr>
+      <tr><th>수비</th><td class="${guarding ? 'mOn' : 'dim'}">${guarding ? '켜짐' : '꺼짐'}</td></tr>
+      <tr><th>공적</th><td>${fmt(g.merit)}</td></tr>
+      <tr><th>훈장</th><td>${(S.medals && S.medals[id]) || 0}개</td></tr>
+    </table>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+  $('#mFace').replaceWith(faceCanvas(g.face || FACES[0].id));
+  $('#modalBox').classList.add('memberBox');
 }
 
 function bar(v, max) {
