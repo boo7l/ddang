@@ -267,20 +267,41 @@ async function renderSeasonBadge() {
 
 // ===== 명예의 전당 (첫 화면 아래) =====
 // 시즌이 끝날 때마다 서버가 남긴 공적 상위 10명 (소속 = 가장 오래 몸담은 세력. 시즌 1은 그 기록이 없어 소속 칸을 안 보인다). 모두 접혀 있고, 시즌 제목을 누르면 펼쳐진다
+// 첫 화면에는 단추 하나, 내용은 하위 페이지 (2026-11-01). HOF는 최신 시즌이 맨 앞
+let HOF = [], hofCur = 0, hofStart = 0;
+const hofPerPage = () => (innerWidth <= 700 ? 3 : 6); // 한 줄에 보이는 시즌 수. 다 들어가면 화살표를 숨긴다
+const hofSw = c => (c ? `<span class="swatch" style="background:${c}"></span>` : '');
 async function renderHof() {
   const box = $('#hof');
   if (!sb) return;
-  const { data, error } = await sb.from('hall_of_fame').select('*').order('season', { ascending: true }); // 시즌 1부터 차례로 (2026-10-27)
+  const { data, error } = await sb.from('hall_of_fame').select('*').order('season', { ascending: false });
   if (error || !data || !data.length) { box.innerHTML = ''; return; }
-  const sw = c => (c ? `<span class="swatch" style="background:${c}"></span>` : '');
-  box.innerHTML = `<h3 class="hofTitle">🏆 명예의 전당</h3>` + data.map((h, n) => `
-    <details class="hofSeason">
-      <summary>시즌 ${h.season} · ${sw(h.winner_color)}${esc(h.winner || '?')} 천하통일 <span class="dim">(${dateText(h.turn, h.start_year || 190)})</span></summary>
-      <table class="hofTable"><tr><th></th><th>이름</th>${h.season > 1 ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr><td class="num">${i + 1}</td><td>${esc(g.name)}${(h.heroes || []).some(x => x.name === g.name) ? `<span class="medal" title="개국공신">${MEDAL}</span>` : ''}</td>${h.season > 1 ? `<td>${g.faction ? `${sw(g.color)}${esc(g.faction)}` : '<span class="dim">-</span>'}</td>` : ''}
-        <td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td></tr>`).join('')}</table>
-      ${h.heroes && h.heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${h.heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
-    </details>`).join('');
+  HOF = data;
+  box.innerHTML = `<button class="hofEntry">🏆 명예의 전당 <span class="hofLast">· 지난 통일 ${hofSw(HOF[0].winner_color)}${esc(HOF[0].winner || '?')}</span></button>`;
+  box.querySelector('.hofEntry').onclick = () => { hofCur = 0; hofStart = 0; showScreen('hofPage'); hofRender(); scrollTo(0, 0); };
 }
+function hofRender() {
+  const n = hofPerPage();
+  hofStart = Math.max(0, Math.min(hofStart, HOF.length - n));
+  const shown = HOF.slice(hofStart, hofStart + n);
+  $('#hofChips').innerHTML = shown.map((h, k) => `<button data-i="${hofStart + k}"${hofStart + k === hofCur ? ' class="on"' : ''}>시즌 ${h.season}</button>`).join('') + '<span class="blank"></span>'.repeat(n - shown.length);
+  $('#chipPrev').hidden = $('#chipNext').hidden = HOF.length <= n;
+  $('#chipPrev').disabled = hofStart === 0;
+  $('#chipNext').disabled = hofStart + n >= HOF.length;
+  const h = HOF[hofCur], heroes = h.heroes || [];
+  const isHero = name => heroes.some(x => x.name === name);
+  const hasFaction = h.top.some(g => g.faction);
+  // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
+  const medals = g => g.medals ?? (isHero(g.name) ? 1 : 0);
+  $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
+    <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="개국공신">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
+    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}`;
+}
+$('#hofBack').onclick = () => showTitle();
+$('#chipPrev').onclick = () => { hofStart -= hofPerPage(); hofRender(); };
+$('#chipNext').onclick = () => { hofStart += hofPerPage(); hofRender(); };
+$('#hofChips').onclick = e => { const b = e.target.closest('button'); if (b) { hofCur = +b.dataset.i; hofRender(); } };
+addEventListener('resize', () => { if (!$('#hofPage').hidden) hofRender(); });
 
 // ===== 턴 =====
 // 턴 처리는 서버가 한다. 여기서는 세계를 다시 받아 와서 그린다
@@ -723,10 +744,10 @@ setTimeout(() => { $('#loader').hidden = true; document.body.classList.remove('l
 
 function showScreen(id) {
   hideLoader();
-  ['title', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
+  ['title', 'hofPage', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
-  $('#who').hidden = id === 'title';
+  $('#who').hidden = id === 'title' || id === 'hofPage';
   $('#miniLink').hidden = id !== 'title';
   $('#mTabs').hidden = id !== 'game'; // 휴대폰 아래 탭은 게임 화면에서만
   $('#refreshBtn').hidden = id !== 'game'; // 새로고침 단추도 게임 화면에서만
