@@ -549,7 +549,8 @@ function buyFoodDialog() {
     <h2>군량 구매 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
     <p>${esc(at.name)}에 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
     <p class="dim">시세는 매달 바뀌어요 (${RULES.foodBuy.min}~${RULES.foodBuy.max}). 실제로는 예약한 턴의 시세로 사요.</p>
-    <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 내 금 ${fmt(p.gold)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>
+    <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>
+    <p class="dim">지금 내 금 <b class="hi">${fmt(p.gold)}</b></p>
     <p class="sub">쓸 금 <span class="dim">(1~${fmt(goldMax)})</span></p>
     <p><input type="number" id="bGold" min="1" max="${goldMax}" step="1" value="${choices[0]}" style="width:110px">
       ${choices.map(n => `<button type="button" class="mini" data-gold="${n}">${fmt(n)}</button>`).join(' ')}
