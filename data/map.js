@@ -325,7 +325,7 @@ const MAP_DATA = {
    "x": 0,
    "y": 11,
    "name": "목포",
-   "faction": "mh",
+   "faction": "",
    "grade": 1
   },
   {
@@ -381,7 +381,7 @@ const MAP_DATA = {
    "x": 2,
    "y": 10,
    "name": "남원",
-   "faction": "",
+   "faction": "mh",
    "grade": 1
   },
   {
