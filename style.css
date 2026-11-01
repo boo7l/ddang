@@ -578,7 +578,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .medal small { font-size: 18px; line-height: 1; margin-left: 1px; color: var(--title); } /* 훈장 3개부터 ×개수. 16px은 작고 20px은 커서 18px (2026-10-31) */
 .createStats .medalCol { color: var(--title); text-align: center; padding-left: 8px; } /* 장수 만들기: 훈장 보너스 칸 */
 #hof .swatch { width: 12px; height: 12px; }
-#title .tSeason { margin: 10px 0 0; padding: 4px 8px; display: inline-block; color: var(--title); border: 1px solid var(--gold-dark); background: var(--panel-dark); } #title .tSeason:empty { display: none; }
+#title .tSeason { margin: 10px 0 0; padding: 7px 12px; display: inline-block; color: var(--title); border: 1px solid var(--gold-dark); background: var(--panel-dark); } #title .tSeason:empty { display: none; }
 #title .tSeason .tNow { font-size: 17px; } /* 시즌 안내 윗줄 (2026-11-01) */
 #title .tSeason .tDate { display: block; margin-top: 2px; color: var(--text); }
 #title .tSeason .tNext { display: inline-block; margin-top: 4px; color: var(--text); } /* 다음 시즌 예고 (2026-10-31) */
