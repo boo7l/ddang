@@ -137,8 +137,8 @@ function adminDialog(tab = 'users', fid = null) {
     const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
     const pick = fid !== null && counts[fid === '-' ? '' : fid] ? (fid === '-' ? '' : fid) : (keys[0] || '');
     const summary = keys.map(f => `<button class="pick${f === pick ? ' on' : ''}" data-uf="${f || '-'}">${swatch(f)}${fname(f)} <span class="dim">${counts[f]}</span></button>`).join('') || '장수가 없어요.';
-    // 예약은 앞에서부터 10개만 (나머지는 "외 N개")
-    const queueText = g => { const os = (g.queue || []).filter(Boolean); return os.slice(0, 10).map(o => esc(orderLabel(o))).join(', ') + (os.length > 10 ? ` <span class="dim">외 ${os.length - 10}개</span>` : ''); };
+    // 예약은 앞에서부터 5개만 (나머지는 "외 N개")
+    const queueText = g => { const os = (g.queue || []).filter(Boolean); return os.slice(0, 5).map(o => esc(orderLabel(o))).join(', ') + (os.length > 5 ? ` <span class="dim">외 ${os.length - 5}개</span>` : ''); };
     const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
     const rows = gens.filter(g => (g.faction || '') === pick).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
