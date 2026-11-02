@@ -822,7 +822,8 @@ async function boardDialog(page = 0, kind = '') {
       <p class="boardHead"><span class="tTag">[${esc(p.kind)}]</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
       <p class="boardText">${esc(p.text)}</p>
       ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li>${who(c)} <span class="boardText">${esc(c.text)}</span> <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</li>`).join('')}</ul>` : ''}
-      ${canWrite ? `<form class="boardReply" data-post="${esc(p.id)}" autocomplete="off"><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
+      ${canWrite ? `<p class="replyRow"><button type="button" class="mini replyBtn">💬 댓글 달기</button></p>
+      <form class="boardReply" data-post="${esc(p.id)}" autocomplete="off" hidden><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
     </li>`).join('') || '<li class="dim center">아직 글이 없어요. 첫 글을 남겨 보세요.</li>';
   const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
   const kinds = [['', '전체'], ['건의', '건의'], ['자유', '자유']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
@@ -856,6 +857,13 @@ async function boardDialog(page = 0, kind = '') {
       e.preventDefault();
       send('boardPost', { kind: write.querySelector('select').value, text: write.querySelector('textarea').value }, write.querySelector('button'), () => boardDialog(0, kind));
     };
+    // [💬 댓글 달기]를 눌러야 그 글의 댓글 입력칸이 열린다 (2026-11-02). 다시 누르면 닫힌다
+    box.querySelectorAll('.replyBtn').forEach(b => { b.onclick = () => {
+      const f = b.closest('.boardPost').querySelector('.boardReply');
+      f.hidden = !f.hidden;
+      b.textContent = f.hidden ? '💬 댓글 달기' : '닫기';
+      if (!f.hidden) f.querySelector('input').focus();
+    }; });
     box.querySelectorAll('.boardReply').forEach(f => { f.onsubmit = e => {
       e.preventDefault();
       send('boardComment', { post: f.dataset.post, text: f.querySelector('input').value }, f.querySelector('button'), () => boardDialog(page, kind));
