@@ -125,6 +125,8 @@ function memberBanDialog(m) {
 // ===== 관리자 보기 (개발자 도구) =====
 // 모든 장수의 자세한 정보(아이디·금·예약)와 모든 세력의 채팅. 서버가 관리자에게만 보내 준다
 let ACCOUNTS = {}; // 계정id → 아이디 (관리자만 받는다)
+// 관리자 보기 · 유저 목록: 세력을 한 번도 바꾸지 않은 장수(가입 1번)만 보기 (2026-11-03, 개국공신 후보 확인용)
+let adminLoyalOnly = false;
 function adminDialog(tab = 'users', fid = null) {
   if (tab === 'members') { membersDialog(); return; }
   const gens = allGenerals().sort((a, b) => String(a.faction).localeCompare(String(b.faction)) || b.merit - a.merit);
@@ -143,12 +145,14 @@ function adminDialog(tab = 'users', fid = null) {
     const queueCount = g => (g.queue || []).filter(Boolean).length;
     const traitText = g => { const t = GENERAL_TRAITS[g.trait]; return t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '<span class="dim">-</span>'; };
     const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
-    const rows = gens.filter(g => (g.faction || '') === pick).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}${medalOf(g.id)}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
+    const changes = g => Math.max(0, (g.joins || 1) - 1); // 세력 변경 횟수 (장수 기록 창과 같은 셈)
+    const rows = gens.filter(g => (g.faction || '') === pick && (!adminLoyalOnly || changes(g) === 0)).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}${medalOf(g.id)}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
       <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>
-      <td class="num">${queueCount(g)}</td><td>${traitText(g)}</td></tr>`).join('');
-    body = `<div class="picks">${summary}</div><p class="dim">모두 ${gens.length}명 · ${fname(pick)} ${counts[pick] || 0}명 보는 중</p>
-      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>예약</th><th>특성</th></tr>${rows}</table></div>`;
+      <td class="num">${changes(g)}</td><td class="num">${queueCount(g)}</td><td>${traitText(g)}</td></tr>`).join('');
+    body = `<div class="picks">${summary}</div><p class="dim">모두 ${gens.length}명 · ${fname(pick)} ${counts[pick] || 0}명${adminLoyalOnly ? ` 중 세력 변경 0회 ${(rows.match(/<tr>/g) || []).length}명` : ''} 보는 중
+        <label class="lockSw" style="margin-left:12px"><input type="checkbox" id="aLoyal" data-keep="${pick || '-'}"${adminLoyalOnly ? ' checked' : ''}> 세력 변경 0회만</label></p>
+      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>변경</th><th>예약</th><th>특성</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
     const fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
@@ -162,6 +166,7 @@ function adminDialog(tab = 'users', fid = null) {
     box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
+    if (box.querySelector('#aLoyal')) box.querySelector('#aLoyal').onchange = e => { adminLoyalOnly = e.target.checked; adminDialog('users', e.target.dataset.keep); };
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
     box.querySelectorAll('[data-delchat]').forEach(b => { b.onclick = async () => { // 채팅 글 지우기 (2026-10-31)
       if (!confirm('이 글을 지울까요? 되돌릴 수 없어요.')) return;
