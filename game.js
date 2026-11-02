@@ -197,7 +197,7 @@ function adminToolsDialog() {
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
-    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 자동으로 열려요. ⚠ 그 시각 전에 새 시즌 시작을 눌러 시즌 ${plan.season}을 만들어야 해요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 문은 직접 열어야 해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
+    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(MAP.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
        연 <input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}">
        월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
