@@ -1517,9 +1517,9 @@ function renderCommands() {
     <h2>명령</h2>
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 넣을 명령 <span class="dim">(이때 ${esc(at.name)}에 있을 예정)</span></p>
     <p class="sub">내정</p>
-    <div class="cmds">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
+    <div class="cmds cg-dom">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
     <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
-    <div class="cmds">
+    <div class="cmds cg-mil">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정 · ${cost('draft')}` : `통솔 · ${cost('draft')}`)}
       ${btn('drill', '훈련', '통솔')}
       ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : `이웃 성 공격 · ${cost('attack')}`)}
@@ -1527,9 +1527,9 @@ function renderCommands() {
       ${btn('siege', '병기', '충차·정란·벽력거')}
     </div>
     <p class="sub">계략</p>
-    <div class="cmds">${plot}</div>
+    <div class="cmds cg-plot">${plot}</div>
     ${etc ? `<p class="sub">기타</p>
-    <div class="cmds">${etc}</div>` : ''}
+    <div class="cmds cg-etc">${etc}</div>` : ''}
 `;
   const dialogs = { adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
