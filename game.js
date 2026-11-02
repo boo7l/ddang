@@ -290,13 +290,16 @@ function hofRender() {
   $('#chipPrev').disabled = hofStart === 0;
   $('#chipNext').disabled = hofStart + n >= HOF.length;
   const h = HOF[hofCur], heroes = h.heroes || [];
-  const isHero = name => heroes.some(x => x.name === name);
+  // 공적 1위 훈장은 시즌 4부터 (2026-11-02). 상위 10명 표의 맨 위와 공적이 같으면 모두 1위
+  const topMerit = h.season >= 4 && h.top.length && h.top[0].merit > 0 ? h.top.filter(g => g.merit === h.top[0].merit) : [];
+  const isHero = name => heroes.some(x => x.name === name) || topMerit.some(x => x.name === name);
   const hasFaction = h.top.some(g => g.faction);
   // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
   const medals = g => g.medals ?? (isHero(g.name) ? 1 : 0);
   $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
-    <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="개국공신">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
-    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}`;
+    <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="훈장">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
+    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
+    ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}`;
 }
 $('#hofBack').onclick = () => showTitle();
 $('#chipPrev').onclick = () => { hofStart -= hofPerPage(); hofRender(); };
@@ -1028,7 +1031,7 @@ function renderCreateStats() {
   // 개국공신 훈장: 개수만큼 통솔·무력·지력 +medalBonus (서버도 만들 때 똑같이 더한다). 숫자·합계에 미리 더해 보여 준다 (2026-10-27)
   const medals = (S && S.myMedals) || 0, mb = medals * RULES.medalBonus;
   const final = st => Math.min(RULES.statMax, base[st.key] + (draft.bonus[st.key] || 0) + mb);
-  $('#cStats').innerHTML = (mb ? `<tr><th></th><td></td><td></td><td></td><td class="medalCol"><span class="medal" title="개국공신 훈장 ${medals}개">${MEDAL}</span></td></tr>` : '') + STATS.map(st => {
+  $('#cStats').innerHTML = (mb ? `<tr><th></th><td></td><td></td><td></td><td class="medalCol"><span class="medal" title="훈장 ${medals}개">${MEDAL}</span></td></tr>` : '') + STATS.map(st => {
     const b = draft.bonus[st.key] || 0;
     return `<tr><th>${st.name}</th>
       <td class="num">${final(st)}</td>
@@ -1508,7 +1511,7 @@ const chatOf = fid => (S.chat && S.chat[fid]) || [];
 // 훈장 그림: 금메달 + 빨강·흰색·파랑 끈 (8×9 도트, 2026-10-27 기획자가 고름)
 const MEDAL = '<svg viewBox="0 0 8 9" shape-rendering="crispEdges"><rect x="1" y="0" width="2" height="3" fill="#c0392b"/><rect x="3" y="0" width="2" height="3" fill="#f0e0b0"/><rect x="5" y="0" width="2" height="3" fill="#2c4a8a"/><rect x="2" y="3" width="4" height="1" fill="#8a5a10"/><rect x="1" y="4" width="6" height="4" fill="#f2c230"/><rect x="2" y="8" width="4" height="1" fill="#b07a10"/><rect x="3" y="5" width="2" height="2" fill="#fff3a0"/><rect x="6" y="5" width="1" height="3" fill="#c08a10"/></svg>';
 // 훈장 표시: 2개까지는 그림 그대로, 3개부터는 그림 하나에 ×개수 (자리를 덜 차지하게, 2026-10-31)
-const medalBadge = n => (n ? `<span class="medal" title="개국공신 ${n}회">${n >= 3 ? `${MEDAL}<small>×${n}</small>` : MEDAL.repeat(n)}</span>` : '');
+const medalBadge = n => (n ? `<span class="medal" title="훈장 ${n}개">${n >= 3 ? `${MEDAL}<small>×${n}</small>` : MEDAL.repeat(n)}</span>` : '');
 const medalOf = id => medalBadge((S && S.medals && S.medals[id]) || 0);
 // 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
 // linkFaction을 주면, 그 세력에 이름이 같은 장수가 딱 한 명 있을 때만 이름을 눌러 정보 창을 볼 수 있다 (2026-11-01. 채팅에는 이름만 저장되어 있다)
