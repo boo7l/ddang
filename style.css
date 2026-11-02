@@ -585,7 +585,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardComments li { padding: 2px 0; overflow-wrap: anywhere; }
 .boardReply { display: flex; gap: 6px; margin-top: 6px; }
 .boardReply[hidden] { display: none; } /* 댓글 달기를 눌러야 열린다 (2026-11-02) */
-.replyRow { margin: 4px 0 0; text-align: right; }
+.replyRow { margin: 4px 0 0; text-align: left; }
 .boardReply input { flex: 1; min-width: 0; font-size: 16px; padding: 2px 6px; }
 #modalBox .notesPop { height: 480px; max-height: 60vh; overflow-y: auto; } /* 패치마다 길이가 달라도 넘기는 단추가 들썩이지 않게 (2026-10-31) */
 .notePager { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
