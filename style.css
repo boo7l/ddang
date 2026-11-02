@@ -831,3 +831,13 @@ details.fold > summary:hover h2 { color: var(--title); }
   .hofTable2 .medal { display: none; } /* 칸이 모자라 표 안 훈장 그림은 뺀다. 훈장 칸과 개국공신 줄에 나온다 */
   .hofTable2 .fName { display: none; }  /* 소속은 색 네모만 */
 }
+
+/* 고정 공지 (2026-11-02): 성 정보 위 주황 띠. 지도 칸 너비를 넓히지 않게 width 0 + min-width 100% */
+#notice { margin-bottom: 12px; width: 0; min-width: 100%; box-sizing: border-box; word-break: keep-all; padding: 8px 12px; background: rgba(255, 150, 40, .18); border: 2px solid var(--label); line-height: 1.6; }
+#notice > summary { list-style: none; cursor: pointer; }
+#notice > summary::-webkit-details-marker { display: none; }
+#notice h2 { display: inline; margin: 0; color: var(--title); font-size: 16px; font-weight: normal; }
+#notice h2::before { content: "◆ "; color: var(--seal); }
+#notice h2::after { content: " ▶"; color: var(--dim); font-size: 13px; }
+#notice[open] h2::after { content: " ▼"; }
+#notice p { margin: 4px 0 0; }
