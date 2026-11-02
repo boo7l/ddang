@@ -137,15 +137,16 @@ function adminDialog(tab = 'users', fid = null) {
     const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
     const pick = fid !== null && counts[fid === '-' ? '' : fid] ? (fid === '-' ? '' : fid) : (keys[0] || '');
     const summary = keys.map(f => `<button class="pick${f === pick ? ' on' : ''}" data-uf="${f || '-'}">${swatch(f)}${fname(f)} <span class="dim">${counts[f]}</span></button>`).join('') || '장수가 없어요.';
-    // 예약은 앞에서부터 5개만 (나머지는 "외 N개")
-    const queueText = g => { const os = (g.queue || []).filter(Boolean); return os.slice(0, 5).map(o => esc(orderLabel(o))).join(', ') + (os.length > 5 ? ` <span class="dim">외 ${os.length - 5}개</span>` : ''); };
+    // 예약은 개수만 (내용은 장수 이름을 눌러서 본다)
+    const queueCount = g => (g.queue || []).filter(Boolean).length;
+    const traitText = g => { const t = GENERAL_TRAITS[g.trait]; return t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '<span class="dim">-</span>'; };
     const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
     const rows = gens.filter(g => (g.faction || '') === pick).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}${medalOf(g.id)}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
       <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>
-      <td>${queueText(g) || '<span class="dim">없음</span>'}</td></tr>`).join('');
+      <td class="num">${queueCount(g)}</td><td>${traitText(g)}</td></tr>`).join('');
     body = `<div class="picks">${summary}</div><p class="dim">모두 ${gens.length}명 · ${fname(pick)} ${counts[pick] || 0}명 보는 중</p>
-      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>예약</th></tr>${rows}</table></div>`;
+      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>예약</th><th>특성</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
     const fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
