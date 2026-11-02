@@ -466,7 +466,7 @@ function attackDialog() {
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `수비 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '수비 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
-    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${RULES.myGoldCost.attack} · 출진 군량 ${fmt(marchFood(p.troops))} (병력 × ${RULES.marchFoodRate}, 결과와 상관없이 사라짐) · 예상은 지금 병력 기준</p>`,
+    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${fmt(attackGoldOf(p.troops))} (병력 1,000당 ${RULES.attackGold.per1000}) · 출진 군량 ${fmt(marchFood(p.troops))} (병력 × ${RULES.marchFoodRate}, 결과와 상관없이 사라짐) · 예상은 지금 병력 기준</p>`,
   rows, '예약', v => reserve({ cmd: 'attack', to: v }));
 }
 
@@ -685,10 +685,10 @@ async function deleteGeneralDialog() {
 
 function moveDialog() {
   const from = cityAtSlot(me(), slot);
-  const opts = linkedOwnCities(from.id, me().faction, moveRangeOf(me())).map(c =>
+  const opts = linkedOwnCities(from.id, me().faction, moveRangeOf(me()), !!gTrait(me()).freePath).map(c =>
     `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b> ${cityTags(c)}
       <span class="r dim">군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
-  pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 우리 땅으로 ${moveRangeOf(me())}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
+  pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 ${gTrait(me()).freePath ? '' : '우리 땅으로 '}${moveRangeOf(me())}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
     opts, '예약', v => reserve({ cmd: 'move', to: v }));
 }
 
@@ -1551,7 +1551,7 @@ function renderCommands() {
     <div class="cmds cg-mil">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정 · ${cost('draft')}` : `통솔 · ${cost('draft')}`)}
       ${btn('drill', '훈련', '통솔')}
-      ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : `이웃 성 공격 · ${cost('attack')}`)}
+      ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : '이웃 성 공격')}
       ${btn('move', '이동', '아군 성으로')}
       ${btn('siege', '병기', '충차·정란·벽력거')}
     </div>

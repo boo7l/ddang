@@ -224,7 +224,8 @@ const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
 // (fromId가 아직 내 성이 아니어도 된다: 예약표에서 출진 뒤 그 성에 있을 거라고 짐작할 때)
 // 먼 길(RULES.farRoads)은 한 번에 그 길 하나만: 첫 칸으로만 탈 수 있고, 건너간 성에서 더 가지 못한다 (2026-11-03)
 const isFarRoad = (a, b) => (RULES.farRoads || []).includes(a.name + '-' + b.name) || (RULES.farRoads || []).includes(b.name + '-' + a.name);
-function linkedOwnCities(fromId, fid, maxSteps = Infinity) {
+// anyPath (2026-11-03 시즌 5, 뼈에게 닿기를): 남의 성·공백지를 지나도 된다. 도착하는 곳은 여전히 아군 성
+function linkedOwnCities(fromId, fid, maxSteps = Infinity, anyPath = false) {
   const seen = new Set([fromId]), limited = maxSteps !== Infinity;
   let ring = [cityById(fromId)];
   for (let step = 0; step < maxSteps && ring.length; step++) { // 한 칸씩 넓혀 간다
@@ -233,13 +234,13 @@ function linkedOwnCities(fromId, fid, maxSteps = Infinity) {
       for (const n of neighborsOf(MAP, c)) {
         const far = limited && isFarRoad(c, n);
         if (far && step > 0) continue; // 다른 칸을 지나온 뒤에는 먼 길을 못 탄다
-        if (n.faction === fid && !seen.has(n.id)) { seen.add(n.id); if (!far) next.push(n); } // 먼 길로 건너간 성에서는 멈춘다
+        if ((anyPath || n.faction === fid) && !seen.has(n.id)) { seen.add(n.id); if (!far) next.push(n); } // 먼 길로 건너간 성에서는 멈춘다
       }
     }
     ring = next;
   }
   seen.delete(fromId);
-  return MAP.cities.filter(c => seen.has(c.id));
+  return MAP.cities.filter(c => seen.has(c.id) && c.faction === fid);
 }
 
 // ===== 턴 =====
@@ -379,8 +380,8 @@ function cityAtSlot(g, i) {
 const VERB = { agri: '논밭을 일구었다', comm: '시장을 넓혔다', tech: '기술을 연구했다', wall: '성벽을 쌓았다', peace: '순찰을 돌아 민심을 다독였다' };
 
 // 비용을 낼 수 있는지 보고, 낼 수 있으면 낸다. 못 내면 이유
-function pay(g, kind) {
-  const mg = RULES.myGoldCost[kind] || 0;
+function pay(g, kind, amount) {
+  const mg = amount !== undefined ? amount : RULES.myGoldCost[kind] || 0;
   if (g.gold < mg) return `금 부족 (필요 ${mg}, 있음 ${fmt(g.gold)})`;
   g.gold -= mg;
   return '';
@@ -573,6 +574,10 @@ function retreatFrom(c, oldFaction, byFid) {
       const lost = Math.ceil(g.troops * RULES.isolatedLoss);
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} 포위를 뚫고 ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
+    } else if (!g.defense && g.troops > 0) { // 방어를 끈 장수도 물러나며 병력을 조금 잃는다 (2026-11-03 시즌 5)
+      const k = RULES.defenseOffLoss, lost = Math.ceil(g.troops * (k.min + Math.random() * (k.max - k.min)));
+      g.troops -= lost;
+      out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
     } else out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다.`);
     capDefense(g);
   }
@@ -634,7 +639,7 @@ function runAttack(g, o, mark) {
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
   const food = marchFood(g.troops);
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
-  const why = pay(g, 'attack'); // 출진은 금 50 (2026-10-26. 군량이 모자라 못 나가면 들지 않는다)
+  const why = pay(g, 'attack', attackGoldOf(g.troops)); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
   if (why) return why;
   home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
   g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
@@ -786,7 +791,7 @@ function runMove(g, o) {
   if (!to) return '없는 성';
   if (to.id === from.id) return `이미 ${to.name}에 있음`;
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
-  if (!linkedOwnCities(from.id, g.faction, moveRangeOf(g)).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${moveRangeOf(g)}칸 안에 이어져 있지 않음`;
+  if (!linkedOwnCities(from.id, g.faction, moveRangeOf(g), !!gTrait(g).freePath).includes(to)) return `${from.name}에서 ${to.name}까지 ${gTrait(g).freePath ? '' : '아군 땅으로 '}${moveRangeOf(g)}칸 안에 이어져 있지 않음`;
   g.city = to.id;
   capDefense(g);
   addLog(g, `${from.name}에서 ${josa(to.name, '으로')} 옮겨 갔다. (병력 ${fmt(g.troops)})`);

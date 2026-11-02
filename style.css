@@ -345,7 +345,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .face { object-fit: cover; display: block; border: 2px solid var(--gold); background: #000; }
 .facePick { display: flex; gap: 14px; align-items: flex-start; }
 #cFaceBig .face { width: 128px; height: 160px; }
-#cFaces { display: grid; grid-template-columns: repeat(4, 68px); gap: 6px; } /* 윗줄 문관, 아랫줄 무관 (각 4개, 2026-10-28 순서 바꿈) */
+#cFaces { display: grid; grid-template-columns: repeat(5, 68px); gap: 6px; } /* 윗줄 문관, 아랫줄 무관 (각 5개, 2026-11-03. 2026-10-28 순서 바꿈) */
 #cFaces button { padding: 0; border: 2px solid var(--gold-dark); background: none; box-shadow: none; }
 #cFaces button .face { width: 64px; height: 80px; border: 0; }
 #cFaces button.on { border-color: var(--title); outline: 2px solid var(--title); }
@@ -767,7 +767,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #create { margin: 8px auto; }
   .createGrid { grid-template-columns: 1fr; gap: 12px; }
   .facePick { flex-direction: column; align-items: center; }
-  #cFaces { grid-template-columns: repeat(4, 1fr); }
+  #cFaces { grid-template-columns: repeat(5, 1fr); }
   #cFaces button .face { width: 100%; height: auto; aspect-ratio: 4 / 5; }
   #join { display: block; }
   #join aside.wide { width: auto; }
