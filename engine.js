@@ -188,6 +188,7 @@ function joinFaction(g, fid, cityId) {
   const home = picked && picked.faction === f.id ? picked : startCity(f.id);
   g.faction = f.id;
   g.joins = (g.joins || 0) + 1; // 세력에 들어간 횟수 (개국공신은 한 번만 들어간 장수)
+  if (g.joins === 1) g.firstJoin = Date.now(); // 첫 임관 시각: 공적 1위가 동점일 때 먼저 임관한 장수가 받는다 (2026-11-02)
   delete g.fallen; // 멸망 알림은 새 세력에 들어가면 끝
   g.city = home.id;
   capDefense(g);

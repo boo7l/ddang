@@ -290,8 +290,8 @@ function hofRender() {
   $('#chipPrev').disabled = hofStart === 0;
   $('#chipNext').disabled = hofStart + n >= HOF.length;
   const h = HOF[hofCur], heroes = h.heroes || [];
-  // 공적 1위 훈장은 시즌 4부터 (2026-11-02). 상위 10명 표의 맨 위와 공적이 같으면 모두 1위
-  const topMerit = h.season >= 4 && h.top.length && h.top[0].merit > 0 ? h.top.filter(g => g.merit === h.top[0].merit) : [];
+  // 공적 1위 훈장은 시즌 4부터 (2026-11-02). 상위 10명 표의 맨 위 한 명 (동점이면 서버가 먼저 임관한 장수를 맨 위에 둔다)
+  const topMerit = h.season >= 4 && h.top.length && h.top[0].merit > 0 ? [h.top[0]] : [];
   const isHero = name => heroes.some(x => x.name === name) || topMerit.some(x => x.name === name);
   const hasFaction = h.top.some(g => g.faction);
   // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
@@ -685,6 +685,7 @@ function helpDialog(page = 0) {
       <li><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</li>
       <li>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</li>
       <li><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</li>
+      <li><b>훈장</b>: 통일 세력에 끝까지 남은 공적 상위 ${RULES.heroCount}명과 시즌 전체 공적 1위가 받아요. 한 사람이 시즌당 2개를 받지는 않아서, 시즌마다 5개 또는 6개가 지급돼요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</li>
       <li><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요.</li></ul>`],
   ];
   const [title, body] = pages[page];
