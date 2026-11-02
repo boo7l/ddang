@@ -191,10 +191,14 @@ function adminToolsDialog() {
     <p class="sub">시즌·계정</p>
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    <p class="sub">다음 시즌 예고 <span class="dim">(시즌 종료·문 닫힘 동안 첫 화면에 보여요. 문을 열면 지워져요)</span></p>
+    <p><input id="aNote" maxlength="60" placeholder="시즌 5 · 11월 8일(일) 저녁 8시 시작 예정" value="${esc((S && S.nextNote) || '')}" style="width:100%;box-sizing:border-box"></p>
+    <p><button id="aNoteSave">예고 저장</button> <span class="dim small">비우고 저장하면 지워져요</span></p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
+    $('#aNoteSave').onclick = async () => { await call('nextNote', { text: $('#aNote').value }); afterAdmin(); };
     $('#aDoor').onclick = async () => {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
       await call('door'); afterAdmin();
@@ -250,8 +254,6 @@ function applyLoginGate() {
   $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 그동안 게시판은 이용할 수 있어요.` : '';
   if (closed) $('#tEnter').hidden = true; // 관리자가 아니면 들어갈 수 없다
 }
-// 다음 시즌 예고 (2026-10-31): 시즌이 끝나 있는 동안 첫 화면 시즌 표시 아래에 보인다. 비워 두면 안 보인다
-const NEXT_SEASON_NOTE = '📢 시즌 4 · 11월 1일(일) 저녁 8시 시작 예정';
 async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
@@ -259,8 +261,9 @@ async function renderSeasonBadge() {
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
-    el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일` + (NEXT_SEASON_NOTE ? `<br><span class="tNext">${NEXT_SEASON_NOTE}</span>` : '')
-      : s.preparing ? (NEXT_SEASON_NOTE ? `<span class="tNext">${NEXT_SEASON_NOTE}</span>` : '') // 준비 중 문구는 예고 아래 안내(tPrep)가 맡는다 (2026-10-31)
+    const note = s.nextNote ? `<span class="tNext">📢 ${esc(s.nextNote)}</span>` : ''; // 다음 시즌 예고: 🛠 관리에서 쓴다 (2026-11-02)
+    el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일` + (note ? `<br>${note}` : '')
+      : s.preparing ? note // 준비 중 문구는 예고 아래 안내(tPrep)가 맡는다 (2026-10-31)
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
       : `<span class="tNow">⚔ 시즌 ${s.season}${s.scenario ? ' ' + esc(s.scenario) : ''} 진행 중</span><span class="tDate">${dateText(s.turn, s.startYear)}</span>`; // 첫 장수를 기다리는 중이어도 "진행 중"으로 보인다
   } catch (e) { el.innerHTML = ''; }
