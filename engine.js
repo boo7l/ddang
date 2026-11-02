@@ -220,14 +220,18 @@ const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
 
 // fid 세력 성 가운데, fromId에서 그 세력 땅만 밟고 maxSteps칸 안에 갈 수 있는 성들 (이동 목적지)
 // (fromId가 아직 내 성이 아니어도 된다: 예약표에서 출진 뒤 그 성에 있을 거라고 짐작할 때)
+// 먼 길(RULES.farRoads)은 한 번에 그 길 하나만: 첫 칸으로만 탈 수 있고, 건너간 성에서 더 가지 못한다 (2026-11-03)
+const isFarRoad = (a, b) => (RULES.farRoads || []).includes(a.name + '-' + b.name) || (RULES.farRoads || []).includes(b.name + '-' + a.name);
 function linkedOwnCities(fromId, fid, maxSteps = Infinity) {
-  const seen = new Set([fromId]);
+  const seen = new Set([fromId]), limited = maxSteps !== Infinity;
   let ring = [cityById(fromId)];
   for (let step = 0; step < maxSteps && ring.length; step++) { // 한 칸씩 넓혀 간다
     const next = [];
     for (const c of ring) {
       for (const n of neighborsOf(MAP, c)) {
-        if (n.faction === fid && !seen.has(n.id)) { seen.add(n.id); next.push(n); }
+        const far = limited && isFarRoad(c, n);
+        if (far && step > 0) continue; // 다른 칸을 지나온 뒤에는 먼 길을 못 탄다
+        if (n.faction === fid && !seen.has(n.id)) { seen.add(n.id); if (!far) next.push(n); } // 먼 길로 건너간 성에서는 멈춘다
       }
     }
     ring = next;
