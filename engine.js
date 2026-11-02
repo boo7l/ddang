@@ -49,12 +49,12 @@ const memberCount = fid => allGenerals().filter(g => g.faction === fid).length;
 const hasGuard = c => !!c.faction && memberCount(c.faction) === 0;
 
 // 기록은 장수마다 따로. 여러 줄이어도 된다 (전투 보고서)
-function addLog(g, text) {
+function addLog(g, text, all = false) {
   if (!g.log) g.log = [];
-  g.log.unshift({ t: now(), text });
+  g.log.unshift(all ? { t: now(), text, all: true } : { t: now(), text });
   if (g.log.length > RULES.logMax) g.log.length = RULES.logMax;
 }
-const logAll = text => allGenerals().forEach(g => addLog(g, text));
+const logAll = text => allGenerals().forEach(g => addLog(g, text, true)); // 전체 메시지: 기록 창에 노란색으로 보인다 (2026-11-02)
 
 // ===== 세계 만들기 =====
 function newWorld(season = 1) {

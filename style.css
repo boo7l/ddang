@@ -339,6 +339,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 /* 출진 중 표시, 전투 보고서 */
 .marching { margin: 0 0 8px; padding: 6px 8px; background: var(--seal); color: var(--text); border: 2px solid var(--title); }
 #log li.report { color: var(--title); padding: 4px 0; }
+#log li.notice { color: var(--title); } /* 전체 메시지 (2026-11-02) */
 
 /* ===== 장수 얼굴 (img/faces 그림) ===== */
 .face { object-fit: cover; display: block; border: 2px solid var(--gold); background: #000; }

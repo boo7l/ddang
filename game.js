@@ -198,6 +198,9 @@ function adminToolsDialog() {
     <p class="sub">시즌·계정</p>
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    <p class="sub">전체 메시지 <span class="dim">(지금 있는 모든 장수의 기록에 노란색으로, ${S ? allGenerals().length : 0}명)</span></p>
+    <p><input id="aMsg" maxlength="200" placeholder="[📢공지] 200자까지" style="width:100%;box-sizing:border-box"></p>
+    <p><button id="aMsgSend">보내기</button></p>
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
     <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(MAP.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
@@ -211,6 +214,12 @@ function adminToolsDialog() {
     box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
+    $('#aMsgSend').onclick = async () => {
+      const text = $('#aMsg').value.trim();
+      if (!text) { alert('보낼 내용을 적어 주세요.'); return; }
+      if (!confirm(`모든 장수의 기록에 보낼까요? 보내면 지울 수 없어요.\n\n${text}`)) return;
+      if (await call('adminNotice', { text })) afterAdmin();
+    };
     $('#aoSave').onclick = async () => {
       const v = id => +$(id).value;
       if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked })) afterAdmin();
@@ -1602,7 +1611,7 @@ function renderChatList() {
 
 function renderLog() {
   $('#log').innerHTML = `<h2>기록</h2><ul>${(me().log || []).map(l =>
-    `<li${l.text.includes('\n') ? ' class="report"' : ''}><span class="t">${fmtTime(l.t)}</span>${esc(l.text).replace(/\n/g, '<br>')}</li>`).join('')}</ul>`;
+    `<li class="${l.text.includes('\n') ? 'report' : ''}${l.all ? ' notice' : ''}"><span class="t">${fmtTime(l.t)}</span>${esc(l.text).replace(/\n/g, '<br>')}</li>`).join('')}</ul>`;
 }
 
 // map.js가 성 정보 창을 그릴 때 부르는 함수들
