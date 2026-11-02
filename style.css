@@ -841,3 +841,5 @@ details.fold > summary:hover h2 { color: var(--title); }
 #notice h2::after { content: " ▶"; color: var(--dim); font-size: 13px; }
 #notice[open] h2::after { content: " ▼"; }
 #notice p { margin: 4px 0 0; }
+/* 관리자 경고 알림 창 (2026-11-02) */
+.warnText { margin: 12px 0; padding: 10px 12px; border: 2px solid var(--bad); background: rgba(255, 106, 74, .15); color: var(--text); line-height: 1.6; word-break: keep-all; }

@@ -345,6 +345,7 @@ async function refresh() {
   render();
   renderLegend();
   renderAll();
+  showWarns();
 }
 
 // ===== 예약표 =====
@@ -1340,6 +1341,28 @@ function enterGame() {
   render();
   renderLegend();
   renderAll();
+  showWarns();
+}
+
+// 안 읽은 관리자 경고 (2026-11-02): 게임 화면에 있을 때 알림 창으로 하나씩 띄운다. [확인했어요]를 누르면 서버에서 읽음으로 지운다
+let warnOpen = false;
+function showWarns() {
+  const w = S && (S.myWarns || [])[0];
+  if (!w || warnOpen || $('#game').hidden || !$('#modal').hidden) return;
+  warnOpen = true;
+  openModal(`<h2>⚠ 관리자 경고</h2>
+    <p class="dim small">${fmtTime(w.t)}${me() ? ` · 받은 장수: ${esc(me().name)}` : ''}</p>
+    <p class="warnText">${esc(w.text)}</p>
+    <p class="dim small">이 경고는 장수 기록에도 남아 있어요. 문의는 metal926@naver.com</p>
+    <div class="modalBtns"><button id="warnOk" class="main">확인했어요</button></div>`, () => {
+    $('#warnOk').onclick = async () => {
+      closeModal();
+      S.myWarns = S.myWarns.filter(x => x.t > w.t); // 서버 답을 기다리지 않고 다음 경고로
+      await call('warnSeen', { t: w.t });
+      warnOpen = false;
+      showWarns();
+    };
+  });
 }
 
 function renderAll() {
