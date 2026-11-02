@@ -826,7 +826,7 @@ async function boardDialog(page = 0, kind = '') {
       <p class="boardHead"><span class="tTag">[${esc(p.kind)}]</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
       <p class="boardText">${esc(p.text)}</p>
       ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li>${who(c)} <span class="boardText">${esc(c.text)}</span> <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</li>`).join('')}</ul>` : ''}
-      ${canWrite ? `<p class="replyRow"><button type="button" class="mini replyBtn">💬 댓글 달기</button></p>
+      ${canWrite ? `<p class="replyRow"><button type="button" class="mini replyBtn">💬 댓글</button></p>
       <form class="boardReply" data-post="${esc(p.id)}" autocomplete="off" hidden><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
     </li>`).join('') || '<li class="dim center">아직 글이 없어요. 첫 글을 남겨 보세요.</li>';
   const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
@@ -865,7 +865,7 @@ async function boardDialog(page = 0, kind = '') {
     box.querySelectorAll('.replyBtn').forEach(b => { b.onclick = () => {
       const f = b.closest('.boardPost').querySelector('.boardReply');
       f.hidden = !f.hidden;
-      b.textContent = f.hidden ? '💬 댓글 달기' : '닫기';
+      b.textContent = f.hidden ? '💬 댓글' : '닫기';
       if (!f.hidden) f.querySelector('input').focus();
     }; });
     box.querySelectorAll('.boardReply').forEach(f => { f.onsubmit = e => {
