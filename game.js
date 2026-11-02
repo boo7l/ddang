@@ -196,23 +196,24 @@ function adminToolsDialog() {
     <p class="sub">시즌·계정</p>
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
-    <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각. 그 시각에 문이 저절로 열려요)</span></p>
-    <p>${plan ? `<b>${esc(openText(plan))}</b>${S.season !== plan.season ? `<br><span class="dim">⚠ 그 시각 전에 새 시즌 시작을 눌러 시즌 ${plan.season}을 만들어야 열려요.</span>` : ''}` : '<span class="dim">예약 없음</span>'}</p>
+    <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
+    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 자동으로 열려요. ⚠ 그 시각 전에 새 시즌 시작을 눌러 시즌 ${plan.season}을 만들어야 해요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 문은 직접 열어야 해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
        연 <input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}">
        월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
        일 <input id="aoD" type="number" min="1" max="31" value="${pk ? pk.getUTCDate() : ''}">
        시간 <select id="aoH">${[...Array(24).keys()].map(h => `<option value="${h}"${(pk ? pk.getUTCHours() : 20) === h ? ' selected' : ''}>${hourText(h)}</option>`).join('')}</select></p>
-    <p><button id="aoSave">예약 저장</button>${plan ? ' <button id="aoClear">예약 지우기</button>' : ''}</p>
+    <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
+    <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
     $('#aoSave').onclick = async () => {
       const v = id => +$(id).value;
-      if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH') })) afterAdmin();
+      if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked })) afterAdmin();
     };
-    if ($('#aoClear')) $('#aoClear').onclick = async () => { await call('nextOpen', { clear: true }); afterAdmin(); };
+    if ($('#aoClear')) $('#aoClear').onclick = async () => { if (!confirm('오픈 예약을 취소할까요? 첫 화면 예고도 사라져요.')) return; await call('nextOpen', { clear: true }); afterAdmin(); };
     $('#aDoor').onclick = async () => {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
       await call('door'); afterAdmin();
