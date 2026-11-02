@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/DungGeunMo.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261102210409">
+<link rel="stylesheet" href="style.css?v=20261102210508">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -118,8 +118,6 @@
   <!-- 5. 메인 화면: 왼쪽 전국 지도, 오른쪽 명령과 기록 -->
   <main id="game" hidden>
     <div class="col">
-      <!-- 고정 공지 (2026-11-02): 제목을 누르면 접고 펼친다. 페이지를 열 때마다 펼친 상태. 내릴 때는 이 details를 지운다 -->
-      <details id="notice" open><summary><h2>공지</h2></summary><p>현재 누가 봐도 1인 다계정이 의심되는 장수분들이 있습니다.<br>즉시 제재하지는 않지만 분신 장수께서는 자진 하야 또는 삭제를 권고드리는 바입니다.<br>클린한 땅국지 함께 만들어요!</p></details>
       <div id="info" class="win"></div>
       <div id="map" class="win map"></div>
     </div>
@@ -154,15 +152,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261102210409"></script>
-  <script src="mapcore.js?v=20261102210409"></script>
-  <script src="data/map.js?v=20261102210409"></script>
-  <script src="rules.js?v=20261102210409"></script>
-  <script src="faces.js?v=20261102210409"></script>
-  <script src="patchnotes.js?v=20261102210409"></script>
-  <script src="mapbg.js?v=20261102210409"></script>
-  <script src="map.js?v=20261102210409"></script>
-  <script src="engine.js?v=20261102210409"></script>
-  <script src="game.js?v=20261102210409"></script>
+  <script src="server.js?v=20261102210508"></script>
+  <script src="mapcore.js?v=20261102210508"></script>
+  <script src="data/map.js?v=20261102210508"></script>
+  <script src="rules.js?v=20261102210508"></script>
+  <script src="faces.js?v=20261102210508"></script>
+  <script src="patchnotes.js?v=20261102210508"></script>
+  <script src="mapbg.js?v=20261102210508"></script>
+  <script src="map.js?v=20261102210508"></script>
+  <script src="engine.js?v=20261102210508"></script>
+  <script src="game.js?v=20261102210508"></script>
 </body>
 </html>
