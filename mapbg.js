@@ -85,7 +85,7 @@ function mountainness(u, v) {
 const ROAD_BENDS = {
   '전주-대전': [[3.35, 9.0]],
   '건녕-교지': [[2.5, 10.4]],               // 곧게 그리면 영릉 칸에 가린다
-  '회계-교지': [[7.75, 9.45], [6.3, 10.55]],   // 남해 뱃길 (사섭의 바닷길 교역)
+  '회계-교지': [[6.8, 9.4], [5.5, 10.1]],     // 해안을 따라 내려가는 육로
 };
 function paintRoads(g, pal, cell, isWater) {
   const cityOf = id => MAP.cities.find(o => o.id === id);
