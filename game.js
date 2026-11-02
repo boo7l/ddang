@@ -606,7 +606,7 @@ function buyFoodDialog() {
 
 // 이동·수송 목록에서 성 이름 옆: 규모 별(★) + 이웃에 다른 세력 성이 있으면 ⚔전선 (2026-11-02)
 const isFront = c => neighborsOf(MAP, c).some(n => n.faction && n.faction !== c.faction);
-const cityTags = c => `<span class="grade">${'★'.repeat(c.grade)}</span>${isFront(c) ? ' <span class="frontTag" title="전선: 이웃에 다른 세력 성이 있어요">⚔</span>' : ''}`;
+const cityTags = c => `<span class="pstars" title="${GRADE_NAME[c.grade]}">${'<i></i>'.repeat(c.grade)}</span>${isFront(c) ? ' <span class="frontTag" title="전선: 이웃에 다른 세력 성이 있어요">⚔</span>' : ''}`;
 
 // 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~transportMax(10,000) 직접 입력 (빠른 단추도)
 function transportDialog() {
