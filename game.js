@@ -169,12 +169,17 @@ function adminDialog(tab = 'users', fid = null) {
   $('#modalBox').classList.add('adminBox');
 }
 
+// 오픈 예고 문구: 시즌 5 · 11월 8일(일) 저녁 8시 시작 예정 (연도는 보이지 않는다)
+const hourText = h => (h < 6 ? `새벽 ${h}시` : h < 12 ? `오전 ${h}시` : h === 12 ? '낮 12시' : h < 18 ? `오후 ${h - 12}시` : `저녁 ${h - 12}시`);
+const openText = ({ season, at }) => { const k = new Date(at + 9 * 3600000); return `시즌 ${season} · ${k.getUTCMonth() + 1}월 ${k.getUTCDate()}일(${'일월화수목금토'[k.getUTCDay()]}) ${hourText(k.getUTCHours())} 시작 예정`; };
+
 // ===== 관리 창 (관리자만, 어느 화면에서든 오른쪽 위 "🛠 관리") =====
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
 function adminToolsDialog() {
   const state = !S ? '-' : S.unified ? '천하통일 (턴 멈춤)' : S.paused ? '⏸ 멈춤' : '흐르는 중';
   const door = S && (S.closed || S.unified) ? '🔒 닫힘 (관리자만 들어옴)' : '🔓 열림';
   const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
+  const plan = S && S.nextOpen, pk = plan && new Date(plan.at + 9 * 3600000); // 오픈 예약 (한국 시각으로 칸에 다시 채운다)
   openModal(`
     <h2>🛠 관리 <span class="dim small">· 관리자만 보여요</span></h2>
     <table class="stats">
@@ -191,14 +196,23 @@ function adminToolsDialog() {
     <p class="sub">시즌·계정</p>
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
-    <p class="sub">다음 시즌 예고 <span class="dim">(시즌 종료·문 닫힘 동안 첫 화면에 보여요. 문을 열면 지워져요)</span></p>
-    <p><input id="aNote" maxlength="60" placeholder="시즌 5 · 11월 8일(일) 저녁 8시 시작 예정" value="${esc((S && S.nextNote) || '')}" style="width:100%;box-sizing:border-box"></p>
-    <p><button id="aNoteSave">예고 저장</button> <span class="dim small">비우고 저장하면 지워져요</span></p>
+    <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각. 그 시각에 문이 저절로 열려요)</span></p>
+    <p>${plan ? `<b>${esc(openText(plan))}</b>${S.season !== plan.season ? `<br><span class="dim">⚠ 그 시각 전에 새 시즌 시작을 눌러 시즌 ${plan.season}을 만들어야 열려요.</span>` : ''}` : '<span class="dim">예약 없음</span>'}</p>
+    <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
+       연 <input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}">
+       월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
+       일 <input id="aoD" type="number" min="1" max="31" value="${pk ? pk.getUTCDate() : ''}">
+       시간 <select id="aoH">${[...Array(24).keys()].map(h => `<option value="${h}"${(pk ? pk.getUTCHours() : 20) === h ? ' selected' : ''}>${hourText(h)}</option>`).join('')}</select></p>
+    <p><button id="aoSave">예약 저장</button>${plan ? ' <button id="aoClear">예약 지우기</button>' : ''}</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
-    $('#aNoteSave').onclick = async () => { await call('nextNote', { text: $('#aNote').value }); afterAdmin(); };
+    $('#aoSave').onclick = async () => {
+      const v = id => +$(id).value;
+      if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH') })) afterAdmin();
+    };
+    if ($('#aoClear')) $('#aoClear').onclick = async () => { await call('nextOpen', { clear: true }); afterAdmin(); };
     $('#aDoor').onclick = async () => {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
       await call('door'); afterAdmin();
@@ -261,7 +275,7 @@ async function renderSeasonBadge() {
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
-    const note = s.nextNote ? `<span class="tNext">📢 ${esc(s.nextNote)}</span>` : ''; // 다음 시즌 예고: 🛠 관리에서 쓴다 (2026-11-02)
+    const note = s.nextOpen ? `<span class="tNext">📢 ${esc(openText(s.nextOpen))}</span>` : ''; // 다음 시즌 예고: 🛠 관리에서 예약한다 (2026-11-02)
     el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일` + (note ? `<br>${note}` : '')
       : s.preparing ? note // 준비 중 문구는 예고 아래 안내(tPrep)가 맡는다 (2026-10-31)
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
