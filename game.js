@@ -16,7 +16,9 @@ let turnWait = 1000; // 턴이 넘어간 뒤 몇 ms 기다렸다 받아 올지: 
 let busy = false;   // 서버 요청 중
 
 function applyView(d) {
+  const oldSeason = S && S.season;
   S = d.view || null;
+  if (S && oldSeason && S.season !== oldSeason) { location.reload(); return; } // 게임 화면에 있는 동안 새 시즌이 시작됐다 (자동 시즌 시작, 2026-11-02)
   if (S) S.timeOffset += d.serverNow - Date.now(); // 내 컴퓨터 시계를 서버 시계에 맞춘다
   IS_ADMIN = !!d.admin;
   $('#adminBtn').hidden = !IS_ADMIN;
@@ -39,7 +41,7 @@ async function call(action, payload = {}) {
     const d = await api(action, payload);
     // 정지된 계정은 로그아웃. 시즌 준비 중이면 로그인한 채로 첫 화면으로: 게임은 못 들어가도 게시판은 쓴다 (관리자는 들어온다, 2026-10-31)
     if (d.banned) { await logout(); sayTitle(d.error); return null; }
-    if (d.preparing) { IS_ADMIN = false; showTitle(); return null; }
+    if (d.preparing) { IS_ADMIN = false; showTitle(preparing ? undefined : d.error); return null; } // 문이 닫혔으면 첫 화면 안내가 맡고, 통일 뒤 장수가 없는 사람에게는 이유를 보여 준다
     applyView(d);
     if (d.error) { alert(d.error); return false; }
     return true;
@@ -177,7 +179,7 @@ const openText = ({ season, at }) => { const k = new Date(at + 9 * 3600000); ret
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
 function adminToolsDialog() {
   const state = !S ? '-' : S.unified ? '천하통일 (턴 멈춤)' : S.paused ? '⏸ 멈춤' : '흐르는 중';
-  const door = S && (S.closed || S.unified) ? '🔒 닫힘 (관리자만 들어옴)' : '🔓 열림';
+  const door = S && S.closed ? '🔒 닫힘 (관리자만 들어옴)' : S && S.unified ? '🔓 열림 (시즌 종료: 구경·채팅만)' : '🔓 열림';
   const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
   const plan = S && S.nextOpen, pk = plan && new Date(plan.at + 9 * 3600000); // 오픈 예약 (한국 시각으로 칸에 다시 채운다)
   openModal(`
@@ -1428,6 +1430,7 @@ function renderGeneral() {
   $('#gTraits').ontoggle = e => { traitsOpen = e.target.open; try { localStorage.setItem(TRAITS_KEY, traitsOpen ? '1' : '0'); } catch (err) { /* 저장 못 해도 이번엔 그대로 */ } };
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
+  if (S.unified && !IS_ADMIN) ['#gPouch', '#gDefense', '#gShop'].forEach(id => { if ($(id)) { $(id).disabled = true; $(id).onclick = null; } }); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
 }
 
 // 1초마다 바뀌는 부분만 고친다 (버튼을 다시 만들지 않아서 클릭이 씹히지 않는다)
