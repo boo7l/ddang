@@ -604,12 +604,16 @@ function buyFoodDialog() {
   });
 }
 
+// 이동·수송 목록에서 성 이름 옆: 규모 별(★) + 이웃에 다른 세력 성이 있으면 ⚔전선 (2026-11-02)
+const isFront = c => neighborsOf(MAP, c).some(n => n.faction && n.faction !== c.faction);
+const cityTags = c => `<span class="grade">${'★'.repeat(c.grade)}</span>${isFront(c) ? ' <span class="frontTag">⚔전선</span>' : ''}`;
+
 // 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~transportMax(10,000) 직접 입력 (빠른 단추도)
 function transportDialog() {
   const p = me(), at = cityAtSlot(p, slot), here = S.cities[at.id];
   const opts = linkedOwnCities(at.id, p.faction, RULES.moveRange).map(c => {
     const cs = S.cities[c.id];
-    return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>
+    return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b> ${cityTags(c)}
       <span class="r dim">군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
   }).join('');
   const max = RULES.transportMax;
@@ -658,8 +662,8 @@ async function deleteGeneralDialog() {
 function moveDialog() {
   const from = cityAtSlot(me(), slot);
   const opts = linkedOwnCities(from.id, me().faction, moveRangeOf(me())).map(c =>
-    `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>
-      <span class="r dim">${GRADE_NAME[c.grade]} · 군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
+    `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b> ${cityTags(c)}
+      <span class="r dim">군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
   pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 우리 땅으로 ${moveRangeOf(me())}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
     opts, '예약', v => reserve({ cmd: 'move', to: v }));
 }
