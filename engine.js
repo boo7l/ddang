@@ -525,10 +525,10 @@ function defendersOf(c) {
 // fromId 성에서 fid 세력이 칠 수 있는 이웃 성
 const attackTargetsFrom = (fromId, fid) => neighborsOf(MAP, cityById(fromId)).filter(c => c.faction !== fid);
 
-// 점령한 성의 군량은 일부만 남고 나머지는 흩어진다. 보고서 한 줄을 돌려준다
+// 점령한 성의 군량은 일부만 남고 나머지는 흩어진다. 남은 양이 RULES.captureFoodMin보다 적으면 그만큼으로 채운다 (2026-11-02). 보고서 한 줄을 돌려준다
 function seize(cs) {
   const k = RULES.captureKeep, keep = k.min + Math.random() * (k.max - k.min); // 이번에 남는 비율
-  cs.food = Math.floor(cs.food * keep);
+  cs.food = Math.max(Math.floor(cs.food * keep), RULES.captureFoodMin);
   return `성의 군량 ${fmt(cs.food)}${numJosa(cs.food)} 차지했다.`;
 }
 
