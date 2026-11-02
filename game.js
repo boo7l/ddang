@@ -504,13 +504,29 @@ function spyDialog() {
     <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
 }
 
+// '능력 고정' 스위치 (2026-11-02, 징병의 병과 고정처럼): 켜 두면 수련을 누르자마자 고정된 능력치로 예약 (고르는 창 없이). 이 브라우저에 기억
+// 고정되는 능력치: 이 칸보다 앞에 예약한 수련이 있으면 그 능력치, 없으면 이 브라우저에서 마지막으로 고른 능력치. 이미 최대면 고정하지 않는다
+const TRAIN_LOCK_KEY = 'ddang-train-lock', TRAIN_STAT_KEY = 'ddang-train-stat';
+let trainLock = false;
+try { trainLock = localStorage.getItem(TRAIN_LOCK_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 꺼진 채 */ }
+function trainLockStat(p, i) {
+  const queued = p.queue.slice(0, i).reverse().find(o => o && o.cmd === 'train');
+  let k = queued ? queued.stat : null;
+  if (!k) try { k = localStorage.getItem(TRAIN_STAT_KEY); } catch (e) { /* 없음 */ }
+  return k && STATS.some(s => s.key === k) && p.stats[k] < RULES.statMax ? k : null;
+}
 function trainDialog() {
   const p = me(), xp = k => (p.statExp && p.statExp[k]) || 0;
+  const lockStat = trainLockStat(p, slot);
+  if (trainLock && lockStat) { reserve({ cmd: 'train', stat: lockStat }); return; }
   const opts = STATS.map(st => `<label class="opt"><input type="radio" name="tgt" value="${st.key}"${p.stats[st.key] >= RULES.statMax ? ' disabled' : ''}>
       <b>${st.name} 수련</b> <span class="dim">${p.stats[st.key]}</span>
       <span class="r">${bar(xp(st.key), expNeed(p.stats[st.key]))} <span class="dim">${xp(st.key)}/${expNeed(p.stats[st.key])}</span></span></label>`).join('');
   pickDialog('수련', `<p>능력치 하나를 골라 경험치를 집중해서 쌓습니다 (한 번에 ${RULES.statExp.train.min}~${RULES.statExp.train.max}). 경험치가 다 차면 그 능력치가 1 올라요.</p>
-    <p class="dim">${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => reserve({ cmd: 'train', stat: v }));
+    <p class="dim">${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => {
+      try { localStorage.setItem(TRAIN_STAT_KEY, v); } catch (e) { /* 이번만 */ }
+      reserve({ cmd: 'train', stat: v });
+    });
   $('#modalBox .opts').classList.add('train');
 }
 
@@ -1502,10 +1518,11 @@ function renderCommands() {
   // 이 칸 때 가지고 있을 병종: 앞 칸에 징병 예약이 있으면 그 병종, 없으면 지금 병사가 있을 때만 지금 병종 ('병과 고정'은 이때만 보인다)
   const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft');
   const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
+  const lockStat = trainLockStat(p, slot); // '능력 고정'은 고정할 능력치가 있을 때만 보인다
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
   const etc = [btn('explore', '탐색', cost('explore')),
-    btn('train', '수련', `능력치 경험 · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
+    btn('train', '수련', `${trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'} · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${levyRange(p).map(fmt).join('~')} · 치안 -${gTrait(p).levy.peace}`) : '', // 개인 특성 이게 일상이야
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
@@ -1532,13 +1549,18 @@ function renderCommands() {
     </div>
     <p class="sub">계략</p>
     <div class="cmds cg-plot">${plot}</div>
-    ${etc ? `<p class="sub">기타</p>
+    ${etc ? `<p class="sub subRow">기타${lockStat ? `<label class="lockSw" title="켜 두면 수련을 누르자마자 지금 능력치로 예약해요"><input type="checkbox" id="trainLock"${trainLock ? ' checked' : ''}> 능력 고정</label>` : ''}</p>
     <div class="cmds cg-etc">${etc}</div>` : ''}
 `;
   const dialogs = { adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
     draftLock = e.target.checked;
     try { localStorage.setItem(DRAFT_LOCK_KEY, draftLock ? '1' : '0'); } catch (err) { /* 이번만 */ }
+    renderCommands();
+  };
+  if ($('#trainLock')) $('#trainLock').onchange = e => {
+    trainLock = e.target.checked;
+    try { localStorage.setItem(TRAIN_LOCK_KEY, trainLock ? '1' : '0'); } catch (err) { /* 이번만 */ }
     renderCommands();
   };
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
