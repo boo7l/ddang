@@ -71,6 +71,7 @@ function newWorld(season = 1) {
     generals: {}, // 계정id → 장수
     cities: {},
     owners: {},
+    ownerLog: [], // 세력 변화 기록 (2026-11-03, 시즌 5부터): [턴, 성id, 새 주인 세력id('' = 공백)]. 처음 주인은 지도 파일. 명예의 전당 다시 보기용
   };
   ensureCities();
   return S;
@@ -91,6 +92,7 @@ function setOwner(c, fid) {
   const before = c.faction;
   c.faction = fid;
   S.owners[c.id] = fid;
+  if (before !== fid) (S.ownerLog = S.ownerLog || []).push([S.turn, c.id, fid || '']);
   if (before && citiesOfFaction(before).length === 0) logAll(`☆ ${factionById(before).name} 세력이 멸망했다.`);
   checkUnify(fid);
 }

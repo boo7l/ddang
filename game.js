@@ -309,7 +309,7 @@ const hofSw = c => (c ? `<span class="swatch" style="background:${c}"></span>` :
 async function renderHof() {
   const box = $('#hof');
   if (!sb) return;
-  const { data, error } = await sb.from('hall_of_fame').select('*').order('season', { ascending: false });
+  const { data, error } = await sb.from('hall_of_fame').select('season,ended_at,winner,winner_color,turn,top,heroes,start_year,scenario').order('season', { ascending: false }); // replay(세력 변화 기록)는 다시 보기를 열 때만 따로 받는다
   if (error || !data || !data.length) { box.innerHTML = ''; return; }
   HOF = data;
   box.innerHTML = `<button class="hofEntry">🏆 명예의 전당 <span class="hofLast">· 지난 통일 ${hofSw(HOF[0].winner_color)}${esc(HOF[0].winner || '?')}</span></button>`;
