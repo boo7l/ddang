@@ -328,8 +328,11 @@ function hofRender() {
   $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
     <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="훈장">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
     ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
-    ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}`;
+    ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}
+    ${HOF_NOTES[h.season] ? `<p class="hofNote dim">${esc(HOF_NOTES[h.season])}</p>` : ''}`;
 }
+// 명예의 전당 시즌별 맨 아랫줄 안내 (2026-11-03)
+const HOF_NOTES = { 4: '*다계정 의심으로 수여가 보류된 장수가 있습니다. 사실과 다를 시 메일로 알려주세요.' };
 $('#hofBack').onclick = () => showTitle();
 $('#chipPrev').onclick = () => { hofStart -= hofPerPage(); hofRender(); };
 $('#chipNext').onclick = () => { hofStart += hofPerPage(); hofRender(); };
