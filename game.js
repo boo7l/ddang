@@ -199,7 +199,7 @@ function adminToolsDialog() {
     <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     <p class="sub">전체 메시지 <span class="dim">(지금 있는 모든 장수의 기록에 노란색으로, ${S ? allGenerals().length : 0}명)</span></p>
-    <p style="display:flex;gap:6px;align-items:center"><span>[📢]</span><input id="aMsg" maxlength="195" placeholder="195자까지 (앞에 [📢]가 자동으로 붙어요)" style="flex:1;min-width:0"></p>
+    <p><input id="aMsg" maxlength="200" value="[📢] " placeholder="200자까지" style="width:100%;box-sizing:border-box"></p><!-- 입력칸에 [📢]를 미리 넣어 둔다. 필요 없으면 지우면 된다 (2026-11-02) -->
     <p><button id="aMsgSend">보내기</button></p>
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
     <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(MAP.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
@@ -215,9 +215,8 @@ function adminToolsDialog() {
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
     $('#aMsgSend').onclick = async () => {
-      const body = $('#aMsg').value.trim().replace(/^\[📢\]\s*/u, ''); // 전체 메시지 앞에는 언제나 [📢] (2026-11-02, 직접 적었으면 두 번 붙이지 않는다)
-      if (!body) { alert('보낼 내용을 적어 주세요.'); return; }
-      const text = `[📢] ${body}`;
+      const text = $('#aMsg').value.trim();
+      if (!text || text === '[📢]') { alert('보낼 내용을 적어 주세요.'); return; }
       if (!confirm(`모든 장수의 기록에 보낼까요? 보내면 지울 수 없어요.\n\n${text}`)) return;
       if (await call('adminNotice', { text })) afterAdmin();
     };
