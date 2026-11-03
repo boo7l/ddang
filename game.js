@@ -672,7 +672,7 @@ function transportDialog() {
   const opts = linkedOwnCities(at.id, p.faction, RULES.moveRange).map(c => {
     const cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${frontTag(c)}
-      <span class="r dim">${gradeStars(c)}군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
+      <span class="r foodR">${gradeStars(c)}군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
   }).join('');
   const max = RULES.transportMax;
   const extra = `
@@ -721,7 +721,7 @@ function moveDialog() {
   const from = cityAtSlot(me(), slot);
   const opts = linkedOwnCities(from.id, me().faction, moveRangeOf(me()), !!gTrait(me()).freePath).map(c =>
     `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${frontTag(c)}
-      <span class="r dim">${gradeStars(c)}군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
+      <span class="r foodR">${gradeStars(c)}군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
   pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 ${gTrait(me()).freePath ? '' : '우리 땅으로 '}${moveRangeOf(me())}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
     opts, '예약', v => reserve({ cmd: 'move', to: v }));
 }
