@@ -503,14 +503,14 @@ function runDraft(g, o) {
   return '';
 }
 
-// 수비대장 징병 (2026-11-04 시즌 5): 내 사병 대신 머무는 성의 수비대장 병력을 모은다. 양·금·치안·공적·경험치는 보통 징병과 같다.
+// 수비대 징병 (2026-11-04 시즌 5, 화면 이름은 '수비대 징병'. 부대 이름은 그대로 수비대장): 내 사병 대신 머무는 성의 수비대장 병력을 모은다. 양·금·치안·공적·경험치는 보통 징병과 같다.
 // 최대치는 RULES.guardMax (성 규모별). 다른 병종을 모으면 있던 수비대 병력은 흩어진다. 0인 성에서도 다시 모을 수 있다
 function runGuardDraft(g, type) {
   const city = cityById(g.city), cs = S.cities[g.city], max = RULES.guardMax[city.grade];
   if (city.faction !== g.faction) return '우리 세력 성이 아님';
-  if (defendingIn(g.city, g.faction).length >= RULES.defenseMax) return `방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어 수비대장 징병 불가`; // 2026-11-04
+  if (defendingIn(g.city, g.faction).length >= RULES.defenseMax) return `방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어 수비대 징병 불가`; // 2026-11-04
   const curType = cs.guardType || RULES.guardUnit.type;
-  if ((cs.guard || 0) >= max && curType === type) return '수비대장 병력이 이미 최대치';
+  if ((cs.guard || 0) >= max && curType === type) return '수비대 병력이 이미 최대치';
   const peace = cs.peace, rate = peaceDraft(peace);
   if (!rate) return `${city.name}의 치안이 너무 낮음 (${peace}, ${RULES.peaceLow} 미만은 징병 불가)`;
   const why = pay(g, 'draft');
@@ -524,7 +524,7 @@ function runGuardDraft(g, type) {
   addRecord(g, 'drafted', gain);
   const drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0))));
   cs.peace -= drop;
-  addLog(g, `${city.name}: 수비대장에게 ${type}을 모아 주었다. 수비대 +${fmt(gain)} (${fmt(cs.guard)}/${fmt(max)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
+  addLog(g, `${city.name}: 수비대에 ${type}을 모았다. 수비대 +${fmt(gain)} (${fmt(cs.guard)}/${fmt(max)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
   gainStatExp(g, 'lea', RULES.statExp.draft);
   return '';

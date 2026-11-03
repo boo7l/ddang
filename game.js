@@ -536,19 +536,19 @@ function draftDialog() {
     <p class="dim" id="draftNow">${p.troops > 0 ? `지금 ${p.unitType} ${fmt(p.troops)}. 다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'} 금 ${RULES.myGoldCost.draft}</p>`,
   opts, '예약', (t, box) => {
     if (box.querySelector('#draftGuard').checked) { // 수비대장 징병 (2026-11-04)
-      if (gNow > 0 && t !== gType && !confirm(`수비대장에게 ${t}을 모으면 지금 있는 수비대 ${gType} ${fmt(gNow)}명은 모두 흩어져요. 예약할까요?`)) return false;
+      if (gNow > 0 && t !== gType && !confirm(`수비대에 ${t}을 모으면 지금 있는 수비대 ${gType} ${fmt(gNow)}명은 모두 흩어져요. 예약할까요?`)) return false;
       reserve({ cmd: 'draft', unit: t, who: 'guard' });
       return;
     }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     reserve({ cmd: 'draft', unit: t });
-  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대장 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대장의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대장 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)})</span></label>
+  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)})</span></label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
   const ownCap = $('#draftCap').textContent, ownNow = $('#draftNow').textContent;
   gBox.onchange = () => {
-    $('#draftCap').textContent = gBox.checked ? `수비대장 최대 ${fmt(gMax)}` : ownCap;
+    $('#draftCap').textContent = gBox.checked ? `수비대 최대 ${fmt(gMax)}` : ownCap;
     $('#draftNow').textContent = gBox.checked ? `지금 수비대 ${gType} ${fmt(gNow)}. 다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요. 금 ${RULES.myGoldCost.draft}` : ownNow;
     const want = gBox.checked ? gType : cur;
     const r = $('#modalBox').querySelector(`input[name=tgt][value="${want}"]`);
