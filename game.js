@@ -1403,6 +1403,7 @@ function setTab(t) {
   document.querySelectorAll('#mTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   $('#game').scrollTop = 0;
   if (t === 'chat') { const ul = $('#chat .chatList'); if (ul) ul.scrollTop = ul.scrollHeight; } // 숨어 있다 나오면 맨 아래(새 글)로
+  if (t === 'chat') document.querySelector('#mTabs [data-tab=chat]').classList.remove('dot'); // 받은 서신 빨간 점을 지운다
 }
 document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
 // 새로고침 단추: 페이지를 다시 열지 않고 서버에서 최신 상태만 받아 온다 (2026-10-31)
@@ -1685,6 +1686,7 @@ function syncChatChannel() {
     list.push({ t: m.t, name: m.name, city: m.city, text: m.text, ...(m.letter ? { letter: m.letter } : {}) });
     if (list.length > CHAT_MAX) list.splice(0, list.length - CHAT_MAX);
     if (!$('#game').hidden) renderChatList();
+    if (m.letter && m.letter.dir === 'in') letterAlert();
   }).subscribe();
 }
 // 틀(입력칸)은 한 번만 만든다. 다시 그리면 한글 입력 중이던 글자가 깨지므로 그 뒤로는 목록만 고친다
@@ -1732,6 +1734,14 @@ function letterLine(m, p) {
     ? `<li class="letter"><span class="t">${fmtClock(m.t)}</span>📜 ${sw}<b>${fName(other)}</b> 세력 ${letterWho(m)}의 서신: ${esc(m.text)}${citiesOfFaction(other).length && me().faction ? ` <button class="mini" data-reply="${esc(other)}">답장</button>` : ''}</li>`
     : `<li class="letter out"><span class="t">${fmtClock(m.t)}</span>📜 ${sw}<b>${fName(other)}</b> 세력에 보낸 서신 (${letterWho(m)}): ${esc(m.text)}</li>`;
 }
+// 받은 서신 알림 (2026-11-03): 휴대폰에서 채팅 탭이 아니면 탭에 빨간 점, 다른 브라우저 탭을 보고 있으면 제목에 (개수)
+let unreadLetters = 0;
+const BASE_TITLE = document.title;
+function letterAlert() {
+  if ($('#game').dataset.tab !== 'chat') document.querySelector('#mTabs [data-tab=chat]').classList.add('dot');
+  if (document.hidden) document.title = `(${++unreadLetters}) ${BASE_TITLE}`;
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && unreadLetters) { unreadLetters = 0; document.title = BASE_TITLE; } });
 // 서신 쓰기 창: 받을 세력(멸망하지 않은 다른 세력)을 고르고 100자까지. to를 주면 그 세력이 골라져 있다 (답장)
 function letterDialog(to) {
   const p = me(); if (!p || !p.faction) return;

@@ -775,6 +775,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #mTabs button { flex: 1; padding: 12px 0; margin: 0; border: 0; border-right: 1px solid var(--gold-dark); box-shadow: none; background: none; color: var(--text); }
   #mTabs button:last-child { border-right: 0; }
   #mTabs button.on { background: var(--title); color: var(--panel-dark); }
+  #mTabs button.dot::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 4px; vertical-align: 6px; background: #e8352a; border: 1px solid #000; } /* 받은 서신 빨간 점 (2026-11-03, 도트라 네모) */
 
   /* 첫 화면·장수 만들기·세력 선택 */
   #title { margin: 16px auto; }
