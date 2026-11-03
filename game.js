@@ -199,7 +199,7 @@ function adminDialog(tab = 'users', fid = null) {
     fid = fid || (fs[0] && fs[0].id);
     const list = fid ? chatOf(fid) : [];
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
-      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${chatWho(m)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
+      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${chatWho(m)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
   }
   openModal(`<h2>👁 관리자 보기 <span class="dim small">· 새 정보는 1분마다 받아 와요</span></h2>${tabs}${body}
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
@@ -1682,7 +1682,7 @@ function syncChatChannel() {
     S.chat = S.chat || {};
     const list = S.chat[m.faction] || (S.chat[m.faction] = []);
     if (list.some(x => x.t === m.t && x.name === m.name && x.text === m.text)) return; // 이미 받아 온 글
-    list.push({ t: m.t, name: m.name, city: m.city, text: m.text });
+    list.push({ t: m.t, name: m.name, city: m.city, text: m.text, ...(m.letter ? { letter: m.letter } : {}) });
     if (list.length > CHAT_MAX) list.splice(0, list.length - CHAT_MAX);
     if (!$('#game').hidden) renderChatList();
   }).subscribe();
@@ -1696,9 +1696,14 @@ function renderChat() {
       <form class="chatForm" autocomplete="off">
         <input type="text" id="chatInput" maxlength="${CHAT_LEN}" placeholder="우리 세력에게 한마디">
         <button type="submit">보내기</button>
+        <button type="button" class="letterBtn" title="다른 세력에 외교 서신 보내기">📜 서신</button>
       </form>
       <p class="note">같은 세력 장수들끼리만 보여요. 새 글은 곧바로 떠요. (최근 ${CHAT_MAX}개)</p>`;
-    box.querySelector('.chatList').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
+    box.querySelector('.chatList').onclick = e => {
+      const r = e.target.closest('[data-reply]'); if (r) { letterDialog(r.dataset.reply); return; }
+      const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid);
+    };
+    box.querySelector('.letterBtn').onclick = () => letterDialog();
     box.querySelector('.chatForm').onsubmit = e => {
       e.preventDefault();
       const input = $('#chatInput');
@@ -1712,9 +1717,38 @@ function renderChat() {
 function renderChatList() {
   const ul = $('#chat .chatList'), p = me(), list = chatOf(p.faction);
   ul.innerHTML = list.length
-    ? list.map(m => `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m, p.faction)}</span>${esc(m.text)}</li>`).join('')
+    ? list.map(m => m.letter ? letterLine(m, p) : `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m, p.faction)}</span>${esc(m.text)}</li>`).join('')
     : '<li class="empty">아직 아무 말도 없어요. 첫마디를 남겨 보세요.</li>';
   ul.scrollTop = ul.scrollHeight; // 새 글이 보이게 맨 아래로
+}
+
+// 외교 서신 (2026-11-03): 채팅 목록 안에 양피지 줄로. 받은 서신에는 [답장]
+const fName = fid => { const f = factionById(fid); return f ? esc(f.name) : '?'; };
+// 서신의 이름: 얼굴 색만 (어느 성에 있는지는 적지 않는다)
+const letterWho = m => { const g = allGenerals().find(x => x.name === m.name), f = g && FACES.find(x => x.id === g.face); return f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name); };
+function letterLine(m, p) {
+  const other = m.letter.other, sw = factionById(other) ? `<span class="swatch" style="background:${factionById(other).color}"></span>` : '';
+  return m.letter.dir === 'in'
+    ? `<li class="letter"><span class="t">${fmtClock(m.t)}</span>📜 ${sw}<b>${fName(other)}</b> 세력 ${letterWho(m)}의 서신: ${esc(m.text)}${citiesOfFaction(other).length && me().faction ? ` <button class="mini" data-reply="${esc(other)}">답장</button>` : ''}</li>`
+    : `<li class="letter out"><span class="t">${fmtClock(m.t)}</span>📜 ${sw}<b>${fName(other)}</b> 세력에 보낸 서신 (${letterWho(m)}): ${esc(m.text)}</li>`;
+}
+// 서신 쓰기 창: 받을 세력(멸망하지 않은 다른 세력)을 고르고 100자까지. to를 주면 그 세력이 골라져 있다 (답장)
+function letterDialog(to) {
+  const p = me(); if (!p || !p.faction) return;
+  const fs = MAP.factions.filter(f => f.id !== p.faction && citiesOfFaction(f.id).length);
+  if (!fs.length) { alert('서신을 보낼 세력이 없어요.'); return; }
+  openModal(`<h2>📜 외교 서신</h2>
+    <p>다른 세력에 서신을 보내요. 받는 세력 채팅과 우리 세력 채팅에 함께 남아요. 한 세력에는 우리 세력 전체에서 5분에 한 통만 보낼 수 있어요.</p>
+    <div class="opts">${fs.map(f => `<label class="opt"><input type="radio" name="lto" value="${f.id}"${f.id === to ? ' checked' : ''}><span class="swatch" style="background:${f.color}"></span><b>${esc(f.name)}</b></label>`).join('')}</div>
+    <p><input type="text" id="letterText" maxlength="${CHAT_LEN}" placeholder="서신 내용 (${CHAT_LEN}자까지)" style="width:100%"></p>
+    <div class="modalBtns"><button data-close>취소</button><button id="letterOk" class="main">보내기</button></div>`, box => {
+    box.querySelector('#letterOk').onclick = async () => {
+      const sel = box.querySelector('input[name=lto]:checked'), text = box.querySelector('#letterText').value.trim();
+      if (!sel) { alert('받을 세력을 골라 주세요.'); return; }
+      if (!text) { alert('서신 내용을 적어 주세요.'); return; }
+      if (await call('letter', { to: sel.value, text })) { closeModal(); renderChatList(); }
+    };
+  });
 }
 
 function renderLog() {

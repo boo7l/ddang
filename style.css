@@ -513,6 +513,10 @@ table.rank .num { text-align: right; padding-right: 12px; }
 #chat .chatList .who { color: var(--label); margin-right: 6px; }
 #chat .chatList li.mine { background: rgba(255, 216, 96, .07); } /* 내 글: 줄 바탕을 옅은 금빛으로 (2026-10-30. 닉네임은 얼굴 색이라 이름 색으로는 구분하지 않는다) */
 #chat .chatList .empty { color: var(--dim); border: 0; }
+#chat .chatList li.letter { background: rgba(232, 200, 140, .14); border-left: 3px solid #e8c88c; padding: 3px 6px; margin: 2px 0; } /* 외교 서신: 양피지 빛 줄 (2026-11-03) */
+#chat .chatList li.letter.out { background: rgba(232, 200, 140, .07); }
+#chat .chatList li.letter b { font-weight: normal; color: var(--title); }
+#chat .chatList li.letter .mini { margin-left: 4px; }
 #chat .chatForm { display: flex; gap: 6px; }
 #chat .chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
 #chat .note { color: var(--dim); font-size: 13px; margin: 6px 0 0; }
