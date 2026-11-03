@@ -49,7 +49,7 @@ const RULES = {
   battleReward: 500,        // 임시: 전투에 이기면 들어오는 금 (명령으로 금을 더 얻는 길. 기획서 [미정])
   // 공적: 수련을 뺀 모든 명령에 붙는다. 순위를 매기는 점수 (임시값)
   meritBuyGold: 100, // 군량 구매 공적: 실제로 낸 금 100당 1 (최소 1, 2026-11-02)
-  merit: { domestic: 10, draft: 10, transport: 10, siege: 10, explore: 10, move: 5, plot: 10, plotOk: 10, win: 30, blank: 30, lose: 10, duel: 20, scheme: 20 }, // 2026-10-28 계략은 시도 10 + 성공 20. 2026-10-31 공백지 차지 50 → 30, 일기토 승리·책략 성공 25 → 20
+  merit: { domestic: 10, draft: 10, transport: 10, siege: 10, explore: 10, move: 5, plot: 10, plotOk: 10, win: 30, blank: 30, lose: 10, duel: 20, scheme: 20, charge: 20 }, // 2026-10-28 계략은 시도 10 + 성공 20. 2026-10-31 공백지 차지 50 → 30, 일기토 승리·책략 성공 25 → 20
   meritTurnMax: 100,        // 한 장수가 한 턴에 얻는 공적의 최대치 (2026-10-28: 함락·일기토·책략·피해·성벽 공적이 겹쳐도 100까지)
   meritPerKill: 300,        // 피해 공적: 전투에서 없앤 적 병력 300명당 공적 1 (공격·수비 모두, 2026-10-26. 2026-10-31 200명에서)
   meritPerWall: 30,         // 성벽 공적: 성벽 공격으로 깎은 방어 30당 공적 1 (2026-10-26)
@@ -118,6 +118,7 @@ const RULES = {
   // 일기토 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
   duel: { minWar: 70, chance: 0.05, lossPerWar: [13, 20], exp: 50 }, // 일기토: 진 쪽 병력 손실 = 이긴 쪽 무력 × 13~20 (2026-10-31, 그 전엔 진 쪽 병력의 30% → 25%). 양쪽 무력 70 이상이면 합마다 5% (2026-10-28 8%에서, 빠뜨롱 나와 특성은 10%),출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
   // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 15)% 확률로 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (60~90) × 10 × (지력 차이 ÷ 10)^0.6 (2026-10-31 (50~100), 지수 0.7에서)
+  charge: { minWar: 70, chancePerWar: 1 / 1500, base: [60, 90], ref: 10, exp: 0.6, statExp: 40 }, // 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 같은 수식에 지력 대신 무력. 무력 경험치 40, 공적 20. 침착이면 피해 -50%
   scheme: { minInt: 70, chancePerInt: 1 / 1500, base: [60, 90], ref: 10, exp: 0.6, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 40 }, // 책략 한 번에 지력 경험치 40 (2026-10-27 30에서). 출진 한 번(5합)에 최대 1번
 
   // 병종과 훈련 (기획서 8장)
@@ -274,7 +275,7 @@ const GENERAL_TRAITS = {
   persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 무력의 2~5배만큼 금 획득, 치안 -3 (쿨타임 5턴)", levy: { warMin: 2, warMax: 5, peace: 3, cooldown: 5 } }, // 2026-10-31 금 = 무력 × 2~5. 2026-10-30 무력 × 1~5 (그 전 30~300). 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
   duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
-  calm: { tier: 'SSR', name: '침착', desc: '일기토·책략 피해 -50%, 머무는 성의 계략 피해 -50%', calm: 0.50 }, // 2026-10-31 -40% → -50%. 2026-10-28 최상 (같은 성에 여럿이어도 계략 경감은 한 번만)
+  calm: { tier: 'SSR', name: '침착', desc: '일기토·책략·돌격 피해 -50%, 머무는 성의 계략 피해 -50%', calm: 0.50 }, // 2026-11-03 돌격도 줄인다. // 2026-10-31 -40% → -50%. 2026-10-28 최상 (같은 성에 여럿이어도 계략 경감은 한 번만)
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
@@ -409,6 +410,19 @@ function fightRounds(att, def, wall, left) {
       me.schemes = (me.schemes || 0) + 1;
       const kind = C.kinds[Math.floor(Math.random() * C.kinds.length)];
       lines.push(`${used}합: ${kind}! ${me.name}(지력 ${me.stats.int})의 계책에 ${foe.name} 부대 -${loss.toLocaleString('ko-KR')}`);
+      continue;
+    }
+    // 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 무력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (무력 ÷ 15)% 확률로 보통 교전 대신 일방적으로 친다.
+    // 피해 = (60~90) × 10 × (무력 차이 ÷ 10)^0.6. 출진 한 번(5합)에 최대 1번 (책략과 따로 센다)
+    const G = RULES.charge, aw = att.stats.war || 0, dw = def.stats.war || 0;
+    const chg = aw >= G.minWar && aw > dw ? [att, def, aw - dw] : dw >= G.minWar && dw > aw ? [def, att, dw - aw] : null;
+    if (chg && !att.charged && Math.random() < chg[0].stats.war * G.chancePerWar) {
+      att.charged = true;
+      const [me, foe, gap] = chg;
+      const loss = Math.min(foe.troops, Math.round((G.base[0] + Math.random() * (G.base[1] - G.base[0])) * G.ref * Math.pow(gap / G.ref, G.exp) * (1 - (gTrait(foe).calm || 0)))); // 침착: 돌격 피해 감소
+      foe.troops -= loss;
+      me.charges = (me.charges || 0) + 1;
+      lines.push(`${used}합: 🐎 돌격! ${me.name}(무력 ${me.stats.war})의 돌격에 ${foe.name} 부대 -${loss.toLocaleString('ko-KR')}`);
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
