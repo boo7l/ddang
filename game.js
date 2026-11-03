@@ -987,7 +987,7 @@ function showTitle(msg) {
   const needNick = !!(ME && !ME.nickname);
   $('#tGoogleBox').hidden = needNick;
   $('#tNickBox').hidden = !needNick;
-  // 로그인한 채로 첫 화면에 왔으면 (제목줄 낙관·로고를 눌러서) 로그인 대신 "게임으로 들어가기" (2026-10-27)
+  // 로그인한 채로 첫 화면에 왔으면 (제목줄 낙관·로고를 눌러서) 로그인 대신 "입장하기" (2026-10-27, 2026-11-03 "게임으로 들어가기"에서 바꿈)
   const inGame = !!(ME && ME.nickname);
   $('#tEnter').hidden = !inGame;
   $('#tLogout').hidden = !inGame;
