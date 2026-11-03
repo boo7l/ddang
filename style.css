@@ -1,11 +1,12 @@
 /* ===== 땅국지 공통 모양: 옛날 DOS 코에이 삼국지 + 고대 중국 (붉은 옻칠과 금테) ===== */
 
-/* 도트 글꼴 '둥근모꼴'을 게임 폴더에 같이 넣어 둬서 어느 컴퓨터에서도 같은 글꼴로 보인다.
+/* 2026-11-03 시험: 기본 글꼴을 삼국지3글꼴(Sam3KRFont, leedheo 제작, MIT, github.com/hurss/fonts)로 바꿔 봄. 되돌리려면 git에서 이 바꿈을 되돌린다.
+   도트 글꼴 '둥근모꼴'을 게임 폴더에 같이 넣어 둬서 어느 컴퓨터에서도 같은 글꼴로 보인다.
    이 글꼴은 16px의 배수(16, 32)일 때 가장 또렷하므로 글자 크기는 16px을 기본으로 쓴다. */
 @font-face {
-  font-family: "DungGeunMo";
-  /* 웹용 woff(1.6MB)를 먼저 쓰고, 안 되면 원본 ttf(7MB) */
-  src: url("fonts/DungGeunMo.woff") format("woff"), url("fonts/DungGeunMo.ttf") format("truetype");
+  font-family: "Sam3KR";
+  /* 웹용 woff(0.48MB)를 먼저 쓰고, 안 되면 원본 ttf(2.1MB) */
+  src: url("fonts/Sam3KRFont.woff") format("woff"), url("fonts/Sam3KRFont.ttf") format("truetype");
   font-display: block; /* 받는 동안 잠깐(최대 3초) 글자를 숨겨서, 다른 글꼴로 깨져 보였다 바뀌지 않게 */
 }
 
@@ -42,7 +43,7 @@ body {
   background-size: 24px 24px;
   background-position: 0 0, 12px 12px;
   color: var(--text);
-  font-family: "DungGeunMo", monospace;
+  font-family: "Sam3KR", monospace;
   font-size: 16px;
   line-height: 1.5;
 }
