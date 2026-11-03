@@ -319,6 +319,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 }
 #modalBox { width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; margin: 0; }
 #modalBox p { margin: 6px 0; }
+#boardCover { position: fixed; z-index: 51; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .6); color: var(--text); font-size: 16px; } /* 게시판 다시 불러오는 동안 창을 덮는다 (2026-11-03) */
 .opts { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
 .opt {
   display: flex; align-items: center; gap: 8px;

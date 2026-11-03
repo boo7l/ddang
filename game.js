@@ -455,7 +455,7 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox'); }
+function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 function pickDialog(title, intro, opts, okText, onOk, extra = '') {
@@ -879,11 +879,27 @@ function renderNotes() {
 }
 // ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
 // kind: '' 전체, '건의', '자유'. 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
+// 게시판이 이미 열려 있으면 (글쓰기·댓글·지우기·탭·쪽 넘기기) 창을 그대로 두고 반투명 검정으로 덮는다 (2026-11-03: 창 크기가 들썩이지 않게)
+function boardCover(on) {
+  const old = document.getElementById('boardCover');
+  if (old) old.remove();
+  if (!on) return;
+  const r = $('#modalBox').getBoundingClientRect(), c = document.createElement('div');
+  c.id = 'boardCover';
+  c.textContent = '불러오는 중…';
+  Object.assign(c.style, { top: r.top + 'px', left: r.left + 'px', width: r.width + 'px', height: r.height + 'px' });
+  $('#modal').appendChild(c);
+}
 async function boardDialog(page = 0, kind = '') {
-  openModal('<h2>💬 게시판</h2><p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>');
-  $('#modalBox').classList.add('wideBox');
+  const reopen = !$('#modal').hidden && $('#modalBox').querySelector('.boardList');
+  if (reopen) boardCover(true);
+  else {
+    openModal('<h2>💬 게시판</h2><p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>');
+    $('#modalBox').classList.add('wideBox');
+  }
   let d;
   try { d = await api('boardList', { page, kind }); } catch (e) { d = { error: e.message }; }
+  boardCover(false);
   if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
   if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
   const canWrite = d.me && !d.me.banned;
