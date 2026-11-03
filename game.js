@@ -573,9 +573,10 @@ function siegeDialog() {
   const p = me();
   const opts = Object.entries(SIEGE).map(([t, w]) => {
     const have = p.siege && p.siege[t];
-    return `<label class="opt"><input type="radio" name="tgt" value="${t}"${have ? ' disabled' : ''}>
+    // 설명은 16px, 괄호 부분은 다음 줄로 (2026-11-03: 충차·벽력거)
+    return `<label class="opt siegeOpt"><input type="radio" name="tgt" value="${t}"${have ? ' disabled' : ''}>
       <b>${t}</b> <span class="dim">금 ${fmt(siegePrice(p, t))}</span>
-      <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc}</span></label>`;
+      <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
   pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 50% 확률로 부서져요.</p>
     <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'} · 내 금 ${fmt(p.gold)}</p>`, opts, '예약', v => {
