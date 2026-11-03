@@ -6,6 +6,37 @@ let MY_ID = null;     // 내 계정 id (서버 계정)
 let IS_ADMIN = false; // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
 const me = () => S.generals[MY_ID];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+// 가운데 점 붙이기 (2026-11-03, 삼국지3글꼴 시험): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
+// 글자를 쓰는 곳(코드·서버 기록·채팅)은 그대로 두고, 화면에 붙는 글자만 바꾼다. 입력칸은 건드리지 않는다. 글꼴을 되돌리면 TIGHT_DOTS를 false로
+const TIGHT_DOTS = true;
+(function tightDots() {
+  if (!TIGHT_DOTS || typeof MutationObserver !== 'function') return;
+  const SKIP = /^(SCRIPT|STYLE|TEXTAREA|INPUT)$/;
+  const ok = t => t.parentNode && !SKIP.test(t.parentNode.nodeName) && !t.parentNode.isContentEditable;
+  const one = t => {
+    if (!t.data.includes('·') || !ok(t)) return;
+    let d = t.data.replace(/ +· +/g, '·').replace(/ +·$/, '·').replace(/^· +/, '·');
+    if (d.startsWith('·') && document.body.contains(t)) { // 점이 덩어리 맨 앞이면 앞 글자 덩어리 끝의 띄어쓰기도 뺀다 (예: "명예의 전당 <span>· 지난 통일")
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); w.currentNode = t;
+      const p = w.previousNode();
+      if (p && / +$/.test(p.data) && ok(p)) p.data = p.data.replace(/ +$/, '');
+    }
+    if (d !== t.data) t.data = d;
+  };
+  const fix = n => {
+    if (n.nodeType === 3) return one(n);
+    if (n.nodeType !== 1 || SKIP.test(n.nodeName)) return;
+    const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT), list = [];
+    for (let t = w.nextNode(); t; t = w.nextNode()) list.push(t);
+    list.forEach(one);
+  };
+  const start = () => {
+    fix(document.body);
+    new MutationObserver(list => { for (const m of list) { if (m.type === 'characterData') fix(m.target); else m.addedNodes.forEach(fix); } })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+  };
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
 const fmtLeft = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${pad(s % 60)}`; };
 
 // ===== 서버와 주고받기 =====
