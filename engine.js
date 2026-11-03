@@ -914,7 +914,7 @@ function runSpy(g, o) {
   addRecord(g, 'plotOk');
   addMerit(g, RULES.merit.plotOk); // 첩보 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   addLog(g, `첩보 성공! ${c.name}: 농업 ${cs.agri} · 상업 ${cs.comm} · 방어 ${cs.wall} · 치안 ${cs.peace} · 군량 ${fmt(cs.food)}\n(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`);
-  gainStatExp(g, 'int', PLOT.exp);
+  gainStatExp(g, 'int', PLOT.spyExp);
   return '';
 }
 
