@@ -879,6 +879,9 @@ function renderNotes() {
 }
 // ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
 // kind: '' 전체, '건의', '자유'. 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
+// 댓글 접기 (2026-11-03): 기본은 펼침. 접은 글은 페이지를 새로 열기 전까지 기억해서 다시 불러와도 접힌 채로 둔다
+const BOARD_FOLDED = new Set();
+const foldText = (id, n) => (BOARD_FOLDED.has(id) ? `▼ 댓글 ${n}개 펴기` : '▲ 댓글 접기');
 // 게시판이 이미 열려 있으면 (글쓰기·댓글·지우기·탭·쪽 넘기기) 창을 그대로 두고 반투명 검정으로 덮는다 (2026-11-03: 창 크기가 들썩이지 않게)
 function boardCover(on) {
   const old = document.getElementById('boardCover');
@@ -908,9 +911,9 @@ async function boardDialog(page = 0, kind = '') {
   const items = d.posts.map(p => `<li class="boardPost">
       <p class="boardHead"><span class="tTag">[${esc(p.kind)}]</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
       <p class="boardText">${esc(p.text)}</p>
-      ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li><p class="boardHead">${who(c)} <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</p><p class="boardText">${esc(c.text)}</p></li>`).join('')}</ul>` : ''}
-      ${canWrite ? `<p class="replyRow"><button type="button" class="mini replyBtn">💬 댓글</button></p>
-      <form class="boardReply" data-post="${esc(p.id)}" autocomplete="off" hidden><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
+      ${p.comments.length ? `<ul class="boardComments"${BOARD_FOLDED.has(p.id) ? ' hidden' : ''}>${p.comments.map(c => `<li><p class="boardHead">${who(c)} <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</p><p class="boardText">${esc(c.text)}</p></li>`).join('')}</ul>` : ''}
+      ${canWrite || p.comments.length ? `<p class="replyRow">${canWrite ? '<button type="button" class="mini replyBtn">💬 댓글</button>' : ''}${p.comments.length ? ` <button type="button" class="mini foldBtn" data-post="${esc(p.id)}" data-n="${p.comments.length}">${foldText(p.id, p.comments.length)}</button>` : ''}</p>` : ''}
+      ${canWrite ? `<form class="boardReply" data-post="${esc(p.id)}" autocomplete="off" hidden><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
     </li>`).join('') || '<li class="dim center">아직 글이 없어요. 첫 글을 남겨 보세요.</li>';
   const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
   const kinds = [['', '전체'], ['건의', '건의'], ['자유', '자유']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
@@ -951,9 +954,15 @@ async function boardDialog(page = 0, kind = '') {
       b.textContent = f.hidden ? '💬 댓글' : '닫기';
       if (!f.hidden) f.querySelector('input').focus();
     }; });
+    box.querySelectorAll('.foldBtn').forEach(b => { b.onclick = () => {
+      const id = b.dataset.post, list = b.closest('.boardPost').querySelector('.boardComments');
+      if (BOARD_FOLDED.has(id)) BOARD_FOLDED.delete(id); else BOARD_FOLDED.add(id);
+      list.hidden = BOARD_FOLDED.has(id);
+      b.textContent = foldText(id, +b.dataset.n);
+    }; });
     box.querySelectorAll('.boardReply').forEach(f => { f.onsubmit = e => {
       e.preventDefault();
-      send('boardComment', { post: f.dataset.post, text: f.querySelector('input').value }, f.querySelector('button'), () => boardDialog(page, kind));
+      send('boardComment', { post: f.dataset.post, text: f.querySelector('input').value }, f.querySelector('button'), () => { BOARD_FOLDED.delete(f.dataset.post); return boardDialog(page, kind); }); // 댓글을 달면 그 글 댓글은 펼친다
     }; });
     box.querySelectorAll('[data-bdel]').forEach(b => { b.onclick = () => {
       if (!confirm('지울까요? 되돌릴 수 없어요.')) return;
