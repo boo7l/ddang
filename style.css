@@ -95,6 +95,7 @@ header.titlebar { --panel: #380c08; } /* 상단 바만 조금 짙은 옻칠 (202
   transform: rotate(-10deg);
 }
 h1 { margin: 0; font-size: 32px; font-weight: normal; color: var(--title); letter-spacing: 4px; text-shadow: 2px 2px 0 #000; }
+.titlebar h1 { display: flex; align-items: center; } /* 로고 그림을 글꼴 기준선이 아니라 제목줄 가운데에 맞춘다 (2026-11-03: 삼국지3글꼴로 바꾼 뒤 휴대폰에서 로고가 아래로 처졌다) */
 h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left: 12px; text-shadow: none; }
 .era { color: var(--label); }
 .season { color: var(--title); border: 1px solid var(--gold-dark); padding: 0 6px; }
