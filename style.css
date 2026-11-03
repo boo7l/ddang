@@ -451,6 +451,8 @@ aside.mid { width: 340px; }
 .helpTabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 .helpTabs button { padding: 3px 8px; }
 .helpTabs button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
+#modalBox .helpScroll { max-height: min(340px, 50vh); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--gold-dark) var(--panel-dark); } /* 도움말 전투 상세: 길어서 안에서 스크롤 (2026-11-04) */
+#modalBox .helpSub { margin: 10px 0 2px; color: var(--title); }
 #modalBox .help { min-height: 190px; padding: 10px 4px; border-top: 1px dotted var(--gold-dark); border-bottom: 1px dotted var(--gold-dark); }
 .helpNav { align-items: center; }
 .helpNav .helpPage { margin: 0 6px; }
