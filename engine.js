@@ -273,6 +273,7 @@ function advance() {
       S.incomeAt = mark; turns++; break;
     }
     const month = dateOf(S.turn).month;
+    const foodRate = runRegionEvents(month); // 지역 이벤트 (2026-11-04): 금 수입·수확보다 먼저
     // 금: 장수마다 자기가 있는 성의 상업에 따라 자기 금으로
     if (RULES.goldMonths.includes(month)) {
       for (const g of allGenerals()) {
@@ -285,7 +286,7 @@ function advance() {
     S.foodPrice = Math.min(RULES.foodBuy.max, Math.max(RULES.foodBuy.min, foodPrice() + randInt(-1, 1)));
     // 군량: 세력이 있는 성마다 그 성의 농업에 따라 (공백지는 수입 없음)
     if (RULES.harvestMonths.includes(month)) {
-      for (const c of MAP.cities) if (c.faction) harvestFood(S.cities[c.id], c.grade);
+      for (const c of MAP.cities) if (c.faction) harvestFood(S.cities[c.id], c.grade, foodRate[regionOf(c)] || 0);
       for (const g of allGenerals()) if (g.faction) addLog(g, `🌾 ${dateText(S.turn)} 수확: ${cityById(g.city).name} 군량 ${fmt(S.cities[g.city].food)}`);
     }
     // 병사는 머무는 성의 군량을 먹는다
@@ -295,6 +296,48 @@ function advance() {
   }
   for (const g of starved) addLog(g, `군량이 모자라 병사들이 흩어졌다! 병력 ${fmt(g.troops)}`);
   return turns;
+}
+
+// ===== 지역 이벤트 (2026-11-04, rules.js regionEvents) =====
+// 이벤트마다 따로 확률을 굴리고, 터지면 이번 턴에 아직 이벤트가 없고 쉬는 중이 아닌 구역 하나를 똑같은 확률로 뽑는다.
+// 숨은 규칙: 이벤트가 터진 구역은 RULES.regionEventRest턴(반년) 동안 쉰다 (S.regionRest[구역] = 다시 걸릴 수 있는 턴).
+// 돌려주는 값: 구역 → 이번 턴 수확량 변화 (풍작 +0.3, 가뭄 -0.3)
+function runRegionEvents(month) {
+  const foodRate = {};
+  const regions = [...new Set(MAP.cities.map(regionOf).filter(Boolean))];
+  if (!regions.length) return foodRate; // 주 묶음이 없는 지도(대한민국 등)에서는 이벤트가 없다
+  S.regionRest = S.regionRest || {};
+  const hit = new Set();
+  for (const e of RULES.regionEvents) {
+    if (e.months && !e.months.includes(month)) continue;
+    if (Math.random() >= e.chance) continue;
+    const free = regions.filter(r => !hit.has(r) && !((S.regionRest[r] || 0) > S.turn));
+    if (!free.length) continue;
+    const r = free[Math.floor(Math.random() * free.length)];
+    hit.add(r);
+    S.regionRest[r] = S.turn + RULES.regionEventRest + 1;
+    const cities = MAP.cities.filter(c => regionOf(c) === r), ids = new Set(cities.map(c => c.id));
+    const fx = [];
+    if (e.food) { foodRate[r] = e.food; fx.push(`이번 수확 ${e.food > 0 ? '+' : ''}${Math.round(e.food * 100)}%`); }
+    for (const c of cities) {
+      const cs = S.cities[c.id];
+      for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), Math.round(cs[k] * (1 + e[k]))));
+      if (e.peace) cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + e.peace));
+      if (e.troops && cs.guard > 0) cs.guard = Math.max(0, cs.guard - Math.ceil(cs.guard * -e.troops));
+    }
+    if (e.agri) fx.push(`농업 ${Math.round(e.agri * 100)}%`);
+    if (e.comm) fx.push(`상업 ${e.comm > 0 ? '+' : ''}${Math.round(e.comm * 100)}%`);
+    if (e.peace) fx.push(`치안 ${e.peace}`);
+    if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
+    if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
+    logAll(`${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${cities.map(c => c.name).join('·')}: ${fx.join(' · ')})`);
+    for (const g of allGenerals()) {
+      if (!g.faction || !ids.has(g.city)) continue;
+      if (e.troops && g.troops > 0) { const lost = Math.ceil(g.troops * -e.troops); g.troops -= lost; addLog(g, `${e.icon} ${e.name}으로 병력 -${fmt(lost)} (${fmt(g.troops)})`); }
+      if (e.gold) { const got = earnGold(g, e.gold); addLog(g, `${e.icon} ${e.name}! 내 금 +${fmt(got)}`); }
+    }
+  }
+  return foodRate;
 }
 
 // 모든 장수의 예약표 맨 앞 칸 명령을 예약한 순서대로 실행하고, 예약표를 한 칸씩 당긴다. 빈 칸이면 대기

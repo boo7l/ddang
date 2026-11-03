@@ -86,6 +86,20 @@ const RULES = {
   startYear: 200, startMonth: 1, // 지도 파일에 year가 없을 때만 쓰는 시작 해. 보통은 지도 편집기의 "시나리오" 칸에서 정한다. 새 시즌을 열 때 세계에 S.startYear로 남긴다
   goldMonths: [1, 4, 7, 10], // 금 수입이 들어오는 달
   harvestMonths: [4, 10],   // 군량 수확이 들어오는 달 (먹는 것은 매달)
+  // 지역 이벤트 (2026-11-04, 시즌 5부터): 매 턴 이벤트마다 따로 확률을 굴려 터지면 구역(mapcore.js regionOf) 하나를 똑같은 확률로 뽑는다.
+  // 한 턴에 한 구역에는 이벤트 하나만. 처리 순서: 예약 명령 → 이벤트 → 금 수입 → 군량 수확.
+  // months: 일어날 수 있는 달 (없으면 매달), chance: 턴당 확률
+  // food: 그 턴 수확량 변화, troops: 그 구역 장수·수비대장 병력 변화, agri·comm: 지금 값에 곱하는 변화(영구, 상한까지), peace: 치안 더하기, gold: 그 구역 장수 금
+  regionEvents: [
+    { key: 'harvest', name: '풍작', icon: '🌾', months: [4, 10], chance: 0.05, food: 0.3 },
+    { key: 'drought', name: '가뭄', icon: '☀️', months: [4, 10], chance: 0.05, food: -0.3 },
+    { key: 'revolt', name: '민란', icon: '🔥', chance: 0.02, troops: -0.05, peace: -20 },
+    { key: 'plague', name: '역병', icon: '☠️', chance: 0.01, troops: -0.1 },
+    { key: 'flood', name: '폭우', icon: '🌧️', months: [6, 7, 8], chance: 0.02, agri: -0.05, comm: -0.05, peace: -10 },
+    { key: 'cold', name: '한파', icon: '❄️', months: [12, 1, 2], chance: 0.02, agri: -0.05, comm: -0.05 },
+    { key: 'boom', name: '교역 호황', icon: '💰', months: [1, 4, 7, 10], chance: 0.03, comm: 0.15, gold: 500 },
+  ],
+  regionEventRest: 6, // 숨은 규칙 (화면·도움말에 적지 않는다): 이벤트가 터진 구역은 이 턴 수(반년) 동안 이벤트가 안 일어난다
   // 수입 (임시값)
   goldBase: 100, goldPerComm: 0.8, // 금 수입 = (100 + 장수가 있는 성의 상업 × 0.8) × (1 + 공적 × meritIncome) × 치안 보정 (2026-10-31, 그 전엔 상업 × 1. 저점을 올리고 고점을 낮춤)
   meritIncome: 0.0001,      // 공적 보너스: 공적 100마다 수입 1% 더 (1,000이면 10%. 2026-10-25 0.0001 → 0.0002, 2026-10-31 다시 0.0001)
@@ -224,8 +238,8 @@ function turnAfter(t, i) {
 // 장수의 금 수입: 있는 성의 상업에 공적 보너스와 치안 보정을 곱한다
 const goldIncome = (cs, merit = 0) => Math.floor((RULES.goldBase + cs.comm * RULES.goldPerComm) * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
 // 수확(4·10월): 그 성의 농업에 따라 군량이 들어온다 (상한까지만)
-function harvestFood(cs, grade) {
-  cs.food = Math.min(foodMax(grade), cs.food + Math.floor((cs.agri * RULES.foodPerAgri + RULES.foodBase) * peaceIncome(cs.peace)));
+function harvestFood(cs, grade, rate = 0) { // rate: 지역 이벤트(풍작 +0.3 · 가뭄 -0.3)로 이번 수확량이 바뀌는 비율
+  cs.food = Math.min(foodMax(grade), cs.food + Math.floor((cs.agri * RULES.foodPerAgri + RULES.foodBase) * peaceIncome(cs.peace) * (1 + rate)));
 }
 // 게임 속 날짜: n번째 턴이 몇 년 몇 월인지
 function dateOf(turn, year = (typeof S !== "undefined" && S && S.startYear) || RULES.startYear) { // 해는 그 세계가 시작한 해 (명예의 전당은 그 시즌의 해를 준다)
