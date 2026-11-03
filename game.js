@@ -680,7 +680,7 @@ function transportDialog() {
   const p = me(), at = cityAtSlot(p, slot), here = S.cities[at.id];
   const opts = linkedOwnCities(at.id, p.faction, RULES.moveRange).map(c => {
     const cs = S.cities[c.id];
-    return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${frontTag(c)}
+    return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${isFarRoad(at, c) ? ' <span class="dim">(먼 길)</span>' : ''}${frontTag(c)}
       <span class="r foodR">${gradeStars(c)}군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
   }).join('');
   const max = RULES.transportMax;
