@@ -6,8 +6,8 @@ let MY_ID = null;     // 내 계정 id (서버 계정)
 let IS_ADMIN = false; // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
 const me = () => S.generals[MY_ID];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-// 가운데 점 붙이기 (2026-11-03, 삼국지3글꼴 시험): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
-// 글자를 쓰는 곳(코드·서버 기록·채팅)은 그대로 두고, 화면에 붙는 글자만 바꾼다. 입력칸은 건드리지 않는다. 글꼴을 되돌리면 TIGHT_DOTS를 false로
+// 가운데 점 붙이기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
+// 글자를 쓰는 곳(코드·서버 기록·채팅)은 그대로 두고, 화면에 붙는 글자만 바꾼다. 입력칸은 건드리지 않는다. 글꼴을 다른 것으로 바꾸면 TIGHT_DOTS를 false로
 const TIGHT_DOTS = true;
 (function tightDots() {
   if (!TIGHT_DOTS || typeof MutationObserver !== 'function') return;
@@ -1546,8 +1546,8 @@ function renderCommands() {
   $('#nowSeason').textContent = `시즌 ${S.season || 1}`; // 상단: 몇 번째 시즌
   $('#nowScenario').textContent = S.scenario || MAP.scenario || RULES.scenario; // 상단: 시나리오 이름 (예: 관도대전)
   const statName = k => STATS.find(s => s.key === k).name;
-  const cost = k => (RULES.myGoldCost[k] ? `금${RULES.myGoldCost[k]}` : '');
-  const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}">${name}<small>${sub}</small></button>` : '');
+  // 명령 단추 아래 작은 글씨에는 금을 쓰지 않는다 (2026-11-03, 14px로 키우면서 한 줄에 들어가게). 금은 각 명령 창에 보인다
+  const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}">${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
   const rows = p.queue.map((o, i) => `<li data-i="${i}" class="${i === slot ? 'sel' : ''}${o ? '' : ' idle'}${isNightTurn(slotTime(i)) ? ' night' : ''}">
       <span class="t">${dateOf(S.turn + 1 + i).month}월${RULES.goldMonths.includes(dateOf(S.turn + 1 + i).month) ? '💰' : ''}${RULES.harvestMonths.includes(dateOf(S.turn + 1 + i).month) ? '🌾' : ''}</span>
       <span class="clock">${fmtClock(slotTime(i))}</span>
@@ -1559,9 +1559,9 @@ function renderCommands() {
   const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
   const lockStat = trainLockStat(p, slot); // '능력 고정'은 고정할 능력치가 있을 때만 보인다
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
-  const plot = [btn('destroy', '파괴', `방어 낮추기 · ${cost('plot')}`), btn('rumor', '유언', `치안 낮추기 · ${cost('plot')}`), btn('spy', '첩보', `적 성 엿보기 · ${cost('plot')}`)].join('');
-  const etc = [btn('explore', '탐색', cost('explore')),
-    btn('train', '수련', `${trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'} · ${traitOf(p.faction).freeTrain ? '무료' : cost('train')}`), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
+  const plot = [btn('destroy', '파괴', '방어 낮추기'), btn('rumor', '유언', '치안 낮추기'), btn('spy', '첩보', '적 성 엿보기')].join('');
+  const etc = [btn('explore', '탐색', ''),
+    btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${levyRange(p).map(fmt).join('~')} · 치안 -${gTrait(p).levy.peace}`) : '', // 개인 특성 이게 일상이야
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
@@ -1580,11 +1580,11 @@ function renderCommands() {
     <div class="cmds cg-dom">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
     <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
     <div class="cmds cg-mil">
-      ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정 · ${cost('draft')}` : `통솔 · ${cost('draft')}`)}
+      ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정` : '통솔')}
       ${btn('drill', '훈련', '통솔')}
       ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : '이웃 성 공격')}
-      ${btn('move', '이동', '아군 성으로')}
-      ${btn('siege', '병기', '충차·정란·벽력거')}
+      ${btn('move', '이동', '')}
+      ${btn('siege', '병기', '')}
     </div>
     <p class="sub">계략</p>
     <div class="cmds cg-plot">${plot}</div>

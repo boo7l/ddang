@@ -1,7 +1,8 @@
 /* ===== 땅국지 공통 모양: 옛날 DOS 코에이 삼국지 + 고대 중국 (붉은 옻칠과 금테) ===== */
 
-/* 2026-11-03 시험: 기본 글꼴을 삼국지3글꼴(Sam3KRFont, leedheo 제작, MIT, github.com/hurss/fonts)로 바꿔 봄. 되돌리려면 git에서 이 바꿈을 되돌린다.
-   도트 글꼴 '둥근모꼴'을 게임 폴더에 같이 넣어 둬서 어느 컴퓨터에서도 같은 글꼴로 보인다.
+/* 2026-11-03 기본 글꼴을 둥근모꼴 → 삼국지3글꼴(Sam3KRFont, leedheo 제작, MIT, github.com/hurss/fonts)로 확정. 출처는 terms.html.
+   글자 하나가 16×16 도트라 16px의 배수가 또렷하다 (14px은 타협, 12px 이하는 뭉개짐). 가운데 점 양옆 띄어쓰기는 game.js TIGHT_DOTS가 화면에서 뺀다.
+   (옛 설명) 도트 글꼴 '둥근모꼴'을 게임 폴더에 같이 넣어 둬서 어느 컴퓨터에서도 같은 글꼴로 보인다.
    이 글꼴은 16px의 배수(16, 32)일 때 가장 또렷하므로 글자 크기는 16px을 기본으로 쓴다. */
 @font-face {
   font-family: "Sam3KR";
@@ -280,8 +281,10 @@ aside.wide { width: 380px; }
 /* 명령 버튼 */
 .cmds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .cmds button { padding: 6px 4px; }
-.cmds button small { display: block; font-size: 12px; color: var(--dim); }
+.cmds button small { display: block; font-size: 14px; color: var(--dim); } /* 2026-11-03 12px → 14px (삼국지3글꼴은 16칸 도트라 12px이 뭉개짐) */
 .cmds button:hover small { color: var(--panel-dark); }
+/* 아래 글씨가 없는 단추(이동·병기·탐색)도 높이를 맞추고 이름을 가운데로 (2026-11-03) */
+.cmds[class*="cg-"] button { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: calc(16px * 1.38 + 14px * 1.38 + 12px); }
 
 /* 장수 만들기 */
 #create { max-width: 900px; margin: 24px auto; }
