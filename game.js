@@ -512,7 +512,7 @@ function attackDialog() {
 
 // 고른 칸이 실행될 때의 병종: 그 앞 칸에 예약한 징병이 있으면 그 병종, 없으면 지금 병종
 function unitAtSlot(p, i) {
-  const d = p.queue.slice(0, i).reverse().find(o => o && o.cmd === 'draft');
+  const d = p.queue.slice(0, i).reverse().find(o => o && o.cmd === 'draft' && o.who !== 'guard'); // 수비대장 징병은 내 병종과 상관없다
   return d ? d.unit : p.unitType;
 }
 
@@ -522,21 +522,38 @@ let draftLock = false;
 try { draftLock = localStorage.getItem(DRAFT_LOCK_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 꺼진 채 */ }
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
-  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft');
+  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft' && o.who !== 'guard');
   const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
   if (draftLock && lockUnit) { reserve({ cmd: 'draft', unit: lockUnit }); return; }
   const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
   const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
+  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gType = gcs.guardType || RULES.guardUnit.type, gMax = RULES.guardMax[from.grade]; // 이 성 수비대장
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
-  pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다 (최대 병력 ${fmt(troopsMax(p))}까지). 병종마다 전투력에 쓰는 능력치가 달라요.</p>
-    <p class="dim">${p.troops > 0 ? `지금 ${p.unitType} ${fmt(p.troops)}. 다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'} 금 ${RULES.myGoldCost.draft}</p>`,
-  opts, '예약', t => {
+  pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다 (<span id="draftCap">최대 병력 ${fmt(troopsMax(p))}</span>까지). 병종마다 전투력에 쓰는 능력치가 달라요.</p>
+    <p class="dim" id="draftNow">${p.troops > 0 ? `지금 ${p.unitType} ${fmt(p.troops)}. 다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'} 금 ${RULES.myGoldCost.draft}</p>`,
+  opts, '예약', (t, box) => {
+    if (box.querySelector('#draftGuard').checked) { // 수비대장 징병 (2026-11-04)
+      if (gNow > 0 && t !== gType && !confirm(`수비대장에게 ${t}을 모으면 지금 있는 수비대 ${gType} ${fmt(gNow)}명은 모두 흩어져요. 예약할까요?`)) return false;
+      reserve({ cmd: 'draft', unit: t, who: 'guard' });
+      return;
+    }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     reserve({ cmd: 'draft', unit: t });
-  }, `<p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
+  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"> 🛡 <b>수비대장 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대장의 병력을 모아요 (지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)})</span></label>
+    <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
+  // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
+  const gBox = $('#draftGuard');
+  const ownCap = $('#draftCap').textContent, ownNow = $('#draftNow').textContent;
+  gBox.onchange = () => {
+    $('#draftCap').textContent = gBox.checked ? `수비대장 최대 ${fmt(gMax)}` : ownCap;
+    $('#draftNow').textContent = gBox.checked ? `지금 수비대 ${gType} ${fmt(gNow)}. 다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요. 금 ${RULES.myGoldCost.draft}` : ownNow;
+    const want = gBox.checked ? gType : cur;
+    const r = $('#modalBox').querySelector(`input[name=tgt][value="${want}"]`);
+    if (r) { r.checked = true; $('#mOk').disabled = false; }
+  };
 }
 
 function spyDialog() {
@@ -1614,7 +1631,7 @@ function renderCommands() {
       ${o ? `<button class="mini x" data-x="${i}" title="이 칸 비우기">✕</button>` : ''}</li>`).join('');
   const at = cityAtSlot(me(), slot);
   // 이 칸 때 가지고 있을 병종: 앞 칸에 징병 예약이 있으면 그 병종, 없으면 지금 병사가 있을 때만 지금 병종 ('병과 고정'은 이때만 보인다)
-  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft');
+  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft' && o.who !== 'guard');
   const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
   const lockStat = trainLockStat(p, slot); // '능력 고정'은 고정할 능력치가 있을 때만 보인다
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다

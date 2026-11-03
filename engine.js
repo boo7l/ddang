@@ -265,7 +265,7 @@ function advance() {
       cs.peace = Math.min(devMax(cityById(g.city).grade, 'peace'), cs.peace + gTrait(g).peaceTurn);
     }
     // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26). 한번 전멸(0)하면 다시 생기지 않는다 (2026-10-28)
-    for (const c of MAP.cities) if (hasGuard(c) && S.cities[c.id].guard > 0) { const cs = S.cities[c.id]; cs.guard = Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen); }
+    for (const c of MAP.cities) if (hasGuard(c) && S.cities[c.id].guard > 0) { const cs = S.cities[c.id]; cs.guard = Math.max(cs.guard, Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen)); } // 징병으로 회복 상한보다 많으면 그대로
     // 세력마다 몸담은 턴 수 (명예의 전당 소속 = 가장 오래 있었던 세력)
     for (const g of allGenerals()) if (g.faction) { g.factionTurns = g.factionTurns || {}; g.factionTurns[g.faction] = (g.factionTurns[g.faction] || 0) + 1; }
     if (S.unified) { // 이번 턴에 통일했다
@@ -478,6 +478,7 @@ function runDomestic(g, key) {
 function runDraft(g, o) {
   const city = cityById(g.city), type = o.unit;
   if (!UNIT_TYPES[type]) return '없는 병종';
+  if (o.who === 'guard') return runGuardDraft(g, type);
   if (g.troops >= troopsMax(g) && g.unitType === type) return '병력이 이미 최대치';
   const peace = S.cities[g.city].peace, rate = peaceDraft(peace);
   if (!rate) return `${city.name}의 치안이 너무 낮음 (${peace}, ${RULES.peaceLow} 미만은 징병 불가)`;
@@ -497,6 +498,32 @@ function runDraft(g, o) {
   const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
   cs.peace -= drop;
   addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
+  addMerit(g, RULES.merit.draft);
+  gainStatExp(g, 'lea', RULES.statExp.draft);
+  return '';
+}
+
+// 수비대장 징병 (2026-11-04 시즌 5): 내 사병 대신 머무는 성의 수비대장 병력을 모은다. 양·금·치안·공적·경험치는 보통 징병과 같다.
+// 최대치는 RULES.guardMax (성 규모별). 다른 병종을 모으면 있던 수비대 병력은 흩어진다. 0인 성에서도 다시 모을 수 있다
+function runGuardDraft(g, type) {
+  const city = cityById(g.city), cs = S.cities[g.city], max = RULES.guardMax[city.grade];
+  if (city.faction !== g.faction) return '우리 세력 성이 아님';
+  const curType = cs.guardType || RULES.guardUnit.type;
+  if ((cs.guard || 0) >= max && curType === type) return '수비대장 병력이 이미 최대치';
+  const peace = cs.peace, rate = peaceDraft(peace);
+  if (!rate) return `${city.name}의 치안이 너무 낮음 (${peace}, ${RULES.peaceLow} 미만은 징병 불가)`;
+  const why = pay(g, 'draft');
+  if (why) return why;
+  let note = '';
+  if ((cs.guard || 0) > 0 && curType !== type) { note = ` · 있던 수비대 ${curType} ${fmt(cs.guard)}명은 흩어졌다`; cs.guard = 0; }
+  const t = traitOf(g.faction);
+  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0))), max - (cs.guard || 0));
+  cs.guard = (cs.guard || 0) + gain;
+  cs.guardType = type;
+  addRecord(g, 'drafted', gain);
+  const drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0))));
+  cs.peace -= drop;
+  addLog(g, `${city.name}: 수비대장에게 ${type}을 모아 주었다. 수비대 +${fmt(gain)} (${fmt(cs.guard)}/${fmt(max)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
   gainStatExp(g, 'lea', RULES.statExp.draft);
   return '';
@@ -565,7 +592,7 @@ function defendersOf(c) {
   if (c.faction && cs.guard > 0) {
     const st = RULES.guardStat;
     list.push({ name: '수비대장', troops: cs.guard, stats: { lea: st, war: st, int: st },
-      type: RULES.guardUnit.type, training: RULES.guardUnit.training, guard: true, faction: c.faction });
+      type: cs.guardType || RULES.guardUnit.type, training: RULES.guardUnit.training, guard: true, faction: c.faction }); // 병종은 수비대장 징병으로 바뀐다 (2026-11-04)
   }
   for (const g of allGenerals()) {
     if (g.city === c.id && g.faction === c.faction && g.defense && g.troops > 0) list.push(unitOf(g));
@@ -634,6 +661,7 @@ function capture(g, to, oldFaction, lines) {
   const cs = S.cities[to.id];
   setOwner(to, g.faction);
   cs.guard = 0; // 수비대장은 물러난다
+  delete cs.guardType; // 새 주인이 수비대장 징병하면 그 병종으로
   if (!oldFaction) { // 공백지: 군량도 모두 그대로 차지한다
     lines.push(`성의 군량 ${fmt(cs.food)}${numJosa(cs.food)} 차지했다.`);
     g.city = to.id;
@@ -1128,7 +1156,7 @@ const COMMANDS = {
   tech: { label: () => '기술', run: g => runDomestic(g, 'tech') },
   wall: { label: () => '축성', run: g => runDomestic(g, 'wall') },
   peace: { label: () => '치안', run: g => runDomestic(g, 'peace') },
-  draft: { label: o => `징병 (${o.unit})`, run: runDraft },
+  draft: { label: o => (o.who === 'guard' ? `징병 (수비대 ${o.unit})` : `징병 (${o.unit})`), run: runDraft },
   drill: { label: () => '훈련', run: runDrill },
   attack: { label: o => `출진 → ${cityName(o.to)}`, run: runAttack },
   move: { label: o => `이동 → ${cityName(o.to)}`, run: runMove },

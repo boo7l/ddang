@@ -522,6 +522,7 @@ table.rank .num { text-align: right; padding-right: 12px; }
 #chat .chatList li.letter .mini { margin-left: 4px; }
 #chat .chatForm { display: flex; gap: 6px; }
 #chat .chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
+.guardSw { display: block; margin: 8px 0 4px; padding: 6px 8px; border: 1px dotted var(--gold-dark); cursor: pointer; } /* 징병 창 수비대장 징병 체크 (2026-11-04) */
 #chat .chatForm .letterBtn { padding-left: 8px; padding-right: 8px; } /* 서신은 자주 안 써서 아이콘만 (2026-11-04) */
 #chat .note { color: var(--dim); font-size: 13px; margin: 6px 0 0; }
 
