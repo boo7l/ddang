@@ -542,7 +542,7 @@ function draftDialog() {
     }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     reserve({ cmd: 'draft', unit: t });
-  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대장 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대장의 병력을 모아요 (지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)}). 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대장 징병을 할 수 없어요.</span>` : ''}</label>
+  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대장 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대장의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대장 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)})</span></label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
