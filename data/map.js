@@ -48,7 +48,7 @@ const MAP_DATA = {
    "x": 6,
    "y": 0,
    "name": "계",
-   "faction": "",
+   "faction": "cc",
    "grade": 2
   },
   {
@@ -64,7 +64,7 @@ const MAP_DATA = {
    "x": 5,
    "y": 1,
    "name": "진양",
-   "faction": "",
+   "faction": "cc",
    "grade": 1
   },
   {
@@ -224,7 +224,7 @@ const MAP_DATA = {
    "x": 3,
    "y": 6,
    "name": "양양",
-   "faction": "lb",
+   "faction": "cc",
    "grade": 3
   },
   {
@@ -232,7 +232,7 @@ const MAP_DATA = {
    "x": 4,
    "y": 6,
    "name": "강하",
-   "faction": "lb",
+   "faction": "f1791967125335",
    "grade": 2
   },
   {
@@ -264,7 +264,7 @@ const MAP_DATA = {
    "x": 2,
    "y": 7,
    "name": "영안",
-   "faction": "lb",
+   "faction": "f1793660967652",
    "grade": 1
   },
   {
