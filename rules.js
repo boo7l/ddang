@@ -256,9 +256,9 @@ const UNIT_TYPES = {
 const GENERAL_TRAITS = {
   brave: { tier: 'N', name: '용맹', desc: '공격 전투력 +3%', attack: 0.03 },
   wall: { tier: 'N', name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
-  trade: { tier: 'N', name: '상재', desc: '상업 내정 +20%', dev: { comm: 0.20 } }, // 2026-10-28 +10% → +15% → +20%
-  farm: { tier: 'N', name: '둔전', desc: '농업 내정 +20%', dev: { agri: 0.20 } }, // 2026-10-28 +10% → +15% → +20%
-  build: { tier: 'N', name: '장인', desc: '축성 내정 +20%', dev: { wall: 0.20 } }, // 2026-10-28 +10% → +15% → +20%
+  trade: { tier: 'N', name: '상재', desc: '상업 내정 +25%', dev: { comm: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
+  farm: { tier: 'N', name: '둔전', desc: '농업 내정 +25%', dev: { agri: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
+  build: { tier: 'N', name: '장인', desc: '축성 내정 +25%', dev: { wall: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
   lazy: { tier: 'R', name: '장군뒹굴', desc: '대기 턴마다 모든 능력치 경험치 +3', idleExp: 3 }, // 2026-11-03 시즌 5: +2 → +3. // 2026-10-31 추가. 빈 칸일 때만, 세력 소속일 때만, 다른 경험치 보너스 없이 정확히 2 (같은 날 1에서)
   politic: { tier: 'R', name: '전문정치팀', desc: '모든 내정 +10%', dev: { agri: 0.10, comm: 0.10, tech: 0.10, wall: 0.10, peace: 0.10 } }, // 2026-10-28 +5%에서
   haggle: { tier: 'N', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
