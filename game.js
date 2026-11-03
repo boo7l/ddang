@@ -528,7 +528,7 @@ function draftDialog() {
   const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
   const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
-  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gType = gcs.guardType || RULES.guardUnit.type, gMax = RULES.guardMax[from.grade]; // 이 성 수비대장
+  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gType = gcs.guardType || RULES.guardUnit.type, gMax = RULES.guardMax[from.grade], gFull = defendingIn(from.id, p.faction).length >= RULES.defenseMax; // 이 성 수비대장. 방어 모드 장수가 꽉 차면 못 한다
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
@@ -542,7 +542,7 @@ function draftDialog() {
     }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     reserve({ cmd: 'draft', unit: t });
-  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"> 🛡 <b>수비대장 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대장의 병력을 모아요 (지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)}). 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span></label>
+  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대장 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대장의 병력을 모아요 (지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)}). 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대장 징병을 할 수 없어요.</span>` : ''}</label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');

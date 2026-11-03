@@ -508,6 +508,7 @@ function runDraft(g, o) {
 function runGuardDraft(g, type) {
   const city = cityById(g.city), cs = S.cities[g.city], max = RULES.guardMax[city.grade];
   if (city.faction !== g.faction) return '우리 세력 성이 아님';
+  if (defendingIn(g.city, g.faction).length >= RULES.defenseMax) return `방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어 수비대장 징병 불가`; // 2026-11-04
   const curType = cs.guardType || RULES.guardUnit.type;
   if ((cs.guard || 0) >= max && curType === type) return '수비대장 병력이 이미 최대치';
   const peace = cs.peace, rate = peaceDraft(peace);
