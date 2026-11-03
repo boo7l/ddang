@@ -549,7 +549,7 @@ function spyDialog() {
       <span class="r dim">${until ? `${dateText(until)} 전까지 알고 있음` : '모름'}</span></label>`;
   }).join('');
   pickDialog('첩보', `<p>${esc(from.name)}의 이웃한 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot}</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }));
 }
 
 // '능력 고정' 스위치 (2026-11-02, 징병의 병과 고정처럼): 켜 두면 수련을 누르자마자 고정된 능력치로 예약 (고르는 창 없이). 이 브라우저에 기억
@@ -636,7 +636,7 @@ function plotDialog(kind) {
     ? `성공하면 그 성의 <b>방어</b>를 약 ${Math.floor(int * PLOT.destroy.wallPerInt)} 낮춰요.`
     : `성공하면 그 성의 <b>치안</b>을 약 ${Math.floor(int * PLOT.rumor.peacePerInt)}, 농업·상업을 약 ${Math.floor(int * PLOT.rumor.devPerInt)}씩 낮춰요.`;
   pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 ${PLOT.critMul}배!</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((PLOT.successRate(int) + (gTrait(p).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot} (실패해도 들어요)</p>`,
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((PLOT.successRate(int) + (gTrait(p).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot}</p>`,
   opts, '예약', v => reserve({ cmd: kind, to: v }));
 }
 
