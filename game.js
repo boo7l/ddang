@@ -6,15 +6,15 @@ let MY_ID = null;     // 내 계정 id (서버 계정)
 let IS_ADMIN = false; // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
 const me = () => S.generals[MY_ID];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-// 가운데 점 붙이기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
+// 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
 // 글자를 쓰는 곳(코드·서버 기록·채팅)은 그대로 두고, 화면에 붙는 글자만 바꾼다. 입력칸은 건드리지 않는다. 글꼴을 다른 것으로 바꾸면 TIGHT_DOTS를 false로
 const TIGHT_DOTS = true;
 (function tightDots() {
   if (!TIGHT_DOTS || typeof MutationObserver !== 'function') return;
-  const SKIP = /^(SCRIPT|STYLE|TEXTAREA|INPUT)$/;
+  const SKIP = /^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|TITLE|text)$/; // OPTION 안에는 span을 넣을 수 없다
   const ok = t => t.parentNode && !SKIP.test(t.parentNode.nodeName) && !t.parentNode.isContentEditable;
   const one = t => {
-    if (!t.data.includes('·') || !ok(t)) return;
+    if (!(t.data.includes('·') || t.data.includes('~')) || !ok(t)) return;
     let d = t.data.replace(/ +· +/g, '·').replace(/ +·$/, '·').replace(/^· +/, '·');
     if (d.startsWith('·') && document.body.contains(t)) { // 점이 덩어리 맨 앞이면 앞 글자 덩어리 끝의 띄어쓰기도 뺀다 (예: "명예의 전당 <span>· 지난 통일")
       const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); w.currentNode = t;
@@ -22,6 +22,15 @@ const TIGHT_DOTS = true;
       if (p && / +$/.test(p.data) && ok(p)) p.data = p.data.replace(/ +$/, '');
     }
     if (d !== t.data) t.data = d;
+    // 물결(~)은 이 글꼴에서 위에 붙어 보여서, 화면에서만 <span class="tl">로 감싸 조금 내린다 (2026-11-03)
+    if (d.includes('~') && !(t.parentNode.classList && t.parentNode.classList.contains('tl'))) {
+      const frag = document.createDocumentFragment();
+      d.split('~').forEach((part, i) => {
+        if (i) { const sp = document.createElement('span'); sp.className = 'tl'; sp.textContent = '~'; frag.appendChild(sp); }
+        if (part) frag.appendChild(document.createTextNode(part));
+      });
+      t.parentNode.replaceChild(frag, t);
+    }
   };
   const fix = n => {
     if (n.nodeType === 3) return one(n);
