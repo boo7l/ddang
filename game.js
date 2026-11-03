@@ -1744,7 +1744,7 @@ function renderChat() {
       <form class="chatForm" autocomplete="off">
         <input type="text" id="chatInput" maxlength="${CHAT_LEN}" placeholder="우리 세력에게 한마디">
         <button type="submit">보내기</button>
-        <button type="button" class="letterBtn" title="다른 세력에 외교 서신 보내기">📜 서신</button>
+        <button type="button" class="letterBtn" title="다른 세력에 외교 서신 보내기" aria-label="외교 서신">📜</button>
       </form>
       <p class="note">같은 세력 장수들끼리만 보여요. 새 글은 곧바로 떠요. (최근 ${CHAT_MAX}개)</p>`;
     box.querySelector('.chatList').onclick = e => {
