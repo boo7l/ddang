@@ -588,10 +588,12 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardPost { padding: 8px 4px; border-bottom: 1px dotted var(--gold-dark); }
 .boardHead { margin: 0 0 4px; }
 .boardText { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.boardPost > .boardText, .boardComments .boardText { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 6px 8px; } /* 글·댓글 본문 상자 (2026-11-03) */
+.boardComments .boardHead { margin: 0 0 3px; }
 .boardList .who { color: var(--label); }
 .boardList .boardAdmin { color: var(--title); }
 .boardComments { list-style: none; margin: 6px 0 0 12px; padding: 0 0 0 8px; border-left: 2px solid var(--gold-dark); }
-.boardComments li { padding: 2px 0; overflow-wrap: anywhere; }
+.boardComments li { padding: 4px 0; overflow-wrap: anywhere; }
 .boardReply { display: flex; gap: 6px; margin-top: 6px; }
 .boardReply[hidden] { display: none; } /* 댓글 달기를 눌러야 열린다 (2026-11-02) */
 .replyRow { margin: 4px 0 0; text-align: left; }

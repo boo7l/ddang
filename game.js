@@ -892,7 +892,7 @@ async function boardDialog(page = 0, kind = '') {
   const items = d.posts.map(p => `<li class="boardPost">
       <p class="boardHead"><span class="tTag">[${esc(p.kind)}]</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
       <p class="boardText">${esc(p.text)}</p>
-      ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li>${who(c)} <span class="boardText">${esc(c.text)}</span> <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</li>`).join('')}</ul>` : ''}
+      ${p.comments.length ? `<ul class="boardComments">${p.comments.map(c => `<li><p class="boardHead">${who(c)} <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</p><p class="boardText">${esc(c.text)}</p></li>`).join('')}</ul>` : ''}
       ${canWrite ? `<p class="replyRow"><button type="button" class="mini replyBtn">💬 댓글</button></p>
       <form class="boardReply" data-post="${esc(p.id)}" autocomplete="off" hidden><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
     </li>`).join('') || '<li class="dim center">아직 글이 없어요. 첫 글을 남겨 보세요.</li>';
