@@ -266,7 +266,7 @@ const GENERAL_TRAITS = {
   schemer: { tier: 'N', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
   charisma: { tier: 'N', name: '인망', desc: '징병 +10% 더 모임', draft: 0.10 }, // 2026-10-28 +10% → +5% → +10%
   frail: { tier: 'SR', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 4칸까지 (아군 땅이 끊겨도)', power: -0.02, moveRange: 4, freePath: true }, // 2026-11-03 시즌 5: 길이 끊겨도 4칸 안의 아군 성으로. // 2026-10-28 3칸 → 4칸
-  chadol: { tier: 'R', name: '차돌애호가', desc: '지력 경험치 -3%, 통솔·무력 경험치 +5%', exp: { lea: 0.05, war: 0.05, int: -0.03 } }, // 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
+  chadol: { tier: 'R', name: '차돌애호가', desc: '무력 경험치 +10%, 지력 경험치 -5%', exp: { war: 0.10, int: -0.05 } }, // 2026-11-03 시즌 5: 통솔·무력 +5%·지력 -3% → 무력 +10%·지력 -5% (통솔 보너스 없앰). 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15 }, // 2026-10-28 +10%에서
   engineer: { tier: 'R', name: '병기도 과학', desc: '병기 제작비 -15%', siegePrice: -0.15 }, // 2026-10-28 -20%에서
