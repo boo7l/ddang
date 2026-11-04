@@ -533,7 +533,7 @@ function draftDialog() {
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
-  pickDialog('징병', `<p>금 ${RULES.myGoldCost.draft}으로 ${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다 (<span id="draftCap">최대 병력 ${fmt(troopsMax(p))}</span>까지). 병종마다 전투력에 쓰는 능력치가 달라요.</p>
+  pickDialog('징병', `<p>금 ${RULES.myGoldCost.draft}으로 ${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
     ${p.troops > 0 ? `<p id="draftHave">현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))}</p>` : ""}
     <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>`,
   opts, '예약', (t, box) => {
@@ -548,9 +548,8 @@ function draftDialog() {
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
-  const ownCap = $('#draftCap').textContent, ownNow = $('#draftNow').textContent;
+  const ownNow = $('#draftNow').textContent;
   gBox.onchange = () => {
-    $('#draftCap').textContent = gBox.checked ? `수비대 최대 ${fmt(gMax)}` : ownCap;
     $('#draftNow').textContent = gBox.checked ? `다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요.` : ownNow;
     const want = gBox.checked ? gType : cur;
     const r = $('#modalBox').querySelector(`input[name=tgt][value="${want}"]`);
