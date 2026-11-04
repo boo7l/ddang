@@ -550,7 +550,6 @@ function draftDialog() {
   const gBox = $('#draftGuard');
   const ownCap = $('#draftCap').textContent, ownNow = $('#draftNow').textContent;
   gBox.onchange = () => {
-    if ($("#draftHave")) $("#draftHave").hidden = gBox.checked; // 수비대 징병이면 내 병력 줄은 숨긴다 (수비대 병력은 위 항목에 이미 있다)
     $('#draftCap').textContent = gBox.checked ? `수비대 최대 ${fmt(gMax)}` : ownCap;
     $('#draftNow').textContent = gBox.checked ? `다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요.` : ownNow;
     const want = gBox.checked ? gType : cur;
