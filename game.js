@@ -377,7 +377,7 @@ function hofRender() {
     ${HOF_NOTES[h.season] ? `<p class="hofNote dim">${esc(HOF_NOTES[h.season])}</p>` : ''}`;
 }
 // 명예의 전당 시즌별 맨 아랫줄 안내 (2026-11-03)
-const HOF_NOTES = { 4: '*다계정 의심으로 수여가 보류된 장수가 있습니다. 사실과 다를 시 메일로 알려주세요.' };
+const HOF_NOTES = {};
 $('#hofBack').onclick = () => showTitle();
 $('#chipPrev').onclick = () => { hofStart -= hofPerPage(); hofRender(); };
 $('#chipNext').onclick = () => { hofStart += hofPerPage(); hofRender(); };
