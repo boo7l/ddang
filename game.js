@@ -1752,7 +1752,7 @@ function syncChatChannel() {
     if (list.length > CHAT_MAX) list.splice(0, list.length - CHAT_MAX);
     if (!$('#game').hidden) renderChatList();
     if (m.letter && m.letter.dir === 'in') letterAlert();
-    if (m.letter && m.letter.dir === 'out') LETTER_UNTIL[m.letter.other] = Date.now() + LETTER_GAP; // 같은 세력 누가 보냈으면 5분 동안 그 세력은 못 보낸다
+    if (m.letter && m.letter.dir === 'out') LETTER_UNTIL[m.letter.other] = Date.now() + LETTER_GAP; // 같은 세력 누가 보냈으면 간격 동안 그 세력은 못 보낸다
   }).subscribe();
 }
 // 틀(입력칸)은 한 번만 만든다. 다시 그리면 한글 입력 중이던 글자가 깨지므로 그 뒤로는 목록만 고친다
@@ -1791,7 +1791,7 @@ function renderChatList() {
 }
 
 // 외교 서신 간격 (2026-11-05): 세력 id → 다시 보낼 수 있는 시각. 서버가 남은 ms를 주고, 같은 세력이 보낸 서신이 오면 새로 잰다
-const LETTER_GAP = 5 * 60 * 1000;
+const LETTER_GAP = 3 * 60 * 1000; // 서버 api.js와 같게 (2026-11-05 5분 → 3분)
 let LETTER_UNTIL = {};
 // 외교 서신 (2026-11-03): 채팅 목록 안에 양피지 줄로. 받은 서신에는 [답장]
 const fName = fid => { const f = factionById(fid); return f ? esc(f.name) : '?'; };
@@ -1817,7 +1817,7 @@ function letterDialog(to) {
   const fs = MAP.factions.filter(f => f.id !== p.faction && citiesOfFaction(f.id).length);
   if (!fs.length) { alert('서신을 보낼 세력이 없어요.'); return; }
   openModal(`<h2>📜 외교 서신</h2>
-    <p>다른 세력에 서신을 보내요. 받는 세력 채팅과 우리 세력 채팅에 함께 남아요. 한 세력에는 우리 세력 전체에서 5분에 한 통만 보낼 수 있어요.</p>
+    <p>다른 세력에 서신을 보내요. 받는 세력 채팅과 우리 세력 채팅에 함께 남아요. 한 세력에는 우리 세력 전체에서 ${LETTER_GAP / 60000}분에 한 통만 보낼 수 있어요.</p>
     <div class="opts">${fs.map(f => { const left = (LETTER_UNTIL[f.id] || 0) - Date.now(), wait = left > 0; return `<label class="opt${wait ? ' dim' : ''}"><input type="radio" name="lto" value="${f.id}"${wait ? ' disabled' : f.id === to ? ' checked' : ''}><span class="swatch" style="background:${f.color}"></span><b>${esc(f.name)}</b>${wait ? `<span class="r dim">${Math.ceil(left / 60000)}분 뒤</span>` : ''}</label>`; }).join('')}</div>
     <p><input type="text" id="letterText" maxlength="${CHAT_LEN}" placeholder="서신 내용 (${CHAT_LEN}자까지)" style="width:100%"></p>
     <div class="modalBtns"><button data-close>취소</button><button id="letterOk" class="main">보내기</button></div>`, box => {
@@ -1826,7 +1826,7 @@ function letterDialog(to) {
       if (!sel) { alert('받을 세력을 골라 주세요.'); return; }
       if (!text) { alert('서신 내용을 적어 주세요.'); return; }
       const fn = fName(sel.value);
-      if (!confirm(`${fn} 세력에 서신을 보내면 5분 동안 우리 세력 누구도 ${fn} 세력에 서신을 보낼 수 없어요. 보낼까요?`)) return;
+      if (!confirm(`${fn} 세력에 서신을 보내면 ${LETTER_GAP / 60000}분 동안 우리 세력 누구도 ${fn} 세력에 서신을 보낼 수 없어요. 보낼까요?`)) return;
       if (await call('letter', { to: sel.value, text })) { LETTER_UNTIL[sel.value] = Date.now() + LETTER_GAP; closeModal(); renderChatList(); }
     };
   });
