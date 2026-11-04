@@ -365,14 +365,14 @@ function hofRender() {
   $('#chipNext').disabled = hofStart + n >= HOF.length;
   const h = HOF[hofCur], heroes = h.heroes || [];
   // 공적 1위 훈장은 시즌 4부터 (2026-11-02). 상위 10명 표의 맨 위 한 명 (동점이면 서버가 먼저 임관한 장수를 맨 위에 둔다)
-  const topMerit = h.season >= 4 && h.top.length && h.top[0].merit > 0 ? [h.top[0]] : [];
+  const topMerit = h.season === 4 && h.top.length && h.top[0].merit > 0 ? [h.top[0]] : [];
   const isHero = name => heroes.some(x => x.name === name) || topMerit.some(x => x.name === name);
   const hasFaction = h.top.some(g => g.faction);
   // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
   const medals = g => g.medals ?? (isHero(g.name) ? 1 : 0);
   $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
     <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="훈장">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
-    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 개국공신: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
+    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> ${h.season >= 5 ? "공적 상위 5명" : "개국공신"}: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
     ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}
     ${HOF_NOTES[h.season] ? `<p class="hofNote dim">${esc(HOF_NOTES[h.season])}</p>` : ''}`;
 }
@@ -825,7 +825,7 @@ function helpDialog(page = 0) {
       <li><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</li>
       <li>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</li>
       <li><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</li>
-      <li><b>훈장</b>: 통일 세력에 끝까지 남은 공적 상위 ${RULES.heroCount}명과 시즌 전체 공적 1위가 받아요. 한 사람이 시즌당 2개를 받지는 않아서, 시즌마다 5개 또는 6개가 지급돼요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</li>
+      <li><b>훈장</b>: 시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</li>
       <li><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요.</li></ul>`],
   ];
   const [title, body] = pages[page];
