@@ -550,7 +550,7 @@ function draftDialog() {
   const ownCap = $('#draftCap').textContent, ownNow = $('#draftNow').textContent;
   gBox.onchange = () => {
     $('#draftCap').textContent = gBox.checked ? `수비대 최대 ${fmt(gMax)}` : ownCap;
-    $('#draftNow').textContent = gBox.checked ? `지금 수비대 ${gType} ${fmt(gNow)}. 다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요. 금 ${RULES.myGoldCost.draft}` : ownNow;
+    $('#draftNow').textContent = gBox.checked ? `다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요. 금 ${RULES.myGoldCost.draft}` : ownNow;
     const want = gBox.checked ? gType : cur;
     const r = $('#modalBox').querySelector(`input[name=tgt][value="${want}"]`);
     if (r) { r.checked = true; $('#mOk').disabled = false; }
