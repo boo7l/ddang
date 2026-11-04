@@ -338,12 +338,12 @@ const FACTION_TRAITS = {
 
 // ===== 전투 =====
 // 부대 하나: { name, troops, stats, type(병종), training(훈련도 0~100) }
-// 부대 전투력 = 병력 × (0.4 + 병종 능력치 ÷ 100) × 훈련 보정 (2026-10-25 0.5에서 낮춤: 주고받는 피해를 조금 줄임)
+// 부대 전투력 = 병력 × (0.5 + 병종 능력치 ÷ 120) × 훈련 보정 (2026-11-04 시즌 5: 0.4 + ÷100에서, 고점을 살짝 내림 · 70 vs 110 차이 36% → 31%. 2026-10-25 0.5에서 0.4로 낮췄었음)
 function unitPower(u) {
   const stat = u.stats[UNIT_TYPES[u.type].stat];
   const drill = !RULES.features.drill ? 1 : RULES.trainingFloor + (1 - RULES.trainingFloor) * (u.training || 0) / 100;
   const c = RULES.troopCurve, eff = u.troops > 0 ? c.ref * Math.pow(u.troops / c.ref, c.exp) : 0; // 병력 곡선
-  return eff * (0.4 + stat / 100) * drill;
+  return eff * (0.5 + stat / 120) * drill;
 }
 // 상성 보정: a가 b에게 강하면 1.2. 약할 때 깎는 것은 없다 (너무 세서 뺐다)
 function matchupOf(a, b) {
