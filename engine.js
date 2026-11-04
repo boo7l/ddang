@@ -993,6 +993,8 @@ function runSpy(g, o) {
 // ----- 계략 (지력) -----
 // 이웃한 다른 세력 성에 쓴다. 지력이 높을수록 잘 되고, 대성공이면 효과 2배. 성공하면 지력 경험치와 공적
 const PLOT_NAME = { destroy: '파괴', rumor: '유언' };
+// 계략 효과 배수: [최소, 최대] 사이 무작위 (2026-11-04 시즌 5, 유언은 치안·농업·상업을 따로 굴린다)
+const plotRoll = ([lo, hi]) => lo + Math.random() * (hi - lo);
 function runPlot(g, kind, o) {
   const c = cityById(o.to);
   if (!c) return '없는 성';
@@ -1015,8 +1017,8 @@ function runPlot(g, kind, o) {
   // 남은 수치는 적지 않는다 (다른 세력 성의 농업·상업·방어·치안은 비공개, 2026-10-26 방어도)
   const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}`; };
   const what = kind === 'destroy'
-    ? [cut('wall', int * PLOT.destroy.wallPerInt)]
-    : [cut('peace', int * PLOT.rumor.peacePerInt), cut('agri', int * PLOT.rumor.devPerInt), cut('comm', int * PLOT.rumor.devPerInt)];
+    ? [cut('wall', int * plotRoll(PLOT.destroy.wallPerInt))]
+    : [cut('peace', int * plotRoll(PLOT.rumor.peacePerInt)), cut('agri', int * plotRoll(PLOT.rumor.devPerInt)), cut('comm', int * plotRoll(PLOT.rumor.devPerInt))];
   addLog(g, `${head} ${c.name}: ${kind === 'destroy' ? '성벽 곳곳을 무너뜨렸다' : '흉흉한 소문을 퍼뜨렸다'}. ${what.join(' · ')}`);
   addMerit(g, RULES.merit.plotOk); // 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   gainStatExp(g, 'int', r === 'crit' ? PLOT.critExp : PLOT.exp);
