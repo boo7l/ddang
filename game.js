@@ -504,7 +504,7 @@ function attackDialog() {
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f ? f.color : 'var(--empty)'}"></span>
       <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>
-      <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `수비 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '수비 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
+      <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
     <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${fmt(attackGoldOf(p.troops))} (병력 1,000당 ${RULES.attackGold.per1000}) · 출진 군량 ${fmt(marchFood(p.troops))} (병력 × ${RULES.marchFoodRate}, 결과와 상관없이 사라짐) · 예상은 지금 병력 기준</p>`,
@@ -1842,7 +1842,7 @@ function cityDetailRows(c) {
   if (!c.faction) rows.push('<tr class="wide"><th>수비</th><td class="dim">없음 (공백지)</td></tr>');
   else {
     const defs = defendersOf(c);
-    rows.push(`<tr class="wide"><th>수비</th><td>${defs.length ? defenseText(c, defs, '<br>') : '<span class="dim">방어하는 장수 없음</span>'}</td></tr>`);
+    rows.push(`<tr class="wide"><th>수비</th><td>${defs.length ? defenseText(c, defs, '<br>') : '<span class="dim">방어부대 없음</span>'}</td></tr>`);
   }
   // 다른 세력 성의 지금 수치는 ? (서버가 보내지 않는다). 첩보가 유효하면 농업·상업·방어·치안이 온다
   // 치안이 낮으면 색으로 경고: 50 미만 주황 (수입·징병 감소), 20 미만 빨강 (징병 불가)
