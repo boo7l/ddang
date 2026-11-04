@@ -535,7 +535,8 @@ function draftDialog() {
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
   pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다 (<span id="draftCap">최대 병력 ${fmt(troopsMax(p))}</span>까지). 병종마다 전투력에 쓰는 능력치가 달라요.</p>
     ${p.troops > 0 ? `<p class="dim" id="draftHave">지금 ${p.unitType} <b class="hi">${fmt(p.troops)}</b></p>` : ""}
-    <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'} 금 ${RULES.myGoldCost.draft}</p>`,
+    <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>
+    <p class="dim">금 ${RULES.myGoldCost.draft}</p>`,
   opts, '예약', (t, box) => {
     if (box.querySelector('#draftGuard').checked) { // 수비대장 징병 (2026-11-04)
       if (gNow > 0 && t !== gType && !confirm(`수비대에 ${t}을 모으면 지금 있는 수비대 ${gType} ${fmt(gNow)}명은 모두 흩어져요. 예약할까요?`)) return false;
@@ -552,7 +553,7 @@ function draftDialog() {
   gBox.onchange = () => {
     if ($("#draftHave")) $("#draftHave").hidden = gBox.checked; // 수비대 징병이면 내 병력 줄은 숨긴다 (수비대 병력은 위 항목에 이미 있다)
     $('#draftCap').textContent = gBox.checked ? `수비대 최대 ${fmt(gMax)}` : ownCap;
-    $('#draftNow').textContent = gBox.checked ? `다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요. 금 ${RULES.myGoldCost.draft}` : ownNow;
+    $('#draftNow').textContent = gBox.checked ? `다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요.` : ownNow;
     const want = gBox.checked ? gType : cur;
     const r = $('#modalBox').querySelector(`input[name=tgt][value="${want}"]`);
     if (r) { r.checked = true; $('#mOk').disabled = false; }
