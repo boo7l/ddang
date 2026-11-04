@@ -597,7 +597,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardPost { padding: 8px 4px; border-bottom: 1px dotted var(--gold-dark); }
 .boardHead { margin: 0 0 4px; }
 .boardText { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.boardPost > .boardText, .boardComments .boardText { background: #380c08; border: 1px solid var(--gold-dark); padding: 6px 8px; } /* 글·댓글 본문 상자 (2026-11-03, 바탕 #2a0604 → 한 단계 밝게 #380c08) */
+/* 글·댓글 본문 상자: 바랜 옛 문서 (2026-11-05 시안 C, 세로 괘선 없이. 그 전엔 #380c08 어두운 상자) */
+.boardPost > .boardText, .boardComments .boardText { color: #3a210e; border: 1px solid #7a5426; padding: 8px 10px; background: radial-gradient(ellipse at center, #f1e2bc 55%, #e2c992 85%, #cfae6e 100%); box-shadow: inset 0 0 10px rgba(110, 60, 10, .45), 2px 2px 0 rgba(0, 0, 0, .35); }
+.boardComments .boardText { background: radial-gradient(ellipse at center, #ead7aa 55%, #d9bd82 90%, #c7a362 100%); }
 .boardComments .boardHead { margin: 0 0 3px; }
 .boardList .who { color: var(--label); }
 .boardList .boardAdmin { color: var(--title); }
