@@ -1016,7 +1016,7 @@ function noteDialog(i) {
   const short = x => x.title.replace(' 주요 업데이트', '');
   openModal(`
     <h2>📜 ${n.title} <span class="dim small">(${n.date})</span></h2>
-    <div class="help notesPop">${n.groups.map(gr => `<p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul>`).join('')}</div>
+    <div class="help notesPop">${n.groups.map(gr => `<div class="notePaper"><p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul></div>`).join('')}</div>
     <div class="notePager">
       <button id="noteOlder"${older ? '' : ' disabled'}>◀ ${older ? short(older) : ''}</button>
       <span class="dim">${PATCH_NOTES.length - i} / ${PATCH_NOTES.length}</span>

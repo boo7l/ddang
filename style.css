@@ -612,8 +612,12 @@ details.fold > summary:hover h2 { color: var(--title); }
 #modalBox .notesPop { height: 480px; max-height: 60vh; overflow-y: auto; } /* 패치마다 길이가 달라도 넘기는 단추가 들썩이지 않게 (2026-10-31) */
 .notePager { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
 .notePager button { padding: 8px 12px; min-width: 110px; }
-.notesPop .noteHead { margin: 16px 0 4px; padding-top: 12px; border-top: 1px solid var(--gold-dark); color: var(--title); } /* 파트 사이 실선과 여백 (2026-10-31) */
-.notesPop .noteHead:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+/* 패치노트: 파트 하나 = 바랜 옛 문서 한 장, 제목은 적갈색 띠지 (2026-11-05, 그 전엔 붉은 바탕에 금색 실선으로 나눔) */
+.notePaper { color: #3a210e; border: 1px solid #7a5426; padding: 0 12px 8px; margin: 0 0 12px; background: radial-gradient(ellipse at center, #f1e2bc 55%, #e2c992 85%, #cfae6e 100%); box-shadow: inset 0 0 12px rgba(110, 60, 10, .45), 2px 2px 0 rgba(0, 0, 0, .35); }
+.notePaper .noteHead { display: inline-block; margin: 0 0 8px -12px; padding: 3px 12px; background: #8c2a10; color: #fbefd0; box-shadow: 1px 1px 0 rgba(0, 0, 0, .35); }
+.notePaper b { color: #8a1c10; }
+.notePaper ul { padding-left: 20px; }
+.notePaper li::marker { color: #8a5a14; }
 .notesPop li { line-height: 1.4; word-break: keep-all; }
 .medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
 .medal small { font-size: 18px; line-height: 1; margin-left: 1px; color: var(--title); } /* 훈장 3개부터 ×개수. 16px은 작고 20px은 커서 18px (2026-10-31) */
