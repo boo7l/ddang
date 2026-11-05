@@ -619,7 +619,7 @@ function shopDialog(msg = '') {
   const p = me(), statName = k => STATS.find(s => s.key === k).name;
   const rows = Object.entries(SHOP).map(([name, it]) => {
     const n = gearCount(p, name), price = shopPrice(p, name), top = effStats(p)[it.stat] >= RULES.statMax;
-    return `<div class="opt"><b>${name}</b> <span class="dim">${statName(it.stat)} +${it.bonus} · 가진 것 ${n}개 · 지금 ${statName(it.stat)} ${effStats(p)[it.stat]}</span>
+    return `<div class="opt"><b>${name}</b> <span class="dim">${statName(it.stat)}+${it.bonus}·${n}개 보유·</span><span style="color:#fff">현재 ${statName(it.stat)} ${effStats(p)[it.stat]}</span>
       <span class="r">${top ? `<span class="dim">${statName(it.stat)} 최고</span>` : `<button data-buy="${name}"${p.gold < price ? ' disabled' : ''}>금 ${fmt(price)}에 사기</button>`}</span></div>`;
   }).join('');
   openModal(`<h2>상점 <span class="dim small">· 바로 사요 (턴을 쓰지 않아요)</span></h2>
