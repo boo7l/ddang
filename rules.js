@@ -95,8 +95,8 @@ const RULES = {
     { key: 'drought', name: '가뭄', icon: '☀️', months: [4, 10], chance: 0.05, food: -0.3 },
     { key: 'revolt', name: '민란', icon: '🔥', chance: 0.03, troops: -0.05, peace: -20 },
     { key: 'plague', name: '역병', icon: '☠️', chance: 0.02, troops: -0.1 },
-    { key: 'flood', name: '폭우', icon: '🌧️', months: [6, 7, 8], chance: 0.03, agri: -0.05, comm: -0.05, peace: -10 },
-    { key: 'cold', name: '한파', icon: '❄️', months: [12, 1, 2], chance: 0.03, agri: -0.05, comm: -0.05 },
+    { key: 'flood', name: '폭우', icon: '🌧️', months: [6, 7, 8], chance: 0.03, agri: -0.1, comm: -0.1, peace: -10 },
+    { key: 'cold', name: '한파', icon: '❄️', months: [12, 1, 2], chance: 0.03, agri: -0.1, comm: -0.1 },
     { key: 'boom', name: '교역 호황', icon: '💰', months: [1, 4, 7, 10], chance: 0.03, comm: 0.15, gold: 500 },
   ],
   regionEventRest: 6, // 숨은 규칙 (화면·도움말에 적지 않는다): 이벤트가 터진 구역은 이 턴 수(반년) 동안 이벤트가 안 일어난다
