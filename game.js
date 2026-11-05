@@ -533,7 +533,7 @@ function draftDialog() {
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
-  pickDialog('징병', `<p>금 ${RULES.myGoldCost.draft}으로 ${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
+  pickDialog('징병', `<p><b>금 ${RULES.myGoldCost.draft}</b>으로 ${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
     ${p.troops > 0 ? `<p id="draftHave">현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))}</p>` : ""}
     <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>`,
   opts, '예약', (t, box) => {
