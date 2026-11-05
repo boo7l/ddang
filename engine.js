@@ -1071,7 +1071,7 @@ function buyItem(g, item) {
   g.gold -= price;
   g.gear = g.gear || {};
   g.gear[o.item] = gearCount(g, o.item) + 1;
-  addLog(g, `상점에서 ${josa(o.item, '을를')} 샀다! ${st.name} +${it.bonus} (지금 ${effStats(g)[it.stat]}, ${o.item} ${g.gear[o.item]}개) · 내 금 -${fmt(price)}`);
+  // 기록창에는 남기지 않는다: 상점 창 아래에 "○○을 구매했다!"만 보인다 (2026-11-05)
   return '';
 }
 

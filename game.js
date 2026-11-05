@@ -634,7 +634,7 @@ function shopDialog(msg = '') {
         box.querySelectorAll('[data-buy]').forEach(x => { x.disabled = true; });
         const ok = await call('buy', { item });
         renderAll();
-        shopDialog(ok ? `${item}${josa(item, '을를').slice(-1)} 샀어요!` : '');
+        shopDialog(ok ? `${josa(item, '을를')} 구매했다!` : ''); // 기록창 대신 여기만 (2026-11-05)
       };
     });
   });
