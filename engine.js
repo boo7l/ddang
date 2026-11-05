@@ -1159,7 +1159,7 @@ const COMMANDS = {
   tech: { label: () => '기술', run: g => runDomestic(g, 'tech') },
   wall: { label: () => '축성', run: g => runDomestic(g, 'wall') },
   peace: { label: () => '치안', run: g => runDomestic(g, 'peace') },
-  draft: { label: o => (o.who === 'guard' ? '징병(수비)' : `징병 (${o.unit})`), run: runDraft },
+  draft: { label: o => (o.who === 'guard' ? '징병 (수비)' : `징병 (${o.unit})`), run: runDraft },
   drill: { label: () => '훈련', run: runDrill },
   attack: { label: o => `출진 → ${cityName(o.to)}`, run: runAttack },
   move: { label: o => `이동 → ${cityName(o.to)}`, run: runMove },
