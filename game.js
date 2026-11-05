@@ -1584,7 +1584,6 @@ function renderGeneral() {
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
         <tr><th>군량</th><td>${fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
-        ${RULES.features.drill ? '' : '<!--'}<tr><th>훈련</th><td>${p.training} <span class="dim">/ 100</span></td></tr>${RULES.features.drill ? '' : '-->'}
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
         ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
@@ -1658,7 +1657,6 @@ function renderCommands() {
     <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
     <div class="cmds cg-mil">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정` : '통솔')}
-      ${btn('drill', '훈련', '통솔')}
       ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : '이웃 성 공격')}
       ${btn('move', '이동', '')}
       ${btn('siege', '병기', '')}

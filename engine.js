@@ -147,7 +147,7 @@ function addGeneral(id, { name, face, stats }) {
   const g = S.generals[id] = {
     id, name, face, faction: null, city: null, // 세력은 다음 화면에서 고른다
     stats: Object.fromEntries(STATS.map(st => [st.key, stats[st.key]])),
-    troops: 0, unitType: null, training: 0, defense: true, // 병종은 첫 징병 때 고른다
+    troops: 0, unitType: null, defense: true, // 병종은 첫 징병 때 고른다
     gold: RULES.startGold, merit: 0, statExp: {}, siege: {}, gear: {}, intel: {},
     queue: Array(RULES.queueSize).fill(null), // 앞으로 queueSize턴의 예약 명령 (null = 대기)
     log: [],
@@ -217,7 +217,7 @@ const meritRanking = () => allGenerals()
   .map(g => ({ id: g.id, name: g.name, faction: g.faction, merit: g.merit })).sort((a, b) => b.merit - a.merit);
 
 // 기능 스위치가 꺼진 명령인지
-const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', drill: 'drill', explore: 'explore', shop: 'shop', buy: 'shop' };
+const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', explore: 'explore', shop: 'shop', buy: 'shop' };
 const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
 
 // fid 세력 성 가운데, fromId에서 그 세력 땅만 밟고 maxSteps칸 안에 갈 수 있는 성들 (이동 목적지)
@@ -487,10 +487,8 @@ function runDraft(g, o) {
   // 다른 병종을 모으면 있던 병력은 모두 흩어지고 새 부대가 된다
   let note = '';
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
-  if (g.troops <= 0) g.training = 0; // 병사가 없을 때 모으면 새 부대
   const t = traitOf(g.faction);
   const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0))), troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
-  if (g.troops > 0) g.training = dilutedTraining(g.training, g.troops, gain);
   g.unitType = type;
   g.troops += gain;
   addRecord(g, 'drafted', gain);
@@ -530,16 +528,6 @@ function runGuardDraft(g, type) {
   return '';
 }
 
-// ----- 훈련 -----
-function runDrill(g) {
-  const city = cityById(g.city);
-  if (g.troops <= 0) return '훈련할 병사가 없음';
-  if (g.training >= 100) return '훈련도가 이미 최대';
-  const gain = Math.min(drillGain(effStats(g).lea), 100 - g.training);
-  g.training += gain;
-  addLog(g, `${city.name}: ${g.unitType}을 훈련했다. 훈련도 +${gain} (${g.training}/100)`);
-  return '';
-}
 
 // ----- 방어 모드 (예약 없이 바로) -----
 // 켜 두면 머무는 성이 공격받을 때 요격에 나선다. 병력이 없으면 켤 수 없다
@@ -582,7 +570,7 @@ function trimDefense() {
 
 // ----- 출진 -----
 // 장수의 부대 (전투 계산용). ref는 전투가 끝난 뒤 병력을 되돌려 적을 장수
-const unitOf = g => ({ name: g.name, faction: g.faction, trait: g.trait, troops: g.troops, stats: effStats(g), type: g.unitType, training: g.training, siege: g.siege || {}, player: true, ref: g });
+const unitOf = g => ({ name: g.name, faction: g.faction, trait: g.trait, troops: g.troops, stats: effStats(g), type: g.unitType, siege: g.siege || {}, player: true, ref: g });
 
 // 성을 지키는 부대들. 병력이 많은 순서로 나서서 요격한다.
 //   - 수비대장: 세력 성에 병력이 남아 있으면 (2026-10-28부터 유저가 들어온 세력에서도 남아서 지킨다. 회복은 유저 없는 세력만)
@@ -593,7 +581,7 @@ function defendersOf(c) {
   if (c.faction && cs.guard > 0) {
     const st = RULES.guardStat;
     list.push({ name: '수비대장', troops: cs.guard, stats: { lea: st, war: st, int: st },
-      type: cs.guardType || RULES.guardUnit.type, training: RULES.guardUnit.training, guard: true, faction: c.faction }); // 병종은 수비대장 징병으로 바뀐다 (2026-11-04)
+      type: cs.guardType || RULES.guardUnit.type, guard: true, faction: c.faction }); // 병종은 수비대장 징병으로 바뀐다 (2026-11-04)
   }
   for (const g of allGenerals()) {
     if (g.city === c.id && g.faction === c.faction && g.defense && g.troops > 0) list.push(unitOf(g));
@@ -902,7 +890,6 @@ function runExplore(g) {
     case 'troops': {
       const n = Math.min(randInt(e.min, e.max), troopsMax(g) - g.troops);
       if (!g.unitType) g.unitType = '보병'; // 병사가 없던 장수에게 온 의병은 보병
-      g.training = dilutedTraining(g.training, g.troops, n);
       g.troops += n;
       text = n > 0 ? `소문을 들은 의병 ${fmt(n)}명이 찾아와 합류했다!` : '의병들이 찾아왔지만 더 거느릴 수 없어 돌려보냈다.';
       break;
@@ -1144,7 +1131,7 @@ function runResign(g) {
   if (!g.faction) return '세력에 소속되어 있지 않아요.';
   const f = factionById(g.faction), city = cityById(g.city);
   const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
-  Object.assign(g, { faction: null, city: null, troops: 0, unitType: null, training: 0 });
+  Object.assign(g, { faction: null, city: null, troops: 0, unitType: null });
   g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait }; // 떠난 세력에는 한동안 다시 못 들어간다
   clearOrders(g);
   addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}`);
@@ -1160,7 +1147,6 @@ const COMMANDS = {
   wall: { label: () => '축성', run: g => runDomestic(g, 'wall') },
   peace: { label: () => '치안', run: g => runDomestic(g, 'peace') },
   draft: { label: o => (o.who === 'guard' ? '징병 (수비)' : `징병 (${o.unit})`), run: runDraft },
-  drill: { label: () => '훈련', run: runDrill },
   attack: { label: o => `출진 → ${cityName(o.to)}`, run: runAttack },
   move: { label: o => `이동 → ${cityName(o.to)}`, run: runMove },
   destroy: { label: o => `파괴 → ${cityName(o.to)}`, run: (g, o) => runPlot(g, 'destroy', o) },

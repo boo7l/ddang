@@ -13,7 +13,6 @@ const RULES = {
     tech: false,      // 기술 내정
     siege: true,      // 병기: 충차·정란·벽력거를 금으로 만든다 (2026-10-26 다시 켬, 기술 조건 없음)
     spy: true,        // 첩보: 다른 세력 성의 농업·상업·방어·치안을 엿본다 (2026-10-26 다시 켬, 계략)
-    drill: false,     // 훈련 (끄면 훈련도에 따른 전투력 차이도 없음)
     explore: true,    // 탐색 (2026-10-25 다시 켬)
     shop: true,       // 상점: 명검·서적·명마를 여러 번 살 수 있고, 살 때마다 비싸진다
   },
@@ -136,11 +135,10 @@ const RULES = {
   charge: { minWar: 70, chancePerWar: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, statExp: 30 }, // 2026-11-03 시즌 5 발동 확률 능력치 ÷ 1500 → ÷ 2000, 경험치 40 → 30. 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 같은 수식에 지력 대신 무력. 무력 경험치 40, 공적 20. 침착이면 피해 -50%
   scheme: { minInt: 70, chancePerInt: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 30 }, // 2026-11-03 시즌 5 발동 확률 지력 ÷ 1500 → ÷ 2000, 경험치 40 → 30. // 책략 한 번에 지력 경험치 40 (2026-10-27 30에서). 출진 한 번(5합)에 최대 1번
 
-  // 병종과 훈련 (기획서 8장)
+  // 병종 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
   warAttackPer10: 0.01,     // 병종과 상관없이 무력 10마다 전투력 +1%, 공격·수비 모두 (무력 100이면 +10%. 2026-11-04 시즌 5: 20마다 +1%에서, 무력 메리트가 적다는 의견. 2026-10-26 처음)
-  trainingFloor: 0.7,       // 임시: 훈련도 0이면 전투력 70%, 100이면 100%
-  guardUnit: { type: '보병', training: 50 },  // 임시: 수비대장의 병종과 훈련도
+  guardUnit: { type: '보병' },  // 수비대장의 기본 병종 (훈련도는 2026-11-06 기능째 지움)
 
   npcOnly: [],              // 플레이어가 고를 수 없는 세력 이름 (지금은 없음. 동탁 NPC는 보류)
   rejoinWait: 10,           // 하야한 세력에 다시 들어가려면 기다려야 하는 턴 수
@@ -337,13 +335,12 @@ const FACTION_TRAITS = {
 };
 
 // ===== 전투 =====
-// 부대 하나: { name, troops, stats, type(병종), training(훈련도 0~100) }
-// 부대 전투력 = 병력 × (0.5 + 병종 능력치 ÷ 120) × 훈련 보정 (2026-11-04 시즌 5: 0.4 + ÷100에서, 고점을 살짝 내림 · 70 vs 110 차이 36% → 31%. 2026-10-25 0.5에서 0.4로 낮췄었음)
+// 부대 하나: { name, troops, stats, type(병종) }
+// 부대 전투력 = 병력(곡선) × (0.5 + 병종 능력치 ÷ 120) (2026-11-04 시즌 5: 0.4 + ÷100에서, 고점을 살짝 내림 · 70 vs 110 차이 36% → 31%. 2026-10-25 0.5에서 0.4로 낮췄었음)
 function unitPower(u) {
   const stat = u.stats[UNIT_TYPES[u.type].stat];
-  const drill = !RULES.features.drill ? 1 : RULES.trainingFloor + (1 - RULES.trainingFloor) * (u.training || 0) / 100;
   const c = RULES.troopCurve, eff = u.troops > 0 ? c.ref * Math.pow(u.troops / c.ref, c.exp) : 0; // 병력 곡선
-  return eff * (0.5 + stat / 120) * drill;
+  return eff * (0.5 + stat / 120);
 }
 // 상성 보정: a가 b에게 강하면 1.2. 약할 때 깎는 것은 없다 (너무 세서 뺐다)
 function matchupOf(a, b) {
@@ -370,10 +367,6 @@ const defensePower = (d, wall, a) => {
     * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 철벽, 뼈에게 닿기를
 };
 
-// 훈련: 한 번에 오르는 훈련도 (임시: 통솔 10마다 1씩 더)
-const drillGain = lea => 5 + Math.floor(lea / 10);
-// 징병으로 새 병사(훈련도 0)가 섞이면 훈련도 평균이 내려간다
-const dilutedTraining = (training, oldTroops, added) => (oldTroops + added ? Math.floor(training * oldTroops / (oldTroops + added)) : 0);
 
 // 일기토: 무력 높은 쪽이 이길 확률이 높다 (50% + 무력 차이 × 1%, 10~90%)
 const duelWinRate = (myWar, theirWar) => Math.min(0.9, Math.max(0.1, 0.5 + (myWar - theirWar) / 100));
