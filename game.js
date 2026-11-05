@@ -238,8 +238,7 @@ function adminToolsDialog() {
       <tr><th>문</th><td>${door}</td></tr>
     </table>
     <p class="sub">턴 <span class="dim">(모든 장수에게 적용)</span></p>
-    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button>
-       <button data-skip="1">+1턴</button> <button data-skip="5">+5턴</button> <button data-skip="12">+12턴</button></p>
+    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button></p>
     <p class="sub">보기</p>
     <p><button id="aView">👁 관리자 보기</button></p>
     <p class="sub">시즌·계정</p>
@@ -258,7 +257,6 @@ function adminToolsDialog() {
     <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
     <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aView').onclick = () => adminDialog();
     $('#aMsgSend').onclick = async () => {
