@@ -104,6 +104,7 @@ const TYPES = {              // 속도: 초당 도트 수
 const FOOT_RAMP = 0.8;        // 점수 1점마다 창병이 빨라지는 양 (CALM점부터)
 const FOOT_MAX = 90;         // 창병 최고 속도 (100점, 2026-11-05 72에서)
 const HORSE_MAX = 105;       // 기병 최고 속도 (100점). MID까지는 TYPES.horse.speed 그대로 (2026-11-05)
+const HEAVY_MAX = 45;        // 중장병 최고 속도 (100점). MID까지는 TYPES.heavy.speed 그대로 (2026-11-05)
 const HEAVY_HP_MIN = 2;      // 중장병을 쓰러뜨리는 데 필요한 타수 (이 사이에서 무작위)
 const HEAVY_HP_MAX = 5;
 const KNOCK = 32;            // 맞았을 때 밀려나는 거리 (칼 범위 밖으로 나갈 만큼)
@@ -288,11 +289,11 @@ function gapAt(n) {
   return mid + (MIN_GAP - mid) * (Math.min(n, RAMP_END) - MID) / (RAMP_END - MID);
 }
 
-// 기병: MID까지 그대로, RAMP_END까지 HORSE_MAX로 고르게 빨라진다
-function horseSpeed() {
-  const h = TYPES.horse.speed;
-  return score <= MID ? h : h + (HORSE_MAX - h) * (Math.min(score, RAMP_END) - MID) / (RAMP_END - MID);
+// 기병·중장병: MID까지 그대로, RAMP_END까지 최고 속도로 고르게 빨라진다
+function rampSpeed(base, max) {
+  return score <= MID ? base : base + (max - base) * (Math.min(score, RAMP_END) - MID) / (RAMP_END - MID);
 }
+
 
 function footSpeed() {
   const mid = TYPES.foot.speed + (MID - CALM) * FOOT_RAMP;
@@ -324,7 +325,7 @@ function plan() {
     // 중장병이 밀려났다 돌아올 자리는 비워 둔다.
     for (const h of holes) if (arrive > h.from && arrive < h.to) arrive = h.to;
     const type = pickType(n);
-    const speed = type === "foot" ? footSpeed() : type === "horse" ? horseSpeed() : TYPES[type].speed;
+    const speed = type === "foot" ? footSpeed() : type === "horse" ? rampSpeed(TYPES.horse.speed, HORSE_MAX) : rampSpeed(TYPES.heavy.speed, HEAVY_MAX);
     const hp = type !== "heavy" ? 1 : HEAVY_HP_MIN + Math.floor(Math.random() * (HEAVY_HP_MAX - HEAVY_HP_MIN + 1));
     const side = n < CALM && n % 3 !== 2 ? (n % 2 ? 1 : -1) : (Math.random() < 0.5 ? -1 : 1);
     pending.push({ type, side, speed, hp, arrive, spawn: arrive - (EDGE - TOUCH) / speed });
