@@ -92,15 +92,17 @@ const TOUCH = 10;            // 적의 창끝이 여기까지 오면 게임오�
 const EDGE = 125;            // 적이 나타나는 거리
 const CALM = 6;              // 처음 이만큼은 같은 속도, 같은 간격
 const FIRST_GAP = 1.15;      // 처음 적 사이 간격(초)
-const MIN_GAP = 0.30;        // 가장 어려울 때 적 사이 간격(초)
-const GAP_SHRINK = 0.975;    // 적 하나마다 간격이 줄어드는 비율
+const MIN_GAP = 0.25;        // 가장 어려울 때(100점) 적 사이 간격(초) (2026-11-05 0.30에서)
+const GAP_SHRINK = 0.975;    // MID까지 적 하나마다 간격이 줄어드는 비율
+const MID = 50;              // 여기까지는 예전 속도로 어려워지고, 그 뒤로는 RAMP_END까지 고르게 더 어려워진다 (2026-11-05)
+const RAMP_END = 100;        // 이 점수에서 가장 어려워지고, 그 뒤로는 그대로
 const TYPES = {              // 속도: 초당 도트 수
   foot:  { speed: 38 },
   heavy: { speed: 34 },
   horse: { speed: 84 },
 };
 const FOOT_RAMP = 0.8;        // 점수 1점마다 창병이 빨라지는 양 (CALM점부터)
-const FOOT_MAX = 72;         // 창병 최고 속도
+const FOOT_MAX = 90;         // 창병 최고 속도 (100점, 2026-11-05 72에서)
 const HEAVY_HP_MIN = 2;      // 중장병을 쓰러뜨리는 데 필요한 타수 (이 사이에서 무작위)
 const HEAVY_HP_MAX = 5;
 const KNOCK = 32;            // 맞았을 때 밀려나는 거리 (칼 범위 밖으로 나갈 만큼)
@@ -277,8 +279,18 @@ function pickType(n) {
   return "foot";
 }
 
+// n번째 적 앞의 간격: CALM까지 그대로, MID까지 GAP_SHRINK씩 줄고, RAMP_END까지 MIN_GAP으로 고르게 줄어든다
+function gapAt(n) {
+  if (n < CALM) return FIRST_GAP;
+  if (n < MID) return FIRST_GAP * GAP_SHRINK ** (n - CALM);
+  const mid = FIRST_GAP * GAP_SHRINK ** (MID - CALM);
+  return mid + (MIN_GAP - mid) * (Math.min(n, RAMP_END) - MID) / (RAMP_END - MID);
+}
+
 function footSpeed() {
-  return Math.min(FOOT_MAX, TYPES.foot.speed + Math.max(0, score - CALM) * FOOT_RAMP);
+  const mid = TYPES.foot.speed + (MID - CALM) * FOOT_RAMP;
+  if (score <= MID) return TYPES.foot.speed + Math.max(0, score - CALM) * FOOT_RAMP;
+  return mid + (FOOT_MAX - mid) * (Math.min(score, RAMP_END) - MID) / (RAMP_END - MID);
 }
 
 // 밀려난 적이 다시 닿을 시각을 다른 적과 겹치지 않게 잡는다. 겹치면 그만큼 비틀거리다 출발한다.
@@ -299,7 +311,7 @@ function knockBack(e) {
 function plan() {
   while (lastArrive < t + HORIZON) {
     const n = planned++;
-    if (n >= CALM) gap = Math.max(MIN_GAP, gap * GAP_SHRINK);
+    gap = gapAt(n);
     const wobble = n < CALM ? 1 : 0.8 + Math.random() * 0.6 * Math.min(1, (n - CALM) / 15 + 0.3);
     let arrive = lastArrive + Math.max(MIN_GAP, gap * wobble);
     // 중장병이 밀려났다 돌아올 자리는 비워 둔다.
