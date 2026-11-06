@@ -32,7 +32,7 @@ const traitOf = fid => {
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
 const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}; return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0))); }; // 개인 특성 차돌애호가
 // 이동 거리: 보통 2칸, 개인 특성 뼈에게 닿기를은 4칸 (군량 수송은 그대로 2칸)
-const moveRangeOf = g => gTrait(g).moveRange || RULES.moveRange;
+const moveRangeOf = g => Math.max(1, (gTrait(g).moveRange || RULES.moveRange) + (traitOf(g.faction).move || 0)); // 세력 특성 이동 거리 (2026-11-06)
 // 시각은 언제나 한국 시간으로 적는다 (서버는 다른 나라 시간일 수 있다)
 const kst = t => new Date(t + 9 * HOUR);
 const fmtTime = t => { const d = kst(t); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
@@ -271,6 +271,13 @@ function advance() {
       drilled.add(g.city);
       const cs = S.cities[g.city];
       cs.peace = Math.min(devMax(cityById(g.city).grade, 'peace'), cs.peace + gTrait(g).peaceTurn);
+    }
+    // 세력 특성 모든 성 치안 매턴 (2026-11-06, 지도 파일 특성 peaceTurn): 그 세력의 모든 성
+    for (const c of MAP.cities) {
+      const n = c.faction && traitOf(c.faction).peaceTurn;
+      if (!n) continue;
+      const cs = S.cities[c.id];
+      cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + n));
     }
     // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26). 한번 전멸(0)하면 다시 생기지 않는다 (2026-10-28)
     for (const c of MAP.cities) if (hasGuard(c) && S.cities[c.id].guard > 0) { const cs = S.cities[c.id]; cs.guard = Math.max(cs.guard, Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen)); } // 징병으로 회복 상한보다 많으면 그대로
@@ -638,11 +645,11 @@ function retreatFrom(c, oldFaction, byFid) {
     }
     g.city = to.id;
     if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
-      const lost = Math.ceil(g.troops * RULES.isolatedLoss);
+      const lost = Math.min(g.troops, Math.ceil(g.troops * RULES.isolatedLoss * Math.max(0, 1 + (traitOf(g.faction).retreatLoss || 0)))); // 세력 특성 (2026-11-06)
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} 포위를 뚫고 ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
     } else if (!g.defense && g.troops > 0) { // 방어를 끈 장수도 물러나며 병력을 조금 잃는다 (2026-11-03 시즌 5)
-      const k = RULES.defenseOffLoss, lost = Math.ceil(g.troops * (k.min + Math.random() * (k.max - k.min)));
+      const k = RULES.defenseOffLoss, lost = Math.min(g.troops, Math.ceil(g.troops * (k.min + Math.random() * (k.max - k.min)) * Math.max(0, 1 + (traitOf(g.faction).retreatLoss || 0)))); // 세력 특성 (2026-11-06)
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
     } else out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다.`);

@@ -315,6 +315,8 @@ const TRAIT_FX = [
   { key: 'defense', label: '수비력', max: 0.3 },
   { key: 'cavalry', label: '기병 전투력', max: 0.3 },
   { key: 'cavalryDefense', label: '기병 수비력', max: 0.3 },
+  { key: 'infantry', label: '보병 전투력', max: 0.3 }, // 2026-11-06 새 효과
+  { key: 'archer', label: '궁병 전투력', max: 0.3 }, // 2026-11-06 새 효과
   { key: 'draft', label: '징병량', max: 0.5 },
   { key: 'cavalryDraft', label: '기병 징병량', max: 0.5 },
   { key: 'draftPeace', label: '징병 치안 감소', max: 1 },
@@ -327,11 +329,14 @@ const TRAIT_FX = [
   { key: 'exp', label: '모든 능력치 경험치', max: 0.5 },
   { key: 'expInt', label: '지력 경험치', max: 0.5 },
   { key: 'trainExp', label: '수련 경험치', max: 0.5 },
+  { key: 'retreatLoss', label: '함락·포위 때 병력 손실', max: 1 }, // 2026-11-06 새 효과: 성을 잃고 물러날 때 잃는 병력
+  { key: 'move', label: '이동 거리', unit: '칸', int: true, max: 2 }, // 2026-11-06 새 효과: 이동 명령 칸 수 (군량 수송은 그대로)
+  { key: 'peaceTurn', label: '모든 성 치안 매턴', unit: '', int: true, max: 5 }, // 2026-11-06 새 효과: 세력의 모든 성
   { key: 'freeTrain', label: '수련에 금이 들지 않음', flag: true },
 ];
 // 효과 → 설명 글: { attack: 0.1, draftPeace: 0.5 } → "공격력 +10%, 징병 치안 감소 +50%"
 const traitDesc = fx => Object.keys(fx).map(k => TRAIT_FX.find(d => d.key === k)).filter(d => d && fx[d.key] !== 0 && fx[d.key] !== false) // 적힌 순서대로
-  .map(d => (d.flag ? d.label : `${d.label} ${fx[d.key] > 0 ? '+' : ''}${Math.round(fx[d.key] * 1000) / 10}%`)).join(', ');
+  .map(d => (d.flag ? d.label : d.int ? `${d.label} ${fx[d.key] > 0 ? '+' : ''}${fx[d.key]}${d.unit}` : `${d.label} ${fx[d.key] > 0 ? '+' : ''}${Math.round(fx[d.key] * 1000) / 10}%`)).join(', ');
 // 지도 파일에서 온 특성을 믿을 수 있는 모양으로: 아는 효과만, 한도 안에서. 이름이 없거나 효과가 없으면 null
 function cleanTrait(t) {
   if (!t || typeof t !== 'object') return null;
@@ -342,7 +347,8 @@ function cleanTrait(t) {
     const v = t.fx && t.fx[d.key];
     if (d.flag) { if (v === true) fx[d.key] = true; continue; }
     const n = +v;
-    if (Number.isFinite(n) && n !== 0) fx[d.key] = Math.max(-d.max, Math.min(d.max, Math.round(n * 1000) / 1000));
+    if (Number.isFinite(n) && n !== 0) fx[d.key] = Math.max(-d.max, Math.min(d.max, d.int ? Math.round(n) : Math.round(n * 1000) / 1000));
+    if (fx[d.key] === 0) delete fx[d.key];
   }
   const name = String(t.name || '').trim().slice(0, 12);
   return name && Object.keys(fx).length ? { name, fx } : null;
@@ -395,12 +401,14 @@ function matchupOf(a, b) {
 // 공격력: 정란이 있으면 더 세다
 // 세력 특성: 기병(마등), 출진 공격(손견)
 // 무력 보너스: 병종과 상관없이 무력 10마다 전투력 +1%, 공격·수비 모두 (2026-11-04 시즌 5 20마다에서 10마다로. 2026-10-26 처음, 무력의 가치를 올리려고)
+// 보병·궁병 전투력 (세력 특성, 2026-11-06). 기병은 cavalry로 따로
+const unitTypeBonus = (t, type) => (type === '보병' ? 1 + (t.infantry || 0) : type === '궁병' ? 1 + (t.archer || 0) : 1);
 const warBonus = u => 1 + Math.floor((u.stats.war || 0) / 10) * RULES.warAttackPer10;
 const attackPower = (a, d) => {
   const t = traitOf(a.faction);
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
     * warBonus(a)
-    * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1)
+    * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
     * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
 };
 // 수비력: 성 방어 보정을 받는다
@@ -408,7 +416,7 @@ const attackPower = (a, d) => {
 const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + wall / RULES.wallDivisor) * (1 + (t.defense || 0)) * warBonus(d)
-    * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1)
+    * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1) * unitTypeBonus(t, d.type)
     * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 철벽, 뼈에게 닿기를
 };
 
