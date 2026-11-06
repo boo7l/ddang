@@ -92,8 +92,8 @@ const RULES = {
   regionEvents: [
     { key: 'harvest', name: '풍작', icon: '🌾', months: [4, 10], chance: 0.05, food: 0.3 },
     { key: 'drought', name: '가뭄', icon: '☀️', months: [4, 10], chance: 0.05, food: -0.3 },
-    { key: 'revolt', name: '민란', icon: '🔥', chance: 0.03, troops: -0.05, peace: -20 },
-    { key: 'plague', name: '역병', icon: '☠️', chance: 0.02, troops: -0.1 },
+    { key: 'revolt', name: '민란', icon: '🔥', chance: 0.03, troops: -0.1, peace: -20 }, // 2026-11-06 병력 -5% → -10%
+    { key: 'plague', name: '역병', icon: '☠️', chance: 0.02, troops: -0.15 }, // 2026-11-06 병력 -10% → -15%
     { key: 'flood', name: '폭우', icon: '🌧️', months: [6, 7, 8], chance: 0.03, agri: -0.1, comm: -0.1, peace: -10 },
     { key: 'cold', name: '한파', icon: '❄️', months: [12, 1, 2], chance: 0.03, agri: -0.1, comm: -0.1 },
     { key: 'boom', name: '교역 호황', icon: '💰', months: [1, 4, 7, 10], chance: 0.03, comm: 0.15, gold: 500 },
