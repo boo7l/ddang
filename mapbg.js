@@ -288,7 +288,7 @@ function applyMapBg(el) {
   const plain = el.querySelector('.cell:not(.city)'); // 성이 아닌 빈칸은 테두리·여백 없이 딱 한 칸 크기
   const cellPx = plain ? plain.getBoundingClientRect().width : 0;
   if (!(cellPx > 0)) return; // 숨겨진 탭이라 아직 크기가 없다: 보일 때 다시 온다
-  const w = cellPx * MAP.cols, h = cellPx * MAP.rows, key = `${MAP_BG_TONE}:${w}x${h}`;
+  const w = cellPx * MAP.cols, h = cellPx * MAP.rows, key = `${MAP_BG_TONE}:${w}x${h}:${typeof MAP_AT !== 'undefined' ? MAP_AT || '' : ''}`; // 지도가 바뀌면(시즌마다 올린 지도) 다시 그린다
   if (el._bgKey === key) return; // 이미 이 크기로 깔려 있다
   el._bgKey = key;
   if (!bgCache[key]) bgCache[key] = paintBg(MAP_BG_TONE, w, h);
