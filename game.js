@@ -409,16 +409,27 @@ function replayDialog(h, R) {
     $('#modalBox').classList.add('wideBox');
     const cell = {}; box.querySelectorAll('[data-c]').forEach(d => { cell[d.dataset.c] = d; });
     let turn = 0, timer = null, speed = 1;
-    const ownersAt = t => { const o = Object.fromEntries(R.cities.map(c => [c.id, c.faction || ''])); for (const [tt, id, f] of log) { if (tt > t) break; o[id] = f; } return o; };
+    // t턴까지의 성 주인과, 세력이 성을 모두 잃은 턴 (멸망 순서대로 아래에서부터 쌓으려고, 2026-11-06)
+    const ownersAt = t => {
+      const o = Object.fromEntries(R.cities.map(c => [c.id, c.faction || ''])), n = {}, deadAt = {};
+      for (const id in o) if (o[id]) n[o[id]] = (n[o[id]] || 0) + 1;
+      for (const [tt, id, f] of log) {
+        if (tt > t) break;
+        const old = o[id]; o[id] = f;
+        if (old) { n[old]--; if (!n[old]) deadAt[old] = tt; }
+        if (f) { n[f] = (n[f] || 0) + 1; delete deadAt[f]; }
+      }
+      return { o, deadAt };
+    };
     const draw = (t, flash) => {
-      const o = ownersAt(t);
+      const { o, deadAt } = ownersAt(t);
       for (const c of R.cities) { const f = F[o[c.id]]; cell[c.id].classList.toggle('empty', !f); cell[c.id].style.background = f ? f.color : ''; }
       const changed = log.filter(e => e[0] === t);
       if (flash) for (const e of changed) { const d = cell[e[1]]; if (d) { d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash'); } }
       $('#rpDate').innerHTML = `${dateText(t, h.start_year || RULES.startYear)} <small>(${t}턴)</small>`;
       const cnt = {}; for (const id in o) if (o[id]) cnt[o[id]] = (cnt[o[id]] || 0) + 1;
       const max = Math.max(1, ...Object.values(cnt));
-      $('#rpSide').innerHTML = R.factions.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0)).map(f => `<div class="rpRow${cnt[f.id] ? '' : ' dead'}"><span class="swatch" style="background:${f.color}"></span><span class="nm">${esc(f.name)}</span><span class="bar" style="width:${Math.round((cnt[f.id] || 0) / max * 80)}px;background:${f.color}"></span><span class="n">${cnt[f.id] || 0}</span></div>`).join('');
+      $('#rpSide').innerHTML = R.factions.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0) || (deadAt[b.id] ?? -1) - (deadAt[a.id] ?? -1)).map(f => `<div class="rpRow${cnt[f.id] ? '' : ' dead'}"><span class="swatch" style="background:${f.color}"></span><span class="nm">${esc(f.name)}</span><span class="bar" style="width:${Math.round((cnt[f.id] || 0) / max * 80)}px;background:${f.color}"></span><span class="n">${cnt[f.id] || 0}</span></div>`).join('');
       $('#rpEvt').innerHTML = changed.filter(e => byId[e[1]]).map(e => `${esc(byId[e[1]].name)} → ${F[e[2]] ? esc(F[e[2]].name) : '공백지'}`).join(' · ') || '&nbsp;';
       $('#rpSlider').value = t;
     };
