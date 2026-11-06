@@ -1855,13 +1855,15 @@ function renderCommands() {
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
+  // 칸 비우기·채우기 단추: PC는 예약표 아래, 휴대폰은 명령 단추 아래 (휴대폰은 예약표를 위에 붙여 두므로, 2026-11-07)
+  const qBtns = `<p class="cmds two"><button class="qClear">칸 비우기</button><button class="qClearAll danger">모두 비우기</button></p>
+    <p class="cmds one"><button class="qFill"${lastOrder ? '' : ' disabled'}>빈 칸 모두 채우기<small>${lastOrder ? `마지막 명령: ${esc(orderLabel(lastOrder))}` : '명령을 하나 넣으면 쓸 수 있어요'}</small></button></p>`;
   $('#queueBox').innerHTML = `
-    <h2>명령 예약</h2>
+    <h2>명령 예약<button id="qTop" class="mini qTopBtn" title="바로 다음 턴 칸으로">▲ 다음 턴</button></h2>
     <p class="turnInfo">다음 턴 ${fmtClock(slotTime(0))} <span class="dim">(<b id="turnLeft"></b> 남음)</span>
-      <span class="dim">· 1턴 ${RULES.turnLength / MIN}분 = 1달 (밤 ${RULES.night.from}~${RULES.night.to}시는 ${RULES.night.turnLength / MIN}분)</span></p>
+      <span class="dim tiRule">· 1턴 ${RULES.turnLength / MIN}분 = 1달 (밤 ${RULES.night.from}~${RULES.night.to}시는 ${RULES.night.turnLength / MIN}분)</span></p>
     <ol class="queue">${rows}</ol>
-    <p class="cmds two"><button id="qClear">칸 비우기</button><button id="qClearAll" class="danger">모두 비우기</button></p>
-    <p class="cmds one"><button id="qFill"${lastOrder ? '' : ' disabled'}>빈 칸 모두 채우기<small>${lastOrder ? `마지막 명령: ${esc(orderLabel(lastOrder))}` : '명령을 하나 넣으면 쓸 수 있어요'}</small></button></p>
+    <div class="qBtnsWide">${qBtns}</div>
 `;
   $('#commands').innerHTML = `
     <h2>명령</h2>
@@ -1879,6 +1881,7 @@ function renderCommands() {
     <div class="cmds cg-plot">${plot}</div>
     ${etc ? `<p class="sub subRow">기타${lockStat ? `<label class="lockSw" title="켜 두면 수련을 누르자마자 지금 능력치로 예약해요"><input type="checkbox" id="trainLock"${trainLock ? ' checked' : ''}> 능력 고정</label>` : ''}</p>
     <div class="cmds cg-etc">${etc}</div>` : ''}
+    <div class="qBtnsM">${qBtns}</div>
 `;
   const dialogs = { adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
@@ -1901,13 +1904,15 @@ function renderCommands() {
   else if (sel && sel.offsetTop + sel.offsetHeight > q.scrollTop + q.clientHeight) q.scrollTop = sel.offsetTop + sel.offsetHeight - q.clientHeight;
   $('#queueBox').querySelectorAll('.queue li').forEach(li => { li.onclick = () => { slot = +li.dataset.i; renderCommands(); }; });
   $('#queueBox').querySelectorAll('[data-x]').forEach(b => { b.onclick = e => { e.stopPropagation(); clearSlot(+b.dataset.x); }; });
-  $('#qClear').onclick = () => clearSlot(slot);
-  $('#qFill').onclick = () => { if (lastOrder) queueCall('fill', { order: lastOrder }, q => q.forEach((o, i) => { if (!o) q[i] = lastOrder; })); };
-  $('#qClearAll').onclick = () => {
+  const onAll = (sel, fn) => document.querySelectorAll(sel).forEach(b => { b.onclick = fn; });
+  onAll('.qClear', () => clearSlot(slot));
+  onAll('.qFill', () => { if (lastOrder) queueCall('fill', { order: lastOrder }, q => q.forEach((o, i) => { if (!o) q[i] = lastOrder; })); });
+  onAll('.qClearAll', () => {
     if (!confirm('예약한 명령을 모두 비울까요?')) return;
     slot = 0;
     queueCall('clear', {}, q => q.fill(null));
-  };
+  });
+  $('#qTop').onclick = () => { slot = 0; renderCommands(); }; // 휴대폰: 바로 다음 턴 칸으로 (고른 칸이 보이게 예약표도 맨 위로)
   // 천하통일로 시즌이 끝나면: 버튼은 그대로 보이지만 아무 작동도 하지 않는다
   if (S.unified) {
     $('#commands').querySelectorAll('button').forEach(b => { b.disabled = true; b.onclick = null; });
