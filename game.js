@@ -115,8 +115,19 @@ function unifyDialog(u = S.unified) {
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
 const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['chat', '💬 채팅'], ['members', '🗂 가입자']];
 let adminTab = 'ops';
+// 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
+const ADMIN_HIDES = ['title', 'hofPage', 'create', 'trait', 'join', 'game', 'mTabs', 'refreshBtn', 'miniLink'];
+let adminPrev = null; // 열기 전에 보이던 것들 + 게임 화면 표시
+function adminEnter() {
+  if (adminPrev) return;
+  adminPrev = { shown: ADMIN_HIDES.filter(id => $('#' + id) && !$('#' + id).hidden), inGame: document.body.classList.contains('inGame') };
+  adminPrev.shown.forEach(id => { $('#' + id).hidden = true; });
+  document.body.classList.remove('inGame'); // 휴대폰 게임 화면 고정을 풀어 페이지가 스크롤되게
+  closeModal(); scrollTo(0, 0);
+}
 function adminShow(tab, html, onMount) {
   adminTab = tab;
+  adminEnter();
   $('#adminPage').hidden = false;
   $('#adminNav').innerHTML = ADMIN_NAV.map(([k, t]) => `<button data-anav="${k}" class="${k === tab ? 'on' : ''}">${t}</button>`).join('');
   $('#adminNav').querySelectorAll('[data-anav]').forEach(b => { b.onclick = () => openAdmin(b.dataset.anav); });
@@ -134,6 +145,7 @@ function adminSide(html, onMount) {
 function closeAdminSide() { const s = $('#adminSide'); s.hidden = true; s.innerHTML = ''; $('.adminLayout').classList.remove('withSide'); }
 function closeAdmin() {
   closeAdminSide(); $('#adminPage').hidden = true;
+  if (adminPrev) { adminPrev.shown.forEach(id => { $('#' + id).hidden = false; }); document.body.classList.toggle('inGame', adminPrev.inGame); adminPrev = null; }
   if (!$('#game').hidden && S && me() && me().faction) { render(); renderLegend(); renderAll(); }
 }
 // 가입자 탭 (2026-10-31): 가입한 계정 전체. 장수가 없는 계정도 보이고 정지할 수 있다. 검색은 다시 그리지 않고 줄만 숨긴다 (한글 입력)
@@ -242,7 +254,7 @@ function adminToolsDialog() {
   const door = S && S.closed ? '🔒 닫힘 (관리자만 들어옴)' : S && S.unified ? '🔓 열림 (시즌 종료: 구경·채팅만)' : '🔓 열림';
   const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
   const plan = S && S.nextOpen, pk = plan && new Date(plan.at + 9 * 3600000); // 오픈 예약 (한국 시각으로 칸에 다시 채운다)
-  adminShow('ops', `
+  adminShow('ops', `<div class="adminCards">
     <div class="adminCard">
     <table class="stats">
       <tr><th>시즌</th><td>${S ? `시즌 ${S.season || 1}${S.scenario ? ` · ${esc(S.scenario)}` : ''}` : '-'}</td></tr>
@@ -258,7 +270,7 @@ function adminToolsDialog() {
     <p><input id="aMsg" maxlength="200" value="[📢] " placeholder="200자까지" style="width:100%;box-sizing:border-box"></p><!-- 입력칸에 [📢]를 미리 넣어 둔다. 필요 없으면 지우면 된다 (2026-11-02) -->
     <p><button id="aMsgSend">보내기</button></p>
     </div>
-    <div class="adminCard">
+    <div class="adminCard wide">
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
     <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(MAP.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
@@ -269,10 +281,10 @@ function adminToolsDialog() {
     <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
     <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
     </div>
-    <div class="adminCard danger">
+    <div class="adminCard wide danger">
     <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
     <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
-    </div>`, box => {
+    </div></div>`, box => {
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aMsgSend').onclick = async () => {
       const text = $('#aMsg').value.trim();
@@ -975,7 +987,8 @@ setTimeout(() => { $('#loader').hidden = true; document.body.classList.remove('l
 
 function showScreen(id) {
   hideLoader();
-  ['title', 'hofPage', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
+  ['title', 'hofPage', 'adminPage', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
+  adminPrev = null; // 관리 페이지가 열려 있었으면 닫힌 셈 (2026-11-06)
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   $('#who').hidden = id === 'title' || id === 'hofPage';

@@ -913,31 +913,36 @@ details.fold > summary:hover h2 { color: var(--title); }
 .rpCtl input[type=range] { flex: 1; min-width: 0; }
 .rpCtl button { min-width: 44px; }
 
-/* 관리 페이지 (2026-11-06): 팝업 대신 화면 전체. 확인 창(#modal, z 50)보다 아래, 새로고침 단추(z 40)보다 위 */
-#adminPage { position: fixed; inset: 0; z-index: 45; margin: 0; max-width: none; overflow-y: auto; box-sizing: border-box; }
+/* 관리 페이지 (2026-11-06): 명예의 전당처럼 상단 바 아래 가운데에 놓인 페이지. 위에 탭, 장수 정보는 오른쪽 칸 */
+#adminPage { max-width: 1120px; margin: 24px auto; }
 #adminPage .pageHead { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-#adminPage .pageTitle { flex: 1; text-align: center; color: var(--title); }
-#adminPage .back, #adminPage .spacer { width: 120px; white-space: nowrap; }
-.adminLayout { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: start; max-width: 1400px; margin: 0 auto; }
-.adminLayout.withSide { grid-template-columns: 130px minmax(0, 1fr) 400px; }
-#adminNav { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; }
-#adminNav button { text-align: left; }
-#adminNav button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
+#adminPage .pageTitle { flex: 1; text-align: center; color: var(--title); white-space: nowrap; }
+#adminPage .back, #adminPage .pageHead .spacer { width: 104px; white-space: nowrap; }
+.adminTabs { display: flex; gap: 4px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dotted var(--gold-dark); }
+.adminTabs button { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+.adminTabs button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
+.adminLayout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.adminLayout.withSide { grid-template-columns: minmax(0, 1fr) 360px; }
 #adminMain { min-width: 0; }
-#adminSide { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 10px; position: sticky; top: 0; max-height: calc(100vh - 90px); overflow-y: auto; }
+#adminSide { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 10px 12px; position: sticky; top: 12px; max-height: calc(100vh - 40px); overflow-y: auto; }
 #adminSide h3 { margin: 0 0 8px; color: var(--title); }
 #adminSide .sideBtns { text-align: right; margin-top: 10px; }
-#adminPage .adminScroll { max-height: calc(100vh - 230px); }
-#adminPage .adminChat { max-height: calc(100vh - 230px); }
+#adminPage .adminScroll { max-height: 60vh; }
+#adminPage .adminChat { max-height: 60vh; margin-top: 8px; }
+#adminPage .picks { margin-bottom: 6px; }
 #adminPage .picks .dim { float: none; margin-left: 6px; }
-.adminCard { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 8px 12px; margin-bottom: 10px; max-width: 720px; }
+.adminCards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.adminCard { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 8px 12px; }
+.adminCard.wide { grid-column: 1 / -1; }
 .adminCard.danger { border-color: #a33; }
 .adminCard p { margin: 6px 0; }
 @media (max-width: 700px) {
-  .adminLayout, .adminLayout.withSide { grid-template-columns: minmax(0, 1fr); }
-  #adminNav { flex-direction: row; flex-wrap: wrap; position: static; }
-  #adminNav button { flex: 1 1 auto; text-align: center; }
+  #adminPage { margin: 8px; }
+  .adminTabs { flex-wrap: wrap; }
+  .adminTabs button { flex: 1 1 calc(50% - 4px); }
+  .adminLayout.withSide { grid-template-columns: minmax(0, 1fr); }
+  .adminCards { grid-template-columns: minmax(0, 1fr); }
   #adminSide { position: static; max-height: none; }
-  #adminPage .back, #adminPage .spacer { width: auto; }
-  #adminPage .spacer { display: none; }
+  #adminPage .back, #adminPage .pageHead .spacer { width: auto; }
+  #adminPage .pageHead .spacer { display: none; }
 }

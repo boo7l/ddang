@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/Sam3KRFont.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261106202316">
+<link rel="stylesheet" href="style.css?v=20261106202607">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -60,6 +60,12 @@
     <div class="pageHead"><button id="hofBack" class="back">‹ 돌아가기</button><div class="pageTitle">🏆 명예의 전당</div><span class="spacer"></span></div>
     <div class="seasonBar"><button id="chipPrev" class="arrow" aria-label="최근 시즌 쪽으로">‹</button><div class="seasonChips" id="hofChips"></div><button id="chipNext" class="arrow" aria-label="지난 시즌 쪽으로">›</button></div>
     <div id="hofView"></div>
+  </section>
+  <!-- 관리 페이지 (2026-11-06, 관리자만): 상단 바·배경은 그대로 두고 화면 가운데에 페이지로. 어느 화면에서든 열고, 돌아가면 보던 화면으로 -->
+  <section id="adminPage" class="win" hidden>
+    <div class="pageHead"><button id="adminClose" class="back">‹ 돌아가기</button><div class="pageTitle">🛠 관리</div><span class="spacer"></span></div>
+    <div class="adminTabs" id="adminNav"></div>
+    <div class="adminLayout"><div id="adminMain"></div><aside id="adminSide" hidden></aside></div>
   </section>
   <button id="miniLink" hidden>미니게임</button><!-- 있는 듯 없는 듯: 첫 화면 상자 아래 (2026-11-01) -->
 
@@ -147,24 +153,19 @@
   <button id="refreshBtn" hidden title="새로고침" aria-label="새로고침">↻</button>
 
   <!-- 출진·수송·이동 대화 상자 -->
-  <!-- 관리 페이지 (2026-11-06, 관리자만). 화면 전체를 덮고, 확인 창(#modal)은 그 위에 뜬다 -->
-  <div id="adminPage" class="win" hidden>
-    <div class="pageHead"><button id="adminClose" class="back">‹ 돌아가기</button><div class="pageTitle">🛠 관리 <span class="dim small">· 관리자만 보여요</span></div><span class="spacer"></span></div>
-    <div class="adminLayout"><nav id="adminNav"></nav><div id="adminMain"></div><aside id="adminSide" hidden></aside></div>
-  </div>
   <div id="modal" hidden><div id="modalBox" class="win"></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261106202316"></script>
-  <script src="mapcore.js?v=20261106202316"></script>
-  <script src="data/map.js?v=20261106202316"></script>
-  <script src="rules.js?v=20261106202316"></script>
-  <script src="faces.js?v=20261106202316"></script>
-  <script src="patchnotes.js?v=20261106202316"></script>
-  <script src="mapbg.js?v=20261106202316"></script>
-  <script src="map.js?v=20261106202316"></script>
-  <script src="engine.js?v=20261106202316"></script>
-  <script src="game.js?v=20261106202316"></script>
+  <script src="server.js?v=20261106202607"></script>
+  <script src="mapcore.js?v=20261106202607"></script>
+  <script src="data/map.js?v=20261106202607"></script>
+  <script src="rules.js?v=20261106202607"></script>
+  <script src="faces.js?v=20261106202607"></script>
+  <script src="patchnotes.js?v=20261106202607"></script>
+  <script src="mapbg.js?v=20261106202607"></script>
+  <script src="map.js?v=20261106202607"></script>
+  <script src="engine.js?v=20261106202607"></script>
+  <script src="game.js?v=20261106202607"></script>
 </body>
 </html>
