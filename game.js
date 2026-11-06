@@ -1653,6 +1653,35 @@ function setTab(t) {
   if (t === 'chat') document.querySelector('#mTabs [data-tab=chat]').classList.remove('dot'); // 받은 서신 빨간 점을 지운다
 }
 document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
+// 휴대폰: 옆으로 밀어 탭 넘기기 (2026-11-07). 왼쪽 = 다음 탭, 오른쪽 = 이전 탭.
+// 옆으로 60px 넘게, 위아래보다 옆으로 더 움직였을 때만. 입력칸·창(dialog)·옆으로 스크롤되는 곳에서 시작하면 넘기지 않는다
+{
+  let sx = null, sy = 0;
+  const sideScroll = el => {
+    for (; el && el !== document.body; el = el.parentElement) {
+      const ox = getComputedStyle(el).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth + 1) return true;
+    }
+    return false;
+  };
+  $('#game').addEventListener('touchstart', e => {
+    sx = null;
+    if (e.touches.length !== 1 || $('#mTabs').hidden || getComputedStyle($('#mTabs')).display === 'none') return;
+    const t = e.target;
+    if (t.closest('input, textarea, select, dialog, [contenteditable]') || sideScroll(t)) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  $('#game').addEventListener('touchend', e => {
+    if (sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    sx = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (window.getSelection && String(window.getSelection())) return; // 글자를 고르던 중
+    const tabs = [...document.querySelectorAll('#mTabs button')].map(b => b.dataset.tab);
+    const i = tabs.indexOf($('#game').dataset.tab), j = i + (dx < 0 ? 1 : -1);
+    if (i >= 0 && j >= 0 && j < tabs.length) setTab(tabs[j]);
+  }, { passive: true });
+}
 // 새로고침 단추: 페이지를 다시 열지 않고 서버에서 최신 상태만 받아 온다 (2026-10-31)
 $('#refreshBtn').onclick = async () => {
   const b = $('#refreshBtn');
