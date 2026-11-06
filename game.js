@@ -324,7 +324,7 @@ function adminToolsDialog() {
       : `<p class="dim">올려 둔 지도가 없어요. 새 시즌은 서버 기본 지도(${esc(MAP_DATA.scenario || '?')} · ${yearText(MAP_DATA.year || RULES.startYear)})로 열려요.</p>`}
     <p><input type="file" id="amFile" accept=".json"> <span class="dim small" id="amNote"></span></p>
     <div id="amPreview"></div>
-    <p><button id="amUpload" disabled>이 지도를 다음 시즌 지도로 올리기</button></p>
+    <p><button id="amUpload" disabled>업로드</button></p>
     <p class="dim small">올린 지도는 "새 시즌 시작"(직접 또는 자동 오픈 예약)을 할 때 쓰여요. 지금 시즌에는 영향이 없어요.</p>
     </div>
     <div class="adminCard wide danger">
