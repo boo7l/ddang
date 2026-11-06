@@ -2173,7 +2173,7 @@ function recordDialog() {
 $('#recordBtn').onclick = recordDialog;
 // ☰ 메뉴 [♪ 음악] (2026-11-07): 배경 음악 켜기·끄기. 내 장수 공적이 2,000 미만이면 역사풍(history), 이상이면 웅장풍(epic).
 // 곡은 audio/bgm_*.wav (preview/bgm/make_midi.js로 작곡 → tools/save_bgm.js로 녹음). 처음 켤 때만 받아 온다.
-// 켜 둔 것은 이 브라우저에 기억하고, 다시 들어오면 첫 클릭 때 이어서 튼다 (브라우저가 클릭 전 소리를 막는다)
+// 들어올 때마다 항상 꺼진 채로 시작한다 (2026-11-07 기획자: 켠 상태를 기억하지 않는다)
 const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
 const BGM_MERIT = 2000;
 const bgmWant = () => (S && me() && me().merit >= BGM_MERIT ? 'epic' : 'history');
@@ -2204,13 +2204,12 @@ function bgmStop() {
 }
 function bgmSet(on) {
   BGM.on = on;
-  try { if (on) localStorage.setItem('ddang-bgm', '1'); else localStorage.removeItem('ddang-bgm'); } catch (e) { /* 저장 못 하면 이번만 */ }
   bgmLabel();
   if (on) bgmPlay(bgmWant()); else bgmStop();
 }
 function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
 $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
-try { if (localStorage.getItem('ddang-bgm')) { BGM.on = true; bgmLabel(); document.addEventListener('pointerdown', () => { if (BGM.on && !BGM.src) bgmPlay(bgmWant()); }, { once: true }); } } catch (e) { /* 기억 못 해도 괜찮다 */ }
+try { localStorage.removeItem('ddang-bgm'); } catch (e) { /* 예전 판이 기억해 둔 값 지우기 */ }
 document.addEventListener('click', () => document.querySelector('header').classList.remove('menuOpen'));
 // 휴대폰에서 PC 버전으로 보기 ↔ 모바일 버전으로 돌아오기 (2026-10-28). 고른 것은 이 브라우저에 기억하고 새로 연다 (index.html 맨 위에서 화면 너비를 정한다)
 const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); else localStorage.removeItem('ddang-pc'); } catch (e) { /* 저장 못 하면 이번만 */ } location.reload(); };
