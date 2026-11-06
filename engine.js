@@ -336,12 +336,14 @@ function runRegionEvents(month) {
     if (e.food) { foodRate[r] = e.food; fx.push(`이번 수확 ${e.food > 0 ? '+' : ''}${Math.round(e.food * 100)}%`); }
     for (const c of cities) {
       const cs = S.cities[c.id];
-      for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), Math.round(cs[k] * (1 + e[k]))));
+      // 농업·상업: 숫자면 비율(예전), [최소, 최대]면 그만큼 더하거나 뺀다 (성마다·농업 상업 따로 굴림, 2026-11-06)
+      for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), Array.isArray(e[k]) ? cs[k] + randInt(e[k][0], e[k][1]) : Math.round(cs[k] * (1 + e[k]))));
       if (e.peace) cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + e.peace));
       if (e.troops && cs.guard > 0) cs.guard = Math.max(0, cs.guard - Math.ceil(cs.guard * -e.troops));
     }
-    if (e.agri) fx.push(`농업 ${Math.round(e.agri * 100)}%`);
-    if (e.comm) fx.push(`상업 ${e.comm > 0 ? '+' : ''}${Math.round(e.comm * 100)}%`);
+    const rng = v => (Array.isArray(v) ? `${v[0] < 0 ? '-' : '+'}${Math.min(Math.abs(v[0]), Math.abs(v[1]))}~${Math.max(Math.abs(v[0]), Math.abs(v[1]))}` : `${v > 0 ? '+' : ''}${Math.round(v * 100)}%`);
+    if (e.agri && e.comm && JSON.stringify(e.agri) === JSON.stringify(e.comm)) fx.push(`농업·상업 ${rng(e.agri)}`);
+    else { if (e.agri) fx.push(`농업 ${rng(e.agri)}`); if (e.comm) fx.push(`상업 ${rng(e.comm)}`); }
     if (e.peace) fx.push(`치안 ${e.peace}`);
     if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
     if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
