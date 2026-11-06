@@ -4,7 +4,6 @@ const PATCH_NOTES = [
   {
     title: '시즌 5 주요 업데이트',
     date: '11월 5일',
-    isNew: true,
     groups: [
       { head: '🆕 시즌5 시나리오 · 211년 유비입촉', items: [
         '총 7개의 세력 : 조조, 유비, 손권, 유장, 장로, 마초, 사섭',
