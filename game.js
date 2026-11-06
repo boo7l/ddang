@@ -275,7 +275,7 @@ function adminToolsDialog() {
       await call('door'); afterAdmin();
     };
     $('#aSeason').onclick = async () => {
-      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n첫 장수가 세력에 들어오면 ${MAP.scenario ? MAP.scenario + " · " : ""}${MAP.year || RULES.startYear}년 ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
+      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n첫 장수가 세력에 들어오면 ${MAP.scenario ? MAP.scenario + " · " : ""}${yearText(MAP.year || RULES.startYear)} ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
       if (await call('newSeason')) location.reload();
     };
     $('#aReset').onclick = async () => {

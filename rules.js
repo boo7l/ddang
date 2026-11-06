@@ -243,9 +243,13 @@ function harvestFood(cs, grade, rate = 0) { // rate: 지역 이벤트(풍작 +0.
 // 게임 속 날짜: n번째 턴이 몇 년 몇 월인지
 function dateOf(turn, year = (typeof S !== "undefined" && S && S.startYear) || RULES.startYear) { // 해는 그 세계가 시작한 해 (명예의 전당은 그 시즌의 해를 준다)
   const m = RULES.startMonth - 1 + turn;
-  return { year: year + Math.floor(m / 12), month: (m % 12) + 1 };
+  let y = year + Math.floor(m / 12);
+  if (year < 0 && y >= 0) y++; // 기원전(음수)에서 시작하면 0년 없이 기원전 1년 → 서기 1년 (2026-11-06)
+  return { year: y, month: (m % 12) + 1 };
 }
-const dateText = (turn, year) => { const d = dateOf(turn, year); return `${d.year}년 ${d.month}월`; };
+// 해 표시: 음수는 기원전 (-203 → "기원전 203년")
+const yearText = y => (y < 0 ? `기원전 ${-y}년` : `${y}년`);
+const dateText = (turn, year) => { const d = dateOf(turn, year); return `${yearText(d.year)} ${d.month}월`; };
 
 // 매달 장수의 병사가 군량을 먹는다. 모자라면 병력이 흩어진다. 굶었으면 true
 function feedTroops(g, cs) {
