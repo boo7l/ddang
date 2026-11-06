@@ -93,7 +93,7 @@ const RULES = {
     { key: 'harvest', name: '풍작', icon: '🌾', months: [4, 10], chance: 0.05, food: 0.3 },
     { key: 'drought', name: '가뭄', icon: '☀️', months: [4, 10], chance: 0.05, food: -0.3 },
     { key: 'revolt', name: '민란', icon: '🔥', chance: 0.03, troops: -0.1, peace: -20 }, // 2026-11-06 병력 -5% → -10%
-    { key: 'plague', name: '역병', icon: '☠️', chance: 0.02, troops: -0.15 }, // 2026-11-06 병력 -10% → -15%
+    { key: 'plague', name: '역병', icon: '☠️', chance: 0.02, troops: -0.15, peace: -10 }, // 2026-11-06 병력 -10% → -15%, 치안 -10 추가
     { key: 'flood', name: '폭우', icon: '🌧️', months: [6, 7, 8], chance: 0.03, agri: [-60, -40], comm: [-60, -40], peace: -10 }, // 2026-11-06 농업·상업 -10% → -40~60 (따로 굴림)
     { key: 'cold', name: '한파', icon: '❄️', months: [12, 1, 2], chance: 0.03, agri: [-60, -40], comm: [-60, -40], peace: -10 }, // 2026-11-06 농업·상업 -10% → -40~60 (따로 굴림), 치안 -10 추가
     { key: 'boom', name: '교역 호황', icon: '💰', months: [1, 4, 7, 10], chance: 0.03, comm: [40, 60], gold: 500 }, // 2026-11-06 상업 +15% → +40~60
