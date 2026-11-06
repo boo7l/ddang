@@ -349,7 +349,7 @@ const hofSw = c => (c ? `<span class="swatch" style="background:${c}"></span>` :
 async function renderHof() {
   const box = $('#hof');
   if (!sb) return;
-  const { data, error } = await sb.from('hall_of_fame').select('season,ended_at,winner,winner_color,turn,top,heroes,start_year,scenario').order('season', { ascending: false }); // replay(세력 변화 기록)는 다시 보기를 열 때만 따로 받는다
+  const { data, error } = await sb.from('hall_of_fame').select('season,ended_at,winner,winner_color,turn,top,heroes,start_year,scenario,rp:replay->cols').order('season', { ascending: false }); // replay(세력 변화 기록)는 다시 보기를 열 때만 따로 받는다
   if (error || !data || !data.length) { box.innerHTML = ''; return; }
   HOF = data;
   box.innerHTML = `<button class="hofEntry">🏆 명예의 전당 <span class="hofLast">· 지난 통일 ${hofSw(HOF[0].winner_color)}${esc(HOF[0].winner || '?')}</span></button>`;
@@ -370,11 +370,70 @@ function hofRender() {
   const hasFaction = h.top.some(g => g.faction);
   // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
   const medals = g => g.medals ?? (isHero(g.name) ? 1 : 0);
-  $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
+  $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span>${h.rp ? '<button id="hofReplay" class="main replayBtn">▶ 세력 변화 보기</button>' : ''}</div>
     <table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th><th class="num">훈장</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${isHero(g.name) ? `<span class="medal" title="훈장">${MEDAL}</span>` : ''}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td><td class="num">${medals(g)}</td></tr>`).join('')}</table>
     ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> ${h.season >= 5 ? "공적 상위 5명" : "개국공신"}: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
     ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}
     ${HOF_NOTES[h.season] ? `<p class="hofNote dim">${esc(HOF_NOTES[h.season])}</p>` : ''}`;
+  if ($('#hofReplay')) $('#hofReplay').onclick = () => openReplay(h);
+}
+
+// ===== 세력 변화 보기 (2026-11-06): 시즌 5부터 서버가 남긴 성 주인 변화 기록(hall_of_fame.replay)을 지도로 다시 본다 =====
+// replay = { cols, rows, endTurn, factions:[{id,name,color}], cities:[{id,name,x,y,grade,faction(처음 주인)}], links, log:[[턴, 성 id, 새 주인 id 또는 '']] }
+async function openReplay(h) {
+  const b = $('#hofReplay'); b.disabled = true;
+  const { data, error } = await sb.from('hall_of_fame').select('replay').eq('season', h.season).single();
+  b.disabled = false;
+  if (error || !data || !data.replay) { alert('기록을 불러오지 못했어요. 잠시 뒤에 다시 눌러 주세요.'); return; }
+  replayDialog(h, data.replay);
+}
+function replayDialog(h, R) {
+  const F = Object.fromEntries(R.factions.map(f => [f.id, f])), byId = Object.fromEntries(R.cities.map(c => [c.id, c]));
+  const log = (R.log || []).slice().sort((a, b) => a[0] - b[0]), end = R.endTurn || (log.length ? log[log.length - 1][0] : 0);
+  // 칸 크기: 창 너비에 맞춘다 (PC 46×30, 휴대폰은 더 작게)
+  const GAP = 4, avail = Math.min(640, innerWidth - 32) - 40, cw = Math.max(26, Math.min(46, Math.floor((avail - GAP * (R.cols - 1)) / R.cols))), ch = Math.round(cw * 0.65);
+  const W = R.cols * cw + (R.cols - 1) * GAP, H = R.rows * ch + (R.rows - 1) * GAP;
+  const cx = c => c.x * (cw + GAP) + cw / 2, cy = c => c.y * (ch + GAP) + ch / 2;
+  const lines = (R.links || []).map(l => [byId[l[0]], byId[l[1]]]).filter(([a, b]) => a && b)
+    .map(([a, b]) => `<line x1="${cx(a)}" y1="${cy(a)}" x2="${cx(b)}" y2="${cy(b)}"/>`).join('');
+  const cells = R.cities.map(c => `<div class="rpCity g${c.grade}" data-c="${esc(c.id)}" style="grid-column:${c.x + 1};grid-row:${c.y + 1}">${esc(c.name)}</div>`).join('');
+  openModal(`<h2>🗺 세력 변화 <span class="dim small">· 시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''}</span></h2>
+    <div class="rpDate" id="rpDate"></div>
+    <div class="rpWrap">
+      <div class="rpMap"><svg width="${W}" height="${H}">${lines}</svg><div class="rpGrid" style="grid-template-columns:repeat(${R.cols},${cw}px);grid-template-rows:repeat(${R.rows},${ch}px)">${cells}</div></div>
+      <div class="rpSide" id="rpSide"></div>
+    </div>
+    <div class="rpEvt" id="rpEvt"></div>
+    <div class="rpCtl"><button id="rpPlay">▶</button><input type="range" id="rpSlider" min="0" max="${end}" value="0"><button id="rpSpeed">×1</button></div>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    $('#modalBox').classList.add('wideBox');
+    const cell = {}; box.querySelectorAll('[data-c]').forEach(d => { cell[d.dataset.c] = d; });
+    let turn = 0, timer = null, speed = 1;
+    const ownersAt = t => { const o = Object.fromEntries(R.cities.map(c => [c.id, c.faction || ''])); for (const [tt, id, f] of log) { if (tt > t) break; o[id] = f; } return o; };
+    const draw = (t, flash) => {
+      const o = ownersAt(t);
+      for (const c of R.cities) { const f = F[o[c.id]]; cell[c.id].classList.toggle('empty', !f); cell[c.id].style.background = f ? f.color : ''; }
+      const changed = log.filter(e => e[0] === t);
+      if (flash) for (const e of changed) { const d = cell[e[1]]; if (d) { d.classList.remove('flash'); void d.offsetWidth; d.classList.add('flash'); } }
+      $('#rpDate').innerHTML = `${dateText(t, h.start_year || RULES.startYear)} <small>(${t}턴)</small>`;
+      const cnt = {}; for (const id in o) if (o[id]) cnt[o[id]] = (cnt[o[id]] || 0) + 1;
+      const max = Math.max(1, ...Object.values(cnt));
+      $('#rpSide').innerHTML = R.factions.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0)).map(f => `<div class="rpRow${cnt[f.id] ? '' : ' dead'}"><span class="swatch" style="background:${f.color}"></span><span class="nm">${esc(f.name)}</span><span class="bar" style="width:${Math.round((cnt[f.id] || 0) / max * 80)}px;background:${f.color}"></span><span class="n">${cnt[f.id] || 0}</span></div>`).join('');
+      $('#rpEvt').innerHTML = changed.filter(e => byId[e[1]]).map(e => `${esc(byId[e[1]].name)} → ${F[e[2]] ? esc(F[e[2]].name) : '공백지'}`).join(' · ') || '&nbsp;';
+      $('#rpSlider').value = t;
+    };
+    const stop = () => { clearInterval(timer); timer = null; if ($('#rpPlay')) $('#rpPlay').textContent = '▶'; };
+    const start = () => {
+      if (turn >= end) turn = 0;
+      $('#rpPlay').textContent = '⏸';
+      timer = setInterval(() => { if (!$('#rpSlider')) return stop(); turn++; draw(turn, true); if (turn >= end) stop(); }, 200 / speed); // 창을 닫으면 멈춘다
+    };
+    $('#rpPlay').onclick = () => (timer ? stop() : start());
+    $('#rpSlider').oninput = e => { turn = +e.target.value; draw(turn); };
+    $('#rpSpeed').onclick = e => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; e.target.textContent = `×${speed}`; if (timer) { stop(); start(); } };
+    draw(0);
+    start();
+  });
 }
 // 명예의 전당 시즌별 맨 아랫줄 안내 (2026-11-03)
 const HOF_NOTES = {};

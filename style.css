@@ -887,3 +887,28 @@ details.fold > summary:hover h2 { color: var(--title); }
 .pstars i { width: 10px; height: 10px; image-rendering: pixelated; filter: drop-shadow(1px 1px 0 #000);
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'%3E%3Cpath fill='%23ffd860' d='M2 0h1v1H2zM0 1h5v1H0zM1 2h3v1H1zM1 3h1v1H1zM3 3h1v1H3zM0 4h1v1H0zM4 4h1v1H4z'/%3E%3C/svg%3E") 0 0 / 10px 10px no-repeat; }
 .hofNote { margin: 12px 0 0; word-break: keep-all; font-size: 16px; } /* 명예의 전당 시즌별 맨 아랫줄 안내 (2026-11-03) */
+
+/* 명예의 전당 · 세력 변화 보기 (2026-11-06) */
+.winCard .replayBtn { display: block; margin: 8px auto 0; }
+.rpDate { text-align: center; color: var(--title); margin: 4px 0 8px; }
+.rpDate small { color: var(--label); }
+.rpWrap { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+.rpMap { position: relative; background: #1b0c08; border: 1px solid var(--gold-dark); padding: 6px; }
+.rpMap svg { position: absolute; left: 6px; top: 6px; pointer-events: none; }
+.rpMap svg line { stroke: #8a6a3a; stroke-width: 2; }
+.rpGrid { position: relative; display: grid; gap: 4px; }
+.rpCity { display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap; font-size: 14px; color: #fff; text-shadow: 1px 1px 0 #000; border: 1px solid rgba(0, 0, 0, .6); transition: background .25s; }
+.rpCity.empty { background: #4a3a2e; color: #cbb; }
+.rpCity.g3 { border-color: var(--title); }
+.rpCity.flash { animation: rpFlash .6s 2; }
+@keyframes rpFlash { 50% { outline: 2px solid #fff; outline-offset: 1px; } }
+.rpSide { min-width: 170px; }
+.rpRow { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.rpRow .nm { width: 44px; white-space: nowrap; }
+.rpRow .bar { height: 12px; }
+.rpRow .n { color: var(--title); min-width: 20px; text-align: right; }
+.rpRow.dead { opacity: .4; text-decoration: line-through; }
+.rpEvt { min-height: 20px; margin-top: 6px; text-align: center; color: var(--label); }
+.rpCtl { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
+.rpCtl input[type=range] { flex: 1; min-width: 0; }
+.rpCtl button { min-width: 44px; }
