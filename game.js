@@ -66,6 +66,7 @@ function applyView(d) {
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
+  bgmSync(); // 공적이 2,000을 넘으면 곡을 바꾼다
   ACCOUNTS = d.accounts || {};
   lastFetch = Date.now();
   turnWait = 1000 + Math.random() * 5000; // 다음 턴에 받아 올 때 기다릴 시간 (사람마다 다르게)
@@ -2170,6 +2171,46 @@ function recordDialog() {
   $('#modalBox').classList.add('recBox');
 }
 $('#recordBtn').onclick = recordDialog;
+// ☰ 메뉴 [♪ 음악] (2026-11-07): 배경 음악 켜기·끄기. 내 장수 공적이 2,000 미만이면 역사풍(history), 이상이면 웅장풍(epic).
+// 곡은 audio/bgm_*.wav (preview/bgm/make_midi.js로 작곡 → tools/save_bgm.js로 녹음). 처음 켤 때만 받아 온다.
+// 켜 둔 것은 이 브라우저에 기억하고, 다시 들어오면 첫 클릭 때 이어서 튼다 (브라우저가 클릭 전 소리를 막는다)
+const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
+const BGM_MERIT = 2000;
+const bgmWant = () => (S && me() && me().merit >= BGM_MERIT ? 'epic' : 'history');
+const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
+async function bgmPlay(song) {
+  if (!BGM.ctx) {
+    BGM.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    BGM.gain = BGM.ctx.createGain(); BGM.gain.gain.value = 0.4; BGM.gain.connect(BGM.ctx.destination);
+  }
+  if (BGM.ctx.state === 'suspended') await BGM.ctx.resume();
+  if (BGM.song === song && BGM.src) return;
+  BGM.song = song;
+  if (!BGM.bufs[song]) BGM.bufs[song] = fetch(`audio/bgm_${song}.wav`).then(r => r.arrayBuffer()).then(b => BGM.ctx.decodeAudioData(b));
+  let buf;
+  try { buf = await BGM.bufs[song]; } catch (e) { delete BGM.bufs[song]; BGM.song = null; return; }
+  if (!BGM.on || BGM.song !== song) return; // 받는 동안 끄거나 곡이 바뀌었다
+  const old = BGM.src, now = BGM.ctx.currentTime;
+  if (old) { old.fade.gain.setValueAtTime(old.fade.gain.value, now); old.fade.gain.linearRampToValueAtTime(0, now + 1.5); old.stop(now + 1.6); } // 곡 바꿀 때 1.5초 겹쳐 넘긴다
+  const s = BGM.ctx.createBufferSource(), fade = BGM.ctx.createGain();
+  s.buffer = buf; s.loop = true; s.fade = fade;
+  fade.gain.setValueAtTime(0, now); fade.gain.linearRampToValueAtTime(1, now + (old ? 1.5 : 0.3));
+  s.connect(fade).connect(BGM.gain); s.start(now);
+  BGM.src = s;
+}
+function bgmStop() {
+  if (BGM.src) { try { BGM.src.stop(); } catch (e) { /* 이미 멈춤 */ } BGM.src = null; }
+  BGM.song = null;
+}
+function bgmSet(on) {
+  BGM.on = on;
+  try { if (on) localStorage.setItem('ddang-bgm', '1'); else localStorage.removeItem('ddang-bgm'); } catch (e) { /* 저장 못 하면 이번만 */ }
+  bgmLabel();
+  if (on) bgmPlay(bgmWant()); else bgmStop();
+}
+function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
+$('#bgmBtn').onclick = () => bgmSet(!BGM.on);
+try { if (localStorage.getItem('ddang-bgm')) { BGM.on = true; bgmLabel(); document.addEventListener('pointerdown', () => { if (BGM.on && !BGM.src) bgmPlay(bgmWant()); }, { once: true }); } } catch (e) { /* 기억 못 해도 괜찮다 */ }
 document.addEventListener('click', () => document.querySelector('header').classList.remove('menuOpen'));
 // 휴대폰에서 PC 버전으로 보기 ↔ 모바일 버전으로 돌아오기 (2026-10-28). 고른 것은 이 브라우저에 기억하고 새로 연다 (index.html 맨 위에서 화면 너비를 정한다)
 const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); else localStorage.removeItem('ddang-pc'); } catch (e) { /* 저장 못 하면 이번만 */ } location.reload(); };
