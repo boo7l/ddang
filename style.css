@@ -946,3 +946,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #adminPage .back, #adminPage .pageHead .spacer { width: auto; }
   #adminPage .pageHead .spacer { display: none; }
 }
+/* 관리 표 정렬 (2026-11-06): 제목 칸을 누르면 정렬, 고른 열에 ▲▼ */
+#adminPage th.sortable { cursor: pointer; white-space: nowrap; user-select: none; }
+#adminPage th.sortable:hover { color: var(--title); }
+#adminPage th.sortable[data-arrow]:not([data-arrow=""])::after { content: " " attr(data-arrow); color: var(--title); }

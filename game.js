@@ -148,6 +148,34 @@ function closeAdmin() {
   if (adminPrev) { adminPrev.shown.forEach(id => { $('#' + id).hidden = false; }); document.body.classList.toggle('inGame', adminPrev.inGame); adminPrev = null; }
   if (!$('#game').hidden && S && me() && me().faction) { render(); renderLegend(); renderAll(); }
 }
+// 관리 표 정렬 (2026-11-06): 제목 칸을 누르면 그 열로 오름차순 → 다시 누르면 내림차순. 고른 열은 표를 다시 그려도 유지
+// 칸에 data-sort가 있으면 그 숫자(시각 등), class="num"이면 글자 속 숫자, 아니면 글자(가나다)로 비교한다
+const adminSort = {};
+function sortableTable(table, key) {
+  if (!table || !table.rows.length) return;
+  const head = table.rows[0];
+  const val = (tr, i) => {
+    const td = tr.cells[i];
+    if (!td) return '';
+    if (td.dataset.sort !== undefined) return +td.dataset.sort || 0;
+    if (td.classList.contains('num')) return +(td.textContent.replace(/[^\d.-]/g, '') || 0);
+    return td.textContent.trim();
+  };
+  const apply = () => {
+    const s = adminSort[key];
+    [...head.cells].forEach((th, i) => { th.dataset.arrow = s && s.col === i ? (s.dir > 0 ? '▲' : '▼') : ''; });
+    if (!s) return;
+    const rows = [...table.rows].slice(1);
+    rows.sort((a, b) => { const x = val(a, s.col), y = val(b, s.col); return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'ko')) * s.dir; });
+    rows.forEach(r => r.parentNode.appendChild(r)); // 제목 줄은 맨 위에 그대로
+  };
+  [...head.cells].forEach((th, i) => {
+    if (!th.textContent.trim()) return;
+    th.classList.add('sortable'); th.title = '눌러서 정렬';
+    th.onclick = () => { const s = adminSort[key]; adminSort[key] = { col: i, dir: s && s.col === i ? -s.dir : 1 }; apply(); };
+  });
+  apply();
+}
 // 가입자 탭 (2026-10-31): 가입한 계정 전체. 장수가 없는 계정도 보이고 정지할 수 있다. 검색은 다시 그리지 않고 줄만 숨긴다 (한글 입력)
 async function membersDialog() {
   adminShow('members', '<p class="dim">불러오는 중…</p>');
@@ -159,16 +187,17 @@ async function membersDialog() {
   const rows = list.map(m => {
     const g = S && S.generals[m.id];
     const prev = m.prev || []; // 예전 아이디 (최근 것부터). 옛 아이디로 검색해도 찾아진다
-    return `<tr data-name="${esc([m.name, ...prev.map(h => h.name)].join(' ').toLowerCase())}"><td>${esc(m.name)}</td><td>${prev.length ? prev.map(h => `${esc(h.name)} <span class="dim small">(${fmtTime(h.t).split(' ')[0]}까지)</span>`).join('<br>') : '<span class="dim">-</span>'}</td><td>${m.at ? fmtTime(m.at) : '-'}</td>
+    return `<tr data-name="${esc([m.name, ...prev.map(h => h.name)].join(' ').toLowerCase())}"><td>${esc(m.name)}</td><td>${prev.length ? prev.map(h => `${esc(h.name)} <span class="dim small">(${fmtTime(h.t).split(' ')[0]}까지)</span>`).join('<br>') : '<span class="dim">-</span>'}</td><td data-sort="${m.at || 0}">${m.at ? fmtTime(m.at) : '-'}</td>
       <td>${g ? `<button class="link" data-pid="${esc(m.id)}" title="정보 · 제재">${esc(g.name)}</button>` : '<span class="dim">없음</span>'}</td>
-      <td>${g && g.createdAt ? fmtTime(g.createdAt) : g && g.firstJoin ? `${fmtTime(g.firstJoin)} <span class="dim small" title="만든 시각 기록이 없어 처음 세력에 들어간 시각">(임관)</span>` : '<span class="dim">-</span>'}</td>
-      <td>${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
+      <td data-sort="${(g && (g.createdAt || g.firstJoin)) || 0}">${g && g.createdAt ? fmtTime(g.createdAt) : g && g.firstJoin ? `${fmtTime(g.firstJoin)} <span class="dim small" title="만든 시각 기록이 없어 처음 세력에 들어간 시각">(임관)</span>` : '<span class="dim">-</span>'}</td>
+      <td data-sort="${m.medals || 0}">${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
       <td>${m.admin ? '' : `<button class="mini" data-mban="${esc(m.id)}">정지</button>`}</td></tr>`;
   }).join('');
   adminShow('members', `${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
     <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>이번 시즌 장수</th><th>이번 시즌 참가</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}`, box => {
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
     box.querySelectorAll('[data-mban]').forEach(b => { b.onclick = () => memberBanDialog(list.find(m => m.id === b.dataset.mban)); });
+    sortableTable(box.querySelector('.adminScroll table'), 'members');
     const find = box.querySelector('#memberFind');
     if (find) find.oninput = () => {
       const q = find.value.trim().toLowerCase();
@@ -234,6 +263,7 @@ function adminDialog(tab = 'users', fid = null) {
   adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
+    if (tab === 'users') sortableTable(box.querySelector('.adminScroll table'), 'users');
     if (box.querySelector('#aLoyal')) box.querySelector('#aLoyal').onchange = e => { adminLoyalOnly = e.target.checked; adminDialog('users', e.target.dataset.keep); };
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
     box.querySelectorAll('.adminChat [data-gid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.gid, 'chat', fid); }); // 채팅의 장수 이름 → 정보·제재 (2026-11-05)
