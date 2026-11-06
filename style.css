@@ -957,3 +957,5 @@ details.fold > summary:hover h2 { color: var(--title); }
 .mapPrev table { flex: 1; min-width: 240px; }
 /* 특성 뽑기 '이 특성으로 결정' 단추를 조금 작게 (2026-11-06): 줄 전체 → 글자 크기만큼 + 여백 */
 #trPick.btn.big { width: auto; min-width: 220px; padding: 8px 24px; }
+/* 방어 부대 목록: 수비대장은 장수와 구분되게 살짝 회색 (2026-11-06) */
+.guardDef { color: #b9ada2; }

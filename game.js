@@ -656,8 +656,8 @@ function pickDialog(title, intro, opts, okText, onOk, extra = '') {
 // 첩보가 유효한 성은 수비 장수도 이름·병종·병력까지 (2026-10-30)
 function defenseText(c, defs, sep) {
   const ours = c.faction === me().faction || !!(S.cities[c.id] || {}).spied;
-  const out = ours ? defs.map(d => `${esc(d.name)} · ${d.type} ${fmt(d.troops)}`) : [];
-  if (!ours && defs.some(d => d.guard)) out.push('수비대 있음'); // 첩보가 없으면 수비대도 있는지만 (2026-11-04)
+  const out = ours ? defs.map(d => (d.guard ? `<span class="guardDef">${esc(d.name)} · ${d.type} ${fmt(d.troops)}</span>` : `${esc(d.name)} · ${d.type} ${fmt(d.troops)}`)) : []; // 수비대장은 살짝 회색 (2026-11-06)
+  if (!ours && defs.some(d => d.guard)) out.push('<span class="guardDef">수비대 있음</span>'); // 첩보가 없으면 수비대도 있는지만 (2026-11-04)
   if (!ours && defs.some(d => !d.guard)) out.push('장수 수비 있음');
   return out.join(sep);
 }
