@@ -273,7 +273,7 @@ const UNIT_TYPES = {
 // 2026-10-28 기획자 목록 18개. tier(상·중·하)마다 뽑힐 비율이 다르다 (TRAIT_TIER_WEIGHT). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 gTrait(장수 또는 부대)로 읽는다
 const GENERAL_TRAITS = {
   brave: { tier: 'N', name: '용맹', desc: '공격 전투력 +3%', attack: 0.03 },
-  wall: { tier: 'N', name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
+  wall: { tier: 'N', name: '철벽', desc: '수비 시 피해 감소 +5%', dmgCut: 0.05 }, // 2026-11-07 시즌 6: 수비 전투력 +3%에서. 방어도 피해 감소(wallCut)에 더한다 (보통 합만)
   trade: { tier: 'N', name: '상재', desc: '상업 내정 +25%', dev: { comm: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
   farm: { tier: 'N', name: '둔전', desc: '농업 내정 +25%', dev: { agri: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
   build: { tier: 'N', name: '장인', desc: '축성 내정 +25%', dev: { wall: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
@@ -420,7 +420,7 @@ const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (t.defense || 0)) * warBonus(d) // 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다 (wallCut)
     * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1) * unitTypeBonus(t, d.type)
-    * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 철벽, 뼈에게 닿기를
+    * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 뼈에게 닿기를 (철벽은 2026-11-07부터 받는 피해 감소: dmgCut)
 };
 
 
@@ -491,7 +491,7 @@ function fightRounds(att, def, wall, left) {
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
-    const hitDef = Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - wallCut(wall))); // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06)
+    const hitDef = Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, wallCut(wall) + (gTrait(def).dmgCut || 0)))); // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
     const hitAtt = Math.ceil(defensePower(def, wall, att) * RULES.roundRate * luck());
     const dLoss = Math.min(def.troops, hitDef), aLoss = Math.min(att.troops, hitAtt);
     def.troops -= dLoss;
