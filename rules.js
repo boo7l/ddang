@@ -292,7 +292,7 @@ const GENERAL_TRAITS = {
   pierce: { tier: 'SR', name: '관통맨', desc: '공격 시 합마다 25% 확률로 성벽 피해 (병력 ÷ 400)', pierce: { chance: 0.25, per: 400 } }, // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
   persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 무력의 2~5배만큼 금 획득, 치안 -3 (쿨타임 5턴)", levy: { warMin: 2, warMax: 5, peace: 3, cooldown: 5 } }, // 2026-10-31 금 = 무력 × 2~5. 2026-10-30 무력 × 1~5 (그 전 30~300). 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
-  duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +5% 및 승리 확률 +10%', duelChance: 0.05, duelWin: 0.10 },
+  duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +10% 및 승리 확률 +15%', duelChance: 0.10, duelWin: 0.15 }, // 2026-11-07 시즌 6: +5%·+10%에서
   calm: { tier: 'SSR', name: '침착', desc: '일기토·책략·돌격 피해 -50%, 머무는 성의 계략 피해 -50%', calm: 0.50 }, // 2026-11-03 돌격도 줄인다. // 2026-10-31 -40% → -50%. 2026-10-28 최상 (같은 성에 여럿이어도 계략 경감은 한 번만)
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
@@ -449,7 +449,7 @@ function fightRounds(att, def, wall, left) {
       break;
     }
     // 일기토: 양쪽 무력이 기준 이상이면 낮은 확률로. 이긴 쪽은 피해 없이, 진 쪽 부대만 크게 다친다
-    // 개인 특성 빠뜨롱 나와: 어느 한쪽이라도 가지고 있으면 더 자주 벌어지고, 가진 쪽이 이길 확률 +10%p
+    // 개인 특성 빠뜨롱 나와: 어느 한쪽이라도 가지고 있으면 더 자주 벌어지고, 가진 쪽이 이길 확률 +15%p (2026-11-07)
     const D = RULES.duel, duelChance = D.chance + Math.max(gTrait(att).duelChance || 0, gTrait(def).duelChance || 0);
     if (!att.dueled && att.stats.war >= D.minWar && def.stats.war >= D.minWar && Math.random() < duelChance) {
       att.dueled = true; // 이번 출진에서는 더 일어나지 않는다
