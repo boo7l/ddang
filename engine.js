@@ -147,7 +147,8 @@ function addGeneral(id, { name, face, stats }) {
   const g = S.generals[id] = {
     id, name, face, faction: null, city: null, // 세력은 다음 화면에서 고른다
     stats: Object.fromEntries(STATS.map(st => [st.key, stats[st.key]])),
-    troops: 0, unitType: null, defense: true, // 병종은 첫 징병 때 고른다
+    troops: 0, unitType: null, defense: true, createdAt: Date.now(), // 장수를 만든 시각 (관리 페이지 가입자 탭, 2026-11-06)
+    // 병종은 첫 징병 때 고른다
     gold: RULES.startGold, merit: 0, statExp: {}, siege: {}, gear: {}, intel: {},
     queue: Array(RULES.queueSize).fill(null), // 앞으로 queueSize턴의 예약 명령 (null = 대기)
     log: [],
