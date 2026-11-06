@@ -457,6 +457,7 @@ function fightRounds(att, def, wall, left) {
       const loss = Math.min(l.troops, Math.ceil(w.stats.war * (D.lossPerWar[0] + Math.random() * (D.lossPerWar[1] - D.lossPerWar[0])) * (1 - (gTrait(l).calm || 0)))); // 침착: 진 쪽 피해 감소
       l.troops -= loss;
       w.duelWins = (w.duelWins || 0) + 1;
+      l.duelLosses = (l.duelLosses || 0) + 1; // 분석용 기록 (2026-11-06)
       lines.push(`${used}합: ⚡ 일기토! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${loss.toLocaleString('ko-KR')}`);
       continue;
     }

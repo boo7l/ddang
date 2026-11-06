@@ -462,6 +462,10 @@ function addMerit(g, n) {
   return got;
 }
 // 장수 기록 (☰ 메뉴의 정보란, 2026-10-28): 내정 횟수·징병 인원·전투·승전·패전·계략 시도/성공을 센다
+// 전투 기술 횟수 (2026-11-06, 분석용으로 저장만: 장수 기록 창에는 안 보인다. 시즌이 끝나면 season_archive에 남는다)
+function addTechRecord(g, u) {
+  for (const [k, v] of [['duelWins', u.duelWins], ['duelLosses', u.duelLosses], ['charges', u.charges], ['schemes', u.schemes]]) if (v) addRecord(g, k, v);
+}
 function addRecord(g, key, n = 1) {
   g.record = g.record || {};
   g.record[key] = (g.record[key] || 0) + n;
@@ -772,6 +776,7 @@ function runAttack(g, o, mark) {
       if (d.duelWins) gainStatExp(d.ref, 'war', RULES.duel.exp * d.duelWins);
       if (d.schemes) gainStatExp(d.ref, 'int', RULES.scheme.statExp * d.schemes); // 책략을 쓰면 지력 경험치
       if (d.charges) gainStatExp(d.ref, 'war', RULES.charge.statExp * d.charges); // 돌격을 쓰면 무력 경험치 (2026-11-03)
+      addTechRecord(d.ref, d);
     }
     if (d.troops <= 0) lines.push(`${d.name} 부대 전멸!`);
     if (d.ref && (r.used || r.defLost)) { addRecord(d.ref, 'battles'); if (d.troops <= 0) addRecord(d.ref, 'losses'); } // 수비 장수도 전투·패전을 센다
@@ -858,6 +863,7 @@ function runAttack(g, o, mark) {
   if (att.duelWins) gainStatExp(g, 'war', RULES.duel.exp * att.duelWins); // 일기토에서 이기면 무력 경험치
   if (att.schemes) gainStatExp(g, 'int', RULES.scheme.statExp * att.schemes); // 책략을 쓰면 지력 경험치
   if (att.charges) gainStatExp(g, 'war', RULES.charge.statExp * att.charges); // 돌격을 쓰면 무력 경험치 (2026-11-03)
+  addTechRecord(g, att);
   return '';
 }
 
