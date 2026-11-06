@@ -444,7 +444,7 @@ async function renderSeasonBadge() {
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
-    const note = s.nextOpen ? `<span class="tNext">📢 ${esc(openText(s.nextOpen))}</span>` : ''; // 다음 시즌 예고: 🛠 관리에서 예약한다 (2026-11-02)
+    const note = s.nextOpen ? `<span class="tNext">📢 ${esc(openText(s.nextOpen)).replace(' · ', '<br>')}</span>` : ''; // 시즌 이름과 날짜 사이는 줄바꿈 (2026-11-06) // 다음 시즌 예고: 🛠 관리에서 예약한다 (2026-11-02)
     el.innerHTML = f ? `🏆 시즌 ${s.season} 종료 · <span class="swatch" style="background:${f.color}"></span>${esc(f.name)} 천하통일` + (note ? `<br>${note}` : '')
       : s.preparing ? note // 준비 중 문구는 예고 아래 안내(tPrep)가 맡는다 (2026-10-31)
       : s.paused && !s.waiting ? `⏸ 시즌 ${s.season} · 잠시 멈춤`
