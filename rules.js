@@ -272,8 +272,8 @@ const UNIT_TYPES = {
 // ===== 장수 특성 (2026-10-27, 금낭: 장수를 만든 뒤 비단 주머니에서 3장을 뽑아 하나를 영구로 고른다. 다시 뽑기 1번) =====
 // 2026-10-28 기획자 목록 18개. tier(상·중·하)마다 뽑힐 비율이 다르다 (TRAIT_TIER_WEIGHT). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 gTrait(장수 또는 부대)로 읽는다
 const GENERAL_TRAITS = {
-  brave: { tier: 'N', name: '용맹', desc: '공격력 +3%', attack: 0.03 },
-  wall: { tier: 'N', name: '철벽', desc: '수비력 +3%', defense: 0.03 },
+  brave: { tier: 'N', name: '용맹', desc: '공격 전투력 +3%', attack: 0.03 },
+  wall: { tier: 'N', name: '철벽', desc: '수비 전투력 +3%', defense: 0.03 },
   trade: { tier: 'N', name: '상재', desc: '상업 내정 +25%', dev: { comm: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
   farm: { tier: 'N', name: '둔전', desc: '농업 내정 +25%', dev: { agri: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
   build: { tier: 'N', name: '장인', desc: '축성 내정 +25%', dev: { wall: 0.25 } }, // 2026-10-28 +10% → +15% → +20%, 2026-11-03 시즌 5 +25%
@@ -312,10 +312,10 @@ const attackGoldOf = troops => Math.max(RULES.attackGold.min, Math.floor((troops
 // 없으면 아래 FACTION_TRAITS에서 세력 이름으로 찾는다. 고를 수 있는 효과는 TRAIT_FX뿐 (새 종류는 코드에 효과를 넣고 여기에 더한다)
 // pct: 0.10 = 10%. max: 지도 편집기·서버가 받아 주는 크기 한도 (±)
 const TRAIT_FX = [
-  { key: 'attack', label: '공격력', max: 0.3 },
-  { key: 'defense', label: '수비력', max: 0.3 },
+  { key: 'attack', label: '공격 전투력', max: 0.3 },
+  { key: 'defense', label: '수비 전투력', max: 0.3 },
   { key: 'cavalry', label: '기병 전투력', max: 0.3 },
-  { key: 'cavalryDefense', label: '기병 수비력', max: 0.3 },
+  { key: 'cavalryDefense', label: '기병 수비 전투력', max: 0.3 },
   { key: 'infantry', label: '보병 전투력', max: 0.3 }, // 2026-11-06 새 효과
   { key: 'archer', label: '궁병 전투력', max: 0.3 }, // 2026-11-06 새 효과
   { key: 'draft', label: '징병량', max: 0.5 },
@@ -335,7 +335,7 @@ const TRAIT_FX = [
   { key: 'peaceTurn', label: '모든 성 치안 매턴', unit: '', int: true, max: 5 }, // 2026-11-06 새 효과: 세력의 모든 성
   { key: 'freeTrain', label: '수련에 금이 들지 않음', flag: true },
 ];
-// 효과 → 설명 글: { attack: 0.1, draftPeace: 0.5 } → "공격력 +10%, 징병 치안 감소 +50%"
+// 효과 → 설명 글: { attack: 0.1, draftPeace: 0.5 } → "공격 전투력 +10%, 징병 치안 감소 +50%"
 const traitDesc = fx => Object.keys(fx).map(k => TRAIT_FX.find(d => d.key === k)).filter(d => d && fx[d.key] !== 0 && fx[d.key] !== false) // 적힌 순서대로
   .map(d => (d.flag ? d.label : d.int ? `${d.label} ${fx[d.key] > 0 ? '+' : ''}${fx[d.key]}${d.unit}` : `${d.label} ${fx[d.key] > 0 ? '+' : ''}${Math.round(fx[d.key] * 1000) / 10}%`)).join(', ');
 // 지도 파일에서 온 특성을 믿을 수 있는 모양으로: 아는 효과만, 한도 안에서. 이름이 없거나 효과가 없으면 null
@@ -356,17 +356,17 @@ function cleanTrait(t) {
 }
 const FACTION_TRAITS = {
   마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
-  공손찬: { name: '백마의종', desc: '기병 수비력 +10%', cavalryDefense: 0.10 },
+  공손찬: { name: '백마의종', desc: '기병 수비 전투력 +10%', cavalryDefense: 0.10 },
   조조: { name: '유재시거', desc: '모든 능력치 경험치 +10%', exp: 0.10 },
   원소: { name: '사세삼공', desc: '징병량 +5%', draft: 0.05 }, // 2026-10-27 금 수입 +5%에서 바꿈 (명문가라 사람이 모임)
   유비: { name: '인덕', desc: '징병 치안 감소 -50%', draftPeace: -0.50 }, // 2026-10-27 -30%에서 (체감이 거의 없어서)
-  손견: { name: '강동의 호랑이', desc: '공격력 +5%', attack: 0.05 },
-  손책: { name: '소패왕', desc: '공격력 +5%', attack: 0.05 }, // 200년 지도 (손견과 같은 효과)
+  손견: { name: '강동의 호랑이', desc: '공격 전투력 +5%', attack: 0.05 },
+  손책: { name: '소패왕', desc: '공격 전투력 +5%', attack: 0.05 }, // 200년 지도 (손견과 같은 효과)
   동탁: { name: '미오성', desc: '금 수입 +5%', gold: 0.05 }, // 2026-10-27 징병 +5%에서 바꿈 (원소와 겹치지 않게)
   원술: { name: '옥새', desc: '상점 값 -10%', shop: -0.10 },
   유표: { name: '형주 학풍', desc: '지력 경험치 +25%', expInt: 0.25 }, // 2026-10-27 15%에서 올림
-  유언: { name: '익주 천험', desc: '수비력 +5%', defense: 0.05 },
-  유장: { name: '익주 천험', desc: '수비력 +5%', defense: 0.05 }, // 200년 지도 (유언과 똑같이)
+  유언: { name: '익주 천험', desc: '수비 전투력 +5%', defense: 0.05 },
+  유장: { name: '익주 천험', desc: '수비 전투력 +5%', defense: 0.05 }, // 200년 지도 (유언과 똑같이)
   도겸: { name: '서주의 풍요', desc: '상업 내정 +5%', comm: 0.05 },
   장로: { name: '오두미도', desc: '군량 소비 -25%', food: -0.25 }, // 2026-11-05 시즌 5 -20% → -25% (2026-11-03 -15% → -20%, 성 1개 세력)
   엄백호: { name: '강동 호족', desc: '성벽 피해 +15%', siege: 0.15 },
@@ -379,7 +379,7 @@ const FACTION_TRAITS = {
   마한: { name: '삼한 소도', desc: '징병 치안 감소 -50%', draftPeace: -0.50 },
   신라: { name: '화랑도', desc: '수련에 금이 들지 않고 수련 경험치 +20%', freeTrain: true, trainExp: 0.20 },
   가야: { name: '철의 왕국', desc: '성벽 피해 +15%', siege: 0.15 },
-  탐라: { name: '절해고도', desc: '수비력 +5%', defense: 0.05 },
+  탐라: { name: '절해고도', desc: '수비 전투력 +5%', defense: 0.05 },
   // 211년 지도 유비입촉 (2026-11-03, 시즌 5)
   손권: { name: '강동인재', desc: '징병량 +5%', draft: 0.05 },
   마초: { name: '서량기병', desc: '기병 전투력 +5%, 기병 징병량 +5%', cavalry: 0.05, cavalryDraft: 0.05 }, // 2026-11-03 기병 징병 +5% 더함 (고구려 개마무사와 같은 효과)
@@ -399,7 +399,7 @@ function matchupOf(a, b) {
   if (UNIT_TYPES[a.type].beats === b.type) return 1 + RULES.matchup;
   return 1;
 }
-// 공격력: 정란이 있으면 더 세다
+// 공격 전투력: 정란이 있으면 더 세다
 // 세력 특성: 기병(마등), 출진 공격(손견)
 // 무력 보너스: 병종과 상관없이 무력 1마다 전투력 +0.15% (10마다 +1.5%), 공격·수비 모두 (2026-11-06 시즌 6. 2026-11-04 시즌 5 20마다에서 10마다로. 2026-10-26 처음, 무력의 가치를 올리려고)
 // 보병·궁병 전투력 (세력 특성, 2026-11-06). 기병은 cavalry로 따로
@@ -412,7 +412,7 @@ const attackPower = (a, d) => {
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
     * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
 };
-// 수비력: 성 방어 보정을 받는다
+// 수비 전투력 (성 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다: wallCut)
 // 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
 // 방어도 피해 감소 (2026-11-06): 성을 지키는 쪽이 보통 합에서 받는 피해 비율 (0.3 = 30% 덜 받음)
 const wallCut = wall => Math.min(0.9, Math.max(0, wall || 0) / 100 * RULES.wallCutPer100);
@@ -575,7 +575,7 @@ function addStatExp(g, key, gain) {
 // 공격할 때만 효과가 있다. 부대가 전투에서 전멸하면 50% 확률로 부서진다
 const SIEGE = {
   충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
-  정란: { price: 2000, desc: '수비 부대와 싸울 때 공격력 +15%' },
+  정란: { price: 2000, desc: '수비 부대와 싸울 때 공격 전투력 +15%' },
   벽력거: { price: 4000, desc: '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)' },
 };
 // 병기 만드는 값: 개인 특성 병기도 과학은 -20%
@@ -583,7 +583,7 @@ const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.f
 // 병기 효과 (임시값)
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
-  towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격력 +15%
+  towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%
   breakChance: 0.5, // 부대가 전멸하면 병기가 부서질 확률
   firstStrike: 0.5, // 벽력거: 합 전에 쏘는 선제 사격의 피해 = 보통 한 합 피해의 50% (2026-10-26 시즌 2 뒤 "너무 세다"는 의견: 첫 합 무피해 100% → 선제 사격 50% + 5합 그대로)
 };
