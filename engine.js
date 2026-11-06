@@ -712,7 +712,7 @@ function runAttack(g, o, mark) {
   if (g.troops <= 0) return '병력이 없음';
   const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
-  const food = marchFood(g.troops);
+  const food = marchFood(g.troops, g.faction);
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
   const why = pay(g, 'attack', attackGoldOf(g.troops)); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
   if (why) return why;

@@ -202,7 +202,8 @@ const domesticGain = (key, stat) => {
 // 징병 1회 = 통솔 × 15~25 (무작위) + 공적 × 0.1
 const draftGain = (lea, merit = 0) => lea * randInt(RULES.draftPerLea.min, RULES.draftPerLea.max) + Math.floor(merit * RULES.draftPerMerit);
 // 출진에 필요한 군량
-const marchFood = troops => Math.ceil(troops * RULES.marchFoodRate);
+// 출진 군량 (2026-11-06: 세력 특성 군량 소비도 적용. fid = 출진하는 세력)
+const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)));
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
 const troopsMax = g => effStats(g).lea * RULES.troopsPerLea;
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
@@ -321,7 +322,7 @@ const TRAIT_FX = [
   { key: 'cavalryDraft', label: '기병 징병량', max: 0.5 },
   { key: 'draftPeace', label: '징병 치안 감소', max: 1 },
   { key: 'gold', label: '금 수입', max: 0.5 },
-  { key: 'food', label: '군량 소비', max: 0.5 },
+  { key: 'food', label: '군량 소비', max: 0.5 }, // 매달 먹는 군량과 출진 군량 둘 다 (2026-11-06)
   { key: 'comm', label: '상업 내정', max: 0.5 },
   { key: 'siege', label: '성벽 피해', max: 0.5 },
   { key: 'siegePrice', label: '병기 제작비', max: 0.5 },
