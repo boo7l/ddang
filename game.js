@@ -1832,7 +1832,7 @@ function updateTurn() {
 // 명령 창 = 예약표. 칸을 고르고 아래 명령 버튼을 누르면 그 칸에 예약된다
 function renderCommands() {
   const p = me();
-  $('#nowDate').textContent = dateText(S.turn); // 상단: 게임 속 지금 연월
+  { const d = dateOf(S.turn); $('#nowDate').innerHTML = d.year < 0 ? `<span class="eraLong">${dateText(S.turn)}</span><span class="eraShort">${d.year}년 ${d.month}월</span>` : dateText(S.turn); } // 상단: 게임 속 지금 연월 (모바일은 기원전을 -203년처럼 짧게, 2026-11-07)
   $('#nowSeason').textContent = `시즌 ${S.season || 1}`; // 상단: 몇 번째 시즌
   $('#nowScenario').textContent = S.scenario || MAP.scenario || RULES.scenario; // 상단: 시나리오 이름 (예: 관도대전)
   const statName = k => STATS.find(s => s.key === k).name;
