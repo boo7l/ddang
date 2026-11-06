@@ -1623,6 +1623,7 @@ function renderJoinInfo() {
   const cities = citiesOfFaction(f.id);
   box.innerHTML = `
     <h2>${esc(f.name)}</h2>
+    ${f.intro ? `<p class="fIntro">${esc(f.intro)}</p>` : ''}
     <table class="stats">
       <tr><th>장수</th><td>${memberCount(f.id)}명 <span class="dim">(소속한 유저 수)</span></td></tr>
       <tr><th>성</th><td>${cities.length}개</td></tr>
