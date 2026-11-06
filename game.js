@@ -282,7 +282,7 @@ function adminDialog(tab = 'users', fid = null) {
 
 // 오픈 예고 문구: 시즌 5 · 11월 8일(일) 저녁 8시 시작 예정 (연도는 보이지 않는다)
 const hourText = h => (h < 6 ? `새벽 ${h}시` : h < 12 ? `오전 ${h}시` : h === 12 ? '낮 12시' : h < 18 ? `오후 ${h - 12}시` : `저녁 ${h - 12}시`);
-const openText = ({ season, at }) => { const k = new Date(at + 9 * 3600000); return `시즌 ${season} · ${k.getUTCMonth() + 1}월 ${k.getUTCDate()}일(${'일월화수목금토'[k.getUTCDay()]}) ${hourText(k.getUTCHours())} 시작 예정`; };
+const openText = ({ season, at, label }) => { const k = new Date(at + 9 * 3600000); return `시즌 ${season}${label ? `(${label})` : ''} · ${k.getUTCMonth() + 1}월 ${k.getUTCDate()}일(${'일월화수목금토'[k.getUTCDay()]}) ${hourText(k.getUTCHours())} 시작 예정`; };
 
 // ===== 관리 창 (관리자만, 어느 화면에서든 오른쪽 위 "🛠 관리") =====
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
@@ -315,6 +315,7 @@ function adminToolsDialog() {
        월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
        일 <input id="aoD" type="number" min="1" max="31" value="${pk ? pk.getUTCDate() : ''}">
        시간 <select id="aoH">${[...Array(24).keys()].map(h => `<option value="${h}"${(pk ? pk.getUTCHours() : 20) === h ? ' selected' : ''}>${hourText(h)}</option>`).join('')}</select></p>
+    <p>예고에 붙일 이름 <input id="aoL" type="text" maxlength="12" placeholder="예: 초한쟁패" value="${plan && plan.label ? esc(plan.label) : ''}" style="width:9em"> <span class="dim small">비우면 안 보여요 · 시즌 6(초한쟁패) · …</span></p>
     <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
     <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
     </div>
@@ -362,7 +363,7 @@ function adminToolsDialog() {
     };
     $('#aoSave').onclick = async () => {
       const v = id => +$(id).value;
-      if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked })) afterAdmin();
+      if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked, label: $('#aoL').value.trim() })) afterAdmin();
     };
     if ($('#aoClear')) $('#aoClear').onclick = async () => { if (!confirm('오픈 예약을 취소할까요? 첫 화면 예고도 사라져요.')) return; await call('nextOpen', { clear: true }); afterAdmin(); };
     $('#aDoor').onclick = async () => {
