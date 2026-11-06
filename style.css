@@ -912,3 +912,32 @@ details.fold > summary:hover h2 { color: var(--title); }
 .rpCtl { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
 .rpCtl input[type=range] { flex: 1; min-width: 0; }
 .rpCtl button { min-width: 44px; }
+
+/* 관리 페이지 (2026-11-06): 팝업 대신 화면 전체. 확인 창(#modal, z 50)보다 아래, 새로고침 단추(z 40)보다 위 */
+#adminPage { position: fixed; inset: 0; z-index: 45; margin: 0; max-width: none; overflow-y: auto; box-sizing: border-box; }
+#adminPage .pageHead { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+#adminPage .pageTitle { flex: 1; text-align: center; color: var(--title); }
+#adminPage .back, #adminPage .spacer { width: 120px; white-space: nowrap; }
+.adminLayout { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: start; max-width: 1400px; margin: 0 auto; }
+.adminLayout.withSide { grid-template-columns: 130px minmax(0, 1fr) 400px; }
+#adminNav { display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; }
+#adminNav button { text-align: left; }
+#adminNav button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
+#adminMain { min-width: 0; }
+#adminSide { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 10px; position: sticky; top: 0; max-height: calc(100vh - 90px); overflow-y: auto; }
+#adminSide h3 { margin: 0 0 8px; color: var(--title); }
+#adminSide .sideBtns { text-align: right; margin-top: 10px; }
+#adminPage .adminScroll { max-height: calc(100vh - 230px); }
+#adminPage .adminChat { max-height: calc(100vh - 230px); }
+#adminPage .picks .dim { float: none; margin-left: 6px; }
+.adminCard { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 8px 12px; margin-bottom: 10px; max-width: 720px; }
+.adminCard.danger { border-color: #a33; }
+.adminCard p { margin: 6px 0; }
+@media (max-width: 700px) {
+  .adminLayout, .adminLayout.withSide { grid-template-columns: minmax(0, 1fr); }
+  #adminNav { flex-direction: row; flex-wrap: wrap; position: static; }
+  #adminNav button { flex: 1 1 auto; text-align: center; }
+  #adminSide { position: static; max-height: none; }
+  #adminPage .back, #adminPage .spacer { width: auto; }
+  #adminPage .spacer { display: none; }
+}

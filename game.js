@@ -111,16 +111,37 @@ function unifyDialog(u = S.unified) {
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
-// 관리자 보기 탭: 유저 목록(이번 시즌 장수) · 세력 채팅 · 가입자(계정 전체)
-const adminTabs = tab => `<div class="helpTabs">${[['users', '유저 목록'], ['chat', '세력 채팅'], ['members', '가입자']].map(([k, t]) =>
-  `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+// ===== 관리 페이지 (2026-11-06: 🛠 관리 창 + 👁 관리자 보기 팝업을 한 페이지로. 예전 팝업 방식은 git 태그 backup-admin-popup-20261106) =====
+// 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
+const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['chat', '💬 채팅'], ['members', '🗂 가입자']];
+let adminTab = 'ops';
+function adminShow(tab, html, onMount) {
+  adminTab = tab;
+  $('#adminPage').hidden = false;
+  $('#adminNav').innerHTML = ADMIN_NAV.map(([k, t]) => `<button data-anav="${k}" class="${k === tab ? 'on' : ''}">${t}</button>`).join('');
+  $('#adminNav').querySelectorAll('[data-anav]').forEach(b => { b.onclick = () => openAdmin(b.dataset.anav); });
+  $('#adminMain').innerHTML = html;
+  if (onMount) onMount($('#adminMain'));
+}
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab === 'ops') adminToolsDialog(); else adminDialog(tab); }
+function adminSide(html, onMount) {
+  const s = $('#adminSide');
+  s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
+  if (onMount) onMount(s);
+  s.scrollTop = 0;
+  if (innerWidth <= 700) s.scrollIntoView({ block: 'start' });
+}
+function closeAdminSide() { const s = $('#adminSide'); s.hidden = true; s.innerHTML = ''; $('.adminLayout').classList.remove('withSide'); }
+function closeAdmin() {
+  closeAdminSide(); $('#adminPage').hidden = true;
+  if (!$('#game').hidden && S && me() && me().faction) { render(); renderLegend(); renderAll(); }
+}
 // 가입자 탭 (2026-10-31): 가입한 계정 전체. 장수가 없는 계정도 보이고 정지할 수 있다. 검색은 다시 그리지 않고 줄만 숨긴다 (한글 입력)
 async function membersDialog() {
-  openModal(`<h2>👁 관리자 보기</h2>${adminTabs('members')}<p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`);
-  $('#modalBox').classList.add('adminBox');
+  adminShow('members', '<p class="dim">불러오는 중…</p>');
   let d;
   try { d = await api('adminMembers'); } catch (e) { d = { error: e.message }; }
-  if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
+  if ($('#adminPage').hidden || adminTab !== 'members') return; // 불러오는 사이에 닫았거나 다른 탭으로 갔다
   const list = d.members || [];
   const banText = t => (t > Date.now() ? `⛔ ${t - Date.now() > 5 * 365 * 24 * HOUR ? '영구' : fmtTime(t).split(' ')[0] + '까지'}` : '');
   const rows = list.map(m => {
@@ -131,11 +152,8 @@ async function membersDialog() {
       <td>${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
       <td>${m.admin ? '' : `<button class="mini" data-mban="${esc(m.id)}">정지</button>`}</td></tr>`;
   }).join('');
-  openModal(`<h2>👁 관리자 보기</h2>${adminTabs('members')}
-    ${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
-    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
+  adminShow('members', `${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
+    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>이번 시즌 장수</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}`, box => {
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
     box.querySelectorAll('[data-mban]').forEach(b => { b.onclick = () => memberBanDialog(list.find(m => m.id === b.dataset.mban)); });
     const find = box.querySelector('#memberFind');
@@ -146,19 +164,18 @@ async function membersDialog() {
       box.querySelector('#memberCount').textContent = `${n}명`;
     };
   });
-  $('#modalBox').classList.add('adminBox');
 }
 function memberBanDialog(m) {
   const banned = m.ban > Date.now();
-  openModal(`<h2>🛠 ${esc(m.name)} <span class="dim small">· 계정 정지</span></h2>
+  adminSide(`<h3>🛠 ${esc(m.name)} <span class="dim small">· 계정 정지</span></h3>
     <p>정지되는 동안 아예 접속할 수 없어요.${banned ? ` 지금 정지 중이에요.` : ''}</p>
     <p><button data-days="1" class="danger">하루</button> <button data-days="7" class="danger">7일</button> <button data-days="3650" class="danger">영구</button>${banned ? ' <button data-days="0">풀기</button>' : ''}</p>
-    <div class="modalBtns"><button id="mBack">◀ 목록</button><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelector('#mBack').onclick = () => membersDialog();
+    <p class="sideBtns"><button id="mBack">✕ 닫기</button></p>`, box => {
+    box.querySelector('#mBack').onclick = closeAdminSide;
     box.querySelectorAll('[data-days]').forEach(b => { b.onclick = async () => {
       const days = +b.dataset.days;
       if (!confirm(days ? `${m.name}의 계정을 ${b.textContent} 정지할까요?` : '계정 정지를 풀까요?')) return;
-      if (await call('adminBan', { id: m.id, days })) membersDialog();
+      if (await call('adminBan', { id: m.id, days })) { closeAdminSide(); membersDialog(); }
     }; });
   });
 }
@@ -175,7 +192,6 @@ function adminDialog(tab = 'users', fid = null) {
   const swatch = id => (id ? `<span class="swatch" style="background:${factionById(id).color}"></span>` : '');
   const counts = {};
   gens.forEach(g => { counts[g.faction || ''] = (counts[g.faction || ''] || 0) + 1; });
-  const tabs = adminTabs(tab);
   let body;
   if (tab === 'users') {
     // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
@@ -202,9 +218,7 @@ function adminDialog(tab = 'users', fid = null) {
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
       <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
   }
-  openModal(`<h2>👁 관리자 보기 <span class="dim small">· 새 정보는 1분마다 받아 와요</span></h2>${tabs}${body}
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => adminDialog(b.dataset.tab); });
+  adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
     if (box.querySelector('#aLoyal')) box.querySelector('#aLoyal').onchange = e => { adminLoyalOnly = e.target.checked; adminDialog('users', e.target.dataset.keep); };
@@ -215,7 +229,6 @@ function adminDialog(tab = 'users', fid = null) {
       if (await call('adminDelChat', { id: b.dataset.delchat })) adminDialog('chat', fid);
     }; });
   });
-  $('#modalBox').classList.add('adminBox');
 }
 
 // 오픈 예고 문구: 시즌 5 · 11월 8일(일) 저녁 8시 시작 예정 (연도는 보이지 않는다)
@@ -229,24 +242,23 @@ function adminToolsDialog() {
   const door = S && S.closed ? '🔒 닫힘 (관리자만 들어옴)' : S && S.unified ? '🔓 열림 (시즌 종료: 구경·채팅만)' : '🔓 열림';
   const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
   const plan = S && S.nextOpen, pk = plan && new Date(plan.at + 9 * 3600000); // 오픈 예약 (한국 시각으로 칸에 다시 채운다)
-  openModal(`
-    <h2>🛠 관리 <span class="dim small">· 관리자만 보여요</span></h2>
+  adminShow('ops', `
+    <div class="adminCard">
     <table class="stats">
+      <tr><th>시즌</th><td>${S ? `시즌 ${S.season || 1}${S.scenario ? ` · ${esc(S.scenario)}` : ''}` : '-'}</td></tr>
       <tr><th>날짜</th><td>${S ? `${dateText(S.turn)} (${S.turn}턴)` : '-'} · ${state}</td></tr>
       <tr><th>시각</th><td>${S ? fmtTime(now()) : '-'}${ahead ? ` <span class="dim">(실제보다 ${ahead}분 빠름)</span>` : ''}</td></tr>
       <tr><th>장수</th><td>${S ? allGenerals().length : 0}명</td></tr>
       <tr><th>문</th><td>${door}</td></tr>
     </table>
-    <p class="sub">턴 <span class="dim">(모든 장수에게 적용)</span></p>
-    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button></p>
-    <p class="sub">보기</p>
-    <p><button id="aView">👁 관리자 보기</button></p>
-    <p class="sub">시즌·계정</p>
-    <p><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
-    <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button> <button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
+    </div>
+    <div class="adminCard">
     <p class="sub">전체 메시지 <span class="dim">(지금 있는 모든 장수의 기록에 노란색으로, ${S ? allGenerals().length : 0}명)</span></p>
     <p><input id="aMsg" maxlength="200" value="[📢] " placeholder="200자까지" style="width:100%;box-sizing:border-box"></p><!-- 입력칸에 [📢]를 미리 넣어 둔다. 필요 없으면 지우면 된다 (2026-11-02) -->
     <p><button id="aMsgSend">보내기</button></p>
+    </div>
+    <div class="adminCard">
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
     <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(MAP.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
@@ -256,9 +268,12 @@ function adminToolsDialog() {
        시간 <select id="aoH">${[...Array(24).keys()].map(h => `<option value="${h}"${(pk ? pk.getUTCHours() : 20) === h ? ' selected' : ''}>${hourText(h)}</option>`).join('')}</select></p>
     <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
     <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    </div>
+    <div class="adminCard danger">
+    <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
+    <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    </div>`, box => {
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
-    $('#aView').onclick = () => adminDialog();
     $('#aMsgSend').onclick = async () => {
       const text = $('#aMsg').value.trim();
       if (!text || text === '[📢]') { alert('보낼 내용을 적어 주세요.'); return; }
@@ -286,10 +301,10 @@ function adminToolsDialog() {
     };
   });
 }
-// 관리 창에서 무언가 바꾼 뒤: 게임 화면이면 다시 그리고, 관리 창도 새 상태로 다시 연다
+// 운영 탭에서 무언가 바꾼 뒤: 게임 화면이면 다시 그리고, 운영 탭도 새 상태로 다시 그린다
 function afterAdmin() {
   if (!$('#game').hidden && me() && me().faction) { render(); renderLegend(); renderAll(); }
-  adminToolsDialog();
+  if (!$('#adminPage').hidden) adminToolsDialog();
 }
 
 // ===== 공적 순위 (오른쪽 위 "🏆 순위") =====
@@ -1988,8 +2003,10 @@ function playerDialog(id, backTab = 'users', backF = null) {
   const mute = until(S.mutes), ban = until(S.bans), t = GENERAL_TRAITS[g.trait];
   const st = STATS.map(s => `${s.name} ${effStats(g)[s.key]}`).join(' · ');
   const queue = (g.queue || []).filter(Boolean).map(o => esc(orderLabel(o))).join(', ') || '<span class="dim">없음</span>';
-  const act = async (action, body, msg) => { if (!confirm(msg)) return; if (await call(action, { id, ...body })) playerDialog(id, backTab, backF); };
-  openModal(`<h2>🛠 ${esc(g.name)}${medalOf(g.id)} <span class="dim small">· 아이디 ${esc(ACCOUNTS[id] || '?')}</span></h2>
+  // 제재한 뒤: 왼쪽 목록(🔇·⛔ 표시)도 새로 그리고, 이 칸도 새 상태로
+  const again = () => { if (backTab === 'members') membersDialog(); else adminDialog(backTab, backF); playerDialog(id, backTab, backF); };
+  const act = async (action, body, msg) => { if (!confirm(msg)) return; if (await call(action, { id, ...body })) again(); };
+  adminSide(`<h3>🛠 ${esc(g.name)}${medalOf(g.id)} <span class="dim small">· 아이디 ${esc(ACCOUNTS[id] || '?')}</span></h3>
     <table class="stats">
       <tr><th>세력</th><td>${g.faction ? esc(factionById(g.faction).name) : '재야'} · ${g.city ? esc(cityById(g.city).name) : '-'}</td></tr>
       <tr><th>능력치</th><td>${st}</td></tr>
@@ -2004,17 +2021,16 @@ function playerDialog(id, backTab = 'users', backF = null) {
     <p><button id="pWarn">⚠ 경고</button> <button id="pKick"${g.faction ? '' : ' disabled'}>강제 하야</button></p>
     <p>채팅 금지: <button data-mute="1">1시간</button> <button data-mute="24">하루</button> <button data-mute="168">7일</button>${mute ? ' <button data-mute="0">풀기</button>' : ''}</p>
     <p>계정 정지: <button data-ban="1" class="danger">하루</button> <button data-ban="7" class="danger">7일</button> <button data-ban="3650" class="danger">영구</button>${ban ? ' <button data-ban="0">풀기</button>' : ''}</p>
-    <div class="modalBtns"><button id="pBack">◀ 목록</button><button data-close class="main">닫기</button></div>`, box => {
-    $('#pBack').onclick = () => adminDialog(backTab, backF);
+    <p class="sideBtns"><button id="pBack">✕ 닫기</button></p>`, box => {
+    $('#pBack').onclick = closeAdminSide;
     $('#pWarn').onclick = async () => {
       const text = prompt(`${g.name}에게 보낼 경고 (100자까지, 그 장수의 기록에 남아요)`, '비매너 행위로 경고합니다.');
-      if (text && text.trim() && await call('adminWarn', { id, text })) playerDialog(id, backTab, backF);
+      if (text && text.trim() && await call('adminWarn', { id, text })) again();
     };
     $('#pKick').onclick = () => act('adminKick', {}, `${g.name}을(를) 세력에서 쫓아낼까요?\n하야처럼 병력은 흩어지고, 그 세력에는 한동안 다시 못 들어가요.`);
     box.querySelectorAll('[data-mute]').forEach(b => { b.onclick = () => act('adminMute', { hours: +b.dataset.mute }, +b.dataset.mute ? `${g.name}의 채팅을 ${b.textContent} 동안 막을까요?` : '채팅 금지를 풀까요?'); });
     box.querySelectorAll('[data-ban]').forEach(b => { b.onclick = () => act('adminBan', { days: +b.dataset.ban }, +b.dataset.ban ? `${g.name}의 계정을 ${b.textContent} 정지할까요?\n정지되는 동안 아예 접속할 수 없어요.` : '계정 정지를 풀까요?'); });
   });
-  $('#modalBox').classList.add('wideBox');
 }
 
 function recordDialog() {
@@ -2031,8 +2047,9 @@ document.addEventListener('click', () => document.querySelector('header').classL
 const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); else localStorage.removeItem('ddang-pc'); } catch (e) { /* 저장 못 하면 이번만 */ } location.reload(); };
 $('#pcBtn').onclick = () => setPcMode(true);
 $('#mobileBtn').onclick = () => setPcMode(false);
-$('#adminBtn').onclick = adminToolsDialog;
-$('#tAdmin').onclick = async () => { if (!S) await call('state'); if (IS_ADMIN) adminToolsDialog(); }; // 첫 화면의 관리 단추 (세계를 아직 안 받았으면 먼저 받는다)
+$('#adminBtn').onclick = () => openAdmin('ops');
+$('#tAdmin').onclick = async () => { if (!S) await call('state'); if (IS_ADMIN) openAdmin('ops'); }; // 첫 화면의 관리 단추 (세계를 아직 안 받았으면 먼저 받는다)
+$('#adminClose').onclick = closeAdmin;
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = rankDialog;
