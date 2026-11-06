@@ -282,7 +282,7 @@ const GENERAL_TRAITS = {
   rich: { tier: 'N', name: '부호', desc: '금 수입 +5%', gold: 0.05 }, // 2026-10-31 추가
   schemer: { tier: 'N', name: '책사', desc: '계략 성공 확률 +5%p', plot: 0.05 },
   charisma: { tier: 'N', name: '인망', desc: '징병량 +10%', draft: 0.10 }, // 2026-10-28 +10% → +5% → +10%
-  frail: { tier: 'SR', name: '뼈에게 닿기를', desc: '공격력·수비력 -2%, 대신 이동을 4칸까지 (아군 땅이 끊겨도)', power: -0.02, moveRange: 4, freePath: true }, // 2026-11-03 시즌 5: 길이 끊겨도 4칸 안의 아군 성으로. // 2026-10-28 3칸 → 4칸
+  frail: { tier: 'SR', name: '뼈에게 닿기를', desc: '전투력 -2%, 대신 이동을 4칸까지 (아군 땅이 끊겨도)', power: -0.02, moveRange: 4, freePath: true }, // 2026-11-03 시즌 5: 길이 끊겨도 4칸 안의 아군 성으로. // 2026-10-28 3칸 → 4칸
   chadol: { tier: 'R', name: '차돌애호가', desc: '통솔·무력 경험치 +10%, 지력 경험치 -5%', exp: { lea: 0.10, war: 0.10, int: -0.05 } }, // 2026-11-03 시즌 5: 통솔·무력 +5%·지력 -3% → 통솔·무력 +10%·지력 -5%. 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15 }, // 2026-10-28 +10%에서
@@ -307,7 +307,7 @@ const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 const attackGoldOf = troops => Math.max(RULES.attackGold.min, Math.floor((troops || 0) / 1000) * RULES.attackGold.per1000);
 
 const FACTION_TRAITS = {
-  마등: { name: '서량기병', desc: '기병 공격력·수비력 +5%', cavalry: 0.05 },
+  마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
   공손찬: { name: '백마의종', desc: '기병 수비력 +10%', cavalryDefense: 0.10 },
   조조: { name: '유재시거', desc: '모든 능력치 경험치 +10%', exp: 0.10 },
   원소: { name: '사세삼공', desc: '징병량 +5%', draft: 0.05 }, // 2026-10-27 금 수입 +5%에서 바꿈 (명문가라 사람이 모임)
@@ -326,7 +326,7 @@ const FACTION_TRAITS = {
   // 한국 지도 (2026-10-31)
   고려: { name: '벽란도', desc: '금 수입 +5%', gold: 0.05 },
   조선: { name: '신기전', desc: '병기 제작비 -20%', siegePrice: -0.20 },
-  고구려: { name: '개마무사', desc: '기병 공격력·수비력 +5%, 기병 징병량 +5%', cavalry: 0.05, cavalryDraft: 0.05 },
+  고구려: { name: '개마무사', desc: '기병 전투력 +5%, 기병 징병량 +5%', cavalry: 0.05, cavalryDraft: 0.05 },
   백제: { name: '오경박사', desc: '지력 경험치 +25%', expInt: 0.25 },
   마한: { name: '삼한 소도', desc: '징병 치안 감소 -50%', draftPeace: -0.50 },
   신라: { name: '화랑도', desc: '수련에 금이 들지 않고 수련 경험치 +20%', freeTrain: true, trainExp: 0.20 },
@@ -334,7 +334,7 @@ const FACTION_TRAITS = {
   탐라: { name: '절해고도', desc: '수비력 +5%', defense: 0.05 },
   // 211년 지도 유비입촉 (2026-11-03, 시즌 5)
   손권: { name: '강동인재', desc: '징병량 +5%', draft: 0.05 },
-  마초: { name: '서량기병', desc: '기병 공격력·수비력 +5%, 기병 징병량 +5%', cavalry: 0.05, cavalryDraft: 0.05 }, // 2026-11-03 기병 징병 +5% 더함 (고구려 개마무사와 같은 효과)
+  마초: { name: '서량기병', desc: '기병 전투력 +5%, 기병 징병량 +5%', cavalry: 0.05, cavalryDraft: 0.05 }, // 2026-11-03 기병 징병 +5% 더함 (고구려 개마무사와 같은 효과)
   사섭: { name: '남해 교역', desc: '금 수입 +15%', gold: 0.15 }, // 2026-11-05 +10% → +15% (2026-11-03 +5% → +10%, 성 1개 세력). 1·4·7·10월 정기 수입에만
   // 기원전 203년 지도 초한쟁패 (2026-11-06, map_bc203.json). 세력 크기와 상관없이 같은 급으로
   항우: { name: '역발산기개세', desc: '공격력 +10%, 징병 치안 감소 +50%', attack: 0.10, draftPeace: 0.50 }, // 2026-11-06 극단형으로 (강하지만 민심을 잃는다)
