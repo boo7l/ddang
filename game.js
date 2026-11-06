@@ -69,6 +69,12 @@ function applyView(d) {
   ACCOUNTS = d.accounts || {};
   lastFetch = Date.now();
   turnWait = 1000 + Math.random() * 5000; // 다음 턴에 받아 올 때 기다릴 시간 (사람마다 다르게)
+  // 시즌 지도 (2026-11-06): 서버의 지도가 내가 그린 것과 다르면 바꾼다 (0이면 기본 지도로 돌아간다)
+  if (S && S.mapAt !== undefined && S.mapAt !== MAP_AT) {
+    const m = S.mapAt ? S.map : MAP_DATA;
+    if (m) swapMap(m, S.mapAt);
+  }
+  if (S) delete S.map; // 지도는 MAP에 들어갔다
   if (!ORIGIN) ORIGIN = MAP.cities.map(c => c.faction);
   MAP.cities.forEach((c, i) => { c.faction = ORIGIN[i]; });
   if (S) applyOwners();
@@ -303,7 +309,7 @@ function adminToolsDialog() {
     </div>
     <div class="adminCard wide">
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
-    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(MAP.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
+    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc((S.nextMap || MAP_DATA).scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
        연 <input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}">
        월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
@@ -312,10 +318,41 @@ function adminToolsDialog() {
     <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
     <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
     </div>
+    <div class="adminCard wide">
+    <p class="sub">다음 시즌 지도 <span class="dim">(지도 편집기로 만든 .json 파일)</span></p>
+    ${S && S.nextMap ? `<p>올려 둔 지도: <b class="hi">${esc(S.nextMap.scenario || '이름 없음')}</b> · ${yearText(S.nextMap.year || RULES.startYear)}${S.nextMapName ? ` <span class="dim small">(${esc(S.nextMapName)})</span>` : ''} <button id="amClear" class="mini">올린 지도 지우기</button></p>${mapPreview(S.nextMap)}`
+      : `<p class="dim">올려 둔 지도가 없어요. 새 시즌은 서버 기본 지도(${esc(MAP_DATA.scenario || '?')} · ${yearText(MAP_DATA.year || RULES.startYear)})로 열려요.</p>`}
+    <p><input type="file" id="amFile" accept=".json"> <span class="dim small" id="amNote"></span></p>
+    <div id="amPreview"></div>
+    <p><button id="amUpload" disabled>이 지도를 다음 시즌 지도로 올리기</button></p>
+    <p class="dim small">올린 지도는 "새 시즌 시작"(직접 또는 자동 오픈 예약)을 할 때 쓰여요. 지금 시즌에는 영향이 없어요.</p>
+    </div>
     <div class="adminCard wide danger">
     <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
-    <p><button id="aSeason">새 시즌 시작</button> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    <p><button id="aSeason">새 시즌 시작</button> <span class="dim small">${S && S.nextMap ? `올려 둔 지도(${esc(S.nextMap.scenario || '이름 없음')})로` : `기본 지도(${esc(MAP_DATA.scenario || '?')})로`} 열려요</span> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     </div></div>`, box => {
+    // 다음 시즌 지도 올리기 (2026-11-06): 파일을 고르면 이 화면에서 먼저 검사·미리 보기, 올리기를 누르면 서버가 다시 검사해서 둔다
+    let picked = null, pickedName = '';
+    $('#amFile').onchange = async e => {
+      const file = e.target.files[0];
+      picked = null; $('#amUpload').disabled = true; $('#amPreview').innerHTML = '';
+      if (!file) return;
+      try {
+        const m = JSON.parse(await file.text());
+        const lost = Array.isArray(m.cities) ? findIsolated(m) : [];
+        if (!Array.isArray(m.cities) || !Array.isArray(m.factions)) throw new Error('지도 파일 모양이 아니에요');
+        if (lost.length) throw new Error(`떨어진 성이 있어요: ${lost.map(c => c.name).join(', ')}`);
+        picked = m; pickedName = file.name;
+        $('#amNote').textContent = '✔ 검사 통과';
+        $('#amPreview').innerHTML = mapPreview(m);
+        $('#amUpload').disabled = false;
+      } catch (err) { $('#amNote').textContent = '✘ ' + err.message; }
+    };
+    $('#amUpload').onclick = async () => {
+      if (!picked || !confirm(`「${picked.scenario || '이름 없음'}」 지도를 다음 시즌 지도로 올릴까요?\n지금 시즌에는 영향이 없고, 새 시즌을 시작할 때 쓰여요.`)) return;
+      if (await call('adminMapUpload', { map: picked, fileName: pickedName })) afterAdmin();
+    };
+    if ($('#amClear')) $('#amClear').onclick = async () => { if (!confirm('올려 둔 지도를 지울까요? 새 시즌은 기본 지도로 열려요.')) return; if (await call('adminMapClear')) afterAdmin(); };
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aMsgSend').onclick = async () => {
       const text = $('#aMsg').value.trim();
@@ -333,7 +370,8 @@ function adminToolsDialog() {
       await call('door'); afterAdmin();
     };
     $('#aSeason').onclick = async () => {
-      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n첫 장수가 세력에 들어오면 ${MAP.scenario ? MAP.scenario + " · " : ""}${yearText(MAP.year || RULES.startYear)} ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
+      const nm = S.nextMap || MAP_DATA; // 새 시즌 지도: 올려 둔 지도, 없으면 기본 지도 (2026-11-06)
+      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n지도: ${nm.scenario || '이름 없음'}${S.nextMap ? ' (올려 둔 지도)' : ' (기본 지도)'}\n첫 장수가 세력에 들어오면 ${yearText(nm.year || RULES.startYear)} ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
       if (await call('newSeason')) location.reload();
     };
     $('#aReset').onclick = async () => {
@@ -343,6 +381,21 @@ function adminToolsDialog() {
       location.reload();
     };
   });
+}
+// 지도 미리 보기 (2026-11-06, 관리 페이지 다음 시즌 지도): 작은 칸 지도 + 세력별 성 수·특성
+function mapPreview(m) {
+  const F = Object.fromEntries((m.factions || []).map(f => [f.id, f]));
+  const cw = Math.max(22, Math.min(40, Math.floor(520 / (m.cols || 1)) - 3)), ch = Math.round(cw * 0.65);
+  const cells = (m.cities || []).map(c => { const f = F[c.faction]; return `<div class="rpCity g${c.grade}${f ? '' : ' empty'}" style="grid-column:${c.x + 1};grid-row:${c.y + 1};${f ? `background:${esc(f.color)}` : ''};font-size:${cw < 34 ? 12 : 14}px">${esc(c.name)}</div>`; }).join('');
+  const rows = (m.factions || []).map(f => {
+    const n = (m.cities || []).filter(c => c.faction === f.id).length;
+    const t = f.trait && cleanTrait(f.trait), old = !t && FACTION_TRAITS[f.name];
+    return `<tr><td><span class="swatch" style="background:${esc(f.color)}"></span>${esc(f.name)}</td><td class="num">${n}</td><td>${t ? `<b>${esc(t.name)}</b> <span class="dim">${esc(traitDesc(t.fx))}</span>` : old ? `<b>${esc(old.name)}</b> <span class="dim">${esc(old.desc)} (규칙 파일)</span>` : '<span class="dim">특성 없음</span>'}</td></tr>`;
+  }).join('');
+  const blank = (m.cities || []).filter(c => !c.faction).length;
+  return `<div class="mapPrev"><div class="rpMap"><div class="rpGrid" style="grid-template-columns:repeat(${m.cols},${cw}px);grid-template-rows:repeat(${m.rows},${ch}px)">${cells}</div></div>
+    <table class="stats"><tr><th>세력</th><th class="num">성</th><th>특성</th></tr>${rows}<tr><td class="dim">공백지</td><td class="num">${blank}</td><td></td></tr></table></div>
+    <p class="dim small">${esc(m.scenario || '이름 없음')} · ${yearText(m.year || RULES.startYear)} 시작 · 성 ${(m.cities || []).length}개</p>`;
 }
 // 운영 탭에서 무언가 바꾼 뒤: 게임 화면이면 다시 그리고, 운영 탭도 새 상태로 다시 그린다
 function afterAdmin() {

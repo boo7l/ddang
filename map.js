@@ -4,6 +4,15 @@
 const $ = s => document.querySelector(s);
 
 let MAP = null;
+let MAP_AT = 0; // 지금 그린 지도: 0 = 기본 지도(data/map.js), 그 밖 = 관리자가 올린 지도의 시각 (2026-11-06)
+// 시즌 지도가 바뀌었으면(관리자가 올린 지도로 연 시즌) 그 지도로 바꾼다. 성 주인은 applyView가 다시 입힌다
+function swapMap(data, at) {
+  MAP = JSON.parse(JSON.stringify(data));
+  MAP_AT = at;
+  selected = null;
+  if (typeof ORIGIN !== 'undefined') ORIGIN = null;
+  renderCheck();
+}
 let selected = null;
 
 const neighbors = c => neighborsOf(MAP, c);
@@ -82,7 +91,7 @@ function renderLegend() {
   const box = $('#legendTrait');
   if (!box) return;
   // 누른 세력: 첫 줄 이름(장수 수), 둘째 줄 특성 이름, 셋째 줄 특성 설명
-  const f = legendPick && MAP.factions.find(x => x.id === legendPick), t = f && FACTION_TRAITS[f.name];
+  const f = legendPick && MAP.factions.find(x => x.id === legendPick), t = f && traitOf(f.id).name ? traitOf(f.id) : null; // 지도 파일 특성 먼저 (2026-11-06)
   const members = f && typeof S !== 'undefined' && S ? Object.values(S.generals).filter(g => g.faction === f.id).length : 0;
   box.innerHTML = !f ? '세력을 누르면 정보가 보여요.'
     : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? t.name : '없음'}${t ? `<br>${t.desc}` : ''}`;

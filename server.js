@@ -56,7 +56,7 @@ async function api(action, payload = {}) {
   // 503이면 서버에 아무것도 저장되지 않았으므로 다시 보내도 두 번 처리되지 않는다
   for (let attempt = 0; ; attempt++) {
     // region: 서버 함수를 DB가 있는 시드니에서 돌린다 (가까운 곳에서 돌면 DB를 오갈 때마다 한국↔호주를 오가 느렸다, 2026-10-27)
-    const { data, error } = await sb.functions.invoke('game', { body: { action, ...payload }, region: 'ap-southeast-2' });
+    const { data, error } = await sb.functions.invoke('game', { body: { action, mapAt: typeof MAP_AT === 'number' ? MAP_AT : 0, ...payload }, region: 'ap-southeast-2' }); // mapAt: 내가 가진 지도 (다르면 서버가 지도를 같이 보낸다, 2026-11-06)
     if (!error) return data;
     const status = error.context && error.context.status;
     if (status === 503 && attempt === 0) { await new Promise(ok => setTimeout(ok, 1000 + Math.random() * 1000)); continue; }

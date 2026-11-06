@@ -306,6 +306,47 @@ const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 // 출진 금 (2026-11-03): 병력 1,000당 20, 천 단위 버림, 최소 20. 예: 500 → 20, 2,000 → 40, 10,000 → 200
 const attackGoldOf = troops => Math.max(RULES.attackGold.min, Math.floor((troops || 0) / 1000) * RULES.attackGold.per1000);
 
+// ===== 세력 특성을 지도 파일에 적기 (2026-11-06) =====
+// 지도 파일의 세력에 trait: { name: '역발산기개세', fx: { attack: 0.10, draftPeace: 0.50 } } 를 적으면 그게 먼저 쓰인다.
+// 없으면 아래 FACTION_TRAITS에서 세력 이름으로 찾는다. 고를 수 있는 효과는 TRAIT_FX뿐 (새 종류는 코드에 효과를 넣고 여기에 더한다)
+// pct: 0.10 = 10%. max: 지도 편집기·서버가 받아 주는 크기 한도 (±)
+const TRAIT_FX = [
+  { key: 'attack', label: '공격력', max: 0.3 },
+  { key: 'defense', label: '수비력', max: 0.3 },
+  { key: 'cavalry', label: '기병 전투력', max: 0.3 },
+  { key: 'cavalryDefense', label: '기병 수비력', max: 0.3 },
+  { key: 'draft', label: '징병량', max: 0.5 },
+  { key: 'cavalryDraft', label: '기병 징병량', max: 0.5 },
+  { key: 'draftPeace', label: '징병 치안 감소', max: 1 },
+  { key: 'gold', label: '금 수입', max: 0.5 },
+  { key: 'food', label: '군량 소비', max: 0.5 },
+  { key: 'comm', label: '상업 내정', max: 0.5 },
+  { key: 'siege', label: '성벽 피해', max: 0.5 },
+  { key: 'siegePrice', label: '병기 제작비', max: 0.5 },
+  { key: 'shop', label: '상점 값', max: 0.5 },
+  { key: 'exp', label: '모든 능력치 경험치', max: 0.5 },
+  { key: 'expInt', label: '지력 경험치', max: 0.5 },
+  { key: 'trainExp', label: '수련 경험치', max: 0.5 },
+  { key: 'freeTrain', label: '수련에 금이 들지 않음', flag: true },
+];
+// 효과 → 설명 글: { attack: 0.1, draftPeace: 0.5 } → "공격력 +10%, 징병 치안 감소 +50%"
+const traitDesc = fx => Object.keys(fx).map(k => TRAIT_FX.find(d => d.key === k)).filter(d => d && fx[d.key] !== 0 && fx[d.key] !== false) // 적힌 순서대로
+  .map(d => (d.flag ? d.label : `${d.label} ${fx[d.key] > 0 ? '+' : ''}${Math.round(fx[d.key] * 1000) / 10}%`)).join(', ');
+// 지도 파일에서 온 특성을 믿을 수 있는 모양으로: 아는 효과만, 한도 안에서. 이름이 없거나 효과가 없으면 null
+function cleanTrait(t) {
+  if (!t || typeof t !== 'object') return null;
+  const fx = {};
+  for (const k of Object.keys(t.fx || {})) { // 적힌 순서를 지킨다 (설명 글 순서)
+    const d = TRAIT_FX.find(x => x.key === k);
+    if (!d) continue;
+    const v = t.fx && t.fx[d.key];
+    if (d.flag) { if (v === true) fx[d.key] = true; continue; }
+    const n = +v;
+    if (Number.isFinite(n) && n !== 0) fx[d.key] = Math.max(-d.max, Math.min(d.max, Math.round(n * 1000) / 1000));
+  }
+  const name = String(t.name || '').trim().slice(0, 12);
+  return name && Object.keys(fx).length ? { name, fx } : null;
+}
 const FACTION_TRAITS = {
   마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
   공손찬: { name: '백마의종', desc: '기병 수비력 +10%', cavalryDefense: 0.10 },
@@ -336,14 +377,6 @@ const FACTION_TRAITS = {
   손권: { name: '강동인재', desc: '징병량 +5%', draft: 0.05 },
   마초: { name: '서량기병', desc: '기병 전투력 +5%, 기병 징병량 +5%', cavalry: 0.05, cavalryDraft: 0.05 }, // 2026-11-03 기병 징병 +5% 더함 (고구려 개마무사와 같은 효과)
   사섭: { name: '남해 교역', desc: '금 수입 +15%', gold: 0.15 }, // 2026-11-05 +10% → +15% (2026-11-03 +5% → +10%, 성 1개 세력). 1·4·7·10월 정기 수입에만
-  // 기원전 203년 지도 초한쟁패 (2026-11-06, map_bc203.json). 세력 크기와 상관없이 같은 급으로
-  항우: { name: '역발산기개세', desc: '공격력 +10%, 징병 치안 감소 +50%', attack: 0.10, draftPeace: 0.50 }, // 2026-11-06 극단형으로 (강하지만 민심을 잃는다)
-  유방: { name: '용인술', desc: '모든 능력치 경험치 +15%, 공격력 -5%', exp: 0.15, attack: -0.05 }, // 2026-11-06 약법삼장(징병 치안 -50%)에서. 장량·소하·한신을 쓴 사람, 대신 싸움은 약하다
-  한신: { name: '다다익선', desc: '징병량 +15%, 수비력 -5%', draft: 0.15, defense: -0.05 }, // 2026-11-06 +10%에서 메리트·디메리트형으로 (빼앗기고 늘 신병으로 싸운 한신, 배수진)
-  팽월: { name: '유격전', desc: '군량 소비 -25%', food: -0.25 },
-  영포: { name: '선봉 맹장', desc: '성벽 피해 +15%', siege: 0.15 },
-  공위: { name: '형강 천험', desc: '수비력 +5%', defense: 0.05 },
-  오예: { name: '백월의 신망', desc: '금 수입 +15%', gold: 0.15 },
 };
 
 // ===== 전투 =====

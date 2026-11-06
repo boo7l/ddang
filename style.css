@@ -950,3 +950,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #adminPage th.sortable { cursor: pointer; white-space: nowrap; user-select: none; }
 #adminPage th.sortable:hover { color: var(--title); }
 #adminPage th.sortable[data-arrow]:not([data-arrow=""])::after { content: " " attr(data-arrow); color: var(--title); }
+/* 관리 페이지 · 다음 시즌 지도 미리 보기 (2026-11-06) */
+.mapPrev { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; margin: 6px 0; }
+.mapPrev .rpMap { padding: 4px; }
+.mapPrev .rpGrid { gap: 3px; }
+.mapPrev table { flex: 1; min-width: 240px; }

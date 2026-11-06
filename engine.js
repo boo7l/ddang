@@ -21,7 +21,14 @@ const buyFoodGold = o => Math.max(1, Math.min(RULES.foodBuy.goldMax, Math.floor(
 // 이번 달 군량 시세 (금 1당 군량). 세계에 없으면 처음 값
 const foodPrice = () => (S && S.foodPrice) || RULES.foodBuy.start;
 // 세력 특성 (rules.js의 FACTION_TRAITS). 세력이 없거나 특성이 없으면 빈 것
-const traitOf = fid => { const f = fid && factionById(fid); return (f && FACTION_TRAITS[f.name]) || {}; };
+// 세력 특성: 지도 파일에 적힌 것(trait)이 먼저, 없으면 rules.js FACTION_TRAITS에서 이름으로 (2026-11-06)
+const traitOf = fid => {
+  const f = fid && factionById(fid);
+  if (!f) return {};
+  const t = f.trait && cleanTrait(f.trait);
+  if (t) return { name: t.name, desc: traitDesc(t.fx), ...t.fx };
+  return FACTION_TRAITS[f.name] || {};
+};
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
 const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}; return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0))); }; // 개인 특성 차돌애호가
 // 이동 거리: 보통 2칸, 개인 특성 뼈에게 닿기를은 4칸 (군량 수송은 그대로 2칸)
