@@ -673,7 +673,7 @@ function attackDialog() {
     const wall = c.faction ? S.cities[c.id].wall : 0, seen = wall !== undefined;
     // 맨 앞에서 요격할 부대와 맞붙었을 때를 비교한다 (상성 포함, 지금 기준. 수비대장만 있을 때)
     const can = d && me1.type && !hidden && seen;
-    const mine = can ? attackPower(me1, d) : 0, def = can ? defensePower(d, wall, me1) : 0;
+    const mine = can ? attackPower(me1, d) : 0, def = can ? defensePower(d, wall, me1) / (1 - wallCut(wall)) : 0; // 방어도 피해 감소를 수비 쪽 세기로 쳐서 비교 (2026-11-06)
     // 공백지는 무혈입성, 수비 부대가 있으면 전투력 비교 (모르면 ?), 수비 부대 없는 세력 성은 아래에서 성벽으로 판단
     let guess = !c.faction ? '무혈입성' : !can ? '?' : mine > def * 1.2 ? '유리' : mine < def * 0.8 ? '불리' : '비슷';
     let cls = guess;
@@ -978,14 +978,14 @@ function helpDialog(page = 0) {
       <li>수비 부대를 모두 물리치면(또는 막는 부대가 없으면) 성벽을 공격해요.</li>
       <li>남은 병력이 많을수록 방어를 많이 깎지만, 성벽에서 날아오는 화살·돌에 그만큼 병력도 잃어요. (예: 병력 10,000이면 방어 300~450을 깎고 1,000~1,500명을 잃어요)</li>
       <li><b>방어가 0이 되면 점령</b>이에요. 점령하면 방어는 성 크기에 따라 조금 다시 세워져요.</li>
-      <li>방어가 높은 성은 수비 부대도 더 강해요. (방어 1,000이면 수비가 1.4배)</li>
+      <li>방어가 높은 성을 지키는 부대는 받는 피해가 줄어요. (방어 1,000이면 피해 -30%)</li>
       <li><b>충차</b>는 방어를 더 많이 깎고, <b>정란</b>은 수비 부대와 싸울 때 강해지고, <b>벽력거</b>는 싸우기 전에 먼저 쏴요.</li></ul>
     </div>`],
     ['📋 명령 한눈에', `
       <p class="sub">내정 <span class="dim">(금 없이 1턴)</span></p><ul>
       <li><b>농업</b>: 성의 농업을 올려요. 4·10월 수확 때 군량이 더 들어와요. (지력)</li>
       <li><b>상업</b>: 성의 상업을 올려요. 1·4·7·10월에 금이 더 들어와요. (지력)</li>
-      <li><b>축성</b>: 성의 방어를 올려요. 수비할 때 전투력이 세져요 (방어 100마다 +${Math.round(100 / RULES.wallDivisor * 100)}%). (무력)</li>
+      <li><b>축성</b>: 성의 방어를 올려요. 그 성을 지킬 때 받는 피해가 줄어요 (방어 100마다 -${Math.round(RULES.wallCutPer100 * 100)}%). (무력)</li>
       <li><b>치안</b>: 치안을 올려요. 50 아래면 수입과 징병이 줄어요. (통솔)</li></ul>
       <p class="sub">군사</p><ul>
       <li><b>징병</b>: 금 ${RULES.myGoldCost.draft}으로 병사를 모아요. 병종(보병·기병·궁병)을 골라요.</li>
