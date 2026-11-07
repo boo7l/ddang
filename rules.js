@@ -531,8 +531,8 @@ function rollPlot(int, bonus = 0) { // bonus: 개인 특성 책사 +5%p (최대�
 const EXPLORE = [
   { key: 'none', weight: 10 }, // 2026-10-27 15 → 10 (2026-10-31 같은 날 8로 내렸다가 되돌림)
   // jackpot: 발견했을 때 그중 이 확률로 대박 (2026-10-31 금·군량·의병 양을 올림)
-  { key: 'gold', weight: 20, min: 200, max: 500, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
-  { key: 'food', weight: 20, min: 500, max: 1000, jackpot: { rate: 0.2, min: 2000, max: 4000 } },
+  { key: 'gold', weight: 20, min: 300, max: 500, jackpot: { rate: 0.2, min: 1000, max: 1500 } }, // 2026-11-07 시즌 6: 200~500 → 300~500
+  { key: 'food', weight: 20, min: 1000, max: 2500, jackpot: { rate: 0.2, min: 3000, max: 5000 } }, // 2026-11-07 시즌 6: 500~1,000 → 1,000~2,500, 대박 2,000~4,000 → 3,000~5,000
   { key: 'troops', weight: 15, min: 1000, max: 3000 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
   { key: 'item', weight: 10 },                         // 장비 발견: 상점 장비 하나를 얻는다 (2026-10-31)
   { key: 'feast', weight: 8, peace: 10, min: 30, max: 50 }, // 마을 잔치 (2026-10-31): 그 성 치안 +10, 농업·상업 각각 +30~50 (최대치까지)
