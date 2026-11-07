@@ -1230,10 +1230,11 @@ function noteDialog(i) {
 }
 // 미니게임 일기당천: 첫 화면 상자 아래의 작은 글자로 여는 팝업. 게임 본체와 분리된 minigame.html을 띄우고, 서버와 주고받는 것은 없다 (2026-11-01)
 window.miniBridge = { api: (a, p) => api(a, p), name: () => (ME && ME.nickname) || '' }; // 미니게임 창에서 랭킹을 부를 때 쓴다
-function closeMinigame() { const w = $('#miniWrap'); if (w) w.remove(); }
+function closeMinigame() { const w = $('#miniWrap'); if (w) { w.remove(); bgmHold(false); } }
 function openMinigame() {
   closeMinigame();
   const w = document.createElement('div');
+  bgmHold(true); // 미니게임 전투곡과 겹치지 않게 배경음악을 잠시 멈춘다 (2026-11-08)
   w.id = 'miniWrap';
   w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html?t=' + Date.now() + '" title="미니게임"></iframe></div>';
   w.querySelector('.miniClose').onclick = closeMinigame;
@@ -2217,7 +2218,7 @@ async function bgmPlay(song) {
     BGM.ctx = new (window.AudioContext || window.webkitAudioContext)();
     BGM.gain = BGM.ctx.createGain(); BGM.gain.gain.value = 0.20; /* 음량 20% (2026-11-08 모든 곡 20%로 통일. 2026-11-07 40% → 35% → 30% → 25%) */ BGM.gain.connect(BGM.ctx.destination);
   }
-  if (BGM.ctx.state === 'suspended') await BGM.ctx.resume();
+  if (BGM.ctx.state === 'suspended' && !BGM.hold) await BGM.ctx.resume(); // 미니게임 중에는 멈춘 채로
   if (BGM.song === song && BGM.src) return;
   BGM.song = song;
   if (!BGM.bufs[song]) BGM.bufs[song] = fetch(`audio/bgm_${song}.wav`).then(r => r.arrayBuffer()).then(b => BGM.ctx.decodeAudioData(b));
@@ -2240,6 +2241,12 @@ function bgmSet(on) {
   BGM.on = on;
   bgmLabel();
   if (on) bgmPlay(bgmWant()); else bgmStop();
+}
+// 미니게임 창이 열려 있는 동안 배경음악을 멈췄다가, 닫으면 이어서 튼다 (2026-11-08)
+function bgmHold(on) {
+  BGM.hold = on;
+  if (!BGM.ctx) return;
+  if (on) BGM.ctx.suspend(); else if (BGM.on) BGM.ctx.resume();
 }
 function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
 $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
