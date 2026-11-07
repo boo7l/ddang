@@ -94,11 +94,18 @@ async function call(action, payload = {}) {
     if (d.error) { alert(d.error); return false; }
     return true;
   } catch (e) {
+    lastFetch = Date.now(); // 실패해도 1초마다 다시 묻지 않게 (예전엔 알림 창이 끝없이 떴다, 2026-11-07)
+    if (e.needLogin) { await sessionLost(); return null; }
     alert('서버와 연결하지 못했어요: ' + (e.message || e));
     return false;
   } finally {
     busy = false;
   }
+}
+// 로그인이 풀렸으면 알림 창을 띄우지 않고 첫 화면으로 보낸다 (2026-11-07)
+async function sessionLost() {
+  await logout();
+  sayTitle('로그인이 풀렸어요. 다시 로그인해 주세요.');
 }
 
 // ===== 천하통일 화면 =====
@@ -616,6 +623,7 @@ async function queueCall(action, payload, change) {
     if (!ok || pendingOrders === 1) applyView(d);
     if (!ok) alert(d.error);
   } catch (e) {
+    if (e.needLogin) { pendingOrders--; busy = pendingOrders > 0; await sessionLost(); return false; }
     alert('서버와 연결하지 못했어요: ' + (e.message || e));
   }
   pendingOrders--;
