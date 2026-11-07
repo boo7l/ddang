@@ -936,7 +936,7 @@ function runExplore(g) {
     }
     case 'item': {
       // 장비 발견 (2026-10-31, 그 전엔 기본 능력치 +1): 상점 장비를 공짜로 얻는다. 이미 최고인 능력치의 장비는 빼고 고른다. 가진 수가 늘어 상점 값도 오른다
-      const names = Object.keys(SHOP), open = names.filter(n => effStats(g)[SHOP[n].stat] < RULES.statMax);
+      const names = Object.keys(SHOP), open = names.filter(n => gearStats(g)[SHOP[n].stat] < RULES.statMax);
       if (!open.length) { text = '좋은 장비를 찾았지만, 이미 능력치가 모두 최고라 두고 왔다.'; break; }
       const name = open[randInt(0, open.length - 1)], st = STATS.find(s => s.key === SHOP[name].stat);
       g.gear = g.gear || {};
@@ -1125,7 +1125,7 @@ function buyItem(g, item) {
   const o = { item }, it = SHOP[o.item];
   if (!it) return '없는 물건';
   const st = STATS.find(s => s.key === it.stat);
-  if (effStats(g)[it.stat] >= RULES.statMax) return `${josa(st.name, '이가')} 이미 최고 (${RULES.statMax})`;
+  if (gearStats(g)[it.stat] >= RULES.statMax) return `${josa(st.name, '이가')} 이미 최고 (${RULES.statMax})`;
   const price = shopPrice(g, o.item);
   if (g.gold < price) return `내 금 부족 (필요 ${fmt(price)}, 있음 ${fmt(g.gold)})`;
   g.gold -= price;

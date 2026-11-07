@@ -612,6 +612,12 @@ const SHOP = {
 const gearCount = (g, name) => Number((g.gear || {})[name]) || 0; // 예전 저장의 true는 1개
 const shopPrice = (g, name) => Math.round((RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name)) * (1 + (traitOf(g.faction).shop || 0) + (gTrait(g).shop || 0))); // 원술 할인, 개인 특성 협상가
 
+// 기본 능력치 + 상점 물건만 (최대치 120까지). 장비를 더 얻을 수 있는지는 이걸로 본다 (보물로 120을 넘겨도 장비 몫은 따로, 2026-11-07)
+function gearStats(g) {
+  const s = { ...g.stats };
+  for (const [name, it] of Object.entries(SHOP)) s[it.stat] = Math.min(RULES.statMax, s[it.stat] + it.bonus * gearCount(g, name));
+  return s;
+}
 // 장수의 실제 능력치: 기본 능력치 + 가진 상점 물건 (최대치 120을 넘지 않는다) + 보물 (넘길 수 있다)
 function effStats(g) {
   const s = { ...g.stats };
