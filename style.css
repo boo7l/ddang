@@ -772,6 +772,10 @@ details.fold > summary:hover h2 { color: var(--title); }
   #game[data-tab="cmd"] .queue { max-height: 170px; margin-bottom: 0; }
   #game[data-tab="cmd"] .tiRule, #game[data-tab="cmd"] .qBtnsWide { display: none; }
   #game[data-tab="cmd"] .qBtnsM { display: block; margin-top: 10px; }
+  /* 명령 단추 (2026-11-07): 한 줄에 4개, 아래 작은 글씨 없이 → 내정·군사·계략·기타가 웬만하면 한 줄씩 */
+  #commands .cmds[class*="cg-"] { grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  #commands .cmds[class*="cg-"] button { min-height: 0; padding: 8px 2px 10px; white-space: nowrap; }
+  #commands .cmds[class*="cg-"] button small { display: none; }
   #queueBox h2 { display: flex; align-items: center; }
   #queueBox .qTopBtn { display: inline-block; margin-left: auto; padding: 0 8px; }
   #game .col > .map { width: auto; }
