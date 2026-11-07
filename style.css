@@ -180,6 +180,7 @@ aside { width: 300px; flex: none; }
 .stats th { color: var(--label); font-weight: normal; text-align: left; vertical-align: top; width: 56px; padding: 3px 0; }
 .stats td { padding: 3px 0; }
 .stats .gear { display: inline-block; margin-right: 10px; } /* 장비 하나는 끊기지 않게, 줄은 장비 사이에서만 바뀐다 (2026-10-27) */
+.treasure { display: inline-block; margin-right: 10px; color: var(--title); } /* 보물 (2026-11-07) */
 
 /* 세력 목록 */
 #legend { list-style: none; padding: 0; margin: 0; }

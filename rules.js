@@ -528,18 +528,29 @@ function rollPlot(int, bonus = 0) { // bonus: 개인 특성 책사 +5%p (최대�
 // ===== 탐색 (임시값) =====
 // weight: 일어날 확률(%) — 합계 100
 // 탐색 사건 (확률 = weight%, 합 100). 2026-10-25 기획자 수치
-const EXPLORE = [
+const EXPLORE = [ // 2026-11-07 시즌 6 기획자 표: 금 18 · 군량 18 · 의병 10 · 잔치 10 · 첩자 8(새로) · 보물 3(새로) · 달인 삭제 (합 100 = %)
   { key: 'none', weight: 10 }, // 2026-10-27 15 → 10 (2026-10-31 같은 날 8로 내렸다가 되돌림)
   // jackpot: 발견했을 때 그중 이 확률로 대박 (2026-10-31 금·군량·의병 양을 올림)
-  { key: 'gold', weight: 20, min: 300, max: 500, jackpot: { rate: 0.2, min: 1000, max: 1500 } }, // 2026-11-07 시즌 6: 200~500 → 300~500
-  { key: 'food', weight: 20, min: 1000, max: 2500, jackpot: { rate: 0.2, min: 3000, max: 5000 } }, // 2026-11-07 시즌 6: 500~1,000 → 1,000~2,500, 대박 2,000~4,000 → 3,000~5,000
-  { key: 'troops', weight: 15, min: 1000, max: 3000 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
+  { key: 'gold', weight: 18, min: 300, max: 500, jackpot: { rate: 0.2, min: 1000, max: 1500 } }, // 2026-11-07 시즌 6: 200~500 → 300~500
+  { key: 'food', weight: 18, min: 1000, max: 2500, jackpot: { rate: 0.2, min: 3000, max: 5000 } }, // 2026-11-07 시즌 6: 500~1,000 → 1,000~2,500, 대박 2,000~4,000 → 3,000~5,000
+  { key: 'troops', weight: 10, min: 1000, max: 3000 }, // 의병 합류 (지금 병종으로, 병사가 없으면 보병)
   { key: 'item', weight: 10 },                         // 장비 발견: 상점 장비 하나를 얻는다 (2026-10-31)
-  { key: 'feast', weight: 8, peace: 10, min: 30, max: 50 }, // 마을 잔치 (2026-10-31): 그 성 치안 +10, 농업·상업 각각 +30~50 (최대치까지)
+  { key: 'feast', weight: 10, peace: 10, min: 30, max: 50 }, // 마을 잔치 (2026-10-31): 그 성 치안 +10, 농업·상업 각각 +30~50 (최대치까지)
   { key: 'bandit', weight: 8, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20 }, // 병력 5~10% 또는 금 15~20% (2026-10-31 10 → 8%)
-  { key: 'master', weight: 4, gain: 2 },                // 레어: 달인을 만나 가르침을 얻었다! 무작위 능력치 +2 (2026-10-27, 2026-10-28 5 → 3%, 2026-10-31 4%)
+  { key: 'spy', weight: 8 },                           // 적 첩자 포획 (2026-11-07): 가장 가까운 적 성 중 하나의 정보가 우리 세력에 spyTurns턴 보인다
   { key: 'pouch', weight: 5 },                          // 레어: 특성 주머니 발견 (2026-10-28, 2026-10-31 2 → 5%). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 1번
+  { key: 'treasure', weight: 3 },                       // 레어: 보물 발견 (2026-11-07). 주인 없는 보물이 없으면 장비 발견으로 바뀐다
 ];
+
+// 보물 (2026-11-07 시즌 6, 기획자 목록): 세상에 하나씩. 능력치 최대치(120)를 넘길 수 있다.
+// 뽑을 때 가점이 높을수록 드물다 (pickWeight). 내 부대가 전투에서 전멸하면 보물마다 3% 실종(다시 탐색으로 나옴) · 3% 이긴 적 장수에게 넘어감
+const TREASURES = {
+  손자병법서: { stat: 'lea', bonus: 7 }, 병법이십사편: { stat: 'lea', bonus: 6 }, 맹덕신서: { stat: 'lea', bonus: 5 }, 육도: { stat: 'lea', bonus: 4 }, 삼략: { stat: 'lea', bonus: 3 },
+  청룡언월도: { stat: 'war', bonus: 7 }, 방천화극: { stat: 'war', bonus: 6 }, 장팔사모: { stat: 'war', bonus: 5 }, 청공검: { stat: 'war', bonus: 4 }, 의천검: { stat: 'war', bonus: 3 },
+  둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 노자: { stat: 'int', bonus: 4 }, 장자: { stat: 'int', bonus: 3 },
+};
+const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.03, takeRate: 0.03 }; // 2026-11-07 기획자: 5%·5% → 3%·3%
+const treasuresOf = g => (g.treasures || []).filter(n => TREASURES[n]);
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
@@ -601,9 +612,10 @@ const SHOP = {
 const gearCount = (g, name) => Number((g.gear || {})[name]) || 0; // 예전 저장의 true는 1개
 const shopPrice = (g, name) => Math.round((RULES.shopPrice.base + RULES.shopPrice.step * gearCount(g, name)) * (1 + (traitOf(g.faction).shop || 0) + (gTrait(g).shop || 0))); // 원술 할인, 개인 특성 협상가
 
-// 장수의 실제 능력치: 기본 능력치 + 가진 상점 물건 (최대치 120을 넘지 않는다)
+// 장수의 실제 능력치: 기본 능력치 + 가진 상점 물건 (최대치 120을 넘지 않는다) + 보물 (넘길 수 있다)
 function effStats(g) {
   const s = { ...g.stats };
   for (const [name, it] of Object.entries(SHOP)) s[it.stat] = Math.min(RULES.statMax, s[it.stat] + it.bonus * gearCount(g, name));
+  for (const n of treasuresOf(g)) s[TREASURES[n].stat] += TREASURES[n].bonus; // 보물은 최대치를 넘길 수 있다 (2026-11-07)
   return s;
 }

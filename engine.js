@@ -822,6 +822,21 @@ function runAttack(g, o, mark) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
+  // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 3% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이면 실종)
+  const topDealer = [...dealtBy].sort((x, y) => y[1] - x[1])[0];
+  const loseTreasures = (loser, winner) => {
+    for (const n of treasuresOf(loser)) {
+      const r = Math.random();
+      if (r >= TREASURE_RULES.loseRate + TREASURE_RULES.takeRate) continue;
+      loser.treasures = treasuresOf(loser).filter(x => x !== n);
+      if (r < TREASURE_RULES.takeRate && winner) {
+        winner.treasures = [...treasuresOf(winner), n];
+        logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} 싸움 끝에 ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
+      } else logAll(`💎 ${loser.name}의 부대가 무너지는 틈에 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
+    }
+  };
+  if (g.troops <= 0) loseTreasures(g, topDealer ? topDealer[0] : null);
+  for (const d of defs) if (d.ref && d.troops <= 0) loseTreasures(d.ref, g);
   // 개인 특성 너 치료된 거야: 전투 뒤 확률로 잃은 병력의 일부가 돌아온다 (공격한 장수와 수비 장수 모두)
   if (captured) { addRecord(g, 'wins'); turnCaptured[to.id] = g.faction; } // 승전 = 이번 턴에 그 성을 차지 (함께 공격한 동료도, 아래)
   if (g.troops <= 0) addRecord(g, 'losses'); // 패전 = 내 부대 전멸 (치료로 돌아오기 전)
@@ -889,7 +904,9 @@ function runExplore(g) {
   const city = cityById(g.city), cs = S.cities[g.city];
   const why = pay(g, 'explore');
   if (why) return why;
-  const e = rollExplore();
+  let e = rollExplore();
+  const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n)));
+  if (e.key === 'treasure' && !freeTreasures.length) e = EXPLORE.find(x => x.key === 'item'); // 보물 15개가 모두 주인이 있으면 장비 발견 (2026-11-07)
   let text;
   switch (e.key) {
     case 'gold': {
@@ -933,6 +950,26 @@ function runExplore(g) {
       text = p + a + c > 0 ? `마을 잔치에 초대받아 함께 즐겼다! 치안 +${p} · 농업 +${a} · 상업 +${c}` : '마을 잔치에 초대받았지만, 이미 더없이 풍요로운 성이었다.';
       break;
     }
+    case 'spy': { // 적 첩자 포획 (2026-11-07): 길을 따라 가장 가까운 적 성 중 하나의 정보가 우리 세력에 보인다
+      const near = nearestEnemyCities(g.city, g.faction);
+      if (!g.faction || !near.length) { text = '수상한 자를 붙잡았지만, 아무것도 알아내지 못했다.'; break; }
+      const c = near[randInt(0, near.length - 1)], ccs = S.cities[c.id], until = S.turn + RULES.spyTurns;
+      S.intel = S.intel || {};
+      S.intel[g.faction] = S.intel[g.faction] || {};
+      S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
+      text = `★ 수상한 자를 붙잡아 캐물었다! ${c.name}에서 보낸 첩자였다. ${c.name}: 농업 ${ccs.agri} · 상업 ${ccs.comm} · 방어 ${ccs.wall} · 치안 ${ccs.peace} · 군량 ${fmt(ccs.food)}
+(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`;
+      break;
+    }
+    case 'treasure': { // 보물 발견 (2026-11-07): 주인 없는 보물 중 하나. 가점이 높을수록 드물다. 전체 알림
+      let r = Math.random() * freeTreasures.reduce((a, n) => a + TREASURE_RULES.pickWeight[TREASURES[n].bonus], 0), name = freeTreasures[0];
+      for (const n of freeTreasures) { r -= TREASURE_RULES.pickWeight[TREASURES[n].bonus]; if (r < 0) { name = n; break; } }
+      g.treasures = [...treasuresOf(g), name];
+      const st = STATS.find(x => x.key === TREASURES[name].stat);
+      text = `★★★ 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${TREASURES[name].bonus} (지금 ${effStats(g)[st.key]})`;
+      logAll(`💎 ${g.name}${josa(g.name, '이가').slice(-1)} 탐색 중에 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${TREASURES[name].bonus})`);
+      break;
+    }
     case 'master': { // 레어 (2026-10-27): 달인에게 가르침을 받아 무작위 능력치 +2 (이미 최고인 능력치는 빼고 고른다)
       const open = STATS.filter(s => g.stats[s.key] < RULES.statMax);
       if (!open.length) { text = '달인을 만났지만, 이미 더 배울 것이 없었다.'; break; }
@@ -971,6 +1008,19 @@ function runExplore(g) {
 // ----- 첩보 (계략, 2026-10-26) -----
 // 다른 세력 성의 농업·상업·방어·치안·군량은 보이지 않는다. 첩보에 성공하면 우리 세력 모두가 그 성의 수치를 RULES.spyTurns턴 동안 본다.
 // 성공 확률 = 지력 ÷ 100 + 5% (최대 90%). 금은 들지 않는다
+// 길을 따라 가장 가까운 적 성들 (거리가 같으면 모두). 공백지는 적이 아니다 (2026-11-07 탐색 첩자)
+function nearestEnemyCities(fromId, fid) {
+  let ring = [cityById(fromId)];
+  const seen = new Set([fromId]);
+  while (ring.length) {
+    const next = [];
+    for (const x of ring) for (const n of neighborsOf(MAP, x)) if (!seen.has(n.id)) { seen.add(n.id); next.push(n); }
+    const hit = next.filter(c => c.faction && c.faction !== fid);
+    if (hit.length) return hit;
+    ring = next;
+  }
+  return [];
+}
 const spyTargetsFrom = (fromId, fid) => neighborsOf(MAP, cityById(fromId)).filter(c => c.faction && c.faction !== fid);
 const spySuccessRate = int => Math.min(RULES.spyMax, int / RULES.spyDiv + RULES.spyBase);
 // fid 세력이 c 성을 몇 턴까지 볼 수 있는지 (못 보면 0)

@@ -999,7 +999,7 @@ function helpDialog(page = 0) {
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
       ${cmdOn('spy') ? `<li><b>첩보</b>: 이웃 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
       <p class="sub">기타</p><ul>
-      ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·능력치를 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
+      ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·보물을 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li></ul>`],
@@ -1046,8 +1046,10 @@ function exploreOddsDialog(from) {
     bandit: e => `병사가 있으면 병력 -${Math.round(e.minRate * 100)}~${Math.round(e.maxRate * 100)}%<br>없으면 금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%`,
     master: e => `무작위 능력치 +${e.gain}`,
     pouch: () => '특성 3장 중 하나로 바꾸거나 지금 특성 유지',
+    spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
+    treasure: () => '전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩)',
   };
-  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '★ 특성 주머니' };
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '★ 특성 주머니', spy: '적 첩자 포획', treasure: '★ 보물' };
   const rows = [...EXPLORE].sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   openModal(`
     <h2>탐색 확률표</h2>
@@ -1763,6 +1765,7 @@ function memberDialog(id) {
       <tr><th>특성</th><td>${t ? `<span class="oddsTier t${tierNo}">${esc(t.name)}</span> <span class="dim">(${t.tier})</span><span class="mDesc">${esc(t.desc)}</span>` : none}</td></tr>
       <tr><th>능력치</th><td>${STATS.map(s => `${s.name} ${eff[s.key]}`).join(' · ')}</td></tr>
       <tr><th>장비</th><td>${gear ? esc(gear) : none}</td></tr>
+      ${treasuresOf(g).length ? `<tr><th>보물</th><td>${treasuresOf(g).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
       <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td></tr>
       <tr><th>병기</th><td>${siege ? esc(siege) : none}</td></tr>
       <tr><th>수비</th><td class="${guarding ? 'mOn' : 'dim'}">${guarding ? '켜짐' : '꺼짐'}</td></tr>
@@ -1780,7 +1783,7 @@ function bar(v, max) {
 // 능력치 막대: 기본 능력치는 노랑, 상점 아이템으로 오른 만큼은 초록으로 이어 붙인다 (숫자는 합친 값 하나만)
 function statBar(base, eff, max) {
   const w = v => Math.min(100, (v / max) * 100);
-  return `<span class="bar stat"><span style="width:${w(Math.min(base, eff))}%"></span><span class="item" style="width:${w(Math.max(0, eff - base))}%"></span></span>`;
+  return `<span class="bar stat"><span style="width:${w(Math.min(base, eff))}%"></span><span class="item" style="width:${Math.min(100 - w(Math.min(base, eff)), w(Math.max(0, eff - base)))}%"></span></span>`;
 }
 
 // 장수 창의 세력·개인 특성 칸: 접고 펼 수 있다. 처음엔 펼친 채, 고른 상태는 이 브라우저에 기억한다 (2026-10-28)
@@ -1801,6 +1804,7 @@ function renderGeneral() {
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
         ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
+        ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
         <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
       </table>
