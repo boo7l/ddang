@@ -621,6 +621,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 .notePaper { color: #3a210e; border: 1px solid #7a5426; padding: 0 12px 8px; margin: 0 0 12px; background: radial-gradient(ellipse at center, #f1e2bc 55%, #e2c992 85%, #cfae6e 100%); box-shadow: inset 0 0 12px rgba(110, 60, 10, .45), 2px 2px 0 rgba(0, 0, 0, .35); }
 #modalBox .notePaper .noteHead { display: inline-block; margin: 0 0 8px -12px; padding: 3px 12px; background: #8c2a10; color: #fbefd0; box-shadow: 1px 1px 0 rgba(0, 0, 0, .35); }
 .notePaper b { color: #8a1c10; }
+.notePaper button.link { color: #8a1c10; text-decoration: underline; } /* 패치노트 안 링크 (확률표, 2026-11-07): 종이 위에서 보이게 */
+.notePaper button.link:hover { background: none; color: #c8281e; }
 .notePaper ul { padding-left: 20px; }
 .notePaper li::marker { color: #8a5a14; }
 .notesPop li { line-height: 1.4; word-break: keep-all; }
