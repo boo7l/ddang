@@ -423,7 +423,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 
 /* ===== 명령 예약표 ===== */
 .turnInfo { margin: 0 0 6px; }
-.queue { list-style: none; margin: 0 0 8px; padding: 0; border: 2px solid var(--gold-dark); background: var(--panel-dark); max-height: 420px; overflow-y: auto; position: relative; } /* 칸이 많아 넘치면 스크롤 */
+.queue { list-style: none; margin: 0 0 8px; padding: 0; border: 2px solid var(--gold-dark); background: var(--panel-dark); max-height: 370px; /* 2026-11-07 PC: 420 → 370 (채팅 칸을 50 늘린 만큼) */ overflow-y: auto; position: relative; } /* 칸이 많아 넘치면 스크롤 */
 .queue li { display: flex; align-items: center; gap: 8px; padding: 2px 8px; border-bottom: 1px dotted var(--gold-dark); cursor: pointer; min-height: 26px; }
 .queue li:last-child { border-bottom: 0; }
 .qTopBtn, .qBtnsM { display: none; } /* 휴대폰 명령 탭에서만 보인다 (2026-11-07) */
