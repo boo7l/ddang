@@ -66,7 +66,7 @@ function applyView(d) {
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
-  bgmSync(); // 공적이 2,000을 넘으면 곡을 바꾼다
+  bgmSync(); // 공적이 1,000·2,000을 넘으면 곡을 바꾼다
   ACCOUNTS = d.accounts || {};
   lastFetch = Date.now();
   turnWait = 1000 + Math.random() * 5000; // 다음 턴에 받아 올 때 기다릴 시간 (사람마다 다르게)
@@ -2177,12 +2177,11 @@ function recordDialog() {
   $('#modalBox').classList.add('recBox');
 }
 $('#recordBtn').onclick = recordDialog;
-// ☰ 메뉴 [♪ 음악] (2026-11-07): 배경 음악 켜기·끄기. 내 장수 공적이 2,000 미만이면 역사풍(history), 이상이면 웅장풍(epic).
+// ☰ 메뉴 [♪ 음악] (2026-11-07): 배경 음악 켜기·끄기. 내 장수 공적 1,000 미만 역사풍(history), 1,000~2,000 출정(march, 2026-11-07), 2,000 이상 웅장풍(epic).
 // 곡은 audio/bgm_*.wav (preview/bgm/make_midi.js로 작곡 → tools/save_bgm.js로 녹음). 처음 켤 때만 받아 온다.
 // 들어올 때마다 항상 꺼진 채로 시작한다 (2026-11-07 기획자: 켠 상태를 기억하지 않는다)
 const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
-const BGM_MERIT = 2000;
-const bgmWant = () => (S && me() && me().merit >= BGM_MERIT ? 'epic' : 'history');
+const BGM_MERIT = 2000, BGM_MARCH = 1000;const bgmWant = () => { const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'epic' : m >= BGM_MARCH ? 'march' : 'history'; };
 const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
 async function bgmPlay(song) {
   if (!BGM.ctx) {
