@@ -229,24 +229,41 @@ function musicTick() {
     musicStep = (musicStep + 1) % LEAD.length; musicAt += len;
   }
 }
+// 배경음악 (2026-11-07): 고전 삼국지 전투 느낌의 1분 루프 audio/bgm_battle.wav (preview/bgm/make_midi.js battle → tools/save_bgm.js battle).
+// 파일을 못 받으면 예전 8비트 합성 곡을 대신 튼다
+const BATTLE_VOL = 0.35; // 전투곡 음량 35%
+let battleBuf = null, battleLoad = null, battleSrc = null;
 function startMusic() {
   stopMusic();
   if (!soundOn) return;
   try {
     ac = ac || new (window.AudioContext || window.webkitAudioContext)();
     if (ac.state === "suspended") ac.resume();
-    if (!noiseBuf) {
-      noiseBuf = ac.createBuffer(1, ac.sampleRate * .1, ac.sampleRate);
-      const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    musicOut = ac.createGain(); musicOut.gain.value = MUSIC_VOL; musicOut.connect(ac.destination);
-    musicStep = 0; musicAt = ac.currentTime + .05;
-    musicTick(); musicTimer = setInterval(musicTick, 50);
+    musicOut = ac.createGain(); musicOut.connect(ac.destination);
+    const out = musicOut;
+    if (!battleLoad) battleLoad = fetch("audio/bgm_battle.wav").then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+      .then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no))).then(b => { battleBuf = b; return b; });
+    battleLoad.then(buf => {
+      if (musicOut !== out) return; // 받는 사이에 멈췄거나 다시 시작했다
+      out.gain.value = BATTLE_VOL;
+      battleSrc = ac.createBufferSource(); battleSrc.buffer = buf; battleSrc.loop = true;
+      battleSrc.connect(out); battleSrc.start();
+    }).catch(() => { if (musicOut === out) startSynthMusic(out); });
   } catch (e) {}
+}
+function startSynthMusic(out) {
+  if (!noiseBuf) {
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * .1, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  out.gain.value = MUSIC_VOL;
+  musicStep = 0; musicAt = ac.currentTime + .05;
+  musicTick(); musicTimer = setInterval(musicTick, 50);
 }
 function stopMusic() {
   if (musicTimer) clearInterval(musicTimer);
   musicTimer = null;
+  if (battleSrc) { try { battleSrc.stop(); } catch (e) {} battleSrc = null; }
   if (musicOut) { musicOut.disconnect(); musicOut = null; }  // 예약해 둔 음도 함께 끊긴다
 }
 // 다른 탭으로 가면 음악도 쉰다
