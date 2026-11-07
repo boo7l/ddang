@@ -1224,7 +1224,7 @@ function noteDialog(i) {
     box.querySelector('#noteOlder').onclick = () => noteDialog(i + 1);
     box.querySelector('#noteNewer').onclick = () => noteDialog(i - 1);
     box.querySelectorAll('[data-odds="explore"]').forEach(b => { b.onclick = () => exploreOddsDialog(() => noteDialog(i), '패치노트로'); }); // 패치노트 안의 '확률표' 링크 (2026-11-07)
-    box.querySelectorAll('[data-odds="trait"]').forEach(b => { b.onclick = () => traitOddsDialog(() => noteDialog(i), '패치노트', false); }); // 특성 확률표 링크 (2026-11-08)
+    box.querySelectorAll('[data-odds="trait"]').forEach(b => { b.onclick = () => traitOddsDialog(() => noteDialog(i), '패치노트'); }); // 특성 확률표 링크 (2026-11-08)
   });
   $('#modalBox').classList.add('wideBox');
 }
@@ -1532,7 +1532,7 @@ function pouchDialog(pick = null, animate = true) {
 
 // 특성 확률표 (2026-10-28): 등급·이름·성능·확률을 모두 공개. 확률은 종이 한 장에 그 특성이 나올 확률 (TRAIT_TIER_WEIGHT로 계산)
 // back: 돌아갈 곳, backName: 돌아가기 단추에 쓸 이름 (2026-10-31). 특성 주머니는 R 이상 1장이 꼭 나온다
-function traitOddsDialog(back = null, backName = '주머니', bag = !!back) { // bag: 특성 주머니 안내 줄 (패치노트에서 열 때는 안 보임, 2026-11-08)
+function traitOddsDialog(back = null, backName = '주머니') {
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
   const order = { SSR: 0, SR: 1, R: 2, N: 3 };
@@ -1541,7 +1541,7 @@ function traitOddsDialog(back = null, backName = '주머니', bag = !!back) { //
     return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
   }).join('');
   openModal(`<h2>📋 특성 확률표</h2>
-    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${bag ? '<br>탐색으로 발견한 특성 주머니는 R 이상이 적어도 1장은 나와요.' : ''}</p>
+    <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${back ? '<br>탐색으로 발견한 특성 주머니는 R 이상이 적어도 1장은 나와요.' : ''}</p>
     <div class="oddsScroll"><table class="oddsTable"><tr><th>등급</th><th>이름</th><th>성능</th><th class="num">확률</th></tr>${rows}</table>
     <p class="dim center trNote">높은 등급이라도 무조건 좋은 성능을 보장하지 않아요!<br>대신 더 '재밌는' 플레이를 할 수 있어요.</p></div>
     <div class="modalBtns">${back ? `<button id="oddsBack" class="main">◀ ${backName}로</button>` : '<button data-close class="main">닫기</button>'}</div>`, box => {
