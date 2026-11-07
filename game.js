@@ -932,7 +932,7 @@ async function deleteGeneralDialog() {
 - 장수·병력·금·공적·능력치·기록이 모두 사라져요. 되돌릴 수 없어요.
 - 계정(아이디)은 그대로예요.
 - 지운 뒤 ${RULES.recreateWait}턴 동안은 새 장수를 만들 수 없어요.`)) return;
-  if (await call('deleteGeneral')) { slot = 0; enterFlow(); }
+  if (await call('deleteGeneral')) { slot = 0; showTitle(); } // 지운 뒤에는 메인 화면으로 (2026-11-07, 그 전엔 바로 장수 생성). 입장하기를 누르면 장수 생성으로 간다
 }
 
 function moveDialog() {
