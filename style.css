@@ -314,6 +314,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .cmds.three { grid-template-columns: repeat(3, 1fr); }
 .cmds.one { grid-template-columns: 1fr; margin-top: 6px; }
 #jInfo .btn.big { margin-top: 12px; }
+.jScenario { color: var(--title); margin: -4px 0 6px; } /* 세력 선택: 시나리오 이름 (2026-11-08) */
 #jInfo .fIntro { margin: -2px 0 8px; line-height: 1.4; color: #c8c8c8; } /* 세력 한 줄 소개 (2026-11-07) */
 
 /* ===== 대화 상자 (출진·수송·이동) ===== */
