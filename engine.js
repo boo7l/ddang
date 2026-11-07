@@ -678,7 +678,7 @@ function capture(g, to, oldFaction, lines) {
     return;
   }
   lines.push({ a: seize(cs) });
-  const cut = captureDamage(cs);
+  const cut = captureDamage(cs, to.grade);
   cs.wall = RULES.captureWall[to.grade];
   lines.push({ a: `함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다` });
   lines.push(...retreatFrom(to, oldFaction, g.faction));
