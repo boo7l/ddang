@@ -290,7 +290,7 @@ const GENERAL_TRAITS = {
   engineer: { tier: 'R', name: '병기도 과학', desc: '병기 제작비 -20%', siegePrice: -0.20 }, // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
   medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 20%가 돌아옴', heal: { chance: 0.3, rate: 0.2 } }, // 2026-10-28 50%·25% → 30%·25%, 2026-10-31 30%·20%
   pierce: { tier: 'SR', name: '관통맨', desc: '공격 시 합마다 25% 확률로 성벽 피해 (병력 ÷ 400)', pierce: { chance: 0.25, per: 400 } }, // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
-  persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 3% 확률로 상대가 퇴각', persuade: 0.03 }, // 2026-10-28 5% → 4% → 3%
+  persuade: { tier: 'SR', name: '설득민수', desc: '수비할 때 불리하면 합마다 4% 확률로 상대가 퇴각', persuade: 0.04 }, // 2026-11-07 시즌 6: 3% → 4%. 2026-10-28 5% → 4% → 3%
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 무력의 2~5배만큼 금 획득, 치안 -3 (쿨타임 5턴)", levy: { warMin: 2, warMax: 5, peace: 3, cooldown: 5 } }, // 2026-10-31 금 = 무력 × 2~5. 2026-10-30 무력 × 1~5 (그 전 30~300). 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
   duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +10% 및 승리 확률 +15%', duelChance: 0.10, duelWin: 0.15 }, // 2026-11-07 시즌 6: +5%·+10%에서
   calm: { tier: 'SSR', name: '침착', desc: '일기토·책략·돌격 피해 -50%, 머무는 성의 계략 피해 -50%', calm: 0.50 }, // 2026-11-03 돌격도 줄인다. // 2026-10-31 -40% → -50%. 2026-10-28 최상 (같은 성에 여럿이어도 계략 경감은 한 번만)
@@ -444,7 +444,7 @@ function fightRounds(att, def, wall, left) {
   }
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
-    // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 5% 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
+    // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 persuade(지금 4%) 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
     if (gTrait(def).persuade && defensePower(def, wall, att) / (1 - wallCut(wall)) < attackPower(att, def) && Math.random() < gTrait(def).persuade) {
       att.persuaded = true;
       lines.push(`${used}합: 🗣 ${def.name}의 설득에 ${att.name}의 마음이 흔들렸다! ${att.name} 부대가 물러난다.`);
