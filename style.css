@@ -594,7 +594,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 #notes .titleBtns { display: flex; gap: 6px; }
 #notes .titleBtns button { flex: 1; margin: 4px 0; }
 #notes .newMark { color: #ff4a3a; font-size: 12px; margin-left: 2px; vertical-align: 1px; }
-#notes .newMark { animation: newBlink 1s step-end infinite; } /* NEW 깜빡임 (2026-11-08): 0.5초 켜짐 · 0.5초 꺼짐, 딱딱 끊어서 */
+#notes .newMark { animation: newBlink 1.6s step-end infinite; } /* NEW 깜빡임 (2026-11-08): 0.8초 켜짐 · 0.8초 꺼짐, 딱딱 끊어서 */
 @keyframes newBlink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { #notes .newMark { animation: none; } }
 /* 게시판 (2026-10-31) */
