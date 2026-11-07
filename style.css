@@ -995,3 +995,11 @@ details.fold > summary:hover h2 { color: var(--title); }
   .plaqueText { letter-spacing: 0; font-size: 26px; }
   #hofPage .pageTitle { min-width: 0; }
 }
+
+/* ⌨ 단축키 창 (PC, 2026-11-07). 휴대폰에서는 메뉴 단추를 숨긴다 */
+.keysGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 20px; }
+.keysGrid h3 { margin: 8px 0 4px; }
+.keyRow { display: flex; justify-content: space-between; align-items: center; margin: 3px 0; gap: 8px; }
+.keyBtn { min-width: 72px; }
+.keyBtn.on { outline: 2px solid currentColor; }
+@media (max-width: 700px) { #keysBtn { display: none !important; } .keysGrid { grid-template-columns: 1fr 1fr; } }

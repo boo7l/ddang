@@ -1912,6 +1912,7 @@ function renderCommands() {
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
+    const sk = keyOf(k); if (sk) b.title = `단축키 ${sk}`; // PC 단축키 (☰ ⌨ 단축키에서 바꾼다)
   });
   const q = $('#queueBox .queue'), sel = q.querySelector('li.sel');
   q.scrollTop = qTop;
@@ -2243,6 +2244,74 @@ $('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = rankDialog;
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+// ===== 단축키 (PC, 2026-11-07) =====
+// 키는 e.code(자판 위치)로 본다: 한글 입력 상태여도 Q는 Q로 동작한다. ☰ 메뉴 [⌨ 단축키]에서 바꾸고, 이 브라우저에만 기억한다
+const KEYS_KEY = 'ddang-keys';
+const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
+  ['up', '위 칸', 'ArrowUp', '예약표'], ['down', '아래 칸', 'ArrowDown', '예약표'], ['top', '다음 턴 칸으로', 'Home', '예약표'], ['clear', '칸 비우기', 'Delete', '예약표'], ['clearAll', '모두 비우기', 'KeyZ', '예약표'], ['fill', '빈 칸 모두 채우기', 'KeyC', '예약표'],
+  ['agri', '농업', 'KeyQ', '내정'], ['comm', '상업', 'KeyW', '내정'], ['wall', '축성', 'KeyE', '내정'], ['peace', '치안', 'KeyR', '내정'],
+  ['draft', '징병', 'KeyA', '군사'], ['attack', '출진', 'KeyS', '군사'], ['move', '이동', 'KeyD', '군사'], ['siege', '병기', 'KeyF', '군사'],
+  ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyU', '계략'],
+  ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyK', '기타'], ['levy', '갈취', 'KeyL', '기타'],
+  ['chat', '채팅 입력', 'Slash', '기타 화면'], ['letter', '외교 서신', 'Quote', '기타 화면'],
+];
+let KEYMAP = {}; // 동작 → 키
+function loadKeys() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEYS_KEY) || '{}') || {}; } catch (e) { /* 기본값 */ }
+  KEYMAP = Object.fromEntries(KEY_ACTIONS.map(([id, , def]) => [id, id in saved ? saved[id] : def]));
+}
+function saveKeys() { try { localStorage.setItem(KEYS_KEY, JSON.stringify(KEYMAP)); } catch (e) { /* 이번만 */ } }
+loadKeys();
+const KEY_NAMES = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Slash: '/', Quote: "'", Semicolon: ';', Comma: ',', Period: '.', BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Space', Backspace: 'Backspace', Delete: 'Delete', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown', Insert: 'Insert' };
+const keyName = c => (!c ? '없음' : KEY_NAMES[c] || c.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, '숫자판 '));
+const keyOf = id => KEYMAP[id] ? keyName(KEYMAP[id]) : '';
+let keyWait = null; // 단축키 창에서 새 키를 기다리는 동작
+
+function keysDialog() {
+  const groups = [...new Set(KEY_ACTIONS.map(a => a[3]))];
+  openModal(`
+    <h2>⌨ 단축키 <span class="dim small">· PC 전용, 이 브라우저에만 저장</span></h2>
+    <p class="dim small">바꿀 칸을 누르고 새 키를 누르세요. 이미 쓰는 키면 그쪽은 비워져요. Esc는 취소, Backspace는 없음.</p>
+    <div class="keysGrid">${groups.map(gname => `<div><h3>${gname}</h3>${KEY_ACTIONS.filter(a => a[3] === gname).map(([id, name]) => `<p class="keyRow"><span>${name}</span><button class="mini keyBtn${keyWait === id ? ' on' : ''}" data-key="${id}">${keyWait === id ? '키를 누르세요' : keyName(KEYMAP[id])}</button></p>`).join('')}</div>`).join('')}</div>
+    <div class="modalBtns"><button id="keysReset">기본값으로</button><button data-close class="main">닫기</button></div>`, box => {
+    box.querySelectorAll('[data-key]').forEach(b => { b.onclick = () => { keyWait = b.dataset.key; keysDialog(); }; });
+    box.querySelector('#keysReset').onclick = () => { try { localStorage.removeItem(KEYS_KEY); } catch (e) { /* 무시 */ } loadKeys(); keyWait = null; keysDialog(); if (S && me()) renderCommands(); };
+  });
+}
+$('#keysBtn').onclick = () => { keyWait = null; document.querySelector('header').classList.remove('menuOpen'); keysDialog(); };
+
+document.addEventListener('keydown', e => {
+  // 단축키 창에서 새 키 정하기
+  if (keyWait && !$('#modal').hidden) {
+    e.preventDefault(); e.stopPropagation();
+    if (e.code !== 'Escape') {
+      const code = e.code === 'Backspace' ? '' : e.code;
+      if (code) for (const id in KEYMAP) if (KEYMAP[id] === code) KEYMAP[id] = '';
+      KEYMAP[keyWait] = code;
+      saveKeys();
+      if (S && me()) renderCommands();
+    }
+    keyWait = null; keysDialog();
+    return;
+  }
+  if (e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+  const t = e.target;
+  if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return; // 글을 쓰는 중
+  if (!$('#modal').hidden || !S || !me() || $('#game').hidden || !$('#adminPage').hidden) return;
+  const id = Object.keys(KEYMAP).find(k => KEYMAP[k] && KEYMAP[k] === e.code);
+  if (!id) return;
+  e.preventDefault();
+  const last = RULES.queueSize - 1;
+  if (id === 'up' || id === 'down' || id === 'top') { slot = id === 'top' ? 0 : Math.max(0, Math.min(last, slot + (id === 'up' ? -1 : 1))); renderCommands(); return; }
+  if (id === 'clear') { if (me().queue[slot] && !S.unified) clearSlot(slot); return; }
+  if (id === 'clearAll' || id === 'fill') { const b = document.querySelector(id === 'fill' ? '.qFill' : '.qClearAll'); if (b && !b.disabled && b.onclick) b.click(); return; } // 단추를 누른 것과 같다 (모두 비우기는 확인 창이 뜬다)
+  if (id === 'chat') { const i = $('#chatInput'); if (i) i.focus(); return; }
+  if (id === 'letter') { const b = document.querySelector('#chat .letterBtn'); if (b) b.click(); return; }
+  const b = document.querySelector(`#commands button[data-cmd="${id}"]`);
+  if (b && !b.disabled && b.onclick) b.click();
+});
 
 // 1초마다: 남은 시간·시계 갱신. 턴이 넘어가고 1~6초 뒤(사람마다 무작위)이거나 1분이 지났으면 서버에서 새로 받아 온다
 setInterval(() => {
