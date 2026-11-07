@@ -483,7 +483,7 @@ function draw() {
 function restart() {
   // 게임오버 직후 연타로 바로 다시 시작되는 일을 막는다.
   if (state === "over" && performance.now() - overAt < 500) return;
-  beep(440, .08); rankOpen = false; el("msg").classList.remove("rank"); reset();
+  rankOpen = false; /* 시작 효과음 뺌 (2026-11-07: 예전 8비트 곡처럼 들림) */ el("msg").classList.remove("rank"); reset();
 }
 addEventListener("keydown", e => {
   if (["ArrowLeft", "ArrowRight", "Space", "Enter"].includes(e.code)) e.preventDefault();

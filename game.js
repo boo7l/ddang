@@ -1226,12 +1226,11 @@ function noteDialog(i) {
 }
 // 미니게임 일기당천: 첫 화면 상자 아래의 작은 글자로 여는 팝업. 게임 본체와 분리된 minigame.html을 띄우고, 서버와 주고받는 것은 없다 (2026-11-01)
 window.miniBridge = { api: (a, p) => api(a, p), name: () => (ME && ME.nickname) || '' }; // 미니게임 창에서 랭킹을 부를 때 쓴다
-function closeMinigame() { const w = $('#miniWrap'); if (w) { w.remove(); if (BGM.on && BGM.ctx) BGM.ctx.resume(); } } // 닫으면 본 게임 음악을 다시 (2026-11-07)
+function closeMinigame() { const w = $('#miniWrap'); if (w) w.remove(); }
 function openMinigame() {
   closeMinigame();
   const w = document.createElement('div');
   w.id = 'miniWrap';
-  if (BGM.on && BGM.ctx) BGM.ctx.suspend(); // 미니게임 동안 본 게임 음악은 쉰다: 전투곡과 겹치지 않게 (2026-11-07)
   w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html?t=' + Date.now() + '" title="미니게임"></iframe></div>';
   w.querySelector('.miniClose').onclick = closeMinigame;
   const f = w.querySelector('iframe');
