@@ -296,6 +296,7 @@ const GENERAL_TRAITS = {
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 무력의 2~5배만큼 금 획득, 치안 -3 (쿨타임 5턴)", levy: { warMin: 2, warMax: 5, peace: 3, cooldown: 5 } }, // 2026-10-31 금 = 무력 × 2~5. 2026-10-30 무력 × 1~5 (그 전 30~300). 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
   duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '일기토 발생률 +10% 및 승리 확률 +15%', duelChance: 0.10, duelWin: 0.15 }, // 2026-11-07 시즌 6: +5%·+10%에서
   calm: { tier: 'SSR', name: '침착', desc: '일기토·책략·돌격 피해 -50%, 머무는 성의 계략 피해 -50%', calm: 0.50 }, // 2026-11-03 돌격도 줄인다. // 2026-10-31 -40% → -50%. 2026-10-28 최상 (같은 성에 여럿이어도 계략 경감은 한 번만)
+  taunt: { tier: 'SSR', name: '55도발', desc: '공격 시 55% 확률로 수비 부대 성벽 효과 무시', taunt: 0.55 }, // 2026-11-07 시즌 6 추가: 수비 부대와 맞붙을 때마다 판정. 성공하면 그 상대는 방어도 피해 감소(wallCut)를 못 받는다 (철벽은 그대로, 성벽 공격 단계는 그대로). 뽑힐 비율은 침착과 같은 SSR 0.8
 };
 // 장수(또는 전투 부대)의 개인 특성. 없으면 빈 것
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
@@ -437,6 +438,9 @@ function fightRounds(att, def, wall, left) {
   const luck = () => 1 + (Math.random() * 2 - 1) * RULES.battleRandom;
   const a0 = att.troops, d0 = def.troops, lines = [];
   let used = 0, pierced = 0; // pierced: 개인 특성 관통맨이 합 중에 깎은 방어
+  // 개인 특성 55도발 (2026-11-07 시즌 6): 공격 쪽이 수비 부대와 맞붙을 때마다 55% 판정. 성공하면 이 맞대결 동안 그 상대는 성벽(방어도) 효과를 못 받는다
+  const taunted = !!gTrait(att).taunt && def.troops > 0 && Math.random() < gTrait(att).taunt;
+  if (taunted) lines.push(`🔥 ${att.name}의 도발! ${def.name} 부대가 성 밖으로 뛰쳐나왔다! (성벽 효과 없음)`);
   // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
   if (att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
     att.struck = true;
@@ -495,7 +499,7 @@ function fightRounds(att, def, wall, left) {
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
-    const hitDef = Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, wallCut(wall) + (gTrait(def).dmgCut || 0)))); // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
+    const hitDef = Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
     const hitAtt = Math.ceil(defensePower(def, wall, att) * RULES.roundRate * luck());
     const dLoss = Math.min(def.troops, hitDef), aLoss = Math.min(att.troops, hitAtt);
     def.troops -= dLoss;
