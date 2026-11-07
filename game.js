@@ -1912,7 +1912,7 @@ function renderCommands() {
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
-    const sk = keyOf(k); if (sk) b.title = `단축키 ${sk}`; // PC 단축키 (☰ ⌨ 단축키에서 바꾼다)
+    const sk = keyOf(EXTRA_CMDS.includes(k) ? 'extra' : k); if (sk) b.title = `단축키 ${sk}`; // PC 단축키 (☰ ⌨ 단축키에서 바꾼다)
   });
   const q = $('#queueBox .queue'), sel = q.querySelector('li.sel');
   q.scrollTop = qTop;
@@ -2253,9 +2253,10 @@ const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['agri', '농업', 'KeyQ', '내정'], ['comm', '상업', 'KeyW', '내정'], ['wall', '축성', 'KeyE', '내정'], ['peace', '치안', 'KeyR', '내정'],
   ['draft', '징병', 'KeyA', '군사'], ['attack', '출진', 'KeyS', '군사'], ['move', '이동', 'KeyD', '군사'], ['siege', '병기', 'KeyF', '군사'],
   ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyU', '계략'],
-  ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyK', '기타'], ['levy', '갈취', 'KeyL', '기타'],
+  ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyK', '기타'], ['extra', '추가 명령', 'KeyL', '기타'], // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
   ['chat', '채팅 입력', 'Slash', '기타 화면'], ['letter', '외교 서신', 'Quote', '기타 화면'],
 ];
+const EXTRA_CMDS = ['levy']; // '추가 명령' 키가 누르는 특성 명령 (이게 일상이야 → 갈취)
 let KEYMAP = {}; // 동작 → 키
 function loadKeys() {
   let saved = {};
@@ -2319,7 +2320,7 @@ document.addEventListener('keydown', e => {
   if (id === 'clearAll' || id === 'fill') { const b = document.querySelector(id === 'fill' ? '.qFill' : '.qClearAll'); if (b && !b.disabled && b.onclick) b.click(); return; } // 단추를 누른 것과 같다 (모두 비우기는 확인 창이 뜬다)
   if (id === 'chat') { const i = $('#chatInput'); if (i) i.focus(); return; }
   if (id === 'letter') { const b = document.querySelector('#chat .letterBtn'); if (b) b.click(); return; }
-  const b = document.querySelector(`#commands button[data-cmd="${id}"]`);
+  const b = id === 'extra' ? EXTRA_CMDS.map(c => document.querySelector(`#commands button[data-cmd="${c}"]`)).find(Boolean) : document.querySelector(`#commands button[data-cmd="${id}"]`);
   if (b && !b.disabled && b.onclick) b.click();
 });
 
