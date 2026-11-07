@@ -2266,17 +2266,27 @@ function saveKeys() { try { localStorage.setItem(KEYS_KEY, JSON.stringify(KEYMAP
 loadKeys();
 const KEY_NAMES = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Slash: '/', Quote: "'", Semicolon: ';', Comma: ',', Period: '.', BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', Space: 'Space', Backspace: 'Backspace', Delete: 'Delete', Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown', Insert: 'Insert' };
 const keyName = c => (!c ? '없음' : KEY_NAMES[c] || c.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, '숫자판 '));
-const keyOf = id => KEYMAP[id] ? keyName(KEYMAP[id]) : '';
+// 단축키 쓰기 켜기·끄기 (2026-11-07): 처음엔 꺼져 있다. 켜 두면 이 브라우저에 기억
+const KEYS_ON_KEY = 'ddang-keys-on';
+let keysOn = false;
+try { keysOn = localStorage.getItem(KEYS_ON_KEY) === '1'; } catch (e) { /* 꺼짐 */ }
+const keyOf = id => keysOn && KEYMAP[id] ? keyName(KEYMAP[id]) : '';
 let keyWait = null; // 단축키 창에서 새 키를 기다리는 동작
 
 function keysDialog() {
   const groups = [...new Set(KEY_ACTIONS.map(a => a[3]))];
   openModal(`
     <h2>⌨ 단축키 <span class="dim small">· PC 전용, 이 브라우저에만 저장</span></h2>
+    <p><label><input type="checkbox" id="keysOn"${keysOn ? ' checked' : ''}> 단축키 사용</label></p>
     <p class="dim small">바꿀 칸을 누르고 새 키를 누르세요. 이미 쓰는 키면 그쪽은 비워져요. Esc는 취소, Backspace는 없음.</p>
     <div class="keysGrid">${groups.map(gname => `<div><h3>${gname}</h3>${KEY_ACTIONS.filter(a => a[3] === gname).map(([id, name]) => `<p class="keyRow"><span>${name}</span><button class="mini keyBtn${keyWait === id ? ' on' : ''}" data-key="${id}">${keyWait === id ? '키를 누르세요' : keyName(KEYMAP[id])}</button></p>`).join('')}</div>`).join('')}</div>
     <div class="modalBtns"><button id="keysReset">기본값으로</button><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-key]').forEach(b => { b.onclick = () => { keyWait = b.dataset.key; keysDialog(); }; });
+    box.querySelector('#keysOn').onchange = e => {
+      keysOn = e.target.checked;
+      try { localStorage.setItem(KEYS_ON_KEY, keysOn ? '1' : '0'); } catch (err) { /* 이번만 */ }
+      if (S && me()) renderCommands(); // 단추 위 "단축키 Q" 안내도 켜고 끈다
+    };
     box.querySelector('#keysReset').onclick = () => { try { localStorage.removeItem(KEYS_KEY); } catch (e) { /* 무시 */ } loadKeys(); keyWait = null; keysDialog(); if (S && me()) renderCommands(); };
   });
 }
@@ -2296,7 +2306,7 @@ document.addEventListener('keydown', e => {
     keyWait = null; keysDialog();
     return;
   }
-  if (e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+  if (!keysOn || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
   const t = e.target;
   if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return; // 글을 쓰는 중
   if (!$('#modal').hidden || !S || !me() || $('#game').hidden || !$('#adminPage').hidden) return;
