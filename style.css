@@ -132,6 +132,7 @@ body.loading .hdrRight, body.loading h1 small, body.loading .titlebar .era { vis
 @keyframes ldFrames { to { background-position: -960px 0; } }
 
 #game, #join { display: flex; gap: 16px; align-items: flex-start; }
+#join { justify-content: center; } /* PC: 세력 선택 화면은 가운데로 (2026-11-08). 휴대폰은 아래에서 display: block */
 aside { width: 300px; flex: none; }
 
 /* ===== 지도 ===== */
