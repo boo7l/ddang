@@ -1088,7 +1088,9 @@ function showScreen(id) {
   adminPrev = null; // 관리 페이지가 열려 있었으면 닫힌 셈 (2026-11-06)
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
-  $('#who').hidden = id === 'title' || id === 'hofPage';
+  // 메인(첫) 화면도 로그인했으면 ☰ 메뉴를 보인다: 정보·음악·순위·로그아웃만 (2026-11-07). 명예의 전당 화면은 그대로 숨김
+  $('#who').hidden = (id === 'title' && !(ME && ME.nickname)) || id === 'hofPage';
+  document.body.classList.toggle('onTitle', id === 'title');
   $('#miniLink').hidden = id !== 'title';
   $('#mTabs').hidden = id !== 'game'; // 휴대폰 아래 탭은 게임 화면에서만
   $('#refreshBtn').hidden = id !== 'game'; // 새로고침 단추도 게임 화면에서만
@@ -2136,7 +2138,14 @@ $('#tRename').onclick = renameDialog;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
-$('#menuBtn').onclick = e => { e.stopPropagation(); $('#recordBtn').hidden = !(S && me()); document.querySelector('header').classList.toggle('menuOpen'); };
+// 정보: 이번 시즌 장수가 없으면 흐리게 (2026-11-07, 그 전엔 숨김). 메인 화면에서 아직 세계를 안 받았으면 받아 와서 정한다
+const menuRecordSync = () => { $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S; };
+$('#menuBtn').onclick = async e => {
+  e.stopPropagation();
+  menuRecordSync();
+  const open = document.querySelector('header').classList.toggle('menuOpen');
+  if (open && !S && !$('#title').hidden && ME && ME.nickname && !busy) { try { const d = await api('state'); if (d && d.view && !d.preparing && !d.banned) applyView(d); } catch (err) { /* 못 받으면 정보·순위는 흐린 채 */ } menuRecordSync(); }
+};
 // ☰ 메뉴 맨 위 [📊 정보] (2026-10-28): 누르면 내 장수의 기록 창 (서버가 g.record에 센다). 장수가 없으면 단추를 숨긴다
 // 장수 기록 표의 줄 (내 기록 창·관리자 장수 창이 같이 쓴다). medals = 훈장 개수
 const recordRows = (g, medals) => {

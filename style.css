@@ -1003,3 +1003,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .keyBtn { min-width: 72px; }
 .keyBtn.on { outline: 2px solid currentColor; }
 @media (max-width: 700px) { #keysBtn { display: none !important; } .keysGrid { grid-template-columns: 1fr 1fr; } }
+
+/* 메인(첫) 화면의 ☰ 메뉴 (2026-11-07): 정보·음악·순위·로그아웃만 보인다 */
+.onTitle #who #toMain, .onTitle #who #adminBtn, .onTitle #who #pcBtn, .onTitle #who #keysBtn { display: none !important; }
+#who button:disabled { opacity: .45; cursor: default; }
