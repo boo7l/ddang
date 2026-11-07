@@ -1034,8 +1034,8 @@ function helpDialog(page = 0) {
   });
   $('#modalBox').classList.add('wideBox');
 }
-// 도움말에서 들어가는 탐색 확률표 (2026-10-31). 숫자는 rules.js의 EXPLORE에서 읽는다. from: 돌아갈 도움말 쪽
-function exploreOddsDialog(from) {
+// 도움말에서 들어가는 탐색 확률표 (2026-10-31). 숫자는 rules.js의 EXPLORE에서 읽는다. from: 돌아갈 도움말 쪽 (또는 돌아갈 함수, backName: 단추 이름. 패치노트에서도 연다 2026-11-07)
+function exploreOddsDialog(from, backName = '도움말로') {
   const range = o => `${fmt(o.min)}~${fmt(o.max)}`;
   const text = {
     gold: e => `금 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
@@ -1056,8 +1056,8 @@ function exploreOddsDialog(from) {
     <h2>탐색 확률표</h2>
     <p>금 ${RULES.myGoldCost.explore} · 1턴 · 공적 +${RULES.merit.explore}</p>
     <table class="oddsTable">${rows}</table>
-    <div class="modalBtns"><button id="exploreBack" class="main">◀ 도움말로</button></div>`, box => {
-    box.querySelector('#exploreBack').onclick = () => helpDialog(from);
+    <div class="modalBtns"><button id="exploreBack" class="main">◀ ${backName}</button></div>`, box => {
+    box.querySelector('#exploreBack').onclick = () => (typeof from === 'function' ? from() : helpDialog(from));
   });
   $('#modalBox').classList.add('wideBox');
 }
@@ -1212,6 +1212,7 @@ function noteDialog(i) {
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelector('#noteOlder').onclick = () => noteDialog(i + 1);
     box.querySelector('#noteNewer').onclick = () => noteDialog(i - 1);
+    box.querySelectorAll('[data-odds="explore"]').forEach(b => { b.onclick = () => exploreOddsDialog(() => noteDialog(i), '패치노트로'); }); // 패치노트 안의 '확률표' 링크 (2026-11-07)
   });
   $('#modalBox').classList.add('wideBox');
 }
