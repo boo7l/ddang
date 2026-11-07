@@ -1097,6 +1097,7 @@ function showScreen(id) {
   document.body.classList.toggle('inGame', id === 'game'); // 휴대폰: 게임 화면은 앱처럼 (화면 고정, 가운데만 스크롤)
   if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; $('#nowScenario').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
+  try { bgmSync(); } catch (e) { /* 음악 준비 전 */ } // 화면이 바뀌면 곡도 (첫 화면 곡 ↔ 게임 곡, 2026-11-07)
 }
 
 // ===== 1. 메인 / 로그인 =====
@@ -2206,7 +2207,9 @@ $('#recordBtn').onclick = recordDialog;
 // 들어올 때마다 항상 꺼진 채로 시작한다 (2026-11-07 기획자: 켠 상태를 기억하지 않는다)
 const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
 const BGM_MERIT = 2000, BGM_MARCH = 1000;
-const bgmWant = () => { const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'epic' : m >= BGM_MARCH ? 'march' : 'history'; };
+// 메인 화면~장수 생성·특성·세력 선택(과 명예의 전당)에서는 첫 화면 곡 title (2026-11-07). 게임 화면에서는 공적에 따라
+const BGM_TITLE_SCREENS = ['title', 'hofPage', 'create', 'trait', 'join'];
+const bgmWant = () => { if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'epic' : m >= BGM_MARCH ? 'march' : 'history'; };
 const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
 async function bgmPlay(song) {
   if (!BGM.ctx) {
