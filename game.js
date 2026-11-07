@@ -2181,7 +2181,8 @@ $('#recordBtn').onclick = recordDialog;
 // 곡은 audio/bgm_*.wav (preview/bgm/make_midi.js로 작곡 → tools/save_bgm.js로 녹음). 처음 켤 때만 받아 온다.
 // 들어올 때마다 항상 꺼진 채로 시작한다 (2026-11-07 기획자: 켠 상태를 기억하지 않는다)
 const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
-const BGM_MERIT = 2000, BGM_MARCH = 1000;const bgmWant = () => { const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'epic' : m >= BGM_MARCH ? 'march' : 'history'; };
+const BGM_MERIT = 2000, BGM_MARCH = 1000;
+const bgmWant = () => { const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'epic' : m >= BGM_MARCH ? 'march' : 'history'; };
 const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
 async function bgmPlay(song) {
   if (!BGM.ctx) {
