@@ -327,7 +327,7 @@ const TRAIT_FX = [
   { key: 'siege', label: '성벽 피해', max: 0.5 },
   { key: 'siegePrice', label: '병기 제작비', max: 0.5 },
   { key: 'shop', label: '상점 값', max: 0.5 },
-  { key: 'exp', label: '모든 능력치 경험치', max: 0.5 },
+  { key: 'exp', label: '모든 능력 경험치', max: 0.5 },
   { key: 'expInt', label: '지력 경험치', max: 0.5 },
   { key: 'trainExp', label: '수련 경험치', max: 0.5 },
   { key: 'retreatLoss', label: '함락·포위 때 병력 손실', max: 1 }, // 2026-11-06 새 효과: 성을 잃고 물러날 때 잃는 병력
@@ -357,7 +357,7 @@ function cleanTrait(t) {
 const FACTION_TRAITS = {
   마등: { name: '서량기병', desc: '기병 전투력 +5%', cavalry: 0.05 },
   공손찬: { name: '백마의종', desc: '기병 수비 전투력 +10%', cavalryDefense: 0.10 },
-  조조: { name: '유재시거', desc: '모든 능력치 경험치 +10%', exp: 0.10 },
+  조조: { name: '유재시거', desc: '모든 능력 경험치 +10%', exp: 0.10 },
   원소: { name: '사세삼공', desc: '징병량 +5%', draft: 0.05 }, // 2026-10-27 금 수입 +5%에서 바꿈 (명문가라 사람이 모임)
   유비: { name: '인덕', desc: '징병 치안 감소 -50%', draftPeace: -0.50 }, // 2026-10-27 -30%에서 (체감이 거의 없어서)
   손견: { name: '강동의 호랑이', desc: '공격 전투력 +5%', attack: 0.05 },
