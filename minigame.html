@@ -176,95 +176,36 @@ function beep(freq, dur, type = "square", vol = 0.05, slide = 0) {
   } catch (e) {}
 }
 
-/* ── 배경음악: 파일 없이 코드로 합성하는 8비트 곡. 8분음표 8개가 한 마디, 16마디 반복 ── */
-const BPM = 140;             // 빠르기
-const MUSIC_VOL = 0.4;       // 음악 전체 크기 (효과음은 그대로)
-const A_PART = [
-  "A4 . A4 C5 D5 - C5 A4", "G4 - A4 C5 A4 - - .",
-  "A4 . A4 C5 D5 - E5 G5", "E5 - D5 C5 D5 - - .",
-];
-const B_PART = [
-  "E5 - G5 E5 D5 - C5 D5", "E5 - D5 C5 A4 - - .",
-  "C5 - D5 C5 A4 - G4 A4", "C5 D5 E5 G5 A5 - - .",
-];
-const C_PART = [
-  "E5 - G5 E5 D5 - C5 D5", "E5 - D5 C5 A4 - - .",
-  "C5 - A4 C5 D5 - C5 D5", "A4 - - - A4 . . .",
-];
-const LEAD = [...A_PART, ...B_PART, ...A_PART, ...C_PART].join(" ").split(" ");
-const A_BASS = ["A2", "G2", "A2", "D3"];
-const BASS = [...A_BASS, "C3", "A2", "F2", "G2", ...A_BASS, "C3", "A2", "F2", "A2"];
-const noteFreq = n => {
-  const semi = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[n[0]] + (+n[1] + 1) * 12;
-  return 440 * Math.pow(2, (semi - 69) / 12);
-};
-let musicTimer = null, musicStep = 0, musicAt = 0, musicOut = null, noiseBuf = null;
-function tone(type, freq, at, dur, vol, slide) {
-  const o = ac.createOscillator(), g = ac.createGain();
-  o.type = type; o.frequency.setValueAtTime(freq, at);
-  if (slide) o.frequency.exponentialRampToValueAtTime(slide, at + dur);
-  g.gain.setValueAtTime(0, 0); g.gain.setValueAtTime(vol, at); g.gain.setValueAtTime(vol, at + dur * .7); g.gain.linearRampToValueAtTime(0, at + dur);
-  o.connect(g); g.connect(musicOut); o.start(at); o.stop(at + dur);
-}
-function hat(at, vol) {
-  const n = ac.createBufferSource(), g = ac.createGain();
-  n.buffer = noiseBuf; g.gain.setValueAtTime(0, 0); g.gain.setValueAtTime(vol, at); g.gain.linearRampToValueAtTime(0, at + .04);
-  n.connect(g); g.connect(musicOut); n.start(at); n.stop(at + .04);
-}
-function playStep(i, at, len) {
-  const note = LEAD[i];
-  if (note !== "." && note !== "-") {
-    let hold = 1; while (LEAD[(i + hold) % LEAD.length] === "-") hold++;
-    tone("square", noteFreq(note), at, len * hold * .92, .035);
-  }
-  const root = noteFreq(BASS[Math.floor(i / 8)]);       // 베이스: 근음과 한 옥타브 위를 번갈아
-  tone("triangle", i % 2 ? root * 2 : root, at, len * .8, .07);
-  if (i % 4 === 0) tone("triangle", 150, at, .09, .1, 45);  // 큰북
-  if (i % 4 === 2) hat(at, .05);                             // 작은 소리의 잡음 타악기
-}
-function musicTick() {
-  const len = 60 / BPM / 2;
-  while (musicAt < ac.currentTime + .25) {
-    playStep(musicStep, musicAt, len);
-    musicStep = (musicStep + 1) % LEAD.length; musicAt += len;
-  }
-}
 // 배경음악 (2026-11-07): 고전 삼국지 전투 느낌의 1분 루프 audio/bgm_battle.wav (preview/bgm/make_midi.js battle → tools/save_bgm.js battle).
-// 파일을 못 받으면 예전 8비트 합성 곡을 대신 튼다
+// 페이지를 열자마자 파일을 미리 받아 둔다 (시작 단추를 누를 때 바로 나오게). 예전 8비트 곡으로는 대신 틀지 않는다: 못 받으면 조용하고, 다음 판에 다시 받는다
 const BATTLE_VOL = 0.35; // 전투곡 음량 35%
-let battleBuf = null, battleLoad = null, battleSrc = null;
+let battleBuf = null, battleSrc = null, musicOut = null;
+let battleFile = null; // 받아 둔 파일 (해독 전)
+const fetchBattle = () => (battleFile = fetch("audio/bgm_battle.wav").then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
+fetchBattle().catch(() => { battleFile = null; });
+function battleReady() {
+  if (battleBuf) return Promise.resolve(battleBuf);
+  return (battleFile || fetchBattle()).then(b => new Promise((ok, no) => ac.decodeAudioData(b.slice(0), ok, no))).then(b => (battleBuf = b))
+    .catch(e => { battleFile = null; throw e; }); // 실패하면 다음 판에 다시 받는다
+}
 function startMusic() {
   stopMusic();
   if (!soundOn) return;
   try {
     ac = ac || new (window.AudioContext || window.webkitAudioContext)();
     if (ac.state === "suspended") ac.resume();
-    musicOut = ac.createGain(); musicOut.connect(ac.destination);
+    musicOut = ac.createGain(); musicOut.gain.value = BATTLE_VOL; musicOut.connect(ac.destination);
     const out = musicOut;
-    if (!battleLoad) battleLoad = fetch("audio/bgm_battle.wav").then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-      .then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no))).then(b => { battleBuf = b; return b; });
-    battleLoad.then(buf => {
+    battleReady().then(buf => {
       if (musicOut !== out) return; // 받는 사이에 멈췄거나 다시 시작했다
-      out.gain.value = BATTLE_VOL;
       battleSrc = ac.createBufferSource(); battleSrc.buffer = buf; battleSrc.loop = true;
       battleSrc.connect(out); battleSrc.start();
-    }).catch(() => { if (musicOut === out) startSynthMusic(out); });
+    }).catch(() => {});
   } catch (e) {}
 }
-function startSynthMusic(out) {
-  if (!noiseBuf) {
-    noiseBuf = ac.createBuffer(1, ac.sampleRate * .1, ac.sampleRate);
-    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  }
-  out.gain.value = MUSIC_VOL;
-  musicStep = 0; musicAt = ac.currentTime + .05;
-  musicTick(); musicTimer = setInterval(musicTick, 50);
-}
 function stopMusic() {
-  if (musicTimer) clearInterval(musicTimer);
-  musicTimer = null;
   if (battleSrc) { try { battleSrc.stop(); } catch (e) {} battleSrc = null; }
-  if (musicOut) { musicOut.disconnect(); musicOut = null; }  // 예약해 둔 음도 함께 끊긴다
+  if (musicOut) { musicOut.disconnect(); musicOut = null; }
 }
 // 다른 탭으로 가면 음악도 쉰다
 document.addEventListener("visibilitychange", () => {
