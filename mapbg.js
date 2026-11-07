@@ -298,4 +298,5 @@ function applyMapBg(el) {
   el.style.backgroundClip = 'content-box';
   el.style.backgroundSize = `${w}px ${h}px`;
   el.style.backgroundRepeat = 'no-repeat';
+  el.style.backgroundPosition = '0 0'; // .win 창 꾸밈(귀퉁이 점)의 위치 'top 6px left 6px'가 남아 그림이 6px 밀리며 위·왼쪽에 갈색 띠가 보였다 (2026-11-07)
 }
