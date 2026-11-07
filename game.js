@@ -1819,7 +1819,7 @@ function renderGeneral() {
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
         ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
-        ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
+        ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span> <button class="mini gSell" data-sell="${esc(n)}">팔기</button>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
         <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
       </table>
@@ -1838,7 +1838,13 @@ function renderGeneral() {
   $('#gTraits').ontoggle = e => { traitsOpen = e.target.open; try { localStorage.setItem(TRAITS_KEY, traitsOpen ? '1' : '0'); } catch (err) { /* 저장 못 해도 이번엔 그대로 */ } };
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
-  if (S.unified && !IS_ADMIN) ['#gPouch', '#gDefense', '#gShop'].forEach(id => { if ($(id)) { $(id).disabled = true; $(id).onclick = null; } }); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
+  $('#general').querySelectorAll('[data-sell]').forEach(b => { b.onclick = async () => { // 보물 팔기 (2026-11-08)
+    const n = b.dataset.sell, gold = TREASURES[n].bonus * TREASURE_RULES.sellPer;
+    if (!confirm(`보물 「${n}」${josa(n, '을를').slice(-1)} 상인에게 팔까요?
+금 +${fmt(gold)}을 받고, 보물은 세상으로 돌아가요. 되돌릴 수 없어요.`)) return;
+    await call('sellTreasure', { name: n });
+  }; });
+  if (S.unified && !IS_ADMIN) ['#gPouch', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.disabled = true; x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
 }
 
 // 1초마다 바뀌는 부분만 고친다 (버튼을 다시 만들지 않아서 클릭이 씹히지 않는다)

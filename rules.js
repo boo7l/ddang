@@ -555,7 +555,7 @@ const TREASURES = {
   청룡언월도: { stat: 'war', bonus: 7 }, 방천화극: { stat: 'war', bonus: 6 }, 장팔사모: { stat: 'war', bonus: 5 }, 청공검: { stat: 'war', bonus: 4 }, 의천검: { stat: 'war', bonus: 3 },
   둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 노자: { stat: 'int', bonus: 4 }, 장자: { stat: 'int', bonus: 3 },
 };
-const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.03, takeRate: 0.03 }; // 2026-11-07 기획자: 5%·5% → 3%·3%
+const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.03, takeRate: 0.03, sellPer: 600 }; // 2026-11-07 기획자: 5%·5% → 3%·3%. sellPer: 팔기 = 가점 × 600금 (2026-11-08)
 const treasuresOf = g => (g.treasures || []).filter(n => TREASURES[n]);
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));

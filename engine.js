@@ -953,7 +953,7 @@ function runExplore(g) {
     case 'spy': { // 적 첩자 포획 (2026-11-07): 길을 따라 가장 가까운 적 성 중 하나의 정보가 우리 세력에 보인다
       const near = nearestEnemyCities(g.city, g.faction);
       if (!g.faction || !near.length) { text = '수상한 자를 붙잡았지만, 아무것도 알아내지 못했다.'; break; }
-      const c = near[randInt(0, near.length - 1)], ccs = S.cities[c.id], until = S.turn + RULES.spyTurns;
+      const c = near[randInt(0, near.length - 1)], ccs = S.cities[c.id], until = (spiedUntil(g.faction, c) || S.turn) + RULES.spyTurns; // 이미 보이는 성이면 남은 기간에 더한다 (2026-11-08: 2턴 남았으면 7턴)
       S.intel = S.intel || {};
       S.intel[g.faction] = S.intel[g.faction] || {};
       S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
@@ -1121,6 +1121,16 @@ function runSiege(g, o) {
 // ----- 상점 (내 금, 예약 없이 바로) -----
 // 명마·명검·서적은 여러 번 살 수 있다. 살 때마다 그 물건 값이 오른다 (shopPrice).
 // 명령이 아니라서 턴을 쓰지 않고 공적도 없다. 틀리면 이유를 돌려준다
+// 보물 팔기 (2026-11-08): 마음에 안 드는 보물을 상인에게 판다. 가점 × sellPer 금. 보물은 세상으로 돌아가 다시 탐색에서 나온다 (다른 장수에게 주는 기능은 다중 계정 몰아주기 때문에 만들지 않음)
+// 통솔 보물을 팔아 병력 최대치가 줄어도 지금 병력은 그대로 둔다 (최대치를 넘는 동안은 징병만 막힘)
+function sellTreasure(g, name) {
+  if (!treasuresOf(g).includes(name)) return '가지고 있지 않은 보물이에요.';
+  const gold = TREASURES[name].bonus * TREASURE_RULES.sellPer;
+  g.treasures = treasuresOf(g).filter(n => n !== name);
+  g.gold += gold;
+  addLog(g, `💎 보물 「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(gold)} (${fmt(g.gold)})`);
+  return '';
+}
 function buyItem(g, item) {
   const o = { item }, it = SHOP[o.item];
   if (!it) return '없는 물건';
