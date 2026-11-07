@@ -549,7 +549,7 @@ function replayDialog(h, R) {
       $('#rpDate').innerHTML = `${dateText(t, h.start_year || RULES.startYear)} <small>(${t}턴)</small>`;
       const cnt = {}; for (const id in o) if (o[id]) cnt[o[id]] = (cnt[o[id]] || 0) + 1;
       const max = Math.max(1, R.cities.length); // 막대 최대치 = 지도 전체 성 수 (2026-11-07, 그 전엔 1위 세력의 성 수)
-      $('#rpSide').innerHTML = R.factions.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0) || (deadAt[b.id] ?? -1) - (deadAt[a.id] ?? -1)).map(f => `<div class="rpRow${cnt[f.id] ? '' : ' dead'}"><span class="swatch" style="background:${f.color}"></span><span class="nm">${esc(f.name)}</span><span class="bar" style="width:${Math.round((cnt[f.id] || 0) / max * 80)}px;background:${f.color}"></span><span class="n">${cnt[f.id] || 0}</span></div>`).join('');
+      $('#rpSide').innerHTML = R.factions.slice().sort((a, b) => (cnt[b.id] || 0) - (cnt[a.id] || 0) || (deadAt[b.id] ?? -1) - (deadAt[a.id] ?? -1)).map(f => `<div class="rpRow${cnt[f.id] ? '' : ' dead'}"><span class="swatch" style="background:${f.color}"></span><span class="nm">${esc(f.name)}</span><span class="bar" style="width:${Math.round((cnt[f.id] || 0) / max * 60)}px;background:${f.color}"></span><span class="n">${cnt[f.id] || 0}</span></div>`).join('');
       $('#rpEvt').innerHTML = changed.filter(e => byId[e[1]]).map(e => `${esc(byId[e[1]].name)} → ${F[e[2]] ? esc(F[e[2]].name) : '공백지'}`).join(' · ') || '&nbsp;';
       $('#rpSlider').value = t;
     };

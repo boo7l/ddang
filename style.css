@@ -922,11 +922,11 @@ details.fold > summary:hover h2 { color: var(--title); }
 .rpCity.g3 { border-color: var(--title); }
 .rpCity.flash { animation: rpFlash .6s 2; }
 @keyframes rpFlash { 50% { outline: 2px solid #fff; outline-offset: 1px; } }
-.rpSide { min-width: 170px; }
+.rpSide { width: 170px; flex: none; } /* 너비 고정: 막대가 길어져도 옆으로 밀리지 않게 (2026-11-08, 성 30개 후반에 가로 스크롤 생기던 것). 막대 최대 60px */
 .rpRow { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
 .rpRow .nm { width: 44px; white-space: nowrap; }
-.rpRow .bar { height: 12px; }
-.rpRow .n { color: var(--title); min-width: 20px; text-align: right; }
+.rpRow .bar { height: 12px; flex: none; }
+.rpRow .n { color: var(--title); width: 24px; flex: none; text-align: right; }
 .rpRow.dead { opacity: .4; text-decoration: line-through; }
 .rpEvt { min-height: 20px; margin-top: 6px; text-align: center; color: var(--label); }
 .rpCtl { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
