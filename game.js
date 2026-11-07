@@ -2307,6 +2307,7 @@ document.addEventListener('keydown', e => {
     keyWait = null; keysDialog();
     return;
   }
+  if (e.key === 'Escape' && e.target && e.target.id === 'chatInput') { e.target.blur(); return; } // 채팅칸에서 Esc: 빠져나와 단축키를 다시 쓴다 (마우스 없이, 2026-11-07)
   if (!keysOn || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
   const t = e.target;
   if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return; // 글을 쓰는 중
