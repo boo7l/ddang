@@ -1614,7 +1614,7 @@ function fallenDialog() {
 }
 
 function renderJoin() {
-  $('#jScenario').textContent = `📜 시즌 ${S.season || 1} · ${S.scenario || MAP.scenario || RULES.scenario} · ${yearText(S.startYear ?? MAP.year ?? RULES.startYear)}`; // 시나리오 이름 (2026-11-08)
+  $('#jScenario').textContent = `📜 시즌 ${S.season || 1} · ${S.scenario || MAP.scenario || RULES.scenario}`; // 시나리오 이름 (2026-11-08, 연도는 뺌)
   drawMap($('#joinMap'), {
     focusFaction: joinPick,
     homeId: joinCity,
