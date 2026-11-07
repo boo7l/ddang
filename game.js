@@ -1868,7 +1868,7 @@ function renderCommands() {
 `;
   $('#commands').innerHTML = `
     <h2>명령</h2>
-    <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 넣을 명령 <span class="dim">(이때 ${esc(at.name)}에 있을 예정)</span></p>
+    <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 넣을 명령 <span class="dim atCity">(이때 ${esc(at.name)}에 있을 예정)</span></p>
     <p class="sub">내정</p>
     <div class="cmds cg-dom">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
     <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
