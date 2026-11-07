@@ -1837,7 +1837,8 @@ function renderCommands() {
   $('#nowScenario').textContent = S.scenario || MAP.scenario || RULES.scenario; // 상단: 시나리오 이름 (예: 관도대전)
   const statName = k => STATS.find(s => s.key === k).name;
   // 명령 단추 아래 작은 글씨에는 금을 쓰지 않는다 (2026-11-03, 14px로 키우면서 한 줄에 들어가게). 금은 각 명령 창에 보인다 탐색만 예외: 창이 없어 단추에 금을 쓴다 (2026-11-04)
-  const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}">${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
+  const COOL = '이 칸은 쿨타임'; // 이 글씨가 붙은 단추는 휴대폰에서 흐리게 (작은 글씨를 숨기므로, 2026-11-07)
+  const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}"${sub === COOL ? ' class="cool"' : ''}>${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
   const rows = p.queue.map((o, i) => `<li data-i="${i}" class="${i === slot ? 'sel' : ''}${o ? '' : ' idle'}${isNightTurn(slotTime(i)) ? ' night' : ''}">
       <span class="t">${dateOf(S.turn + 1 + i).month}월${RULES.goldMonths.includes(dateOf(S.turn + 1 + i).month) ? '💰' : ''}${RULES.harvestMonths.includes(dateOf(S.turn + 1 + i).month) ? '🌾' : ''}</span>
       <span class="clock">${fmtClock(slotTime(i))}</span>
@@ -1852,7 +1853,7 @@ function renderCommands() {
   const plot = [btn('destroy', '파괴', '방어 낮추기'), btn('rumor', '유언', '치안 낮추기'), btn('spy', '첩보', '적 성 엿보기')].join('');
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
     btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
-    gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? '이 칸은 쿨타임' : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
+    gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   // 칸 비우기·채우기 단추: PC는 예약표 아래, 휴대폰은 명령 단추 아래 (휴대폰은 예약표를 위에 붙여 두므로, 2026-11-07)
@@ -1873,7 +1874,7 @@ function renderCommands() {
     <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
     <div class="cmds cg-mil">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정` : '통솔')}
-      ${btn('attack', '출진', attackBlocked(p, slot) ? '이 칸은 쿨타임' : '이웃 성 공격')}
+      ${btn('attack', '출진', attackBlocked(p, slot) ? COOL : '이웃 성 공격')}
       ${btn('move', '이동', '')}
       ${btn('siege', '병기', '')}
     </div>

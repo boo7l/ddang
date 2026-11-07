@@ -776,6 +776,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #commands .cmds[class*="cg-"] { grid-template-columns: repeat(4, 1fr); gap: 4px; }
   #commands .cmds[class*="cg-"] button { min-height: 0; padding: 8px 2px 10px; white-space: nowrap; }
   #commands .cmds[class*="cg-"] button small { display: none; }
+  #commands .cmds[class*="cg-"] button.cool { opacity: .45; } /* 쿨타임 칸: 흐리게 (누르면 지금처럼 안내가 나온다) */
   #queueBox h2 { display: flex; align-items: center; }
   #queueBox .qTopBtn { display: inline-block; margin-left: auto; padding: 0 8px; }
   #game .col > .map { width: auto; }
