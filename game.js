@@ -1839,9 +1839,12 @@ function renderGeneral() {
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
   $('#general').querySelectorAll('[data-sell]').forEach(b => { b.onclick = async () => { // 보물 팔기 (2026-11-08)
-    const n = b.dataset.sell, gold = TREASURES[n].bonus * TREASURE_RULES.sellPer;
+    const n = b.dataset.sell, bonus = TREASURES[n].bonus, gold = bonus * TREASURE_RULES.sellPer;
+    const got = Math.max(0, Math.min(gold, RULES.playerGoldMax - me().gold)); // 장수 금 최대치를 넘는 만큼은 못 받는다
+    const warn = got < gold ? `\n\n⚠ 지금 금이 ${fmt(me().gold)}이라 최대치 ${fmt(RULES.playerGoldMax)}을 넘는 ${fmt(gold - got)}은 받지 못해요. (실제로 +${fmt(got)})` : '';
     if (!confirm(`보물 「${n}」${josa(n, '을를').slice(-1)} 상인에게 팔까요?
-금 +${fmt(gold)}을 받고, 보물은 세상으로 돌아가요. 되돌릴 수 없어요.`)) return;
+보물은 가점 1당 금 ${fmt(TREASURE_RULES.sellPer)}에 팔려요. (가점 +${bonus} → 금 ${fmt(gold)})
+판 보물은 세상으로 돌아가 다시 탐색에서 나올 수 있어요. 되돌릴 수 없어요.${warn}`)) return;
     await call('sellTreasure', { name: n });
   }; });
   if (S.unified && !IS_ADMIN) ['#gPouch', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.disabled = true; x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02)

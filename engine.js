@@ -1127,8 +1127,8 @@ function sellTreasure(g, name) {
   if (!treasuresOf(g).includes(name)) return '가지고 있지 않은 보물이에요.';
   const gold = TREASURES[name].bonus * TREASURE_RULES.sellPer;
   g.treasures = treasuresOf(g).filter(n => n !== name);
-  g.gold += gold;
-  addLog(g, `💎 보물 「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(gold)} (${fmt(g.gold)})`);
+  const got = earnGold(g, gold); // 장수 금 최대치(playerGoldMax)를 넘는 만큼은 못 받는다 (확인 창에서 미리 알려 줌)
+  addLog(g, `💎 보물 「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(got)} (${fmt(g.gold)})${got < gold ? ` · 금 최대치 ${fmt(RULES.playerGoldMax)}라 ${fmt(gold - got)}은 받지 못했다` : ''}`);
   return '';
 }
 function buyItem(g, item) {
