@@ -822,14 +822,14 @@ function runAttack(g, o, mark) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
-  // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 3% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이면 실종)
+  // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 3% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
   const topDealer = [...dealtBy].sort((x, y) => y[1] - x[1])[0];
   const loseTreasures = (loser, winner) => {
     for (const n of treasuresOf(loser)) {
       const r = Math.random();
       if (r >= TREASURE_RULES.loseRate + TREASURE_RULES.takeRate) continue;
       loser.treasures = treasuresOf(loser).filter(x => x !== n);
-      if (r < TREASURE_RULES.takeRate && winner) {
+      if (r < TREASURE_RULES.takeRate && winner && !treasuresOf(winner).length) { // 이긴 쪽이 이미 보물이 있으면 사라진다 (한 장수 1개까지)
         winner.treasures = [...treasuresOf(winner), n];
         logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} 싸움 끝에 ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
       } else logAll(`💎 ${loser.name}의 부대가 무너지는 틈에 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
@@ -906,7 +906,7 @@ function runExplore(g) {
   if (why) return why;
   let e = rollExplore();
   const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n)));
-  if (e.key === 'treasure' && !freeTreasures.length) e = EXPLORE.find(x => x.key === 'item'); // 보물 15개가 모두 주인이 있으면 장비 발견 (2026-11-07)
+  if (e.key === 'treasure' && (!freeTreasures.length || treasuresOf(g).length)) e = EXPLORE.find(x => x.key === 'item'); // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지)
   let text;
   switch (e.key) {
     case 'gold': {
