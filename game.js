@@ -2215,7 +2215,7 @@ const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기'
 async function bgmPlay(song) {
   if (!BGM.ctx) {
     BGM.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    BGM.gain = BGM.ctx.createGain(); BGM.gain.gain.value = 0.25; /* 음량 25% (2026-11-07, 40% → 35% → 30% → 25%) */ BGM.gain.connect(BGM.ctx.destination);
+    BGM.gain = BGM.ctx.createGain(); BGM.gain.gain.value = 0.20; /* 음량 20% (2026-11-08 모든 곡 20%로 통일. 2026-11-07 40% → 35% → 30% → 25%) */ BGM.gain.connect(BGM.ctx.destination);
   }
   if (BGM.ctx.state === 'suspended') await BGM.ctx.resume();
   if (BGM.song === song && BGM.src) return;
