@@ -2247,6 +2247,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal
 
 // ===== 단축키 (PC, 2026-11-07) =====
 // 키는 e.code(자판 위치)로 본다: 한글 입력 상태여도 Q는 Q로 동작한다. ☰ 메뉴 [⌨ 단축키]에서 바꾸고, 이 브라우저에만 기억한다
+// 단축키 기능 스위치 (2026-11-07 기획자: 더 다듬을 때까지 숨김). true로 바꾸면 ☰ 메뉴 단추와 키가 다시 살아난다
+const HOTKEYS = false;
 const KEYS_KEY = 'ddang-keys';
 const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['up', '위 칸', 'ArrowUp', '예약표'], ['down', '아래 칸', 'ArrowDown', '예약표'], ['top', '다음 턴 칸으로', 'Home', '예약표'], ['clear', '칸 비우기', 'Delete', '예약표'], ['clearAll', '모두 비우기', 'KeyZ', '예약표'], ['fill', '빈 칸 모두 채우기', 'KeyC', '예약표'],
@@ -2271,7 +2273,7 @@ const keyName = c => (!c ? '없음' : KEY_NAMES[c] || c.replace(/^Key/, '').repl
 const KEYS_ON_KEY = 'ddang-keys-on';
 let keysOn = false;
 try { keysOn = localStorage.getItem(KEYS_ON_KEY) === '1'; } catch (e) { /* 꺼짐 */ }
-const keyOf = id => keysOn && KEYMAP[id] ? keyName(KEYMAP[id]) : '';
+const keyOf = id => HOTKEYS && keysOn && KEYMAP[id] ? keyName(KEYMAP[id]) : '';
 let keyWait = null; // 단축키 창에서 새 키를 기다리는 동작
 
 function keysDialog() {
@@ -2291,7 +2293,8 @@ function keysDialog() {
     box.querySelector('#keysReset').onclick = () => { try { localStorage.removeItem(KEYS_KEY); } catch (e) { /* 무시 */ } loadKeys(); keyWait = null; keysDialog(); if (S && me()) renderCommands(); };
   });
 }
-$('#keysBtn').onclick = () => { keyWait = null; document.querySelector('header').classList.remove('menuOpen'); keysDialog(); };
+if (HOTKEYS) $('#keysBtn').onclick = () => { keyWait = null; document.querySelector('header').classList.remove('menuOpen'); keysDialog(); };
+else $('#keysBtn').remove(); // 숨김: 메뉴에서 단추를 뺀다
 
 document.addEventListener('keydown', e => {
   // 단축키 창에서 새 키 정하기
@@ -2307,6 +2310,7 @@ document.addEventListener('keydown', e => {
     keyWait = null; keysDialog();
     return;
   }
+  if (!HOTKEYS) return; // 숨김 중에는 아무 키도 가로채지 않는다
   if (e.key === 'Escape' && e.target && e.target.id === 'chatInput') { e.target.blur(); return; } // 채팅칸에서 Esc: 빠져나와 단축키를 다시 쓴다 (마우스 없이, 2026-11-07)
   if (!keysOn || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
   const t = e.target;
