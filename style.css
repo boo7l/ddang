@@ -987,7 +987,8 @@ details.fold > summary:hover h2 { color: var(--title); }
   background: linear-gradient(#fff4b0 0 30%, #ffd860 30% 55%, #e8a020 55% 80%, #b86a10 80%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   filter: drop-shadow(2px 0 0 #2a0604) drop-shadow(-2px 0 0 #2a0604) drop-shadow(0 2px 0 #2a0604) drop-shadow(0 -2px 0 #2a0604) drop-shadow(3px 3px 0 #000); }
 @media (max-width: 700px) {
-  .hofPlaque { padding: 8px 20px 10px; }
+  .hofPlaque { padding: 8px 18px 9px; }
   .hofPlaque::before { left: 6px; } .hofPlaque::after { right: 6px; }
-  .plaqueText { letter-spacing: 0; }
+  .plaqueText { letter-spacing: 0; font-size: 26px; }
+  #hofPage .pageTitle { min-width: 0; }
 }
