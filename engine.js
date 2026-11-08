@@ -755,7 +755,7 @@ function runAttack(g, o, mark) {
   // 2. 수비 부대와 싸움
   const att = unitOf(g);
   let left = RULES.roundsMax, atkLost = 0, defLost = 0, pierced = 0;
-  const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map();
+  const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map(), fought = [];
   lines.push({
     a: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`,
     d: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 쳐들어왔다!`,
@@ -784,6 +784,7 @@ function runAttack(g, o, mark) {
     }
     if (d.troops <= 0) lines.push(`${d.name} 부대 전멸!`);
     if (d.ref && (r.used || r.defLost)) { addRecord(d.ref, 'battles'); if (d.troops <= 0) addRecord(d.ref, 'losses'); } // 수비 장수도 전투·패전을 센다
+    if (d.ref && (r.used || r.defLost)) fought.push(d); // 승전 경험치 (2026-11-08): 맞붙은 수비 장수
     if (att.persuaded) break; // 설득민수: 출진이 여기서 끝난다
   }
   g.troops = att.troops;
@@ -865,6 +866,10 @@ function runAttack(g, o, mark) {
     ? `⚠ ${josa(to.name, '을를')} ${myF.name} 세력 ${g.name}에게 빼앗겼다!`
     : `⚠ ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}의 공격을 받았다. (남은 방어 ${fmt(cs.wall)})`));
   gainStatExp(g, statKey, RULES.statExp.battle);
+  // 승전 경험치 (2026-11-08): 상대 장수마다 센다 (수비대장은 빼고). 공격 장수는 전멸시킨 수비 장수 1명당, 수비 장수는 살아남아 막아냈으면
+  const beaten = fought.filter(d => d.troops <= 0).length;
+  if (beaten) gainStatExp(g, statKey, RULES.statExp.win * beaten);
+  for (const d of fought) if (d.troops > 0 && d.ref.troops > 0) gainStatExp(d.ref, UNIT_TYPES[d.type].stat, RULES.statExp.win);
   if (captured) gainStatExp(g, 'lea', RULES.statExp.capture); // 성 점령은 통솔 경험치
   // 함락했으면, 이번 턴에 이 성을 함께 공격했던 우리 세력 장수들도 모두 들어간다 (2026-10-26)
   if (captured) {
