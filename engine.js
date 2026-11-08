@@ -445,7 +445,7 @@ const VERB = { agri: '논밭을 일구었다', comm: '시장을 넓혔다', tech
 function pay(g, kind, amount) {
   const mg = amount !== undefined ? amount : RULES.myGoldCost[kind] || 0;
   if (g.gold < mg) return `금 부족 (필요 ${mg}, 있음 ${fmt(g.gold)})`;
-  g.gold -= mg;
+  g.gold -= mg; if (mg) addRecord(g, 'goldSpent', mg); // 쓴 금: 징병·출진·탐색·계략·수련 등 (2026-11-08, 도적에게 뺏긴 금은 빼고)
   return '';
 }
 
@@ -1112,7 +1112,7 @@ function runSiege(g, o) {
   if (g.siege[o.type]) return `${josa(o.type, '은는')} 이미 가지고 있음`;
   const price = siegePrice(g, o.type);
   if (g.gold < price) return `내 금 부족 (필요 ${fmt(price)}, 있음 ${fmt(g.gold)})`;
-  g.gold -= price;
+  g.gold -= price; addRecord(g, 'goldSpent', price); // 쓴 금 (2026-11-08)
   // 부대마다 병기는 하나만. 다른 병기를 가지고 있었으면 버린다
   const old = Object.keys(g.siege).find(t => g.siege[t]);
   g.siege = { [o.type]: true };
@@ -1141,7 +1141,7 @@ function buyItem(g, item) {
   if (gearStats(g)[it.stat] >= RULES.statMax) return `${josa(st.name, '이가')} 이미 최고 (${RULES.statMax})`;
   const price = shopPrice(g, o.item);
   if (g.gold < price) return `내 금 부족 (필요 ${fmt(price)}, 있음 ${fmt(g.gold)})`;
-  g.gold -= price;
+  g.gold -= price; addRecord(g, 'goldSpent', price); // 쓴 금 (2026-11-08)
   g.gear = g.gear || {};
   g.gear[o.item] = gearCount(g, o.item) + 1;
   // 기록창에는 남기지 않는다: 상점 창 아래에 "○○을 구매했다!"만 보인다 (2026-11-05)
@@ -1178,7 +1178,7 @@ function runBuyFood(g, o) {
   const got = Math.min(want * perGold, max - cs.food);
   const pay = Math.ceil(got / perGold);
   if (g.gold < pay) return `내 금 부족 (필요 ${fmt(pay)}, 있음 ${fmt(g.gold)})`;
-  g.gold -= pay;
+  g.gold -= pay; addRecord(g, 'goldSpent', pay); // 쓴 금 (2026-11-08)
   cs.food += got;
   addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${fmt(pay)} · 시세 1:${perGold}`);
   addMerit(g, Math.max(1, Math.floor(pay / RULES.meritBuyGold))); // 낸 금에 비례 (2026-11-02, 그 전엔 얼마를 사든 10)
@@ -1239,7 +1239,7 @@ function runExpand(g) {
   if (short.length) return `${c.name}의 ${josa(short.map(k => DOMESTIC[k].label).join('·'), '이가')} 아직 최대치의 ${Math.round(RULES.expand.ready * 100)}%가 안 됨`;
   const from = c.grade, cost = RULES.expand.cost[from], merit = RULES.expand.merit[from];
   if (g.gold < cost) return `내 금 부족 (필요 ${fmt(cost)}, 있음 ${fmt(g.gold)})`;
-  g.gold -= cost;
+  g.gold -= cost; addRecord(g, 'goldSpent', cost); // 쓴 금 (2026-11-08)
   if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG)); // 예전 시즌처럼 세계에 지도가 없으면 지금 지도를 넣어 둔다
   const mc = S.map && S.map.cities.find(x => x.id === c.id);
   if (mc) mc.grade = from + 1;

@@ -2174,7 +2174,7 @@ $('#menuBtn').onclick = async e => {
 const recordRows = (g, medals) => {
   const r = g.record || {}, n = k => fmt(r[k] || 0);
   return [['내정', `${n('domestic')}회`], ['징병', `${n('drafted')}명`], ['전투', `${n('battles')}회`], ['승전', `${n('wins')}회`], ['패전', `${n('losses')}회`],
-    ['계략', `${n('plotOk')} / ${n('plotTry')}회 성공`], ['탐색', `${n('n_explore')}회`], ['세력 변경', `${Math.max(0, (g.joins || 1) - 1)}회`], ['훈장', `${medals}개`]]
+    ['계략', `${n('plotOk')} / ${n('plotTry')}회 성공`], ['탐색', `${n('n_explore')}회`], ['사용한 금', `${n('goldSpent')}`], ['세력 변경', `${Math.max(0, (g.joins || 1) - 1)}회`], ['훈장', `${medals}개`]]
     .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
 };
 // 관리자: 장수 한 명의 정보와 제재 (2026-10-28). 관리자 보기 → 유저 목록에서 장수 이름을 누른다. back = 돌아갈 목록 (탭, 세력)
