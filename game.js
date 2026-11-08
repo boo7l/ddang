@@ -1870,11 +1870,11 @@ function expandConfirm() {
     <p><b class="hi">${esc(at.name)}</b>: ${name[g0]} → <b class="hi">${name[g1]}</b></p>
     <p class="exHead">비용</p><div class="exBody">
     <p>내 금 <b class="hi">${fmt(cost)}</b> <span class="dim">(지금 ${fmt(p.gold)})</span>${short ? ' <span class="bad">· 금이 모자라요</span>' : ''}</p></div>
-    <p class="exHead">바뀌는 것 <span class="dim small">(성의 최대치)</span></p><div class="exBody">
+    <p class="exHead">바뀌는 것(최대치)</p><div class="exBody">
     <table class="stats exTable">
       ${row('농업', devMax(g0, 'agri'), devMax(g1, 'agri'))}${row('상업', devMax(g0, 'comm'), devMax(g1, 'comm'))}
       ${row('방어', devMax(g0, 'wall'), devMax(g1, 'wall'))}${row('군량 창고', foodMax(g0), foodMax(g1))}
-      ${row('수비대 상한', RULES.guardMax[g0], RULES.guardMax[g1])}
+      ${row('수비대', RULES.guardMax[g0], RULES.guardMax[g1])}
     </table></div>
     <p class="exHead">보상</p><div class="exBody">
     <p>공적 <b class="hi">+${fmt(E.merit[g0])}</b> · 통솔·무력·지력 경험치 각각 <b class="hi">+${E.exp[g0]}</b></p></div>
