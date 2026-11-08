@@ -914,7 +914,7 @@ function runExplore(g) {
   let e = rollExplore();
   const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n)));
   if (e.key === 'treasure' && (!freeTreasures.length || treasuresOf(g).length)) e = EXPLORE.find(x => x.key === 'item'); // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지)
-  let text;
+  let text, warExp = 0;
   addRecord(g, 'ex_' + e.key); // 탐색 결과별 횟수 (2026-11-08, 시즌 기록용: ex_gold · ex_treasure · ex_bandit …)
   switch (e.key) {
     case 'gold': {
@@ -998,6 +998,7 @@ function runExplore(g) {
         const n = Math.max(1, Math.floor(g.troops * (e.minRate + Math.random() * (e.maxRate - e.minRate))));
         g.troops -= n;
         text = `도적 떼와 마주쳐 싸우다 병사 ${fmt(n)}명을 잃었다.`;
+        warExp = e.warExp || 0; // 2026-11-08: 병사로 싸웠으면 무력 경험치 (금을 빼앗긴 경우는 없음)
       } else {
         const n = Math.floor(g.gold * (e.goldMinRate + Math.random() * (e.goldMaxRate - e.goldMinRate))); // 가진 금의 15~20%
         g.gold -= n;
@@ -1009,6 +1010,7 @@ function runExplore(g) {
       text = '주변을 살폈으나 별다른 일은 없었다.';
   }
   addLog(g, `${city.name} 탐색: ${text}`);
+  if (warExp) gainStatExp(g, 'war', warExp); // 도적과 싸움 (2026-11-08)
   addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 공적이 붙는다
   return '';
 }
