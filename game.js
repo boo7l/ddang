@@ -1883,7 +1883,7 @@ function expandConfirm() {
     <p class="exHead">조건 <span class="dim small">(최대치의 ${Math.round(E.ready * 100)}% 이상)</span></p><div class="exBody">
     <table class="stats exTable">${cond}</table></div>
     <p class="exHead">비용</p><div class="exBody">
-    <p>내 금 <b class="hi">${fmt(cost)}</b> <span class="dim">(지금 ${fmt(p.gold)})</span>${short ? ' <span class="bad">· 금이 모자라요</span>' : ''}</p></div>
+    <p>내 금 <b class="hi">${fmt(cost)}</b> <span class="dim">(지금 ${fmt(p.gold)})</span>${short ? ' <span class="bad">· 모자라요</span>' : ''}</p></div>
     <p class="exHead">바뀌는 것(최대치)</p><div class="exBody">
     <table class="stats exTable">
       ${row('농업', devMax(g0, 'agri'), devMax(g1, 'agri'))}${row('상업', devMax(g0, 'comm'), devMax(g1, 'comm'))}
