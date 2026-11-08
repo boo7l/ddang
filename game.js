@@ -1874,7 +1874,7 @@ function expandConfirm() {
     <table class="stats exTable">
       ${row('농업', devMax(g0, 'agri'), devMax(g1, 'agri'))}${row('상업', devMax(g0, 'comm'), devMax(g1, 'comm'))}
       ${row('방어', devMax(g0, 'wall'), devMax(g1, 'wall'))}${row('군량 창고', foodMax(g0), foodMax(g1))}
-      ${row('수비대장 병력', RULES.guardMax[g0], RULES.guardMax[g1])}
+      ${row('수비대 상한', RULES.guardMax[g0], RULES.guardMax[g1])}
     </table>
     <p class="sub">얻는 것</p>
     <p>공적 <b class="hi">+${fmt(E.merit[g0])}</b> · 통솔·무력·지력 경험치 각각 <b class="hi">+${E.exp[g0]}</b></p>
