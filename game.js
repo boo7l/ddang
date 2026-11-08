@@ -1863,7 +1863,7 @@ function updateTurn() {
 function expandConfirm() {
   const at = cityAtSlot(me(), slot), name = ['', '소성', '중성', '대도시'], E = RULES.expand;
   if (!confirm(`${josa(at.name, '을를')} ${josa(name[at.grade + 1], '으로')} 증축할까요?
-내 금 ${fmt(E.cost[at.grade])}이 들고, 공적 +${fmt(E.merit[at.grade])}을 받아요.
+내 금 ${fmt(E.cost[at.grade])}이 들고, 공적 +${fmt(E.merit[at.grade])}, 통솔·무력·지력 경험치 각각 +${E.exp[at.grade]}을 받아요.
 실행할 때 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 해요. 성을 빼앗겨도 등급은 그대로예요.`)) return;
   reserve({ cmd: 'expand' });
 }

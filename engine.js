@@ -1243,9 +1243,11 @@ function runExpand(g) {
   c.grade = from + 1;
   S.mapAt = Date.now();
   g.merit += merit; // 한 턴 최대 공적(100)의 예외
+  const exp = RULES.expand.exp[from];
+  for (const st of STATS) gainStatExp(g, st.key, exp); // 통솔·무력·지력 경험치 각각 (세력·개인 경험치 보너스가 붙는다)
   addRecord(g, 'expand');
   const name = ['', '소성', '중성', '대도시'];
-  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(merit)}`);
+  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(merit)} · 모든 능력 경험치 +${exp}`);
   logAll(`🏗 ${g.name}${josa(g.name, '이가').slice(-1)} ${josa(c.name, '을를')} ${josa(name[from + 1], '으로')} 증축했다!`);
   return '';
 }
