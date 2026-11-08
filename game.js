@@ -1012,7 +1012,6 @@ function helpDialog(page = 0) {
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
-      <li><b>갈취</b>: 특성 <b>${GENERAL_TRAITS.levy.name}</b>을 가진 장수만 쓰는 전용 명령이에요. 무력의 ${GENERAL_TRAITS.levy.levy.warMin}~${GENERAL_TRAITS.levy.levy.warMax}배만큼 금을 얻고, 그 성의 치안이 ${GENERAL_TRAITS.levy.levy.peace} 떨어져요. (쿨타임 ${GENERAL_TRAITS.levy.levy.cooldown}턴)</li>
       <li><b>증축</b>: 농업·상업·방어·치안이 모두 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키워요. 내 금 ${fmt(RULES.expand.cost[1])}(소성 → 중성) · ${fmt(RULES.expand.cost[2])}(중성 → 대도시), 공적 +${RULES.expand.merit[1]} / +${RULES.expand.merit[2]}, 통솔·무력·지력 경험치 각각 +${RULES.expand.exp[1]} / +${RULES.expand.exp[2]}. 조건이 맞을 때만 버튼이 보여요.</li></ul>`],
     ['💡 작은 팁', `<ul>
       <li>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></li>
