@@ -370,12 +370,14 @@ function runOrders(mark) {
     g.queue.push(null);
     if (order && g.faction) todo.push({ g, order });
     else if (!order && gTrait(g).idleExp) idle.push(g); // 개인 특성 장군뒹굴: 예약 칸이 빈 턴
+    if (!order && g.faction) addRecord(g, 'idle'); // 대기한 턴 수 (2026-11-08, 시즌 기록용)
   }
   todo.sort((a, b) => (a.order.orderedAt || 0) - (b.order.orderedAt || 0));
   for (const { g, order } of todo) {
     if (S.unified || !g.faction) continue; // 통일됐거나, 이번 턴에 앞서 세력을 잃었다
     const fail = COMMANDS[order.cmd] && cmdOn(order.cmd) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
+    else addRecord(g, 'n_' + order.cmd); // 명령별 성공 횟수 (2026-11-08, 시즌 기록용: n_explore · n_move · n_transport …)
   }
   // 장군뒹굴 (2026-10-31): 세력 소속이면 모든 능력치 경험치가 idleExp만큼 오른다. 다른 경험치 보너스는 붙지 않고, 능력치가 오를 때만 기록에 남긴다
   for (const g of idle) {
@@ -908,6 +910,7 @@ function runExplore(g) {
   const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n)));
   if (e.key === 'treasure' && (!freeTreasures.length || treasuresOf(g).length)) e = EXPLORE.find(x => x.key === 'item'); // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지)
   let text;
+  addRecord(g, 'ex_' + e.key); // 탐색 결과별 횟수 (2026-11-08, 시즌 기록용: ex_gold · ex_treasure · ex_bandit …)
   switch (e.key) {
     case 'gold': {
       const f = foundAmount(e);
