@@ -308,7 +308,7 @@ function adminToolsDialog() {
       <tr><th>장수</th><td>${S ? allGenerals().length : 0}명</td></tr>
       <tr><th>문</th><td>${door}</td></tr>
     </table>
-    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button> <button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
+    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button> <button data-skip="1">+1턴</button> <button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     </div>
     <div class="adminCard">
     <p class="sub">전체 메시지 <span class="dim">(지금 있는 모든 장수의 기록에 노란색으로, ${S ? allGenerals().length : 0}명)</span></p>
@@ -362,6 +362,7 @@ function adminToolsDialog() {
       if (await call('adminMapUpload', { map: picked, fileName: pickedName })) afterAdmin();
     };
     if ($('#amClear')) $('#amClear').onclick = async () => { if (!confirm('올려 둔 지도를 지울까요? 새 시즌은 기본 지도로 열려요.')) return; if (await call('adminMapClear')) afterAdmin(); };
+    box.querySelectorAll('[data-skip]').forEach(b => { b.onclick = async () => { await call('skip', { turns: +b.dataset.skip }); afterAdmin(); }; });
     $('#aPause').onclick = async () => { await call('pause'); afterAdmin(); };
     $('#aMsgSend').onclick = async () => {
       const text = $('#aMsg').value.trim();
