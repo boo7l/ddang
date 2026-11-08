@@ -208,7 +208,7 @@ async function membersDialog() {
       <td>${m.admin ? '' : `<button class="mini" data-mban="${esc(m.id)}">정지</button>`}</td></tr>`;
   }).join('');
   adminShow('members', `${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
-    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>마지막 로그인</th><th>이번 시즌 장수</th><th>이번 시즌 참가</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}`, box => {
+    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>마지막 접속</th><th>이번 시즌 장수</th><th>이번 시즌 참가</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}`, box => {
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
     box.querySelectorAll('[data-mban]').forEach(b => { b.onclick = () => memberBanDialog(list.find(m => m.id === b.dataset.mban)); });
     sortableTable(box.querySelector('.adminScroll table'), 'members');
