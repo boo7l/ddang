@@ -975,7 +975,7 @@ function runExplore(g) {
       g.treasures = [...treasuresOf(g), name];
       const st = STATS.find(x => x.key === TREASURES[name].stat);
       text = `★★★ 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${TREASURES[name].bonus} (지금 ${effStats(g)[st.key]})`;
-      logAll(`💎 ${g.faction ? `${factionById(g.faction).name}의 ` : ''}${g.name}${josa(g.name, '이가').slice(-1)} 탐색 중에 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${TREASURES[name].bonus})`);
+      logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 탐색 중에 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${TREASURES[name].bonus})`);
       break;
     }
     case 'master': { // 레어 (2026-10-27): 달인에게 가르침을 받아 무작위 능력치 +2 (이미 최고인 능력치는 빼고 고른다)
