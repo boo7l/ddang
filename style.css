@@ -323,7 +323,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
   background: rgba(0, 0, 0, .6);
   display: flex; align-items: center; justify-content: center;
 }
-#modalBox { width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow-y: auto; margin: 0; }
+#modalBox { width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; margin: 0; } /* dvh: 휴대폰 주소창을 뺀 실제 보이는 높이 (2026-11-08, vh는 주소창까지 넣어 창 위아래가 잘렸다) */
 #modalBox p { margin: 6px 0; }
 #boardCover { position: fixed; z-index: 51; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .6); color: var(--text); font-size: 16px; } /* 게시판 다시 불러오는 동안 창을 덮는다 (2026-11-03) */
 .opts { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
@@ -845,7 +845,8 @@ details.fold > summary:hover h2 { color: var(--title); }
   .oddsTable th, .oddsTable td { padding: 4px 3px; } /* 확률표: 좁으니 이름도 줄바꿈 */
   .oddsTable th { white-space: normal; word-break: keep-all; }
   /* 대화 상자: 화면을 거의 다 쓴다 */
-  #modalBox, #modalBox.wideBox, #modalBox.adminBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); }
+  #modalBox, #modalBox.wideBox, #modalBox.adminBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); max-height: calc(100dvh - 12px); }
+  #modalBox .exHead { margin-top: 12px; } /* 휴대폰: 증축 확인 창 구역 간격을 줄여 한 화면에 더 들어오게 (2026-11-08) */
 }
 @media (max-width: 380px) { .logoTop { width: 102px; height: 28px; } } /* 아주 좁은 휴대폰: 제목줄 한 줄을 지키려고 낙관+로고를 더 작게 (2026-11-03, 그 전엔 낙관을 숨김) */
 
