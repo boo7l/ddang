@@ -1035,7 +1035,7 @@ function runSpy(g, o) {
   if (why) return why;
   addMerit(g, RULES.merit.plot);
   addRecord(g, 'plotTry');
-  if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0)) { // 책사 +5%p
+  if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0)) { // 책사 +8%p
     addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
     return '';
   }
@@ -1063,7 +1063,7 @@ function runPlot(g, kind, o) {
   if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다, 2026-10-26)
   if (why) return why;
-  const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +5%p
+  const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +8%p
   addRecord(g, 'plotTry');
   if (r !== 'fail') addRecord(g, 'plotOk');
   addMerit(g, RULES.merit.plot); // 계략은 시도만 해도 공적 10, 성공하면 20 더 (2026-10-28)
