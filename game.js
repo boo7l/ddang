@@ -1859,6 +1859,14 @@ function updateTurn() {
 }
 
 // 명령 창 = 예약표. 칸을 고르고 아래 명령 버튼을 누르면 그 칸에 예약된다
+// 증축 확인 (2026-11-08): 금이 많이 드는 명령이라 한 번 묻고 예약한다
+function expandConfirm() {
+  const at = cityAtSlot(me(), slot), name = ['', '소성', '중성', '대도시'], E = RULES.expand;
+  if (!confirm(`${josa(at.name, '을를')} ${josa(name[at.grade + 1], '으로')} 증축할까요?
+내 금 ${fmt(E.cost[at.grade])}이 들고, 공적 +${fmt(E.merit[at.grade])}을 받아요.
+실행할 때 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 해요. 성을 빼앗겨도 등급은 그대로예요.`)) return;
+  reserve({ cmd: 'expand' });
+}
 function renderCommands() {
   const p = me();
   { const d = dateOf(S.turn); $('#nowDate').innerHTML = d.year < 0 ? `<span class="eraLong">${dateText(S.turn)}</span><span class="eraShort">${d.year}년 ${d.month}월</span>` : dateText(S.turn); } // 상단: 게임 속 지금 연월 (모바일은 기원전을 -203년처럼 짧게, 2026-11-07)
@@ -1883,6 +1891,7 @@ function renderCommands() {
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
     btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
+    at.faction === p.faction && expandReady(at) ? btn('expand', '증축', `금 ${fmt(RULES.expand.cost[at.grade])}`) : '', // 증축 (2026-11-08): 내정이 모두 90% 이상인 우리 소성·중성에서만
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   // 칸 비우기·채우기 단추: PC는 예약표 아래, 휴대폰은 명령 단추 아래 (휴대폰은 예약표를 위에 붙여 두므로, 2026-11-07)
@@ -1913,7 +1922,7 @@ function renderCommands() {
     <div class="cmds cg-etc">${etc}</div>` : ''}
     <div class="qBtnsM">${qBtns}</div>
 `;
-  const dialogs = { adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { expand: expandConfirm, adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
     draftLock = e.target.checked;
     try { localStorage.setItem(DRAFT_LOCK_KEY, draftLock ? '1' : '0'); } catch (err) { /* 이번만 */ }

@@ -413,7 +413,7 @@ function setOrder(g, i, order) {
 function clearOrders(g) { g.queue = Array(RULES.queueSize).fill(null); }
 // 비어 있는 칸을 모두 같은 명령으로 채운다 (예: 12칸 모두 농업). 하야는 되풀이할 수 없다
 function fillOrders(g, order) {
-  if (!order) return '채울 수 없는 명령이에요.';
+  if (!order || order.cmd === 'expand') return '채울 수 없는 명령이에요.'; // 증축은 한 번만 (2026-11-08)
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
     if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 갈취는 쿨타임이 끝난 칸에만 채운다
@@ -1221,6 +1221,35 @@ function runResign(g) {
   return '';
 }
 
+// ----- 증축 (2026-11-08) -----
+// 내정(기술 빼고 켜진 것: 농업·상업·방어·치안)이 모두 최대치의 RULES.expand.ready(90%) 이상인 우리 세력 소성·중성을 한 단계 올린다.
+// 금은 명령한 장수 혼자 전액. 공적은 한 턴 최대(meritTurnMax)를 넘어도 그대로 더한다. 성을 빼앗겨도 등급은 그대로 (시즌이 끝나면 지도와 함께 사라짐)
+// 등급은 지도에 있으므로 세계의 지도(S.map)를 고치고 S.mapAt을 바꿔 화면이 새 지도를 받아 가게 한다
+const expandKeys = () => Object.keys(DOMESTIC).filter(cmdOn);
+const expandShort = (c, cs) => expandKeys().filter(k => cs[k] < Math.ceil(devMax(c.grade, k) * RULES.expand.ready)); // 아직 90%가 안 된 내정
+const expandReady = c => !!c && c.grade < 3 && !expandShort(c, S.cities[c.id]).length;
+function runExpand(g) {
+  const c = cityById(g.city), cs = S.cities[g.city];
+  if (!g.faction || c.faction !== g.faction) return `${josa(c.name, '은는')} 우리 세력 성이 아님`;
+  if (c.grade >= 3) return `${josa(c.name, '은는')} 이미 대도시`;
+  const short = expandShort(c, cs);
+  if (short.length) return `${c.name}의 ${josa(short.map(k => DOMESTIC[k].label).join('·'), '이가')} 아직 최대치의 ${Math.round(RULES.expand.ready * 100)}%가 안 됨`;
+  const from = c.grade, cost = RULES.expand.cost[from], merit = RULES.expand.merit[from];
+  if (g.gold < cost) return `내 금 부족 (필요 ${fmt(cost)}, 있음 ${fmt(g.gold)})`;
+  g.gold -= cost;
+  if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG)); // 예전 시즌처럼 세계에 지도가 없으면 지금 지도를 넣어 둔다
+  const mc = S.map && S.map.cities.find(x => x.id === c.id);
+  if (mc) mc.grade = from + 1;
+  c.grade = from + 1;
+  S.mapAt = Date.now();
+  g.merit += merit; // 한 턴 최대 공적(100)의 예외
+  addRecord(g, 'expand');
+  const name = ['', '소성', '중성', '대도시'];
+  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(merit)}`);
+  logAll(`🏗 ${g.name}${josa(g.name, '이가').slice(-1)} ${josa(c.name, '을를')} ${josa(name[from + 1], '으로')} 증축했다!`);
+  return '';
+}
+
 // 명령 목록: 이름(label)과 실행(run)
 const cityName = id => (cityById(id) || { name: '?' }).name;
 const COMMANDS = {
@@ -1241,5 +1270,6 @@ const COMMANDS = {
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   levy: { label: () => '갈취', run: runLevy },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
+  expand: { label: () => '증축', run: runExpand }, // 2026-11-08
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');
