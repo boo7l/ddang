@@ -23,7 +23,15 @@ async function serverInit() {
   const { data: prof, error } = await sb.from('profiles').select('nickname').eq('id', u.id).maybeSingle();
   if (error) throw error;
   ME = { id: u.id, nickname: prof ? prof.nickname : null };
+  if (ME.nickname) pingSeen(); // 마지막 접속 (2026-11-08): 첫 화면에만 머물러도 접속으로 센다
   return true;
+}
+// 마지막 접속 신호: 들어왔을 때 한 번, 화면을 켜 두면 10분마다 (서버도 같은 계정은 10분에 한 번만 적는다)
+let seenTimer = null;
+function pingSeen() {
+  const go = () => { if (ME && ME.nickname) api('seen').catch(() => {}); };
+  go();
+  if (!seenTimer) seenTimer = setInterval(go, 10 * 60 * 1000);
 }
 
 // 구글 로그인 (2026-10-26): 구글이 주는 로그인 단추·팝업을 이 페이지에서 바로 쓴다 (Google Identity Services).
