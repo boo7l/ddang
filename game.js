@@ -1059,7 +1059,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
     spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
     treasure: () => '전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>이미 보물이 있으면 장비 발견',
   };
-  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '★ 특성 주머니', spy: '적 첩자 포획', treasure: '★ 보물' };
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', treasure: '★ 보물' };
   const rows = [...EXPLORE].sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   openModal(`
     <h2>탐색 확률표</h2>
