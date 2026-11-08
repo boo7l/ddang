@@ -1864,10 +1864,24 @@ function updateTurn() {
 // 증축 확인 창 (2026-11-08): 금이 많이 드는 명령이라 바로 예약하지 않고, 비용·바뀌는 것·얻는 것을 보여 준 뒤 예약한다
 function expandConfirm() {
   const p = me(), at = cityAtSlot(p, slot), g0 = at.grade, g1 = g0 + 1, name = ['', '소성', '중성', '대도시'], E = RULES.expand;
+  const head = `<h2>🏗 증축 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>`;
+  // 증축할 수 없는 성 (2026-11-08: 버튼이 늘 보이므로 이유를 알려 준다)
+  if (at.faction !== p.faction || g0 >= 3) {
+    openModal(`${head}<p><b class="hi">${esc(at.name)}</b>: ${name[g0] || '?'}</p>
+      <p>${at.faction !== p.faction ? '우리 세력 성이 아니라서 증축할 수 없어요.' : '이미 <b class="hi">대도시</b>라서 더 증축할 수 없어요.'}</p>
+      <p class="dim small exNote">농업·상업·방어·치안이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키울 수 있어요.</p>
+      <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+    return;
+  }
+  const cs = S.cities[at.id] || {}, need = k => Math.ceil(devMax(g0, k) * E.ready), keys = expandKeys();
+  const ready = expandReady(at);
   const cost = E.cost[g0], short = p.gold < cost;
   const row = (label, a, b) => `<tr><th>${label}</th><td>${fmt(a)} → <b class="hi">${fmt(b)}</b></td></tr>`;
-  openModal(`<h2>🏗 증축 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
+  const cond = keys.map(k => { const v = cs[k] || 0, ok = v >= need(k); return `<tr><th>${DOMESTIC[k].label}</th><td>${fmt(v)} / ${fmt(need(k))} ${ok ? '<span class="hi">✓</span>' : '<span class="bad">모자라요</span>'}</td></tr>`; }).join('');
+  openModal(`${head}
     <p><b class="hi">${esc(at.name)}</b>: ${name[g0]} → <b class="hi">${name[g1]}</b></p>
+    <p class="exHead">조건 <span class="dim small">(최대치의 ${Math.round(E.ready * 100)}% 이상)</span></p><div class="exBody">
+    <table class="stats exTable">${cond}</table></div>
     <p class="exHead">비용</p><div class="exBody">
     <p>내 금 <b class="hi">${fmt(cost)}</b> <span class="dim">(지금 ${fmt(p.gold)})</span>${short ? ' <span class="bad">· 금이 모자라요</span>' : ''}</p></div>
     <p class="exHead">바뀌는 것(최대치)</p><div class="exBody">
@@ -1879,7 +1893,7 @@ function expandConfirm() {
     <p class="exHead">보상</p><div class="exBody">
     <p>공적 <b class="hi">+${fmt(E.merit[g0])}</b> · 통솔·무력·지력 경험치 각각 <b class="hi">+${E.exp[g0]}</b></p></div>
     <p class="dim small exNote">실행하는 턴에도 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 하고, 금이 있어야 해요. 아니면 실패하고 금은 들지 않아요. 성을 빼앗겨도 등급은 그대로예요.</p>
-    <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main">예약</button></div>`, () => {
+    <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main"${ready ? '' : ' disabled title="조건이 모자라요"'}>예약</button></div>`, () => {
     $('#exOk').onclick = () => { closeModal(); reserve({ cmd: 'expand' }); };
   });
 }
@@ -1891,7 +1905,7 @@ function renderCommands() {
   const statName = k => STATS.find(s => s.key === k).name;
   // 명령 단추 아래 작은 글씨에는 금을 쓰지 않는다 (2026-11-03, 14px로 키우면서 한 줄에 들어가게). 금은 각 명령 창에 보인다 탐색만 예외: 창이 없어 단추에 금을 쓴다 (2026-11-04)
   const COOL = '이 칸은 쿨타임'; // 이 글씨가 붙은 단추는 휴대폰에서 흐리게 (작은 글씨를 숨기므로, 2026-11-07)
-  const btn = (cmd, name, sub) => (cmdOn(cmd) ? `<button data-cmd="${cmd}"${sub === COOL ? ' class="cool"' : ''}>${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
+  const btn = (cmd, name, sub, dim = false) => (cmdOn(cmd) ? `<button data-cmd="${cmd}"${sub === COOL || dim ? ' class="cool"' : ''}>${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
   const rows = p.queue.map((o, i) => `<li data-i="${i}" class="${i === slot ? 'sel' : ''}${o ? '' : ' idle'}${isNightTurn(slotTime(i)) ? ' night' : ''}">
       <span class="t">${dateOf(S.turn + 1 + i).month}월${RULES.goldMonths.includes(dateOf(S.turn + 1 + i).month) ? '💰' : ''}${RULES.harvestMonths.includes(dateOf(S.turn + 1 + i).month) ? '🌾' : ''}</span>
       <span class="clock">${fmtClock(slotTime(i))}</span>
@@ -1906,8 +1920,9 @@ function renderCommands() {
   const plot = [btn('destroy', '파괴', '방어 낮추기'), btn('rumor', '유언', '치안 낮추기'), btn('spy', '첩보', '적 성 엿보기')].join('');
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
     btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
+    // 증축 (2026-11-08): 늘 보인다 (눌러서 조건·비용·보상을 언제든 볼 수 있게). 조건이 안 되면 흐리게, 예약은 확인 창에서 막는다
+    (() => { const ok = at.faction === p.faction && expandReady(at); return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 3 ? '대도시' : '조건 부족', !ok); })(),
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
-    at.faction === p.faction && expandReady(at) ? btn('expand', '증축', `금 ${fmt(RULES.expand.cost[at.grade])}`) : '', // 증축 (2026-11-08): 내정이 모두 90% 이상인 우리 소성·중성에서만
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
   // 칸 비우기·채우기 단추: PC는 예약표 아래, 휴대폰은 명령 단추 아래 (휴대폰은 예약표를 위에 붙여 두므로, 2026-11-07)
