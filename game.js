@@ -650,11 +650,11 @@ function openModal(html, onMount) {
 function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
-function pickDialog(title, intro, opts, okText, onOk, extra = '') {
+function pickDialog(title, intro, opts, okText, onOk, extra = '', optsClass = '') { // optsClass: 'narrow'면 선택 줄의 가로 폭을 줄인다 (출진·이동·수송, 2026-11-08)
   openModal(`
     <h2>${title} <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
     ${intro}
-    ${opts ? `<div class="opts">${opts}</div>` : '<p class="bad">고를 수 있는 대상이 없어요. (이 턴에 있을 성 기준)</p>'}
+    ${opts ? `<div class="opts${optsClass ? ' ' + optsClass : ''}">${opts}</div>` : '<p class="bad">고를 수 있는 대상이 없어요. (이 턴에 있을 성 기준)</p>'}
     ${extra}
     <div class="modalBtns"><button data-close>취소</button><button id="mOk" class="main" disabled>${okText}</button></div>`, box => {
     box.querySelectorAll('input[name=tgt]').forEach(r => { r.onchange = () => { $('#mOk').disabled = false; }; });
@@ -700,7 +700,7 @@ function attackDialog() {
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
     <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${fmt(attackGoldOf(p.troops))} (병력 1,000당 ${RULES.attackGold.per1000}) · 출진 군량 ${fmt(marchFood(p.troops, p.faction))} (병력 × ${RULES.marchFoodRate}${traitOf(p.faction).food ? ` · 세력 특성 ${Math.round(traitOf(p.faction).food * 100)}%` : ''}, 결과와 상관없이 사라짐) · 예상은 지금 병력 기준</p>`,
-  rows, '예약', v => reserve({ cmd: 'attack', to: v }));
+  rows, '예약', v => reserve({ cmd: 'attack', to: v }), '', 'narrow');
 }
 
 // 고른 칸이 실행될 때의 병종: 그 앞 칸에 예약한 징병이 있으면 그 병종, 없으면 지금 병종
@@ -908,7 +908,7 @@ function transportDialog() {
     if (!(amount >= 1 && amount <= max)) { alert(`양은 1~${fmt(max)} 사이로 적어 주세요.`); return false; }
     const dir = box.querySelector('input[name=dir]:checked').value;
     reserve({ cmd: 'transport', to: v, dir, amount: String(amount) });
-  }, extra);
+  }, extra, 'narrow');
   document.querySelectorAll('[data-amt]').forEach(b => { b.onclick = () => { $('#tAmount').value = b.dataset.amt; }; });
 }
 
@@ -942,7 +942,7 @@ function moveDialog() {
     `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${isFarRoad(from, c) ? ' <span class="dim">(먼 길)</span>' : ''}${frontTag(c)}
       <span class="r foodR">${gradeStars(c)}군량 ${fmt(S.cities[c.id].food)}</span></label>`).join('');
   pickDialog('이동', `<p>${esc(from.name)}에서 내 세력의 다른 성으로 장수와 병력이 옮겨 갑니다. 한 번에 ${gTrait(me()).freePath ? '' : '우리 땅으로 '}${moveRangeOf(me())}칸까지 갈 수 있어요. 병사는 머무는 성의 군량을 먹어요.</p>`,
-    opts, '예약', v => reserve({ cmd: 'move', to: v }));
+    opts, '예약', v => reserve({ cmd: 'move', to: v }), '', 'narrow');
 }
 
 // ===== 도움말 (초심자 안내) =====
