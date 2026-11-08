@@ -845,7 +845,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   .oddsTable th, .oddsTable td { padding: 4px 3px; } /* 확률표: 좁으니 이름도 줄바꿈 */
   .oddsTable th { white-space: normal; word-break: keep-all; }
   /* 대화 상자: 화면을 거의 다 쓴다 */
-  #modalBox, #modalBox.wideBox, #modalBox.adminBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); max-height: calc(100dvh - 12px); }
+  #modalBox, #modalBox.wideBox, #modalBox.adminBox, #modalBox.playerBox { width: min(calc(100vw - 12px), 440px); max-width: none; max-height: calc(100vh - 12px); max-height: calc(100dvh - 12px); }
   #modalBox .exHead { margin-top: 12px; } /* 휴대폰: 증축 확인 창 구역 간격을 줄여 한 화면에 더 들어오게 (2026-11-08) */
 }
 @media (max-width: 380px) { .logoTop { width: 102px; height: 28px; } } /* 아주 좁은 휴대폰: 제목줄 한 줄을 지키려고 낙관+로고를 더 작게 (2026-11-03, 그 전엔 낙관을 숨김) */
@@ -1020,3 +1020,15 @@ details.fold > summary:hover h2 { color: var(--title); }
 /* 메인(첫) 화면의 ☰ 메뉴 (2026-11-07): 정보·음악·순위·로그아웃만 보인다 */
 .onTitle #who #toMain, .onTitle #who #adminBtn, .onTitle #who #pcBtn, .onTitle #who #keysBtn { display: none !important; }
 #who button:disabled { opacity: .45; cursor: default; }
+/* 관리: 장수 정보 팝업 (2026-11-08) */
+#modalBox.playerBox { width: 520px; }
+#modalBox.playerBox .gHead { padding-bottom: 8px; border-bottom: 1px dotted var(--gold-dark); }
+#modalBox.playerBox .exHead { margin-top: 14px; }
+#modalBox.playerBox .pQueue { margin: 4px 0; padding-left: 4px; list-style: none; max-height: 160px; overflow-y: auto; }
+#modalBox.playerBox .pRec summary { cursor: pointer; }
+#modalBox.playerBox .pRec .recTable { margin-top: 6px; }
+@media (max-width: 700px) { #modalBox.playerBox { width: min(calc(100vw - 12px), 440px); } }
+#modalBox.playerBox .pStats { width: 100%; }
+#modalBox.playerBox .pStats td:nth-child(3) { width: 100%; padding-right: 10px; }
+#modalBox.playerBox .pStats td:nth-child(4) { white-space: nowrap; }
+#modalBox.playerBox .pStats th, #modalBox.playerBox .pStats td.num { white-space: nowrap; padding-right: 10px; }

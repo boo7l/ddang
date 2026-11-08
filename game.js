@@ -647,7 +647,7 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox'); }
+function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 function pickDialog(title, intro, opts, okText, onOk, extra = '', optsClass = '') { // optsClass: 'narrow'면 선택 줄의 가로 폭을 줄인다 (출진·이동·수송, 2026-11-08)
@@ -2208,33 +2208,45 @@ const recordRows = (g, medals) => {
     .map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
 };
 // 관리자: 장수 한 명의 정보와 제재 (2026-10-28). 관리자 보기 → 유저 목록에서 장수 이름을 누른다. back = 돌아갈 목록 (탭, 세력)
-function playerDialog(id, backTab = 'users', backF = null) {
+function playerDialog(id, backTab = 'users', backF = null) { // 2026-11-08: 옆 칸 대신 가운데 팝업
   const g = S.generals[id];
   if (!g) return;
   const until = map => ((map || {})[id] > Date.now() ? map[id] : 0);
-  const mute = until(S.mutes), ban = until(S.bans), t = GENERAL_TRAITS[g.trait];
-  const st = STATS.map(s => `${s.name} ${effStats(g)[s.key]}`).join(' · ');
-  const queue = (g.queue || []).filter(Boolean).map(o => esc(orderLabel(o))).join(', ') || '<span class="dim">없음</span>';
-  // 제재한 뒤: 왼쪽 목록(🔇·⛔ 표시)도 새로 그리고, 이 칸도 새 상태로
+  const mute = until(S.mutes), ban = until(S.bans), t = GENERAL_TRAITS[g.trait], f = g.faction && factionById(g.faction);
+  const queue = (g.queue || []).map((o, i) => o ? `<li><span class="dim">${i + 1}.</span> ${esc(orderLabel(o))}</li>` : '').join('') || '<li class="dim">없음</li>';
+  const gear = Object.keys(SHOP).filter(k => gearCount(g, k)).map(k => `<span class="gear">${k} ${gearCount(g, k)}</span>`).join('') || '<span class="dim">없음</span>';
+  const tre = treasuresOf(g).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span>`).join(' ');
+  const statRows = STATS.map(st => `<tr><th>${st.name}</th><td class="num">${effStats(g)[st.key]}</td><td>${statBar(g.stats[st.key], effStats(g)[st.key], RULES.statMax)}</td><td class="dim small">${g.statExp && g.statExp[st.key] ? `경험 ${g.statExp[st.key]}/${expNeed(g.stats[st.key])}` : ''}</td></tr>`).join('');
+  const sumStat = STATS.reduce((n, st) => n + effStats(g)[st.key], 0);
+  // 제재한 뒤: 뒤의 목록(🔇·⛔ 표시)도 새로 그리고, 이 창도 새 상태로
   const again = () => { if (backTab === 'members') membersDialog(); else adminDialog(backTab, backF); playerDialog(id, backTab, backF); };
   const act = async (action, body, msg) => { if (!confirm(msg)) return; if (await call(action, { id, ...body })) again(); };
-  adminSide(`<h3>🛠 ${esc(g.name)}${medalOf(g.id)} <span class="dim small">· 아이디 ${esc(ACCOUNTS[id] || '?')}</span></h3>
-    <table class="stats">
-      <tr><th>세력</th><td>${g.faction ? esc(factionById(g.faction).name) : '재야'} · ${g.city ? esc(cityById(g.city).name) : '-'}</td></tr>
-      <tr><th>능력치</th><td>${st}</td></tr>
-      <tr><th>특성</th><td>${t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '-'}</td></tr>
-      <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)} · 금 ${fmt(g.gold || 0)} · 공적 ${fmt(g.merit)}</td></tr>
-      <tr><th>예약</th><td>${queue}</td></tr>
-      <tr><th>제재</th><td>${mute ? `🔇 채팅 금지 ${fmtTime(mute)}까지` : ''}${mute && ban ? '<br>' : ''}${ban ? `⛔ 계정 정지 ${ban - Date.now() > 5 * 365 * 24 * HOUR ? '영구' : fmtTime(ban) + '까지'}` : ''}${mute || ban ? '' : '<span class="dim">없음</span>'}</td></tr>
-    </table>
-    <p class="sub">기록</p>
-    <table class="recTable">${recordRows(g, (S.medals || {})[id] || 0)}</table>
-    <p class="sub">제재 <span class="dim">(받은 사람의 기록에도 남아요)</span></p>
+  openModal(`<div class="gHead"><div class="gFaceCol"><span id="pFace"></span>${medalOf(g.id)}</div><div>
+      <p class="gname">${esc(g.name)}</p>
+      <p class="dim">아이디 ${esc(ACCOUNTS[id] || '?')}</p>
+      <table class="stats">
+        <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${esc(f.name)}` : '재야'} · ${g.city ? esc(cityById(g.city).name) : '-'}</td></tr>
+        <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)} <span class="dim">/ ${fmt(troopsMax(g))}</span></td></tr>
+        <tr><th>금</th><td>${fmt(g.gold || 0)}</td></tr>
+        <tr><th>공적</th><td>${fmt(g.merit)}</td></tr>
+        <tr><th>특성</th><td>${t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '-'}</td></tr>
+      </table>
+    </div></div>
+    <p class="exHead">능력치 <span class="dim small">· 합 ${sumStat}</span></p>
+    <table class="stats pStats">${statRows}</table>
+    <p class="exHead">장비 · 보물</p>
+    <p>${gear}${tre ? ' ' + tre : ''}</p>
+    <p class="exHead">예약</p>
+    <ol class="pQueue">${queue}</ol>
+    <p class="exHead">제재 <span class="dim small">(받은 사람의 기록에도 남아요)</span></p>
+    <p>${mute ? `🔇 채팅 금지 ${fmtTime(mute)}까지` : ''}${mute && ban ? '<br>' : ''}${ban ? `⛔ 계정 정지 ${ban - Date.now() > 5 * 365 * 24 * HOUR ? '영구' : fmtTime(ban) + '까지'}` : ''}${mute || ban ? '' : '<span class="dim">없음</span>'}</p>
     <p><button id="pWarn">⚠ 경고</button> <button id="pKick"${g.faction ? '' : ' disabled'}>강제 하야</button></p>
     <p>채팅 금지: <button data-mute="1">1시간</button> <button data-mute="24">하루</button> <button data-mute="168">7일</button>${mute ? ' <button data-mute="0">풀기</button>' : ''}</p>
     <p>계정 정지: <button data-ban="1" class="danger">하루</button> <button data-ban="7" class="danger">7일</button> <button data-ban="3650" class="danger">영구</button>${ban ? ' <button data-ban="0">풀기</button>' : ''}</p>
-    <p class="sideBtns"><button id="pBack">✕ 닫기</button></p>`, box => {
-    $('#pBack').onclick = closeAdminSide;
+    <details class="pRec"><summary class="exHead">기록</summary><table class="recTable">${recordRows(g, (S.medals || {})[id] || 0)}</table></details>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    box.classList.add('playerBox');
+    box.querySelector('#pFace').replaceWith(faceCanvas(g.face || FACES[0].id));
     $('#pWarn').onclick = async () => {
       const text = prompt(`${g.name}에게 보낼 경고 (100자까지, 그 장수의 기록에 남아요)`, '비매너 행위로 경고합니다.');
       if (text && text.trim() && await call('adminWarn', { id, text })) again();
