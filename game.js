@@ -1861,13 +1861,27 @@ function updateTurn() {
 }
 
 // 명령 창 = 예약표. 칸을 고르고 아래 명령 버튼을 누르면 그 칸에 예약된다
-// 증축 확인 (2026-11-08): 금이 많이 드는 명령이라 한 번 묻고 예약한다
+// 증축 확인 창 (2026-11-08): 금이 많이 드는 명령이라 바로 예약하지 않고, 비용·바뀌는 것·얻는 것을 보여 준 뒤 예약한다
 function expandConfirm() {
-  const at = cityAtSlot(me(), slot), name = ['', '소성', '중성', '대도시'], E = RULES.expand;
-  if (!confirm(`${josa(at.name, '을를')} ${josa(name[at.grade + 1], '으로')} 증축할까요?
-내 금 ${fmt(E.cost[at.grade])}이 들고, 공적 +${fmt(E.merit[at.grade])}, 통솔·무력·지력 경험치 각각 +${E.exp[at.grade]}을 받아요.
-실행할 때 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 해요. 성을 빼앗겨도 등급은 그대로예요.`)) return;
-  reserve({ cmd: 'expand' });
+  const p = me(), at = cityAtSlot(p, slot), g0 = at.grade, g1 = g0 + 1, name = ['', '소성', '중성', '대도시'], E = RULES.expand;
+  const cost = E.cost[g0], short = p.gold < cost;
+  const row = (label, a, b) => `<tr><th>${label}</th><td>${fmt(a)} → <b class="hi">${fmt(b)}</b></td></tr>`;
+  openModal(`<h2>🏗 증축 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
+    <p><b class="hi">${esc(at.name)}</b>: ${name[g0]} → <b class="hi">${name[g1]}</b></p>
+    <p class="sub">비용</p>
+    <p>내 금 <b class="hi">${fmt(cost)}</b> <span class="dim">(지금 ${fmt(p.gold)})</span>${short ? ' <span class="bad">· 금이 모자라요</span>' : ''}</p>
+    <p class="sub">바뀌는 것 <span class="dim">(성의 최대치)</span></p>
+    <table class="stats">
+      ${row('농업', devMax(g0, 'agri'), devMax(g1, 'agri'))}${row('상업', devMax(g0, 'comm'), devMax(g1, 'comm'))}
+      ${row('방어', devMax(g0, 'wall'), devMax(g1, 'wall'))}${row('군량 창고', foodMax(g0), foodMax(g1))}
+      ${row('수비대장 병력', RULES.guardMax[g0], RULES.guardMax[g1])}
+    </table>
+    <p class="sub">얻는 것</p>
+    <p>공적 <b class="hi">+${fmt(E.merit[g0])}</b> · 통솔·무력·지력 경험치 각각 <b class="hi">+${E.exp[g0]}</b></p>
+    <p class="dim small">실행하는 턴에도 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 하고, 금이 있어야 해요. 아니면 실패하고 금은 들지 않아요. 성을 빼앗겨도 등급은 그대로예요.</p>
+    <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main">예약</button></div>`, () => {
+    $('#exOk').onclick = () => { closeModal(); reserve({ cmd: 'expand' }); };
+  });
 }
 function renderCommands() {
   const p = me();
