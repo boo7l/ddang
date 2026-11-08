@@ -631,6 +631,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .notePaper ul { padding-left: 20px; }
 .notePaper li::marker { color: #8a5a14; }
 .notesPop li { line-height: 1.4; word-break: keep-all; }
+.notesPop li + li { margin-top: 9px; } /* 최상위 항목 사이 간격 (2026-11-08) */
 .medal svg { width: 16px; height: 18px; vertical-align: -3px; margin-left: 2px; } /* 개국공신 훈장 (이름 옆, 8×9 도트를 2배로) */
 .medal small { font-size: 18px; line-height: 1; margin-left: 1px; color: var(--title); } /* 훈장 3개부터 ×개수. 16px은 작고 20px은 커서 18px (2026-10-31) */
 .createStats .medalCol { color: var(--title); text-align: center; padding-left: 8px; } /* 장수 만들기: 훈장 보너스 칸 */
