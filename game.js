@@ -204,11 +204,11 @@ async function membersDialog() {
     return `<tr data-name="${esc([m.name, ...prev.map(h => h.name)].join(' ').toLowerCase())}"><td>${esc(m.name)}</td><td>${prev.length ? prev.map(h => `${esc(h.name)} <span class="dim small">(${fmtTime(h.t).split(' ')[0]}까지)</span>`).join('<br>') : '<span class="dim">-</span>'}</td><td data-sort="${m.at || 0}">${m.at ? fmtTime(m.at) : '-'}</td><td data-sort="${m.last || 0}">${m.last ? fmtTime(m.last) : '-'}</td>
       <td>${g ? `<button class="link" data-pid="${esc(m.id)}" title="정보 · 제재">${esc(g.name)}</button>` : '<span class="dim">없음</span>'}</td>
       <td data-sort="${(g && (g.createdAt || g.firstJoin)) || 0}">${g && g.createdAt ? fmtTime(g.createdAt) : g && g.firstJoin ? `${fmtTime(g.firstJoin)} <span class="dim small" title="만든 시각 기록이 없어 처음 세력에 들어간 시각">(임관)</span>` : '<span class="dim">-</span>'}</td>
-      <td data-sort="${m.medals || 0}">${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
+      <td class="num" data-sort="${m.seasons || 0}">${m.seasons || 0}회</td><td data-sort="${m.medals || 0}">${medalBadge(m.medals)}</td><td>${m.admin ? '관리자' : banText(m.ban)}</td>
       <td>${m.admin ? '' : `<button class="mini" data-mban="${esc(m.id)}">정지</button>`}</td></tr>`;
   }).join('');
   adminShow('members', `${d.error ? `<p>${esc(d.error)}</p>` : `<p><input type="text" id="memberFind" placeholder="아이디 검색" autocomplete="off"> <span class="dim" id="memberCount">모두 ${list.length}명</span></p>
-    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>마지막 접속</th><th>이번 시즌 장수</th><th>이번 시즌 참가</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}`, box => {
+    <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>예전 아이디</th><th>가입 시각</th><th>마지막 접속</th><th>이번 시즌 장수</th><th>이번 시즌 참가</th><th title="세력에 들어간 시즌 수 (시즌 6부터, 진행 중인 시즌 포함)">참가 시즌</th><th>훈장</th><th>상태</th><th></th></tr>${rows}</table></div>`}`, box => {
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, 'members'); });
     box.querySelectorAll('[data-mban]').forEach(b => { b.onclick = () => memberBanDialog(list.find(m => m.id === b.dataset.mban)); });
     sortableTable(box.querySelector('.adminScroll table'), 'members');
