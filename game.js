@@ -261,11 +261,11 @@ function adminDialog(tab = 'users', fid = null) {
     const changes = g => Math.max(0, (g.joins || 1) - 1); // 세력 변경 횟수 (장수 기록 창과 같은 셈)
     const rows = gens.filter(g => (g.faction || '') === pick && (!adminLoyalOnly || changes(g) === 0)).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}${medalOf(g.id)}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
-      <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>
+      <td class="num">${fmt(g.gold || 0)}</td><td class="num">${fmt(g.merit)}</td>${STATS.map(st => `<td class="num" title="기본 ${g.stats[st.key]}">${effStats(g)[st.key]}</td>`).join("")}
       <td class="num">${changes(g)}</td><td class="num">${queueCount(g)}</td><td>${traitText(g)}</td></tr>`).join('');
     body = `<div class="picks">${summary}</div><p class="dim">모두 ${gens.length}명 · ${fname(pick)} ${counts[pick] || 0}명${adminLoyalOnly ? ` 중 세력 변경 0회 ${(rows.match(/<tr>/g) || []).length}명` : ''} 보는 중
         <label class="lockSw" style="margin-left:12px"><input type="checkbox" id="aLoyal" data-keep="${pick || '-'}"${adminLoyalOnly ? ' checked' : ''}> 세력 변경 0회만</label></p>
-      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>변경</th><th>예약</th><th>특성</th></tr>${rows}</table></div>`;
+      <div class="adminScroll"><table class="stats rank"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>통솔</th><th>무력</th><th>지력</th><th>변경</th><th>예약</th><th>특성</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
     const fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
