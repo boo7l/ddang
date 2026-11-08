@@ -824,7 +824,7 @@ function runAttack(g, o, mark) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
-  // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 3% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
+  // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 2% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
   const topDealer = [...dealtBy].sort((x, y) => y[1] - x[1])[0];
   const loseTreasures = (loser, winner) => {
     for (const n of treasuresOf(loser)) {
