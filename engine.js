@@ -1007,7 +1007,7 @@ function runExplore(g) {
 
 // ----- 첩보 (계략, 2026-10-26) -----
 // 다른 세력 성의 농업·상업·방어·치안·군량은 보이지 않는다. 첩보에 성공하면 우리 세력 모두가 그 성의 수치를 RULES.spyTurns턴 동안 본다.
-// 성공 확률 = 지력 ÷ 100 + 5% (최대 90%). 금은 들지 않는다
+// 성공 확률 = 지력 ÷ 110 (최대 90%, RULES.spyDiv). 금 50 (계략과 같은 myGoldCost.plot, 실패해도 든다)
 // 길을 따라 가장 가까운 적 성들 (거리가 같으면 모두). 공백지는 적이 아니다 (2026-11-07 탐색 첩자)
 function nearestEnemyCities(fromId, fid) {
   let ring = [cityById(fromId)];
