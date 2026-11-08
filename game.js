@@ -1011,7 +1011,9 @@ function helpDialog(page = 0) {
       ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·보물을 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
-      <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li></ul>`],
+      <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
+      <li><b>갈취</b>: 특성 <b>${GENERAL_TRAITS.levy.name}</b>을 가진 장수만 쓰는 전용 명령이에요. 무력의 ${GENERAL_TRAITS.levy.levy.warMin}~${GENERAL_TRAITS.levy.levy.warMax}배만큼 금을 얻고, 그 성의 치안이 ${GENERAL_TRAITS.levy.levy.peace} 떨어져요. (쿨타임 ${GENERAL_TRAITS.levy.levy.cooldown}턴)</li>
+      <li><b>증축</b>: 농업·상업·방어·치안이 모두 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키워요. 내 금 ${fmt(RULES.expand.cost[1])}(소성 → 중성) · ${fmt(RULES.expand.cost[2])}(중성 → 대도시), 공적 +${RULES.expand.merit[1]} / +${RULES.expand.merit[2]}, 통솔·무력·지력 경험치 각각 +${RULES.expand.exp[1]} / +${RULES.expand.exp[2]}. 조건이 맞을 때만 버튼이 보여요.</li></ul>`],
     ['💡 작은 팁', `<ul>
       <li>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></li>
       <li>탐색을 하다 보면 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</li>
