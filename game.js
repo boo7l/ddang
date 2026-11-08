@@ -1648,7 +1648,7 @@ function renderJoinInfo() {
     <table class="stats">
       <tr><th>장수</th><td>${memberCount(f.id)}명 <span class="dim">(소속한 유저 수)</span></td></tr>
       <tr><th>성</th><td>${cities.length}개</td></tr>
-      ${traitOf(f.id).name ? `<tr><th>특성</th><td><b class="hi">${traitOf(f.id).name}</b> <span class="dim">${traitOf(f.id).desc}</span></td></tr>` : ''}
+      ${traitOf(f.id).name ? `<tr><th>특성</th><td><b class="hi">${traitOf(f.id).name}</b><br><span class="dim">${traitOf(f.id).desc}</span></td></tr>` : ''}
     </table>
     <p class="sub">시작할 성 <span class="dim">(지도에서 눌러도 돼요)</span></p>
     <div class="picks" id="jCities">${cities.map(c =>
