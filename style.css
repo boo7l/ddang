@@ -329,7 +329,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .opts { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
 .exTable th { width: 128px; white-space: nowrap; } /* 증축 확인 창: 항목 이름이 줄바꿈되지 않게 (2026-11-08) */
 #modalBox .exHead { margin: 20px 0 6px; padding-bottom: 3px; color: var(--title); font-size: 16px; border-bottom: 1px dotted var(--gold-dark); } /* 증축 확인 창 구역 제목 (2026-11-08) */
-.exBody { padding-left: 12px; } #modalBox .exBody p { margin: 4px 0; }
+.exBody { padding-left: 12px; } #modalBox .exBody p { margin: 4px 0; } #modalBox .exNote { margin-top: 16px; } /* 보상과 아래 안내 글 사이 (2026-11-08) */
 @media (min-width: 701px) { .opts.narrow { max-width: 440px; margin-left: auto; margin-right: auto; } } /* PC만: 출진·이동·군량 수송·파괴·유언·첩보 창의 도시 줄 가로 폭을 줄인다 (2026-11-08) */
 .opt {
   display: flex; align-items: center; gap: 8px;
