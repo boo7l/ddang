@@ -176,12 +176,12 @@ function beep(freq, dur, type = "square", vol = 0.05, slide = 0) {
   } catch (e) {}
 }
 
-// 배경음악 (2026-11-07): 고전 삼국지 전투 느낌의 1분 루프 audio/bgm_battle.wav (preview/bgm/make_midi.js battle → tools/save_bgm.js battle).
+// 배경음악 (2026-11-07): 고전 삼국지 전투 느낌의 1분 루프 audio/bgm_mini.wav (preview/bgm/make_midi.js battle → tools/save_bgm.js battle).
 // 페이지를 열자마자 파일을 미리 받아 둔다 (시작 단추를 누를 때 바로 나오게). 예전 8비트 곡으로는 대신 틀지 않는다: 못 받으면 조용하고, 다음 판에 다시 받는다
 const BATTLE_VOL = 0.20; // 전투곡 음량 20% (2026-11-07, 35% → 30% → 20%)
 let battleBuf = null, battleSrc = null, musicOut = null;
 let battleFile = null; // 받아 둔 파일 (해독 전)
-const fetchBattle = () => (battleFile = fetch("audio/bgm_battle.wav").then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
+const fetchBattle = () => (battleFile = fetch("audio/bgm_mini.wav").then(r => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
 fetchBattle().catch(() => { battleFile = null; });
 function battleReady() {
   if (battleBuf) return Promise.resolve(battleBuf);

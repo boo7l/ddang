@@ -2232,7 +2232,8 @@ const BGM_MERIT = 2000, BGM_MARCH = 1000;
 // 메인 화면~장수 생성·특성·세력 선택(과 명예의 전당)에서는 첫 화면 곡 title (2026-11-07). 게임 화면에서는 공적에 따라
 const BGM_TITLE_SCREENS = ['title', 'hofPage', 'create', 'trait', 'join'];
 // 2026-11-08: 첫 화면 곡과 공적 0~1,000 곡을 맞바꿈 (첫 화면 → history, 게임 공적 1,000 미만 → title)
-const bgmWant = () => { if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'history'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'epic' : m >= BGM_MARCH ? 'march' : 'title'; };
+// 2026-11-08 파일 이름을 쓰임새대로: title(첫 화면들) · game1(공적 1,000 미만) · game2(1,000~2,000) · game3(2,000 이상) · mini(미니게임)
+const bgmWant = () => { if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };
 const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
 async function bgmPlay(song) {
   if (!BGM.ctx) {
