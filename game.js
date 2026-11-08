@@ -1871,7 +1871,7 @@ function expandConfirm() {
     <p class="sub">비용</p>
     <p>내 금 <b class="hi">${fmt(cost)}</b> <span class="dim">(지금 ${fmt(p.gold)})</span>${short ? ' <span class="bad">· 금이 모자라요</span>' : ''}</p>
     <p class="sub">바뀌는 것 <span class="dim">(성의 최대치)</span></p>
-    <table class="stats">
+    <table class="stats exTable">
       ${row('농업', devMax(g0, 'agri'), devMax(g1, 'agri'))}${row('상업', devMax(g0, 'comm'), devMax(g1, 'comm'))}
       ${row('방어', devMax(g0, 'wall'), devMax(g1, 'wall'))}${row('군량 창고', foodMax(g0), foodMax(g1))}
       ${row('수비대장 병력', RULES.guardMax[g0], RULES.guardMax[g1])}
