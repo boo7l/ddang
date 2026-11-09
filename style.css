@@ -1038,4 +1038,4 @@ details.fold > summary:hover h2 { color: var(--title); }
 #info .cityMembers .link.mine:hover { color: var(--panel-dark); } /* 커서를 올리면 바탕이 노랗게 바뀌므로 글자는 어둡게 (2026-11-09) */
 #info .cityMembers { margin-top: 2px; line-height: 1.5; max-height: 4.5em; overflow-y: auto; } /* 세 줄이 넘으면 스크롤 (2026-11-09) */
 #legendTrait .tNameW { color: #fff; } /* 세력 창 특성 이름은 흰색 (2026-11-09) */
-#adminPage table th { text-align: center; } /* 관리 페이지 모든 표: 제목 줄 가운데 (2026-11-10) */
+#adminPage .adminScroll table tr:first-child th { text-align: center; } /* 관리 페이지 모든 표: 제목 줄 가운데 (2026-11-10) */
