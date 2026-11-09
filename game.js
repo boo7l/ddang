@@ -186,7 +186,7 @@ function sortableTable(table, key) {
   [...head.cells].forEach((th, i) => {
     if (!th.textContent.trim()) return;
     th.classList.add('sortable'); th.title = '눌러서 정렬';
-    th.onclick = () => { const s = adminSort[key]; adminSort[key] = { col: i, dir: s && s.col === i ? -s.dir : 1 }; apply(); };
+    th.onclick = () => { const s = adminSort[key]; adminSort[key] = { col: i, dir: s && s.col === i ? -s.dir : -1 }; apply(); }; // 처음 누르면 내림차순(큰 값·최근 먼저), 다시 누르면 오름차순 (2026-11-09)
   });
   apply();
 }
