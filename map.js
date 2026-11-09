@@ -94,7 +94,7 @@ function renderLegend() {
   const f = legendPick && MAP.factions.find(x => x.id === legendPick), t = f && traitOf(f.id).name ? traitOf(f.id) : null; // 지도 파일 특성 먼저 (2026-11-06)
   const members = f && typeof S !== 'undefined' && S ? Object.values(S.generals).filter(g => g.faction === f.id).length : 0;
   box.innerHTML = !f ? '세력을 누르면 정보가 보여요.'
-    : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? t.name : '없음'}${t ? `<br>${t.desc}` : ''}`;
+    : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? `<span class="tNameW">${t.name}</span>` : '없음'}${t ? `<br>${t.desc}` : ''}`;
 }
 
 function renderCheck() {
