@@ -75,6 +75,7 @@ const RULES = {
   draftPerLea: { min: 20, max: 25 }, // 징병 1회 = 통솔 × 20~25명 (무작위. 2026-11-04 시즌 5 15~25에서 최솟값 올림. 2026-10-25 15~20에서 올림)
   draftPerMerit: 0.1,       // 징병에 공적 × 0.1명이 더 모인다 (2026-10-25)
   draftPeacePer: 300,       // 징병하면 그 성의 치안이 모은 병사 300명당 1 떨어진다 (2026-10-25 200 → 250, 2026-10-26 "치안이 너무 잘 깎인다" 의견으로 300)
+  draftPeacePerS7: 350,     // 시즌 7부터 350명당 1 (2026-11-09 기획자, 징병 치안 감소 완화. 시즌 7 패치노트에 넣음). draftPeaceOf()
   troopsPerLea: 100,        // 장수 한 명의 최대 병력 = 통솔 × 100
 
   // 군량은 성마다 따로 쌓인다. 상한은 성 규모(1 소성, 2 중성, 3 대도시)마다 다르다 (임시값)
@@ -202,6 +203,8 @@ const domesticGain = (key, stat) => {
   const [lo, hi] = RULES.domesticRate[key] || RULES.domesticRate.agri;
   return Math.max(1, Math.floor(stat * (lo + Math.random() * (hi - lo))));
 };
+// 징병 치안 감소 기준 (모은 병사 몇 명당 치안 -1): 시즌 7부터 350, 그 전엔 300
+const draftPeaceOf = season => ((season || 1) >= 7 ? RULES.draftPeacePerS7 : RULES.draftPeacePer);
 // 징병 1회로 늘어나는 병력: 통솔 × 10~20 (무작위)
 // 징병 1회 = 통솔 × 15~25 (무작위) + 공적 × 0.1
 const draftGain = (lea, merit = 0) => lea * randInt(RULES.draftPerLea.min, RULES.draftPerLea.max) + Math.floor(merit * RULES.draftPerMerit);

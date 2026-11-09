@@ -522,7 +522,7 @@ function runDraft(g, o) {
   g.troops += gain;
   addRecord(g, 'drafted', gain);
   capDefense(g); // 병사가 처음 생겼는데 이 성 수비가 꽉 찼으면 방어 모드는 꺼진 채로
-  const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
+  const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
   cs.peace -= drop;
   addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
@@ -549,7 +549,7 @@ function runGuardDraft(g, type) {
   cs.guard = (cs.guard || 0) + gain;
   cs.guardType = type;
   addRecord(g, 'drafted', gain);
-  const drop = Math.min(cs.peace, Math.round(gain / RULES.draftPeacePer * (1 + (t.draftPeace || 0))));
+  const drop = Math.min(cs.peace, Math.round(gain / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0))));
   cs.peace -= drop;
   addLog(g, `${city.name}: 수비대에 ${type}을 모았다. 수비대 +${fmt(gain)} (${fmt(cs.guard)}/${fmt(max)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
