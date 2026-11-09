@@ -2145,14 +2145,15 @@ function cityDetailRows(c) {
   rows.push(...Object.keys(DOMESTIC).filter(cmdOn).map(k =>
     `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
   if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.food === undefined ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
-  if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
-  // 소속 장수 (2026-11-09): 우리 세력 성에 머무는 우리 장수 목록, 눌러서 펼치고 접는다 (병력 많은 순, 이름을 누르면 장수 정보 창)
-  if (p && p.faction && c.faction === p.faction) {
-    const list = allGenerals().filter(g => g.faction === p.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
+  // 소속 장수 (2026-11-09): 그 성에 머무는 장수 목록, 눌러서 펼치고 접는다 (병력 많은 순, 이름을 누르면 장수 정보 창)
+  // 우리 세력 성, 그리고 첩보가 유효한 다른 세력 성 (서버가 그 성 장수 정보를 모두 보내 준다)
+  if (p && p.faction && c.faction && (c.faction === p.faction || cs.spied)) {
+    const list = allGenerals().filter(g => g.faction === c.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
     const open = cityMembersOpen && list.length;
-    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲ 접기' : '▼'}</button>` : '<span class="dim">없음</span>'}${open ? ` <span class="cityMembers">${list.map(g =>
-      `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`).join(' · ')}</span>` : ''}</td></tr>`); // 이름만 한 줄로 이어서 (2026-11-09 기획자)
+    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲ 접기' : '▼'}</button>` : '<span class="dim">없음</span>'}${open ? `<div class="cityMembers">${list.map(g =>
+      `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
+  if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
 let cityMembersOpen = false; // 성 정보의 소속 장수 목록을 펼쳤는지 (다른 성을 눌러도 그대로)

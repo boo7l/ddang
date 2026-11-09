@@ -1034,3 +1034,4 @@ details.fold > summary:hover h2 { color: var(--title); }
 #modalBox.playerBox .pStats th, #modalBox.playerBox .pStats td.num { white-space: nowrap; padding-right: 10px; }
 /* 성 정보 소속 장수 목록 (2026-11-09) */
 #info .cityMembers .link.mine { color: var(--title); }
+#info .cityMembers { margin-top: 2px; }
