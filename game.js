@@ -263,7 +263,7 @@ function adminDialog(tab = 'users', fid = null) {
       <td class="num">${fmt(x.troops)}</td><td class="num">${fmt(x.gold)}</td><td class="num">${fmt(x.merit)}</td>
       <td class="num">${x.lea}</td><td class="num">${x.war}</td><td class="num">${x.int}</td></tr>`).join('');
     body = `<p class="dim">세력 ${fs.filter(x => x.cs.length).length}개 · 성 ${total}개 중 빈 땅 ${empty}개 · 장수 ${gens.length}명 (재야 ${free}명)</p>
-      <div class="adminScroll"><table class="stats rank"><tr><th>세력</th><th>장수</th><th>성</th><th>성 규모</th><th title="장수 병력 합 (수비대 제외)">총 병력</th><th>총 금</th><th>총 공적</th><th>평균 통솔</th><th>평균 무력</th><th>평균 지력</th></tr>${rows}</table></div>
+      <div class="adminScroll"><table class="stats rank facTable"><tr><th>세력</th><th>장수</th><th>성</th><th>성 규모</th><th title="장수 병력 합 (수비대 제외)">총 병력</th><th>총 금</th><th>총 공적</th><th>평균 통솔</th><th>평균 무력</th><th>평균 지력</th></tr>${rows}</table></div>
       <p class="dim small">총 병력은 장수 병력만 더했어요 (다른 세력 성의 수비대는 숨겨져 있어서 빠져요). 세력 이름을 누르면 그 세력 장수 목록으로 가요.</p>`;
   } else if (tab === 'users') {
     // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
