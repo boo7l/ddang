@@ -281,6 +281,7 @@ function adminDialog(tab = 'users', fid = null) {
     if (box.querySelector('#aLoyal')) box.querySelector('#aLoyal').onchange = e => { adminLoyalOnly = e.target.checked; adminDialog('users', e.target.dataset.keep); };
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
     box.querySelectorAll('.adminChat [data-gid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.gid, 'chat', fid); }); // 채팅의 장수 이름 → 정보·제재 (2026-11-05)
+    const chatUl = box.querySelector('.adminChat'); if (chatUl) chatUl.scrollTop = chatUl.scrollHeight; // 최신 글(맨 아래)부터 보이게 (2026-11-09)
     box.querySelectorAll('[data-delchat]').forEach(b => { b.onclick = async () => { // 채팅 글 지우기 (2026-10-31)
       if (!confirm('이 글을 지울까요? 되돌릴 수 없어요.')) return;
       if (await call('adminDelChat', { id: b.dataset.delchat })) adminDialog('chat', fid);
