@@ -127,7 +127,7 @@ function unifyDialog(u = S.unified) {
 
 // ===== 관리 페이지 (2026-11-06: 🛠 관리 창 + 👁 관리자 보기 팝업을 한 페이지로. 예전 팝업 방식은 git 태그 backup-admin-popup-20261106) =====
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
-const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['chat', '💬 채팅'], ['members', '🗂 가입자']];
+const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['factions', '🚩 세력'], ['chat', '💬 채팅'], ['members', '🗂 가입자']];
 let adminTab = 'ops';
 // 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
 const ADMIN_HIDES = ['title', 'hofPage', 'create', 'trait', 'join', 'game', 'mTabs', 'refreshBtn', 'miniLink'];
@@ -249,7 +249,24 @@ function adminDialog(tab = 'users', fid = null) {
   const counts = {};
   gens.forEach(g => { counts[g.faction || ''] = (counts[g.faction || ''] || 0) + 1; });
   let body;
-  if (tab === 'users') {
+  if (tab === 'factions') {
+    // 세력 탭 (2026-11-10): 이번 시즌 세력별 장수 수·성·병력 등. 병력은 장수 병력만 (다른 세력 성의 수비대는 관리자에게도 숨긴다, 2026-11-09)
+    const fs = MAP.factions.map(f => {
+      const gs = gens.filter(g => g.faction === f.id), cs = citiesOfFaction(f.id), n = gs.length || 1;
+      const avg = k => gs.length ? Math.round(gs.reduce((a, g) => a + effStats(g)[k], 0) / n) : 0;
+      return { f, gs, cs, troops: gs.reduce((a, g) => a + (g.troops || 0), 0), gold: gs.reduce((a, g) => a + (g.gold || 0), 0), merit: gs.reduce((a, g) => a + (g.merit || 0), 0), lea: avg('lea'), war: avg('war'), int: avg('int') };
+    }).filter(x => x.gs.length || x.cs.length).sort((a, b) => b.cs.length - a.cs.length || b.gs.length - a.gs.length);
+    const free = gens.filter(g => !g.faction).length, total = MAP.cities.length, empty = MAP.cities.filter(c => !c.faction).length;
+    const gradeText = cs => [3, 2, 1].map(k => [k, cs.filter(c => c.grade === k).length]).filter(([, n]) => n).map(([k, n]) => `${GRADE_NAME[k]} ${n}`).join(' · ');
+    const rows = fs.map(x => `<tr><td>${swatch(x.f.id)}<button class="link" data-uf="${x.f.id}" title="이 세력 장수 보기">${esc(x.f.name)}</button>${x.cs.length ? '' : ' <span class="dim small">(멸망)</span>'}</td>
+      <td class="num">${x.gs.length}명</td><td class="num">${x.cs.length}</td><td class="small">${gradeText(x.cs) || '-'}</td>
+      <td class="num">${fmt(x.troops)}</td><td class="num">${fmt(x.gs.length ? Math.round(x.troops / x.gs.length) : 0)}</td><td class="num">${fmt(x.gold)}</td><td class="num">${fmt(x.merit)}</td>
+      <td class="num">${x.lea}</td><td class="num">${x.war}</td><td class="num">${x.int}</td>
+      <td class="small">${x.cs.map(c => esc(c.name)).join(', ') || '-'}</td></tr>`).join('');
+    body = `<p class="dim">세력 ${fs.filter(x => x.cs.length).length}개 · 성 ${total}개 중 빈 땅 ${empty}개 · 장수 ${gens.length}명 (재야 ${free}명)</p>
+      <div class="adminScroll"><table class="stats rank"><tr><th>세력</th><th>장수</th><th>성</th><th>성 규모</th><th title="장수 병력 합 (수비대 제외)">총 병력</th><th>평균 병력</th><th>총 금</th><th>총 공적</th><th>평균 통솔</th><th>평균 무력</th><th>평균 지력</th><th>보유 성</th></tr>${rows}</table></div>
+      <p class="dim small">총 병력은 장수 병력만 더했어요 (다른 세력 성의 수비대는 숨겨져 있어서 빠져요). 세력 이름을 누르면 그 세력 장수 목록으로 가요.</p>`;
+  } else if (tab === 'users') {
     // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
     const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
     const pick = fid === '*' && gens.length ? '*' : fid !== null && counts[fid === '-' ? '' : fid] ? (fid === '-' ? '' : fid) : (keys[0] || ''); // '*' = 전체 (2026-11-08)
@@ -277,7 +294,7 @@ function adminDialog(tab = 'users', fid = null) {
   adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
-    if (tab === 'users') sortableTable(box.querySelector('.adminScroll table'), 'users');
+    if (tab === 'users' || tab === 'factions') sortableTable(box.querySelector('.adminScroll table'), tab);
     if (box.querySelector('#aLoyal')) box.querySelector('#aLoyal').onchange = e => { adminLoyalOnly = e.target.checked; adminDialog('users', e.target.dataset.keep); };
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
     box.querySelectorAll('.adminChat [data-gid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.gid, 'chat', fid); }); // 채팅의 장수 이름 → 정보·제재 (2026-11-05)
