@@ -142,6 +142,7 @@ const RULES = {
 
   // 병종 (기획서 8장)
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
+  matchupS7: 0.15,          // 시즌 7부터 +15% (2026-11-10 기획자, 시즌 7 패치노트에 넣음). matchupOf()
   warPer1: 0.0015,          // 병종과 상관없이 무력 1마다 전투력 +0.15%, 공격·수비 모두 (무력 100이면 +15%). 화면·패치노트에는 '10마다 +1.5%'. 2026-11-06 시즌 6: 10마다 +1%(10 단위로 끊음)에서. 2026-11-04 시즌 5: 20마다 +1%에서 10마다로
   guardUnit: { type: '보병' },  // 수비대장의 기본 병종 (훈련도는 2026-11-06 기능째 지움)
 
@@ -403,9 +404,10 @@ function unitPower(u) {
   const c = RULES.troopCurve, eff = u.troops > 0 ? c.ref * Math.pow(u.troops / c.ref, c.exp) : 0; // 병력 곡선
   return eff * (0.5 + stat / 120);
 }
-// 상성 보정: a가 b에게 강하면 1.2. 약할 때 깎는 것은 없다 (너무 세서 뺐다)
+// 상성 보정: a가 b에게 강하면 1.2 (시즌 7부터 1.15). 약할 때 깎는 것은 없다 (너무 세서 뺐다)
 function matchupOf(a, b) {
-  if (UNIT_TYPES[a.type].beats === b.type) return 1 + RULES.matchup;
+  const season = typeof S !== 'undefined' && S ? S.season || 1 : 1; // 전투 시뮬레이터처럼 S가 없으면 지금 값
+  if (UNIT_TYPES[a.type].beats === b.type) return 1 + (season >= 7 ? RULES.matchupS7 : RULES.matchup);
   return 1;
 }
 // 공격 전투력: 정란이 있으면 더 세다
