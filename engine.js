@@ -1220,12 +1220,14 @@ function runPlot(g, kind, o) {
     ? [cut('wall', int * plotRoll(PLOT.destroy.wallPerInt))]
     : [cut('peace', int * plotRoll(PLOT.rumor.peacePerInt)), cut('agri', int * plotRoll(PLOT.rumor.devPerInt)), cut('comm', int * plotRoll(PLOT.rumor.devPerInt))];
   addLog(g, `${head} ${c.name}: ${kind === 'destroy' ? '성벽 곳곳을 무너뜨렸다' : '흉흉한 소문을 퍼뜨렸다'}. ${what.join(' · ')}`);
-  // 당한 성에 머무는 그 세력 장수에게 알림 (누가 했는지는 숨긴다, 실패는 알리지 않는다, 2026-11-10)
-  const crit = r === 'crit';
-  const warn = kind === 'destroy'
-    ? `⚠ 누군가 ${c.name}의 ${crit ? '성벽을 크게' : '성벽 곳곳을'} 무너뜨렸다! ${what.join(' · ')}`
-    : `⚠ 누군가 ${c.name}에 ${crit ? '아주 ' : ''}흉흉한 소문을 퍼뜨렸다! ${what.join(' · ')}`;
-  allGenerals().filter(x => x.city === c.id && x.faction === c.faction).forEach(x => addLog(x, warn));
+  // 당한 성에 머무는 그 세력 장수에게 알림 (누가 했는지는 숨긴다, 실패는 알리지 않는다, 2026-11-10). 시즌 7부터 (시즌 7 패치노트에 넣음)
+  if ((S.season || 1) >= 7) {
+    const crit = r === 'crit';
+    const warn = kind === 'destroy'
+      ? `⚠ 누군가 ${c.name}의 ${crit ? '성벽을 크게' : '성벽 곳곳을'} 무너뜨렸다! ${what.join(' · ')}`
+      : `⚠ 누군가 ${c.name}에 ${crit ? '아주 ' : ''}흉흉한 소문을 퍼뜨렸다! ${what.join(' · ')}`;
+    allGenerals().filter(x => x.city === c.id && x.faction === c.faction).forEach(x => addLog(x, warn));
+  }
   addMerit(g, RULES.merit.plotOk); // 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   gainStatExp(g, 'int', r === 'crit' ? PLOT.critExp : PLOT.exp);
   return '';
