@@ -719,7 +719,7 @@ function loseTreasures(loser, winner) {
 // 턴이 오면 출진해서 바로 싸운다 (기획서 7장).
 //  1. 공백지: 주인이 없어 그냥 들어간다 (금 없음)
 //  2. 수비 부대가 있으면 최대 5합. 병력 많은 순서로 하나씩 상대하고, 합이 남으면 다음 부대와 이어서 싸운다
-//  3. 수비 부대가 없거나 모두 쓰러뜨렸으면 같은 턴에 성벽 공격: 남은 병력의 3~4.5%만큼 방어를 깎고, 그 3.5배의 병력을 잃는다
+//  3. 수비 부대가 없거나 모두 쓰러뜨렸으면 같은 턴에 성벽 공격: 남은 병력의 3~4%만큼 방어를 깎고, 그 4배(siegeLoss)의 병력을 잃는다
 //  4. 방어가 0이 되면 점령 (금 500). 방어가 남으면 돌아오고, 깎인 방어는 그대로 남는다
 // 보고서는 공격한 장수와 그 성에 있던 장수들이 받고, 그 세력의 다른 장수들에게는 알림이 간다
 function runAttack(g, o, mark) {
@@ -941,7 +941,7 @@ function siegeAttack(g, att, from, to, mark, f) {
     const base = Math.max(1, Math.floor(g.troops * rate));
     const boost = 1 + (traitOf(g.faction).siege || 0) + (g.siege && g.siege.충차 ? SIEGE_EFFECT.ramWall : 0); // 엄백호·충차: 같은 손실로 더 깎는다
     const dmg = Math.min(cs.wall, Math.floor(base * boost));
-    const loss = Math.min(g.troops, Math.round(Math.round(dmg / boost) * RULES.siegeLoss)); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 3.5배(siegeLoss)만큼 잃는다. 병력은 정수로 맞춘다
+    const loss = Math.min(g.troops, Math.round(Math.round(dmg / boost) * RULES.siegeLoss)); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 siegeLoss(4)배만큼 잃는다. 병력은 정수로 맞춘다
     cs.wall -= dmg;
     wallDmg = dmg;
     g.troops -= loss;
