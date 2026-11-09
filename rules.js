@@ -118,6 +118,7 @@ const RULES = {
   guardStat: 60,            // 수비대장 능력치 (통솔·무력·지력 모두, 2026-10-26 50에서 올림)
   // 5합 전투 (기획서 8장): 출진 1회에 최대 5합. 한 합에 양쪽이 동시에 상대 병력을 "내 전투력 × 17%"만큼 줄인다
   roundsMax: 5,
+  fieldFromSeason: 7,       // 야전 (맞출진, 2026-11-09 기획): 이 시즌부터. 같은 턴에 두 성이 서로 출진하면 들판에서 먼저 싸운다 (engine.js runField)
   roundRate: 0.2,           // 2026-11-07 시즌 6: 0.2 → 0.17 → 0.19 → 0.2 (방어도 패치로 성 싸움 양쪽 피해가 이미 15~30% 줄어서 되돌림. 큰 부대는 병력 곡선으로 누름. 패치노트에는 안 씀). 임시: 비슷하면 5합 뒤에도 양쪽이 남고, 2~3배 차이면 2~3합에 끝난다
   // 병력 곡선: 병력이 많을수록 전투력이 덜 늘어난다. 실효 병력 = 5,000 × (병력 ÷ 5,000)^exp (exp 1이면 정비례)
   troopCurve: { ref: 4491, exp: 0.70 }, // 병력 곡선 (2026-11-07 시즌 6: 4,730·0.71 → 4,491·0.70 (같은 날 0.67 → 0.69 → 0.70으로 완화). 1,000명은 그대로, 6,000명 -1.8%, 12,000명 -2.5%. 2026-10-26 지수 0.75 → 0.72, 2026-10-31 기준 5,000 → 4,730·지수 0.71: 1,000명은 그대로 두고 큰 부대 우위를 조금 더 누름)
@@ -436,15 +437,18 @@ const duelWinRate = (myWar, theirWar) => Math.min(0.9, Math.max(0.1, 0.5 + (myWa
 
 // 공격 부대 하나와 수비 부대 하나가 남은 합 수(left)만큼 맞붙는다. 한쪽이 전멸하면 멈춘다.
 // 병력을 직접 줄이고 { used(쓴 합 수), lines(합마다 한 줄), atkLost, defLost }를 돌려준다
-function fightRounds(att, def, wall, left) {
+// field: 야전 (2026-11-09, 시즌 7부터). 양쪽 다 공격 쪽 전투력, 성벽·철벽·세력 수비 특성 없음, 55도발·벽력거·정란·설득민수·관통맨 없음
+const fieldPower = (u, foe) => attackPower({ ...u, siege: {} }, foe); // 야전에서는 병기(정란)가 힘을 못 쓴다
+function fightRounds(att, def, wall, left, field = false) {
+  if (field) wall = 0;
   const luck = () => 1 + (Math.random() * 2 - 1) * RULES.battleRandom;
   const a0 = att.troops, d0 = def.troops, lines = [];
   let used = 0, pierced = 0; // pierced: 개인 특성 관통맨이 합 중에 깎은 방어
   // 개인 특성 55도발 (2026-11-07 시즌 6): 공격 쪽이 수비 부대와 맞붙을 때마다 55% 판정. 성공하면 이 맞대결 동안 그 상대는 성벽(방어도) 효과를 못 받는다
-  const taunted = !!gTrait(att).taunt && def.troops > 0 && Math.random() < gTrait(att).taunt;
+  const taunted = !field && !!gTrait(att).taunt && def.troops > 0 && Math.random() < gTrait(att).taunt;
   if (taunted) lines.push(`🔥 ${att.name}의 도발! ${def.name} 부대가 성 밖으로 뛰쳐나왔다! (성벽 효과 없음)`);
   // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
-  if (att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
+  if (!field && att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
     att.struck = true;
     const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * luck()));
     def.troops -= dLoss;
@@ -453,7 +457,7 @@ function fightRounds(att, def, wall, left) {
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
     // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 persuade(지금 4%) 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
-    if (gTrait(def).persuade && defensePower(def, wall, att) / (1 - wallCut(wall)) < attackPower(att, def) && Math.random() < gTrait(def).persuade) {
+    if (!field && gTrait(def).persuade && defensePower(def, wall, att) / (1 - wallCut(wall)) < attackPower(att, def) && Math.random() < gTrait(def).persuade) {
       att.persuaded = true;
       lines.push(`${used}합: 🗣 ${def.name}의 설득에 ${att.name}의 마음이 흔들렸다! ${att.name} 부대가 물러난다.`);
       break;
@@ -501,8 +505,8 @@ function fightRounds(att, def, wall, left) {
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
-    const hitDef = Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
-    const hitAtt = Math.ceil(defensePower(def, wall, att) * RULES.roundRate * luck());
+    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck()) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
+    const hitAtt = Math.ceil((field ? fieldPower(def, att) : defensePower(def, wall, att)) * RULES.roundRate * luck());
     const dLoss = Math.min(def.troops, hitDef), aLoss = Math.min(att.troops, hitAtt);
     def.troops -= dLoss;
     att.troops -= aLoss;

@@ -2146,8 +2146,22 @@ function cityDetailRows(c) {
     `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
   if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.food === undefined ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
+  // 소속 장수 (2026-11-09): 우리 세력 성에 머무는 우리 장수 목록, 눌러서 펼치고 접는다 (병력 많은 순, 이름을 누르면 장수 정보 창)
+  if (p && p.faction && c.faction === p.faction) {
+    const list = allGenerals().filter(g => g.faction === p.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
+    const open = cityMembersOpen && list.length;
+    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲ 접기' : '▼ 보기'}</button>` : '<span class="dim">없음</span>'}${open ? `<ul class="cityMembers">${list.map(g =>
+      `<li class="${g.id === MY_ID ? 'mine' : ''}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button> <span class="dim">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}${g.defense && g.troops > 0 ? ' · 수비' : ''}</span></li>`).join('')}</ul>` : ''}</td></tr>`);
+  }
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
+let cityMembersOpen = false; // 성 정보의 소속 장수 목록을 펼쳤는지 (다른 성을 눌러도 그대로)
+document.addEventListener('click', e => {
+  if (!e.target.closest('#info')) return;
+  if (e.target.closest('[data-cm]')) { cityMembersOpen = !cityMembersOpen; renderInfo(); return; }
+  const b = e.target.closest('[data-gid]');
+  if (b) memberDialog(b.dataset.gid);
+});
 
 // ===== 시작 =====
 // map.js가 지도를 다 읽으면 부른다. 1. 들어와 있지 않으면 로그인 화면부터

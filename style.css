@@ -1032,3 +1032,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 #modalBox.playerBox .pStats td:nth-child(3) { width: 100%; padding-right: 10px; }
 #modalBox.playerBox .pStats td:nth-child(4) { white-space: nowrap; }
 #modalBox.playerBox .pStats th, #modalBox.playerBox .pStats td.num { white-space: nowrap; padding-right: 10px; }
+/* 성 정보 소속 장수 목록 (2026-11-09) */
+#info ul.cityMembers { list-style: none; margin: 4px 0 0; padding: 0; max-height: 160px; overflow-y: auto; }
+#info ul.cityMembers li { padding: 1px 0; }
+#info ul.cityMembers li.mine .link { color: var(--title); }

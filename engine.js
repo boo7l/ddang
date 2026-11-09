@@ -361,9 +361,12 @@ function runRegionEvents(month) {
 // 이번 턴에 성마다 출진한 장수 id (runOrders가 턴마다 비운다)
 let turnAttackers = {};
 let turnCaptured = {}; // 이번 턴에 싸워서 함락한 성 → 함락한 세력 (승전 기록, 2026-10-28)
+let turnTodo = [], turnIdx = 0; // 이번 턴 명령 목록과 지금 실행 중인 차례 (야전 상대 찾기, 2026-11-09)
+let fieldDone = new Set(); // 야전에 휘말려 이번 턴 출진 명령이 이미 끝난 장수 id
 function runOrders(mark) {
   turnAttackers = {};
   turnCaptured = {};
+  fieldDone = new Set();
   const todo = [], idle = [];
   for (const g of allGenerals()) {
     const order = g.queue.shift();
@@ -373,8 +376,11 @@ function runOrders(mark) {
     if (!order && g.faction) addRecord(g, 'idle'); // 대기한 턴 수 (2026-11-08, 시즌 기록용)
   }
   todo.sort((a, b) => (a.order.orderedAt || 0) - (b.order.orderedAt || 0));
-  for (const { g, order } of todo) {
+  turnTodo = todo;
+  for (turnIdx = 0; turnIdx < todo.length; turnIdx++) {
+    const { g, order } = todo[turnIdx];
     if (S.unified || !g.faction) continue; // 통일됐거나, 이번 턴에 앞서 세력을 잃었다
+    if (fieldDone.has(g.id)) continue; // 야전에서 이미 싸워 이번 턴 출진이 끝났다
     const fail = COMMANDS[order.cmd] && cmdOn(order.cmd) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
     else addRecord(g, 'n_' + order.cmd); // 명령별 성공 횟수 (2026-11-08, 시즌 기록용: n_explore · n_move · n_transport …)
@@ -697,6 +703,19 @@ function healAfter(x, lost, lines) {
   lines.push(`🩹 ${x.name}: 너 치료된 거야! 다친 병사 ${fmt(back)}명이 돌아왔다. (병력 ${fmt(x.troops)})`);
 }
 
+// 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 2% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
+function loseTreasures(loser, winner) {
+  for (const n of treasuresOf(loser)) {
+    const r = Math.random();
+    if (r >= TREASURE_RULES.loseRate + TREASURE_RULES.takeRate) continue;
+    loser.treasures = treasuresOf(loser).filter(x => x !== n);
+    if (r < TREASURE_RULES.takeRate && winner && !treasuresOf(winner).length) { // 이긴 쪽이 이미 보물이 있으면 사라진다 (한 장수 1개까지)
+      winner.treasures = [...treasuresOf(winner), n];
+      logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} 싸움 끝에 ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
+    } else logAll(`💎 ${loser.name}의 부대가 무너지는 틈에 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
+  }
+}
+
 // 턴이 오면 출진해서 바로 싸운다 (기획서 7장).
 //  1. 공백지: 주인이 없어 그냥 들어간다 (금 없음)
 //  2. 수비 부대가 있으면 최대 5합. 병력 많은 순서로 하나씩 상대하고, 합이 남으면 다음 부대와 이어서 싸운다
@@ -727,7 +746,123 @@ function runAttack(g, o, mark) {
   home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
   g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
+  const att = unitOf(g);
+  // 야전 (시즌 7부터): 상대 성에서 우리 성으로 출진할 장수가 이번 턴에 아직 남아 있으면 들판에서 먼저 맞붙는다
+  if (to.faction && fieldOn()) {
+    const f = runField(g, att, from, to, mark);
+    if (f) return f.cur ? siegeAttack(f.cur.g, f.cur.u, f.cur.from, f.cur.to, mark, f) : '';
+  }
+  return siegeAttack(g, att, from, to, mark, null);
+}
 
+// ===== 야전 (맞출진, 2026-11-09 기획 · 시즌 7부터, 기획서 "야전 (맞출진)") =====
+// 같은 턴에 A성 장수는 B성을, B성 장수는 A성을 칠 때 들판에서 먼저 1:1로 맞붙는다. 야전과 공성을 합쳐 출진 한 번에 5합.
+const fieldOn = () => (S.season || 1) >= RULES.fieldFromSeason;
+// x가 o(출진) 명령을 지금 실행할 수 있는지 (금·군량은 쓰지 않고 보기만 한다). 못 나가는 장수는 야전 상대가 아니다
+function canMarch(x, o) {
+  const from = x.city && cityById(x.city), to = cityById(o.to);
+  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || x.troops <= 0) return false;
+  if (x.attackTurn && x.attackTurn + RULES.attackCooldown - S.turn > 0) return false;
+  return S.cities[from.id].food >= marchFood(x.troops, x.faction) && x.gold >= attackGoldOf(x.troops);
+}
+// cur 쪽(cur.from → cur.to로 가는 부대)과 마주칠 다음 상대: 이번 턴에 아직 실행 전인 출진 가운데 cur.to에서 cur.from으로 오는 적 장수, 예약 순서대로
+function nextFieldFoe(cur, fought) {
+  if (!cmdOn('attack')) return null;
+  for (let i = turnIdx + 1; i < turnTodo.length; i++) {
+    const { g: x, order: o } = turnTodo[i];
+    if (!o || o.cmd !== 'attack' || o.to !== cur.from.id || x.city !== cur.to.id || !x.faction || x.faction === cur.g.faction) continue;
+    if (fieldDone.has(x.id) || fought.has(x.id) || !canMarch(x, o)) continue;
+    return x;
+  }
+  return null;
+}
+// 야전에 끌려 나온 장수도 출진한 것: 금·군량을 쓰고 출진 쿨타임이 돈다. 이번 턴 그 출진 명령은 여기서 끝난다
+function joinField(x, to) {
+  const home = S.cities[x.city];
+  home.food -= marchFood(x.troops, x.faction);
+  pay(x, 'attack', attackGoldOf(x.troops));
+  x.attackTurn = S.turn;
+  (turnAttackers[to.id] = turnAttackers[to.id] || []).push(x.id);
+  fieldDone.add(x.id);
+  addRecord(x, 'n_attack');
+}
+// 야전이 없으면 null. 있으면 { cur, lines }: cur는 야전을 모두 이기고 공성으로 가는 쪽 (없으면 null = 이번 출진은 야전으로 끝)
+function runField(g, att, from, to, mark) {
+  const fought = new Set([g.id]); // 한 장수는 한 턴에 야전에 한 번만
+  let foe = nextFieldFoe({ g, from, to }, fought);
+  if (!foe) return null;
+  const side = (x, u, a, b) => ({ g: x, u, from: a, to: b, left: RULES.roundsMax, lost: 0, dealt: 0, beaten: 0, by: null });
+  const sides = [];
+  let cur = side(g, att, from, to);
+  sides.push(cur);
+  const lines = [`⚔ ${from.name}~${to.name} 사이 야전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! 들판에서 ${factionById(foe.faction).name} 세력 ${foe.name} 부대와 맞닥뜨렸다!`];
+  const notes = []; // [세력 id, 알림 문구]: 같은 세력 장수들에게
+  const tag = u => `${u.name}(${u.type} ${fmt(u.troops)})`;
+  const PER_SORTIE = ['dueled', 'schemed', 'charged']; // 출진 한 번(5합)에 한 번씩만 일어나는 것
+  let n = 0;
+  while (foe) {
+    joinField(foe, cur.from);
+    fought.add(foe.id);
+    const st = side(foe, unitOf(foe), cur.to, cur.from);
+    sides.push(st);
+    n++;
+    const a = cur.u, d = st.u;
+    const edge = matchupOf(a, d) > 1 ? ` · ${a.type}이 ${d.type}에 강하다!` : matchupOf(d, a) > 1 ? ` · ${d.type}이 ${a.type}에 강하다!` : '';
+    lines.push(`▶ ${n}차 야전: ${tag(a)} 대 ${tag(d)}, 들판에서 맞붙었다 (성벽 없음)${edge}`);
+    const before = PER_SORTIE.map(k => !!a[k]);
+    const r = fightRounds(a, d, 0, Math.min(cur.left, st.left), true);
+    PER_SORTIE.forEach((k, i) => { if (a[k] && !before[i]) d[k] = true; }); // 이 맞대결에서 일어났으면 상대 쪽 출진에서도 쓴 것
+    lines.push(...r.lines);
+    cur.left -= r.used; st.left -= r.used;
+    cur.lost += r.atkLost; cur.dealt += r.defLost;
+    st.lost += r.defLost; st.dealt += r.atkLost;
+    const aDead = a.troops <= 0, dDead = d.troops <= 0;
+    if (dDead) { lines.push(`${d.name} 부대 전멸!`); cur.beaten++; st.by = cur.g; }
+    if (aDead) { lines.push(`${a.name} 부대 전멸!`); st.beaten++; cur.by = st.g; }
+    const res = (foeDead, meDead) => (meDead && !foeDead ? '패배' : foeDead && !meDead ? '승리' : '무승부');
+    notes.push([cur.g.faction, `⚔ ${cur.g.name} 부대가 ${josa(cur.to.name, '으로')} 가던 길에 ${factionById(st.g.faction).name} 세력 ${st.g.name} 부대와 야전을 벌였다 → ${res(dDead, aDead)}`]);
+    notes.push([st.g.faction, `⚔ ${st.g.name} 부대가 ${josa(st.to.name, '으로')} 가던 길에 ${factionById(cur.g.faction).name} 세력 ${cur.g.name} 부대와 야전을 벌였다 → ${res(aDead, dDead)}`]);
+    if (aDead && dDead) { lines.push('양쪽 부대가 모두 무너졌다.'); cur = null; break; }
+    if (!aDead && !dDead) { lines.push(`${RULES.roundsMax}합 안에 승부가 나지 않아 양쪽 모두 자기 성으로 돌아갔다.`); cur = null; break; }
+    if (aDead) cur = st; // 진 쪽 대신 이긴 상대가 이어서 싸운다
+    lines.push(`${cur.g.name} 부대가 이겼다!`);
+    foe = nextFieldFoe(cur, fought); // 이긴 쪽은 남은 합 안에서 아직 안 싸운 다음 상대와 (합이 0이어도 다음 상대가 있으면 무승부 없이 바로 공성으로 간다)
+    if (foe && cur.left <= 0) foe = null;
+  }
+  if (cur) lines.push(`야전에서 모두 이겼다. 남은 병력 ${fmt(cur.u.troops)}명으로 그대로 ${josa(cur.to.name, '으로')} 쳐들어간다!`);
+  const text = lines.join('\n');
+  for (const st of sides) if (st !== cur) endField(st, text);
+  const inField = new Set(sides.map(st => st.g));
+  for (const [fid, t] of notes) for (const x of allGenerals()) if (x.faction === fid && !inField.has(x)) addLog(x, t);
+  return { cur, lines };
+}
+// 야전에서 출진이 끝난 장수 (전멸·무승부): 병력을 되돌려 적고, 지금 전투 규칙대로 전적·병기·보물·치료·공적·경험치를 준다
+function endField(st, text) {
+  const x = st.g, u = st.u, out = [];
+  x.troops = Math.max(0, u.troops);
+  addRecord(x, 'battles');
+  if (x.troops <= 0) {
+    addRecord(x, 'losses');
+    const t = x.siege && Object.keys(x.siege).find(k => x.siege[k]);
+    if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; out.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
+    loseTreasures(x, st.by);
+  }
+  healAfter(x, st.lost, out);
+  const ev = (u.duelWins || 0) * RULES.merit.duel + (u.schemes || 0) * RULES.merit.scheme + (u.charges || 0) * RULES.merit.charge;
+  out.push(`${x.name} 공적 +${addMerit(x, RULES.merit.lose + Math.floor(st.dealt / RULES.meritPerKill) + ev)} · 남은 병력 ${fmt(x.troops)}`);
+  const statKey = UNIT_TYPES[u.type] ? UNIT_TYPES[u.type].stat : 'lea';
+  gainStatExp(x, statKey, RULES.statExp.battle);
+  if (st.beaten) gainStatExp(x, statKey, RULES.statExp.win * st.beaten);
+  if (u.duelWins) gainStatExp(x, 'war', RULES.duel.exp * u.duelWins);
+  if (u.schemes) gainStatExp(x, 'int', RULES.scheme.statExp * u.schemes);
+  if (u.charges) gainStatExp(x, 'war', RULES.charge.statExp * u.charges);
+  addTechRecord(x, u);
+  addLog(x, text + '\n' + out.join('\n'));
+}
+
+// 공성: 수비 부대와 싸우고 성벽을 친다. f는 앞서 치른 야전 (없으면 null): 남은 합·손실·보고서 줄을 이어받는다
+function siegeAttack(g, att, from, to, mark, f) {
+  const cs = S.cities[to.id];
   const oldFaction = to.faction, owner = factionById(oldFaction), myF = factionById(g.faction);
   // 보고서 한 줄: 문자열은 양쪽 다, { a, d }는 공격 쪽과 수비 쪽 문구가 다른 줄 (없는 쪽은 그 줄을 안 본다, 2026-10-31)
   const lines = [];
@@ -753,9 +888,9 @@ function runAttack(g, o, mark) {
   const others = allGenerals().filter(x => x.faction === oldFaction && !victims.includes(x));
 
   // 2. 수비 부대와 싸움
-  const att = unitOf(g);
-  let left = RULES.roundsMax, atkLost = 0, defLost = 0, pierced = 0;
+  let left = f ? f.cur.left : RULES.roundsMax, atkLost = f ? f.cur.lost : 0, defLost = f ? f.cur.dealt : 0, pierced = 0;
   const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map(), fought = [];
+  if (f) lines.push(...f.lines.map(a => ({ a }))); // 야전 보고서는 공격 쪽만 (수비 쪽 장수 중 야전에 나선 사람은 따로 받는다)
   lines.push({
     a: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`,
     d: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 쳐들어왔다!`,
@@ -825,19 +960,7 @@ function runAttack(g, o, mark) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
     if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
   }
-  // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 2% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
   const topDealer = [...dealtBy].sort((x, y) => y[1] - x[1])[0];
-  const loseTreasures = (loser, winner) => {
-    for (const n of treasuresOf(loser)) {
-      const r = Math.random();
-      if (r >= TREASURE_RULES.loseRate + TREASURE_RULES.takeRate) continue;
-      loser.treasures = treasuresOf(loser).filter(x => x !== n);
-      if (r < TREASURE_RULES.takeRate && winner && !treasuresOf(winner).length) { // 이긴 쪽이 이미 보물이 있으면 사라진다 (한 장수 1개까지)
-        winner.treasures = [...treasuresOf(winner), n];
-        logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} 싸움 끝에 ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
-      } else logAll(`💎 ${loser.name}의 부대가 무너지는 틈에 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
-    }
-  };
   if (g.troops <= 0) loseTreasures(g, topDealer ? topDealer[0] : null);
   for (const d of defs) if (d.ref && d.troops <= 0) loseTreasures(d.ref, g);
   // 개인 특성 너 치료된 거야: 전투 뒤 확률로 잃은 병력의 일부가 돌아온다 (공격한 장수와 수비 장수 모두)
@@ -867,7 +990,7 @@ function runAttack(g, o, mark) {
     : `⚠ ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}의 공격을 받았다. (남은 방어 ${fmt(cs.wall)})`));
   gainStatExp(g, statKey, RULES.statExp.battle);
   // 승전 경험치 (2026-11-08): 상대 장수마다 센다 (수비대장은 빼고). 공격 장수는 전멸시킨 수비 장수 1명당, 수비 장수는 살아남아 막아냈으면
-  const beaten = fought.filter(d => d.troops <= 0).length;
+  const beaten = fought.filter(d => d.troops <= 0).length + (f ? f.cur.beaten : 0); // 야전에서 쓰러뜨린 장수도 센다
   if (beaten) gainStatExp(g, statKey, RULES.statExp.win * beaten);
   for (const d of fought) if (d.troops > 0 && d.ref.troops > 0) gainStatExp(d.ref, UNIT_TYPES[d.type].stat, RULES.statExp.win);
   if (captured) gainStatExp(g, 'lea', RULES.statExp.capture); // 성 점령은 통솔 경험치
