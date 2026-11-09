@@ -2151,7 +2151,7 @@ function cityDetailRows(c) {
   if (p && p.faction && c.faction && (c.faction === p.faction || cs.spied)) {
     const list = allGenerals().filter(g => g.faction === c.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
     const open = cityMembersOpen && list.length;
-    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲ 접기' : '▼'}</button>` : '<span class="dim">없음</span>'}${open ? `<div class="cityMembers">${list.map(g =>
+    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${open ? `<div class="cityMembers">${list.map(g =>
       `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
