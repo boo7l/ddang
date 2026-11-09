@@ -518,7 +518,7 @@ table.rank .num { text-align: right; padding-right: 12px; }
 
 /* 세력 채팅 (기획서 10장) */
 #chat { margin-top: 12px; }
-#chat .chatList { list-style: none; margin: 0 0 8px; padding: 4px 8px; height: 270px; /* 2026-11-07 PC: 220 → 270 (두 줄쯤 더) */ overflow-y: auto;
+#chat .chatList { list-style: none; margin: 0 0 8px; padding: 4px 8px; height: 320px; /* 2026-11-09 PC: 270 → 320 (두 줄쯤 더). 2026-11-07: 220 → 270 */ overflow-y: auto;
   border: 2px solid var(--gold-dark); background: var(--panel-dark); }
 #chat .chatList li { padding: 2px 0; border-bottom: 1px dotted var(--gold-dark); word-break: keep-all; overflow-wrap: anywhere; }
 #chat .chatList li:last-child { border-bottom: 0; }
