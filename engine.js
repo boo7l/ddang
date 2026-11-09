@@ -642,10 +642,12 @@ function nearestOwnCities(c, fid) {
   return [];
 }
 // byFid: 성을 빼앗은 세력 (세력이 멸망했을 때 알림에 쓴다)
-function retreatFrom(c, oldFaction, byFid) {
+// byGen: 성을 빼앗은 장수 (2026-11-09: 물러나거나 멸망하는 장수도 보물 실종·빼앗김 판정, 이긴 쪽 = byGen)
+function retreatFrom(c, oldFaction, byFid, byGen) {
   const out = [];
   for (const g of allGenerals()) {
     if (g.city !== c.id || g.faction !== oldFaction) continue;
+    loseTreasures(g, byGen, true); // 병력이 없거나 방어를 꺼서 싸우지 않았어도 함락되면 판정 (싸우다 전멸한 수비 장수는 한 번만)
     const near = neighborsOf(MAP, c).filter(n => n.faction === oldFaction);
     const far = near.length ? [] : nearestOwnCities(c, oldFaction);
     const list = near.length ? near : far;
@@ -689,7 +691,7 @@ function capture(g, to, oldFaction, lines) {
   const cut = captureDamage(cs, to.grade);
   cs.wall = RULES.captureWall[to.grade];
   lines.push({ a: `함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다` });
-  lines.push(...retreatFrom(to, oldFaction, g.faction));
+  lines.push(...retreatFrom(to, oldFaction, g.faction, g));
   g.city = to.id;
 }
 
@@ -704,15 +706,19 @@ function healAfter(x, lost, lines) {
 }
 
 // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 2% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
-function loseTreasures(loser, winner) {
+let treasureRolled = new Set(); // 이번 출진에서 이미 보물 판정을 한 장수 (전멸 + 함락으로 두 번 굴리지 않게, runAttack마다 비운다)
+// fell: 성이 함락돼 물러나거나 멸망한 경우 (싸우다 전멸한 게 아님, 2026-11-09) → 알림 문구만 다르다
+function loseTreasures(loser, winner, fell = false) {
+  if (treasureRolled.has(loser)) return;
+  treasureRolled.add(loser);
   for (const n of treasuresOf(loser)) {
     const r = Math.random();
     if (r >= TREASURE_RULES.loseRate + TREASURE_RULES.takeRate) continue;
     loser.treasures = treasuresOf(loser).filter(x => x !== n);
     if (r < TREASURE_RULES.takeRate && winner && !treasuresOf(winner).length) { // 이긴 쪽이 이미 보물이 있으면 사라진다 (한 장수 1개까지)
       winner.treasures = [...treasuresOf(winner), n];
-      logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} 싸움 끝에 ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
-    } else logAll(`💎 ${loser.name}의 부대가 무너지는 틈에 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
+      logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} ${fell ? '성을 함락하며' : '싸움 끝에'} ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
+    } else logAll(`💎 ${fell ? `${loser.name}${josa(loser.name, '이가').slice(-1)} 성을 잃는 혼란 속에` : `${loser.name}의 부대가 무너지는 틈에`} 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
   }
 }
 
@@ -747,6 +753,7 @@ function runAttack(g, o, mark) {
   g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
   const att = unitOf(g);
+  treasureRolled = new Set(); // 출진 한 번(야전 + 공성)마다 보물 판정은 장수당 한 번
   // 야전 (시즌 7부터): 상대 성에서 우리 성으로 출진할 장수가 이번 턴에 아직 남아 있으면 들판에서 먼저 맞붙는다
   if (to.faction && fieldOn()) {
     const f = runField(g, att, from, to, mark);
