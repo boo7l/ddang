@@ -2150,8 +2150,8 @@ function cityDetailRows(c) {
   if (p && p.faction && c.faction === p.faction) {
     const list = allGenerals().filter(g => g.faction === p.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
     const open = cityMembersOpen && list.length;
-    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲ 접기' : '▼ 보기'}</button>` : '<span class="dim">없음</span>'}${open ? `<ul class="cityMembers">${list.map(g =>
-      `<li class="${g.id === MY_ID ? 'mine' : ''}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button> <span class="dim">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}${g.defense && g.troops > 0 ? ' · 수비' : ''}</span></li>`).join('')}</ul>` : ''}</td></tr>`);
+    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲ 접기' : '▼'}</button>` : '<span class="dim">없음</span>'}${open ? ` <span class="cityMembers">${list.map(g =>
+      `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`).join(' · ')}</span>` : ''}</td></tr>`); // 이름만 한 줄로 이어서 (2026-11-09 기획자)
   }
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
