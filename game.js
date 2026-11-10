@@ -2213,6 +2213,12 @@ function cityDetailRows(c) {
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
 let cityMembersOpen = false; // 성 정보의 소속 장수 목록을 펼쳤는지 (다른 성을 눌러도 그대로)
+// 📍 내 성 (2026-11-10): 성 정보는 1초마다 다시 그려져 click이 씹힐 수 있어서 누르는 순간(pointerdown) 처리한다
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('#infoHome')) return;
+  const home = homeCityId() && MAP.cities.find(o => o.id === homeCityId());
+  if (home && selected !== home) { selected = home; render(); }
+});
 document.addEventListener('click', e => {
   if (!e.target.closest('#info')) return;
   if (e.target.closest('[data-cm]')) { cityMembersOpen = !cityMembersOpen; renderInfo(); return; }

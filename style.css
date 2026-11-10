@@ -1057,3 +1057,6 @@ details.fold > summary:hover h2 { color: var(--title); }
 .trCard .nm { font-size: 18px; color: var(--title); margin: 4px 0; }
 .trArrow { align-self: center; color: var(--gold); font-size: 20px; }
 #modalBox .trGold { text-align: center; margin: 8px 0; }
+/* 성 정보 제목 오른쪽 📍 내 성 단추 (2026-11-10) */
+#info h2.infoHead { display: flex; align-items: center; }
+#info .homeBtn { margin-left: auto; font-size: 13px; padding: 1px 6px; line-height: 1.4; }

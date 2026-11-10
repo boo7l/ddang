@@ -68,8 +68,10 @@ function renderInfo() {
   const c = selected || (homeCityId() && MAP.cities.find(o => o.id === homeCityId()));
   if (!c) { box.innerHTML = '<h2>성 정보</h2><p class="dim">성을 클릭하면 정보가 나와요.</p>'; return; }
   const f = factionOf(c);
+  const home = homeCityId() && MAP.cities.find(o => o.id === homeCityId());
   box.innerHTML = `
-    <h2>성 정보</h2>
+    <h2 class="infoHead">성 정보${home ? ' <button class="mini homeBtn" id="infoHome" title="내가 있는 성 보기">📍</button>' : ''}</h2>`
+    + `
     <table class="stats">
       <tr><th>이름</th><td>${c.name}</td></tr>
       <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${f.name}` : '<span class="dim">공백지</span>'}</td></tr>
