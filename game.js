@@ -672,20 +672,57 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox'); }
+function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 function pickDialog(title, intro, opts, okText, onOk, extra = '', optsClass = '') { // optsClass: 'narrow'면 선택 줄의 가로 폭을 줄인다 (출진·이동·수송, 2026-11-08)
   openModal(`
     <h2>${title} <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
     ${intro}
+    ${opts && pickIds(opts).length ? `<div class="pickHead"><span class="dim small">${pickIds(opts).length}곳 중에서 고르세요</span><button type="button" id="pickMapBtn">지도</button></div>` : ''}
     ${opts ? `<div class="opts${optsClass ? ' ' + optsClass : ''}">${opts}</div>` : '<p class="bad">고를 수 있는 대상이 없어요. (이 턴에 있을 성 기준)</p>'}
     ${extra}
     <div class="modalBtns"><button data-close>취소</button><button id="mOk" class="main" disabled>${okText}</button></div>`, box => {
     box.querySelectorAll('input[name=tgt]').forEach(r => { r.onchange = () => { $('#mOk').disabled = false; }; });
     if (box.querySelector('input[name=tgt]:checked')) $('#mOk').disabled = false;
     $('#mOk').onclick = () => { const v = box.querySelector('input[name=tgt]:checked'); if (onOk(v.value, box) !== false) closeModal(); };
+    const mb = $('#pickMapBtn');
+    if (mb) mb.onclick = () => {
+      const cur = box.querySelector('input[name=tgt]:checked');
+      pickMap(title === '군량 수송' ? '수송할 성' : `${title}할 성`, pickIds(opts), cityAtSlot(me(), slot).id, cur && cur.value, id => {
+        const r = box.querySelector(`input[name=tgt][value="${id}"]`);
+        if (!r) return;
+        r.checked = true; $('#mOk').disabled = false;
+        r.closest('.opt').scrollIntoView({ block: 'nearest' });
+      });
+    };
   });
+}
+
+// ===== 지도로 고르기 (2026-11-10): 성을 고르는 창(출진·이동·군량 수송·첩보·파괴·유언)의 [지도] 단추 =====
+// 명예의 전당 세력 변화 보기와 같은 간략 지도를 창 위에 한 겹 더 띄운다. 고를 수 있는 성만 밝게(점선), 지금 있는 성은 흰 테두리.
+// 성을 누르면 팝업이 닫히고 목록에서 그 성이 골라진다
+const pickIds = opts => { const ids = [...opts.matchAll(/name="tgt" value="([^"]+)"/g)].map(m => m[1]); return ids.length && ids.every(id => MAP.cities.some(c => c.id === id)) ? ids : []; };
+function closePickMap() { const c = document.getElementById('pickMap'); if (c) c.remove(); }
+function pickMap(title, ids, homeId, picked, onPick) {
+  closePickMap();
+  const byId = Object.fromEntries(MAP.cities.map(c => [c.id, c]));
+  const GAP = 4, avail = Math.min(640, innerWidth - 32) - 40, cw = Math.max(26, Math.min(46, Math.floor((avail - GAP * (MAP.cols - 1)) / MAP.cols))), ch = Math.round(cw * 0.65);
+  const W = MAP.cols * cw + (MAP.cols - 1) * GAP, H = MAP.rows * ch + (MAP.rows - 1) * GAP;
+  const cx = c => c.x * (cw + GAP) + cw / 2, cy = c => c.y * (ch + GAP) + ch / 2;
+  const lines = (MAP.links || []).map(l => [byId[l[0]], byId[l[1]]]).filter(([a, b]) => a && b).map(([a, b]) => `<line x1="${cx(a)}" y1="${cy(a)}" x2="${cx(b)}" y2="${cy(b)}"/>`).join('');
+  const cells = MAP.cities.map(c => { const f = factionOf(c);
+    return `<div class="rpCity g${c.grade}${f ? '' : ' empty'}${ids.includes(c.id) ? ' can' : ''}${c.id === homeId ? ' home' : ''}${c.id === picked ? ' picked' : ''}" data-c="${esc(c.id)}" style="grid-column:${c.x + 1};grid-row:${c.y + 1};${f ? `background:${f.color}` : ''}">${esc(c.name)}</div>`; }).join('');
+  const cover = document.createElement('div');
+  cover.id = 'pickMap';
+  cover.innerHTML = `<div class="win pmBox"><h2>${esc(title)} <span class="dim small">· 성을 누르면 골라져요</span></h2>
+    <div class="rpMap pmMap"><svg width="${W}" height="${H}">${lines}</svg><div class="rpGrid" style="grid-template-columns:repeat(${MAP.cols},${cw}px);grid-template-rows:repeat(${MAP.rows},${ch}px)">${cells}</div></div>
+    <div class="pmLegend"><span><i class="pmHome"></i>지금 있는 성</span><span><i class="pmCan"></i>고를 수 있는 성</span></div>
+    <div class="modalBtns"><button type="button" data-pm-close>닫기</button></div></div>`;
+  document.body.appendChild(cover);
+  cover.querySelector('[data-pm-close]').onclick = closePickMap;
+  cover.onclick = e => { if (e.target === cover) closePickMap(); };
+  cover.querySelectorAll('.rpCity.can').forEach(d => { d.onclick = () => { closePickMap(); onPick(d.dataset.c); }; });
 }
 
 // 성의 수비 부대 글: 우리 세력 성이면 모두 보여 주고, 다른 세력 성이면 수비대·장수 모두 있는지만 (2026-11-04, 그 전엔 수비대장은 자세히)
@@ -2419,7 +2456,7 @@ $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = rankDialog;
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (document.getElementById('pickMap')) closePickMap(); else if (!$('#modal').hidden) closeModal(); }); // 지도 팝업이 열려 있으면 그것만 닫는다 (2026-11-10)
 
 // ===== 단축키 (PC, 2026-11-07) =====
 // 키는 e.code(자판 위치)로 본다: 한글 입력 상태여도 Q는 Q로 동작한다. ☰ 메뉴 [⌨ 단축키]에서 바꾸고, 이 브라우저에만 기억한다

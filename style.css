@@ -1067,3 +1067,20 @@ details.fold > summary:hover h2 { color: var(--title); }
 td.nowrap { white-space: nowrap; }
 #adminPage .genTable { width: auto; min-width: 100%; } /* 관리-장수: 줄바꿈 없이 옆으로 스크롤 (2026-11-10) */
 #adminPage .genTable th, #adminPage .genTable td { white-space: nowrap; padding-right: 10px; }
+/* 지도로 고르기 (2026-11-10): 성을 고르는 창의 [지도] 단추와, 창 위에 한 겹 더 뜨는 간략 지도 */
+.pickHead { display: flex; align-items: center; gap: 8px; margin: 8px 0 6px; }
+.pickHead button { margin-left: auto; white-space: nowrap; }
+@media (min-width: 701px) { .pickHead { max-width: 440px; margin-left: auto; margin-right: auto; } } /* 아래 목록(.opts.narrow)과 같은 폭: 지도 단추 오른쪽 끝 = 목록 오른쪽 끝 */
+#pickMap { position: fixed; inset: 0; z-index: 52; background: rgba(0, 0, 0, .6); display: flex; align-items: center; justify-content: center; line-height: 1.38; }
+#pickMap .pmBox { max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); overflow: auto; margin: 0; }
+#pickMap h2 { margin-bottom: 8px; }
+.pmMap { width: max-content; margin: 0 auto; }
+.pmMap .rpCity { filter: saturate(.3) brightness(.45); cursor: default; transition: none; } /* 투명하게 하면 아래 원거리 길 선이 비친다: 어둡게만 */
+.pmMap .rpCity.can { filter: none; cursor: pointer; outline: 2px dashed var(--title); outline-offset: -1px; }
+.pmMap .rpCity.can:hover { outline-style: solid; outline-color: #fff; }
+.pmMap .rpCity.home { filter: none; outline: 2px solid #fff; outline-offset: -1px; }
+.pmMap .rpCity.picked { outline: 3px solid var(--title); }
+.pmLegend { display: flex; gap: 14px; justify-content: center; margin: 8px 0 0; font-size: 14px; color: var(--label); }
+.pmLegend i { display: inline-block; width: 14px; height: 10px; margin-right: 4px; vertical-align: middle; }
+.pmLegend .pmHome { outline: 2px solid #fff; outline-offset: -2px; }
+.pmLegend .pmCan { outline: 2px dashed var(--title); outline-offset: -2px; }
