@@ -84,6 +84,7 @@ function applyView(d) {
 
 // 서버에 요청하고 세계를 받아 온다. 성공하면 true (실패 이유는 알림 창으로)
 async function call(action, payload = {}) {
+  if (S && S.unified && !IS_ADMIN && !['state', 'chat', 'leave', 'warnSeen'].includes(action)) return null; // 시즌이 끝나면 서버가 막는 요청은 보내지 않고 조용히 끝낸다 (2026-11-11, 오류 알림 대신 아무 반응 없게)
   busy = true;
   try {
     const d = await api(action, payload);
@@ -633,7 +634,16 @@ const isNightTurn = t => turnLengthAt(t - 1) === RULES.night.turnLength && RULES
 
 // 고른 칸에 명령을 넣고, 다음 칸으로 넘어간다
 let lastOrder = null; // 마지막으로 예약한 명령 ("빈 칸 채우기"에 쓴다)
+// 천하통일로 시즌이 끝났는지 (2026-11-11): 명령 단추는 평소 모양 그대로 두고 창도 열리지만, 예약은 아무 일도 일어나지 않는다
+const seasonOver = () => !!(S && S.unified);
+// 시즌이 끝나면 명령 창의 [예약] 단추를 눌러도 아무 반응이 없다 (창도 닫히지 않는다). 각 단추의 onclick보다 먼저 가로챈다
+document.addEventListener('click', e => {
+  if (!seasonOver()) return;
+  const b = e.target.closest && e.target.closest('#modalBox #mOk, #modalBox #exOk');
+  if (b) { e.stopPropagation(); e.preventDefault(); }
+}, true);
 async function reserve(order) {
+  if (seasonOver()) return;
   const at = slot;
   lastOrder = order;
   slot = Math.min(at + 1, RULES.queueSize - 1);
@@ -649,6 +659,7 @@ async function clearSlot(i) {
 let pendingOrders = 0;
 let orderChain = Promise.resolve();
 async function queueCall(action, payload, change) {
+  if (seasonOver()) return false; // 시즌이 끝나면 예약표는 바뀌지 않는다
   change(me().queue);
   renderCommands();
   pendingOrders++;
@@ -1988,7 +1999,7 @@ function renderGeneral() {
 판 보물은 세상으로 돌아가 다시 탐색에서 나올 수 있어요. 되돌릴 수 없어요.${warn}`)) return;
     await call('sellTreasure', { name: n });
   }; });
-  if (S.unified && !IS_ADMIN) ['#gPouch', '#gTreasureFound', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.disabled = true; x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
+  if (S.unified && !IS_ADMIN) ['#gPouch', '#gTreasureFound', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02). 2026-11-11: 까맣게 바꾸지 않고 눌러도 반응만 없게
 }
 
 // 1초마다 바뀌는 부분만 고친다 (버튼을 다시 만들지 않아서 클릭이 씹히지 않는다)
@@ -2122,10 +2133,10 @@ function renderCommands() {
     queueCall('clear', {}, q => q.fill(null));
   });
   $('#qTop').onclick = () => { slot = 0; renderCommands(); }; // PC·휴대폰: 바로 다음 턴 칸으로 (PC는 2026-11-10부터) (고른 칸이 보이게 예약표도 맨 위로)
-  // 천하통일로 시즌이 끝나면: 버튼은 그대로 보이지만 아무 작동도 하지 않는다
+  // 천하통일로 시즌이 끝나면: 단추는 평소 모양 그대로. 명령 단추는 창까지 열리지만 [예약]을 눌러도 아무 일도 없다 (seasonOver, 2026-11-11)
+  // 예약표 단추(모두 비우기·빈 칸 채우기 등)는 눌러도 반응이 없다
   if (S.unified) {
-    $('#commands').querySelectorAll('button').forEach(b => { b.disabled = true; b.onclick = null; });
-    $('#queueBox').querySelectorAll('button').forEach(b => { b.disabled = true; b.onclick = null; });
+    $('#queueBox').querySelectorAll('button').forEach(b => { b.onclick = null; });
     $('#queueBox').querySelectorAll('.queue li').forEach(li => { li.onclick = null; });
     $('#commands h2').insertAdjacentHTML('afterend', `<p class="hi">🏆 ${esc(factionById(S.unified.faction).name)} 세력 천하통일! 시즌이 끝나 턴이 멈췄어요. <button id="cResult" class="mini">결과 보기</button></p>`);
     $('#cResult').onclick = () => unifyDialog();
