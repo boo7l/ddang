@@ -1222,7 +1222,7 @@ function runPlot(g, kind, o) {
     return '';
   }
   // 개인 특성 침착 (2026-10-28): 그 성에 침착 장수가 머물면 계략 피해가 줄어든다 (여럿이어도 한 번만)
-  const calm = allGenerals().some(x => x.city === c.id && x.faction === c.faction && gTrait(x).calm) ? 1 - GENERAL_TRAITS.calm.calm : 1;
+  const calm = allGenerals().some(x => x.city === c.id && x.faction === c.faction && gTrait(x).calm && (!gTrait(x).calmNeedsDefense || x.defense)) ? 1 - GENERAL_TRAITS.calm.calm : 1; // 시즌 7부터 방어 모드를 켠 침착 장수만 (2026-11-10)
   const x = (r === 'crit' ? PLOT.critMul : 1) * calm, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
   // 남은 수치는 적지 않는다 (다른 세력 성의 농업·상업·방어·치안은 비공개, 2026-10-26 방어도)
   const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}`; };
