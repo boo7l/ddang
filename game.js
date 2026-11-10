@@ -769,13 +769,13 @@ function draftDialog() {
 function spyDialog() {
   const from = cityAtSlot(me(), slot);
   const int = effStats(me()).int;
-  const opts = spyTargetsFrom(from.id, me().faction).map(c => {
+  const opts = spyRangeTargets(from.id, me().faction).map(c => {
     const f = factionById(c.faction), until = (S.cities[c.id] || {}).spied;
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>
       <span class="r dim">${until ? `${dateText(until)} 전까지 알고 있음` : '모름'}</span></label>`;
   }).join('');
-  pickDialog('첩보', `<p>${esc(from.name)}의 이웃한 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
+  pickDialog('첩보', `<p>${esc(from.name)}${spyRange() > 1 ? `에서 ${spyRange()}칸 안의` : '의 이웃한'} 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
     <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot}</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }), '', 'narrow');
 }
 
@@ -1023,7 +1023,7 @@ function helpDialog(page = 0) {
       <p class="sub">계략 <span class="dim">(지력이 높을수록 잘 돼요)</span></p><ul>
       <li><b>파괴</b>: 이웃 적 성의 방어를 깎아요.</li>
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
-      ${cmdOn('spy') ? `<li><b>첩보</b>: 이웃 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
+      ${cmdOn('spy') ? `<li><b>첩보</b>: ${spyRange() > 1 ? `${spyRange()}칸 안의` : '이웃'} 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
       <p class="sub">기타</p><ul>
       ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·보물을 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>

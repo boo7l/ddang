@@ -1180,7 +1180,19 @@ function nearestEnemyCities(fromId, fid) {
   }
   return [];
 }
-const spyTargetsFrom = (fromId, fid) => neighborsOf(MAP, cityById(fromId)).filter(c => c.faction && c.faction !== fid);
+const spyTargetsFrom = (fromId, fid) => neighborsOf(MAP, cityById(fromId)).filter(c => c.faction && c.faction !== fid); // 파괴·유언: 이웃 성만 (1칸)
+// 첩보 범위 (2026-11-10 기획자): 시즌 7부터 길을 따라 2칸 안의 다른 세력 성 (거쳐 가는 성은 누구 것이든 상관없음). 그 전엔 이웃(1칸)
+const spyRange = () => (seasonNow() >= 7 ? 2 : 1);
+function spyRangeTargets(fromId, fid) {
+  const seen = new Set([fromId]), out = [];
+  let ring = [cityById(fromId)];
+  for (let d = 0; d < spyRange(); d++) {
+    const next = [];
+    for (const x of ring) for (const n of neighborsOf(MAP, x)) if (!seen.has(n.id)) { seen.add(n.id); next.push(n); if (n.faction && n.faction !== fid) out.push(n); }
+    ring = next;
+  }
+  return out;
+}
 const spySuccessRate = int => Math.min(RULES.spyMax, int / RULES.spyDiv + RULES.spyBase);
 // fid 세력이 c 성을 몇 턴까지 볼 수 있는지 (못 보면 0)
 const spiedUntil = (fid, c) => { const u = ((S.intel || {})[fid] || {})[c.id] || 0; return u > S.turn ? u : 0; };
@@ -1189,7 +1201,7 @@ function runSpy(g, o) {
   const c = cityById(o.to);
   if (!c) return '없는 성';
   if (!c.faction || c.faction === g.faction) return `${josa(c.name, '은는')} 이제 ${c.faction ? '아군 성' : '빈 땅'}`;
-  if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
+  if (!spyRangeTargets(g.city, g.faction).includes(c)) return `${josa(c.name, '은는')} ${spyRange() > 1 ? `${spyRange()}칸 안의 성이 아님` : '이웃 성이 아님'}`;
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다)
   if (why) return why;
   addMerit(g, RULES.merit.plot);
