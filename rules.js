@@ -626,7 +626,7 @@ const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.f
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%
-  breakChance: 0.5, // 부대가 전멸하면 병기가 부서질 확률
+  get breakChance() { return seasonNow() >= 7 ? 0.4 : 0.5; }, // 부대가 전멸하면 병기가 부서질 확률 (2026-11-10 기획자: 시즌 7부터 50% → 40%, 시즌 7 패치노트)
   firstStrike: 0.5, // 벽력거: 합 전에 쏘는 선제 사격의 피해 = 보통 한 합 피해의 50% (2026-10-26 시즌 2 뒤 "너무 세다"는 의견: 첫 합 무피해 100% → 선제 사격 50% + 5합 그대로)
 };
 

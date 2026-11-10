@@ -814,7 +814,7 @@ function siegeDialog() {
       <b>${t}</b> <span class="dim">금 ${fmt(siegePrice(p, t))}</span>
       <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
-  pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 50% 확률로 부서져요.</p>
+  pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
     <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'} · 내 금 ${fmt(p.gold)}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
