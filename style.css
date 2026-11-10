@@ -1078,7 +1078,8 @@ td.nowrap { white-space: nowrap; }
 .pmMap .rpCity { filter: saturate(.3) brightness(.45); cursor: default; transition: none; } /* 투명하게 하면 아래 원거리 길 선이 비친다: 어둡게만 */
 .pmMap .rpCity.can { filter: none; cursor: pointer; outline: 2px dashed var(--title); outline-offset: -1px; }
 .pmMap .rpCity.can:hover { outline-style: solid; outline-color: #fff; }
-.pmMap .rpCity.home { filter: none; outline: 2px solid #fff; outline-offset: -1px; }
+.pmMap .rpCity.home { filter: none; outline: 2px solid #fff; outline-offset: -1px; animation: pmBlink .8s steps(1) infinite; }
+@keyframes pmBlink { 50% { outline-color: transparent; } } /* 지금 있는 성: 흰 테두리가 깜빡인다 (메인 지도에서 고른 성처럼 0.8초, 2026-11-10) */
 .pmMap .rpCity.picked { outline: 3px solid var(--title); }
 .pmLegend { display: flex; gap: 14px; justify-content: center; margin: 8px 0 0; font-size: 14px; color: var(--label); }
 .pmLegend i { display: inline-block; width: 14px; height: 10px; margin-right: 4px; vertical-align: middle; }
