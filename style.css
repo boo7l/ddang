@@ -1039,3 +1039,13 @@ details.fold > summary:hover h2 { color: var(--title); }
 #info .cityMembers { margin-top: 2px; line-height: 1.5; max-height: 4.5em; overflow-y: auto; } /* 세 줄이 넘으면 스크롤 (2026-11-09) */
 #legendTrait .tNameW { color: #fff; } /* 세력 창 특성 이름은 흰색 (2026-11-09) */
 #adminPage .adminScroll table tr:first-child th { text-align: center; } /* 관리 페이지 모든 표: 제목 줄 가운데 (2026-11-10) */
+/* 도움말 작은 팁 (2026-11-10): 제목 상자를 누르면 펼쳐지고 다시 누르면 접힌다 */
+.tipBoxes { display: flex; flex-direction: column; gap: 6px; }
+.tipBox { border: 1px solid var(--gold-dark); background: var(--panel-dark); border-radius: 4px; }
+.tipBox > summary { cursor: pointer; padding: 7px 10px; color: var(--title); list-style: none; user-select: none; }
+.tipBox > summary::-webkit-details-marker { display: none; }
+.tipBox > summary::before { content: '▶'; display: inline-block; width: 1.2em; color: var(--label); font-size: 12px; }
+.tipBox[open] > summary::before { content: '▼'; }
+.tipBox > summary:hover { background: rgba(232, 178, 58, 0.1); }
+.tipBox[open] > summary { border-bottom: 1px solid var(--gold-dark); }
+.tipBox > p { margin: 0; padding: 8px 12px 10px; }

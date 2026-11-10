@@ -1030,14 +1030,15 @@ function helpDialog(page = 0) {
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
       <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키워요. 많은 금을 쓰는 대신 공적과 능력 경험치를 얻을 수 있어요.</li></ul>`],
-    ['💡 작은 팁', `<ul>
-      <li>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></li>
-      <li>탐색을 하다 보면 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</li>
-      <li><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</li>
-      <li>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</li>
-      <li><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</li>
-      <li><b>훈장</b>: 시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</li>
-      <li><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요. 군량은 먹지 않아요.</li></ul>`],
+    // 작은 팁 (2026-11-10): 제목 상자만 보이고, 누르면 펼쳐지고 다시 누르면 접힌다 (details)
+    ['💡 작은 팁', `<div class="tipBoxes">
+      <details class="tipBox"><summary>특성</summary><p>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></p></details>
+      <details class="tipBox"><summary>보물</summary><p>탐색을 하다 보면 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</p></details>
+      <details class="tipBox"><summary>세력</summary><p><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</p></details>
+      <details class="tipBox"><summary>방어 모드</summary><p>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</p></details>
+      <details class="tipBox"><summary>공적</summary><p><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</p></details>
+      <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</p></details>
+      <details class="tipBox"><summary>수비대장</summary><p><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요. 군량은 먹지 않아요.</p></details></div>`],
   ];
   const [title, body] = pages[page];
   const last = page === pages.length - 1;
