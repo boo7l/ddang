@@ -84,7 +84,6 @@ function applyView(d) {
 
 // 서버에 요청하고 세계를 받아 온다. 성공하면 true (실패 이유는 알림 창으로)
 async function call(action, payload = {}) {
-  if (S && S.unified && !IS_ADMIN && !['state', 'chat', 'leave', 'warnSeen'].includes(action)) return null; // 시즌이 끝나면 서버가 막는 요청은 보내지 않고 조용히 끝낸다 (2026-11-11, 오류 알림 대신 아무 반응 없게)
   busy = true;
   try {
     const d = await api(action, payload);
@@ -1999,7 +1998,7 @@ function renderGeneral() {
 판 보물은 세상으로 돌아가 다시 탐색에서 나올 수 있어요. 되돌릴 수 없어요.${warn}`)) return;
     await call('sellTreasure', { name: n });
   }; });
-  if (S.unified && !IS_ADMIN) ['#gPouch', '#gTreasureFound', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02). 2026-11-11: 까맣게 바꾸지 않고 눌러도 반응만 없게
+  if (S.unified && !IS_ADMIN) ['#gPouch', '#gTreasureFound', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.disabled = true; x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
 }
 
 // 1초마다 바뀌는 부분만 고친다 (버튼을 다시 만들지 않아서 클릭이 씹히지 않는다)
