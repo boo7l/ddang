@@ -1822,6 +1822,12 @@ function renderMembers() {
   $('#members').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
 }
 // 우리 세력 장수의 이름을 누르면 뜨는 정보 창 (2026-11-01). 금·예약·활동 기록은 보여 주지 않는다 (서버도 보내지 않는다)
+// 같은 세력 장수의 앞 5칸 예약 한 줄 (시즌 7부터, 2026-11-10). 서버가 nextOrders로 보내 준다 (관리자·나는 queue에서)
+function allyOrders(g) {
+  if (seasonNow() < 7 || !me() || !g.faction || g.faction !== me().faction) return '';
+  const list = g.nextOrders || (g.queue ? g.queue.slice(0, ALLY_QUEUE_SHOW).map(shortOrder) : null);
+  return list ? list.map(t => (t === '대기' ? '<span class="dim">대기</span>' : esc(t))).join(', ') : '';
+}
 function memberDialog(id) {
   const g = S.generals[id];
   if (!g) return;
@@ -1843,6 +1849,7 @@ function memberDialog(id) {
       <tr><th>수비</th><td class="${guarding ? 'mOn' : 'dim'}">${guarding ? '켜짐' : '꺼짐'}</td></tr>
       <tr><th>공적</th><td>${fmt(g.merit)}</td></tr>
       <tr><th>훈장</th><td>${(S.medals && S.medals[id]) || 0}개</td></tr>
+      ${allyOrders(g) ? `<tr><th>예약</th><td>${allyOrders(g)}</td></tr>` : ''}
     </table>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
   $('#mFace').replaceWith(faceCanvas(g.face || FACES[0].id));

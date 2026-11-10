@@ -1477,3 +1477,6 @@ const COMMANDS = {
   expand: { label: () => '증축', run: runExpand }, // 2026-11-08
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');
+// 같은 세력 장수 정보 창의 짧은 예약 (2026-11-10 유저 의견, 시즌 7부터): 앞 5칸을 '치안, 징병(기병), 출진→영안, 대기' 처럼
+const ALLY_QUEUE_SHOW = 5;
+const shortOrder = o => (o ? orderLabel(o).replace(' (', '(').replace(' → ', '→').replace(' ← ', '←') : '대기');
