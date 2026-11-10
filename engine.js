@@ -332,27 +332,32 @@ function runRegionEvents(month) {
     hit.add(r);
     S.regionRest[r] = S.turn + RULES.regionEventRest + 1;
     const cities = MAP.cities.filter(c => regionOf(c) === r), ids = new Set(cities.map(c => c.id));
-    const fx = [], rolled = []; // rolled: 성마다 굴린 농업·상업 값 (2026-11-10, 범위 대신 실제 값을 보여 준다. 성의 남은 수치는 숨기려고 깎인 양이 아니라 굴린 값)
+    // 농업·상업이 [최소, 최대]면 지역 전체에 한 번만 굴려 모든 성에 똑같이 (2026-11-10, 그 전엔 성마다). 숫자면 비율(예전 방식)
+    const roll = {};
+    for (const k of ['agri', 'comm']) if (Array.isArray(e[k])) roll[k] = randInt(e[k][0], e[k][1]);
+    const fx = [];
     if (e.food) { foodRate[r] = e.food; fx.push(`이번 수확 ${e.food > 0 ? '+' : ''}${Math.round(e.food * 100)}%`); }
     for (const c of cities) {
       const cs = S.cities[c.id];
-      // 농업·상업: 숫자면 비율(예전), [최소, 최대]면 그만큼 더하거나 뺀다 (성마다·농업 상업 따로 굴림, 2026-11-06)
-      const roll = [];
-      for (const k of ['agri', 'comm']) if (e[k]) {
-        if (Array.isArray(e[k])) { const v = randInt(e[k][0], e[k][1]); roll.push(`${DOMESTIC[k].label} ${v > 0 ? '+' : ''}${v}`); cs[k] = Math.max(0, Math.min(devMax(c.grade, k), cs[k] + v)); }
-        else cs[k] = Math.max(0, Math.min(devMax(c.grade, k), Math.round(cs[k] * (1 + e[k]))));
-      }
-      if (roll.length) rolled.push(`${c.name} ${roll.join('·')}`);
+      for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), k in roll ? cs[k] + roll[k] : Math.round(cs[k] * (1 + e[k]))));
       if (e.peace) cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + e.peace));
       if (e.troops && cs.guard > 0) cs.guard = Math.max(0, cs.guard - Math.ceil(cs.guard * -e.troops));
     }
-    const pctText = v => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%`; // 비율로 정한 농업·상업 (예전 방식)
-    if (e.agri && !Array.isArray(e.agri)) fx.push(`농업 ${pctText(e.agri)}`);
-    if (e.comm && !Array.isArray(e.comm)) fx.push(`상업 ${pctText(e.comm)}`);
+    const sign = v => (v > 0 ? '+' : '') + v;
+    for (const k of ['agri', 'comm']) if (e[k]) fx.push(`${DOMESTIC[k].label} ${k in roll ? sign(roll[k]) : `${sign(Math.round(e[k] * 100))}%`}`);
     if (e.peace) fx.push(`치안 ${e.peace}`);
     if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
     if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
-    logAll(`${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${rolled.length ? [...rolled, ...fx].join(' · ') : `${cities.map(c => c.name).join('·')}: ${fx.join(' · ')}`})`);
+    const head = `${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${cities.map(c => c.name).join('·')}: `;
+    if (Object.keys(roll).length) {
+      // 굴린 값이 있는 이벤트: 그 지역에 성이 있는 세력 장수에게만 숫자, 나머지는 무엇이 줄었는지/늘었는지만 (2026-11-10 기획자 문구)
+      const down = [], up = [];
+      for (const k of ['agri', 'comm']) if (k in roll) (roll[k] < 0 ? down : up).push(DOMESTIC[k].label);
+      if (e.peace) (e.peace < 0 ? down : up).push('치안');
+      const brief = [down.length ? `${down.join(',')} 감소` : '', up.length ? `${up.join(',')} 증가` : '', e.gold ? `머무는 장수 금 +${fmt(e.gold)}` : ''].filter(Boolean).join(', ');
+      const owners = new Set(cities.map(c => c.faction).filter(Boolean));
+      for (const g of allGenerals()) addLog(g, head + (g.faction && owners.has(g.faction) ? fx.join(', ') : brief) + ')', true);
+    } else logAll(head + fx.join(' · ') + ')');
     for (const g of allGenerals()) {
       if (!g.faction || !ids.has(g.city)) continue;
       if (e.troops && g.troops > 0) { const lost = Math.ceil(g.troops * -e.troops); g.troops -= lost; addLog(g, `${e.icon} ${e.name}으로 병력 -${fmt(lost)} (${fmt(g.troops)})`); }
