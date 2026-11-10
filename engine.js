@@ -909,9 +909,12 @@ function siegeAttack(g, att, from, to, mark, f) {
   let left = f ? f.cur.left : RULES.roundsMax, atkLost = f ? f.cur.lost : 0, defLost = f ? f.cur.dealt : 0, pierced = 0;
   const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map(), fought = [];
   if (f) lines.push(...f.lines.map(a => ({ a }))); // 야전 보고서는 공격 쪽만 (수비 쪽 장수 중 야전에 나선 사람은 따로 받는다)
+  // 시즌 7부터 (2026-11-10 유저 의견): 수비 쪽 보고서·알림에 공격이 출발한 성을 적고, 'OO 세력' 대신 'OO군'
+  const s7 = seasonNow() >= 7;
   lines.push({
     a: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`,
-    d: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 쳐들어왔다!`,
+    d: s7 ? `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name}군 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 ${from.name}에서 쳐들어왔다!`
+      : `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 쳐들어왔다!`,
   });
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
@@ -1003,9 +1006,10 @@ function siegeAttack(g, att, from, to, mark, f) {
   const defText = reportFor('d');
   victims.forEach(v => addLog(v, defText));
   if (!captured) refillDefense(to, defs.filter(d => d.ref && d.troops <= 0).length); // 쓰러진 수비 장수 자리를 채운다
+  const foe = s7 ? `${from.name}에서 온 ${myF.name}군 ${g.name}` : `${myF.name} 세력 ${g.name}`; // 시즌 7부터 출발한 성 (2026-11-10)
   others.forEach(x => addLog(x, captured
-    ? `⚠ ${josa(to.name, '을를')} ${myF.name} 세력 ${g.name}에게 빼앗겼다!`
-    : `⚠ ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}의 공격을 받았다. (남은 방어 ${fmt(cs.wall)})`));
+    ? `⚠ ${josa(to.name, '을를')} ${foe}에게 빼앗겼다!`
+    : `⚠ ${josa(to.name, '이가')} ${foe}의 공격을 받았다. (남은 방어 ${fmt(cs.wall)})`));
   gainStatExp(g, statKey, RULES.statExp.battle);
   // 승전 경험치 (2026-11-08): 상대 장수마다 센다 (수비대장은 빼고). 공격 장수는 전멸시킨 수비 장수 1명당, 수비 장수는 살아남아 막아냈으면
   const beaten = fought.filter(d => d.troops <= 0).length + (f ? f.cur.beaten : 0); // 야전에서 쓰러뜨린 장수도 센다
