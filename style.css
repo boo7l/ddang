@@ -1062,3 +1062,6 @@ details.fold > summary:hover h2 { color: var(--title); }
 /* 성 정보 제목 오른쪽 📍 내 성 단추 (2026-11-10) */
 #info h2.infoHead { display: flex; align-items: center; }
 #info .homeBtn { margin-left: auto; font-size: 13px; padding: 1px 6px; line-height: 1.4; }
+/* 가입자 탭 관리자 메모 (2026-11-10) */
+.memoTag { display: inline-block; padding: 0 5px; border: 1px solid var(--gold-dark); border-radius: 3px; color: var(--title); background: var(--panel-dark); font-size: 13px; }
+td.nowrap { white-space: nowrap; }
