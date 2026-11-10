@@ -124,6 +124,9 @@ const RULES = {
   // 병력 곡선: 병력이 많을수록 전투력이 덜 늘어난다. 실효 병력 = 5,000 × (병력 ÷ 5,000)^exp (exp 1이면 정비례)
   troopCurve: { ref: 4491, exp: 0.70 }, // 병력 곡선 (2026-11-07 시즌 6: 4,730·0.71 → 4,491·0.70 (같은 날 0.67 → 0.69 → 0.70으로 완화). 1,000명은 그대로, 6,000명 -1.8%, 12,000명 -2.5%. 2026-10-26 지수 0.75 → 0.72, 2026-10-31 기준 5,000 → 4,730·지수 0.71: 1,000명은 그대로 두고 큰 부대 우위를 조금 더 누름)
   battleRandom: 0.05,       // 합마다 전투력에 ±5% 무작위
+  // 방어도 피해 감소 구간제 (2026-11-10 기획자, 시즌 6 도중 2026-11-10 20:00 KST부터): 방어 100마다 더해지는 감소 %. 0~500은 3%씩, 500~1,000은 2%씩 → 1,000이면 25%. 1,000 넘으면 마지막 값(2%)으로
+  wallCutSteps: [3, 3, 3, 3, 3, 2, 2, 2, 2, 2],
+  wallCutStepsFrom: Date.UTC(2026, 10, 10, 11, 0), // 2026-11-10 20:00 KST. 그 전에는 wallCutPer100 (100마다 3%)
   wallCutPer100: 0.03,      // 방어도 피해 감소: 성을 지키는 쪽이 보통 합에서 받는 피해가 방어 100마다 -3% (방어 1,000이면 -30%). 2026-11-06 시즌 6: 그 전엔 수비 전투력 × (1 + 방어 ÷ 2,500) (100마다 +4%). 돌격·책략·일기토에는 적용 안 함
   captureCut: 0.10,         // 함락된 성의 치안이 지금 값에서 10% 깎인다 (2026-10-26 20% → 15%, 2026-10-27 격전지가 너무 처참하다는 의견으로 10%. 방어는 아래 captureWall로 다시 세운다)
   // 함락 때 농업·상업은 그 성 최대치 대비 얼마나 찼는지에 따라 깎인다 (2026-11-07 시즌 6): 50% 이상 15%, 25~50% 10%, 25% 미만 5%.
@@ -426,7 +429,15 @@ const attackPower = (a, d) => {
 // 수비 전투력 (성 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다: wallCut)
 // 세력 특성: 기병(마등·공손찬 수비), 수비 전투력(유언)
 // 방어도 피해 감소 (2026-11-06): 성을 지키는 쪽이 보통 합에서 받는 피해 비율 (0.3 = 30% 덜 받음)
-const wallCut = wall => Math.min(0.9, Math.max(0, wall || 0) / 100 * RULES.wallCutPer100);
+const wallCutStepped = () => Date.now() >= RULES.wallCutStepsFrom; // 구간제가 켜졌는지 (도움말 문구도 이걸 본다)
+const wallCut = wall => {
+  const w = Math.max(0, wall || 0);
+  if (!wallCutStepped()) return Math.min(0.9, w / 100 * RULES.wallCutPer100);
+  const st = RULES.wallCutSteps;
+  let pct = 0;
+  for (let i = 0; i * 100 < w; i++) pct += (st[Math.min(i, st.length - 1)]) * Math.min(1, (w - i * 100) / 100); // 100 단위 구간마다, 마지막 구간은 비례
+  return Math.min(0.9, pct / 100);
+};
 const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (t.defense || 0)) * warBonus(d) // 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다 (wallCut)
