@@ -265,6 +265,7 @@ function advance() {
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     trimDefense();
+    for (const g of allGenerals()) if (g.treasureFound && S.turn >= g.treasureFound.until) chooseFoundTreasure(g, 'sell', true); // 고를 시간이 지난 보물은 저절로 판다 (2026-11-10)
     // 개인 특성 기강 잡기 (2026-10-28): 기강 잡기 장수가 머무는 성은 매턴 치안 +2 (여럿이 있어도 성마다 한 번)
     const drilled = new Set();
     for (const g of allGenerals()) if (g.faction && g.city && gTrait(g).peaceTurn && !drilled.has(g.city)) {
@@ -1052,8 +1053,9 @@ function runExplore(g) {
   const why = pay(g, 'explore');
   if (why) return why;
   let e = rollExplore();
-  const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n)));
-  if (e.key === 'treasure' && (!freeTreasures.length || treasuresOf(g).length)) e = EXPLORE.find(x => x.key === 'item'); // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지)
+  const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n) || (x.treasureFound && x.treasureFound.name === n))); // 고르는 중인 보물도 주인이 있는 셈
+  // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지). 시즌 7부터는 이미 있어도 바꿀지 팔지 고른다 (2026-11-10, 고르는 중이면 장비 발견)
+  if (e.key === 'treasure' && (!freeTreasures.length || (treasuresOf(g).length && (seasonNow() < 7 || g.treasureFound)))) e = EXPLORE.find(x => x.key === 'item');
   let text, warExp = 0;
   addRecord(g, 'ex_' + e.key); // 탐색 결과별 횟수 (2026-11-08, 시즌 기록용: ex_gold · ex_treasure · ex_bandit …)
   switch (e.key) {
@@ -1112,6 +1114,13 @@ function runExplore(g) {
     case 'treasure': { // 보물 발견 (2026-11-07): 주인 없는 보물 중 하나. 가점이 높을수록 드물다. 전체 알림
       let r = Math.random() * freeTreasures.reduce((a, n) => a + TREASURE_RULES.pickWeight[TREASURES[n].bonus], 0), name = freeTreasures[0];
       for (const n of freeTreasures) { r -= TREASURE_RULES.pickWeight[TREASURES[n].bonus]; if (r < 0) { name = n; break; } }
+      if (treasuresOf(g).length) { // 시즌 7 (2026-11-10): 이미 보물이 있다 → 바꿀지 팔지 고른다. 전체 알림은 바꿨을 때만
+        g.treasureFound = { name, until: S.turn + TREASURE_RULES.foundTurns };
+        const st = STATS.find(x => x.key === TREASURES[name].stat);
+        text = `★★★ 또 다른 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${st.name} +${TREASURES[name].bonus})
+지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요. (${TREASURE_RULES.foundTurns}턴 안에 고르지 않으면 저절로 팔린다)`;
+        break;
+      }
       g.treasures = [...treasuresOf(g), name];
       const st = STATS.find(x => x.key === TREASURES[name].stat);
       text = `★★★ 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${TREASURES[name].bonus} (지금 ${effStats(g)[st.key]})`;
@@ -1287,6 +1296,25 @@ function sellTreasure(g, name) {
   g.treasures = treasuresOf(g).filter(n => n !== name);
   const got = earnGold(g, gold); // 장수 금 최대치(playerGoldMax)를 넘는 만큼은 못 받는다 (확인 창에서 미리 알려 줌)
   addLog(g, `💎 보물 「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(got)} (${fmt(g.gold)})${got < gold ? ` · 금 최대치 ${fmt(RULES.playerGoldMax)}라 ${fmt(gold - got)}은 받지 못했다` : ''}`);
+  return '';
+}
+// 보물을 가진 채 또 찾은 보물 고르기 (2026-11-10, 시즌 7부터): pick 'swap' = 새 보물로 바꾸고 원래 보물은 세상으로 (금 없음, 전체 알림), 'sell' = 새 보물을 판다 (가점 × sellPer)
+function chooseFoundTreasure(g, pick, auto = false) {
+  const f = g.treasureFound;
+  if (!f || !TREASURES[f.name]) { delete g.treasureFound; return '고를 보물이 없어요.'; }
+  const name = f.name, tr = TREASURES[name], st = STATS.find(x => x.key === tr.stat);
+  if (pick === 'swap') {
+    const old = treasuresOf(g);
+    delete g.treasureFound;
+    g.treasures = [name];
+    addLog(g, `💎 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${tr.bonus} (지금 ${effStats(g)[st.key]})${old.length ? ` · 「${old.join('」「')}」${josa(old[old.length - 1], '은는').slice(-1)} 세상으로 돌아갔다` : ''}`);
+    logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${tr.bonus})`);
+    return '';
+  }
+  if (pick !== 'sell') return '바꾸기나 팔기 중에서 골라 주세요.';
+  delete g.treasureFound;
+  const gold = tr.bonus * TREASURE_RULES.sellPer, got = earnGold(g, gold);
+  addLog(g, `💎 ${auto ? `${TREASURE_RULES.foundTurns}턴 동안 고르지 않아 ` : ''}「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(got)} (${fmt(g.gold)})${got < gold ? ` · 금 최대치 ${fmt(RULES.playerGoldMax)}라 ${fmt(gold - got)}은 받지 못했다` : ''}`);
   return '';
 }
 function buyItem(g, item) {

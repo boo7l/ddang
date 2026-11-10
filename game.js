@@ -1515,6 +1515,40 @@ function slipHtml(id, i, animate, on) {
       <b>${esc(t.name)}</b><span class="trDesc">${esc(t.desc)}</span></button>`;
 }
 
+// 보물을 가진 채 또 찾은 보물 (2026-11-10, 시즌 7부터): 바꿀지 팔지 고른다. 처음 한 번 저절로 뜨고, 고르기 전까지 장수 창 단추로 다시 연다
+let treasureShown = '';
+function treasureFoundDialog() {
+  const g = me(), f = g && g.treasureFound;
+  if (!f || !TREASURES[f.name]) return;
+  treasureShown = f.name + f.until;
+  const nu = TREASURES[f.name], nst = STATS.find(x => x.key === nu.stat), old = treasuresOf(g)[0];
+  const ot = old && TREASURES[old], ost = ot && STATS.find(x => x.key === ot.stat);
+  // 바꾸면 능력치가 어떻게 되는지: 새 보물 능력치는 + 새 가점 − (같은 능력치면) 원래 가점
+  const after = effStats(g)[nst.key] + nu.bonus - (ot && ot.stat === nu.stat ? ot.bonus : 0);
+  const gold = nu.bonus * TREASURE_RULES.sellPer, got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold));
+  const left = Math.max(0, f.until - S.turn);
+  openModal(`
+    <h2>💎 또 다른 보물을 발견했다!</h2>
+    <p>보물은 장수 한 명당 1개까지예요. 새 보물로 바꾸거나, 상인에게 팔 수 있어요.</p>
+    <div class="trCards">
+      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm">💎 ${esc(old)}</div><div>${ost.name} +${ot.bonus}</div><div class="dim small">지금 ${ost.name} ${effStats(g)[ost.key]}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
+      <div class="trArrow">⇄</div>
+      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${nst.name} +${nu.bonus}</div><div class="dim small">바꾸면 ${nst.name} ${after}</div></div>
+    </div>
+    <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b> → 팔면 <b>${fmt(g.gold + got)}</b>${got < gold ? ` <span class="bad">(최대치 ${fmt(RULES.playerGoldMax)}이라 ${fmt(gold - got)}은 못 받아요)</span>` : ''}</p>
+    <p class="dim small">· 바꾸면 ${ot ? `${esc(old)}${josa(old, '은는').slice(-1)} 세상으로 돌아가요 (금 없음)` : '그대로 손에 넣어요'}<br>· 팔면 ${esc(f.name)}${josa(f.name, '을를').slice(-1)} 금 ${fmt(gold)}에 팔아요 (가점 1당 ${fmt(TREASURE_RULES.sellPer)})<br>· ${TREASURE_RULES.foundTurns}턴 안에 고르지 않으면 자동으로 팔려요 (남은 턴 ${left})</p>
+    <div class="modalBtns"><button data-close>나중에</button><button id="tfSell">팔기 (금 +${fmt(got)})</button><button id="tfSwap" class="main">${ot ? `${esc(josa(f.name, '으로'))} 바꾸기` : `${esc(f.name)} 갖기`}</button></div>`, box => {
+    box.querySelector('#tfSell').onclick = async () => {
+      if (!confirm(`「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요? 되돌릴 수 없어요.`)) return;
+      if (await call('treasureFound', { pick: 'sell' })) { closeModal(); renderAll(); }
+    };
+    box.querySelector('#tfSwap').onclick = async () => {
+      if (ot && !confirm(`「${f.name}」${josa(f.name, '으로').slice(f.name.length)} 바꿀까요? 「${old}」${josa(old, '은는').slice(-1)} 세상으로 돌아가고 되돌릴 수 없어요.`)) return;
+      if (await call('treasureFound', { pick: 'swap' })) { closeModal(); renderAll(); }
+    };
+  });
+}
+
 // 탐색에서 주운 특성 주머니 (2026-10-28): 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 없음.
 // 주운 뒤 처음 화면을 그릴 때 한 번 저절로 뜨고, 고르기 전까지는 장수 창의 단추로 다시 열 수 있다
 let pouchShown = '';
@@ -1773,6 +1807,8 @@ function renderAll() {
   if (S.unified && !celebrated) { celebrated = true; unifyDialog(); }
   // 탐색에서 특성 주머니를 주웠으면 한 번 저절로 연다 (다른 창이 떠 있으면 다음에)
   if (me().traitFound && pouchShown !== me().traitFound.join() && $('#modal').hidden) pouchDialog();
+  const tf = me().treasureFound; // 또 찾은 보물 (2026-11-10): 한 번 저절로 연다
+  if (tf && treasureShown !== tf.name + tf.until && $('#modal').hidden) treasureFoundDialog();
 }
 
 // 우리 세력 장수: 누가 어디에 얼마나 있는지 (공적 순). 남의 예약·금은 서버가 보내 주지 않는다
@@ -1849,6 +1885,7 @@ function renderGeneral() {
     ${traitOf(f.id).name ? `<p class="traitLine"><span class="tTag">세력</span> <b>${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</p>` : ''}
     ${p.trait && GENERAL_TRAITS[p.trait] ? `<p class="traitLine myTrait"><span class="tTag">개인</span> <b>${GENERAL_TRAITS[p.trait].name}</b><br>${GENERAL_TRAITS[p.trait].desc}</p>` : ''}
     ${p.traitFound ? '<p><button id="gPouch" class="main">🧧 특성 주머니 열기</button></p>' : ''}
+    ${p.treasureFound ? '<p><button id="gTreasureFound" class="main">💎 보물 고르기</button></p>' : ''}
     </details>
     <table class="statbars">${STATS.map(st => `
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
@@ -1856,6 +1893,7 @@ function renderGeneral() {
     </table>`;
   $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
   if ($('#gPouch')) $('#gPouch').onclick = () => pouchDialog();
+  if ($('#gTreasureFound')) $('#gTreasureFound').onclick = () => treasureFoundDialog();
   $('#gTraits').ontoggle = e => { traitsOpen = e.target.open; try { localStorage.setItem(TRAITS_KEY, traitsOpen ? '1' : '0'); } catch (err) { /* 저장 못 해도 이번엔 그대로 */ } };
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
@@ -1868,7 +1906,7 @@ function renderGeneral() {
 판 보물은 세상으로 돌아가 다시 탐색에서 나올 수 있어요. 되돌릴 수 없어요.${warn}`)) return;
     await call('sellTreasure', { name: n });
   }; });
-  if (S.unified && !IS_ADMIN) ['#gPouch', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.disabled = true; x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
+  if (S.unified && !IS_ADMIN) ['#gPouch', '#gTreasureFound', '#gDefense', '#gShop', '.gSell'].forEach(sel => document.querySelectorAll(sel).forEach(x => { x.disabled = true; x.onclick = null; })); // 시즌이 끝나면 구경·채팅만 (2026-11-02)
 }
 
 // 1초마다 바뀌는 부분만 고친다 (버튼을 다시 만들지 않아서 클릭이 씹히지 않는다)

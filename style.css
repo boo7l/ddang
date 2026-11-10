@@ -1049,3 +1049,11 @@ details.fold > summary:hover h2 { color: var(--title); }
 .tipBox > summary:hover { background: rgba(232, 178, 58, 0.1); }
 .tipBox[open] > summary { border-bottom: 1px solid var(--gold-dark); }
 .tipBox > p { margin: 0; padding: 8px 12px 10px; }
+/* 또 찾은 보물 고르기 창 (2026-11-10, 시즌 7부터) */
+.trCards { display: flex; gap: 10px; align-items: stretch; margin: 12px 0; }
+.trCard { flex: 1; border: 1px solid var(--gold-dark); background: var(--panel-dark); border-radius: 4px; padding: 10px 12px; text-align: center; }
+.trCard.new { border-color: var(--gold); box-shadow: 0 0 10px rgba(232, 178, 58, 0.35); }
+.trCard .tTag { display: inline-block; font-size: 14px; color: var(--label); margin-bottom: 4px; }
+.trCard .nm { font-size: 18px; color: var(--title); margin: 4px 0; }
+.trArrow { align-self: center; color: var(--gold); font-size: 20px; }
+#modalBox .trGold { text-align: center; margin: 8px 0; }
