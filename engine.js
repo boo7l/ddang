@@ -332,22 +332,27 @@ function runRegionEvents(month) {
     hit.add(r);
     S.regionRest[r] = S.turn + RULES.regionEventRest + 1;
     const cities = MAP.cities.filter(c => regionOf(c) === r), ids = new Set(cities.map(c => c.id));
-    const fx = [];
+    const fx = [], rolled = []; // rolled: 성마다 굴린 농업·상업 값 (2026-11-10, 범위 대신 실제 값을 보여 준다. 성의 남은 수치는 숨기려고 깎인 양이 아니라 굴린 값)
     if (e.food) { foodRate[r] = e.food; fx.push(`이번 수확 ${e.food > 0 ? '+' : ''}${Math.round(e.food * 100)}%`); }
     for (const c of cities) {
       const cs = S.cities[c.id];
       // 농업·상업: 숫자면 비율(예전), [최소, 최대]면 그만큼 더하거나 뺀다 (성마다·농업 상업 따로 굴림, 2026-11-06)
-      for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), Array.isArray(e[k]) ? cs[k] + randInt(e[k][0], e[k][1]) : Math.round(cs[k] * (1 + e[k]))));
+      const roll = [];
+      for (const k of ['agri', 'comm']) if (e[k]) {
+        if (Array.isArray(e[k])) { const v = randInt(e[k][0], e[k][1]); roll.push(`${DOMESTIC[k].label} ${v > 0 ? '+' : ''}${v}`); cs[k] = Math.max(0, Math.min(devMax(c.grade, k), cs[k] + v)); }
+        else cs[k] = Math.max(0, Math.min(devMax(c.grade, k), Math.round(cs[k] * (1 + e[k]))));
+      }
+      if (roll.length) rolled.push(`${c.name} ${roll.join('·')}`);
       if (e.peace) cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + e.peace));
       if (e.troops && cs.guard > 0) cs.guard = Math.max(0, cs.guard - Math.ceil(cs.guard * -e.troops));
     }
-    const rng = v => (Array.isArray(v) ? `${v[0] < 0 ? '-' : '+'}${Math.min(Math.abs(v[0]), Math.abs(v[1]))}~${Math.max(Math.abs(v[0]), Math.abs(v[1]))}` : `${v > 0 ? '+' : ''}${Math.round(v * 100)}%`);
-    if (e.agri && e.comm && JSON.stringify(e.agri) === JSON.stringify(e.comm)) fx.push(`농업·상업 ${rng(e.agri)}`);
-    else { if (e.agri) fx.push(`농업 ${rng(e.agri)}`); if (e.comm) fx.push(`상업 ${rng(e.comm)}`); }
+    const pctText = v => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%`; // 비율로 정한 농업·상업 (예전 방식)
+    if (e.agri && !Array.isArray(e.agri)) fx.push(`농업 ${pctText(e.agri)}`);
+    if (e.comm && !Array.isArray(e.comm)) fx.push(`상업 ${pctText(e.comm)}`);
     if (e.peace) fx.push(`치안 ${e.peace}`);
     if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
     if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
-    logAll(`${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${cities.map(c => c.name).join('·')}: ${fx.join(' · ')})`);
+    logAll(`${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${rolled.length ? [...rolled, ...fx].join(' · ') : `${cities.map(c => c.name).join('·')}: ${fx.join(' · ')}`})`);
     for (const g of allGenerals()) {
       if (!g.faction || !ids.has(g.city)) continue;
       if (e.troops && g.troops > 0) { const lost = Math.ceil(g.troops * -e.troops); g.troops -= lost; addLog(g, `${e.icon} ${e.name}으로 병력 -${fmt(lost)} (${fmt(g.troops)})`); }
