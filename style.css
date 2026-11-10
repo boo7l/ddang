@@ -906,7 +906,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #notice[open] h2::after { content: " ▼"; }
 #notice p { margin: 4px 0 0; }
 /* 관리자 경고 알림 창 (2026-11-02) */
-.warnText { margin: 12px 0; padding: 10px 12px; border: 2px solid var(--bad); background: rgba(255, 106, 74, .15); color: var(--text); line-height: 1.6; word-break: keep-all; }
+.popText { margin: 12px 0; line-height: 1.7; word-break: keep-all; } /* 알림 팝업 본문 (2026-11-11) */
+.warnText {margin: 12px 0; padding: 10px 12px; border: 2px solid var(--bad); background: rgba(255, 106, 74, .15); color: var(--text); line-height: 1.6; word-break: keep-all; }
 
 /* 고전풍 꾸밈 (2026-11-02) */
 /* 명령 분류 색: 버튼 아래쪽 단청 색 띠, 마우스를 올리면 그 색으로 칠한다 (내정 청록 · 군사 주홍 · 계략 자주 · 기타 쪽빛) */

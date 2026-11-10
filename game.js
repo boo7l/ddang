@@ -340,6 +340,12 @@ function adminToolsDialog() {
     <p><input id="aMsg" maxlength="200" value="[📢] " placeholder="200자까지" style="width:100%;box-sizing:border-box"></p><!-- 입력칸에 [📢]를 미리 넣어 둔다. 필요 없으면 지우면 된다 (2026-11-02) -->
     <p><button id="aMsgSend">보내기</button></p>
     </div>
+    <div class="adminCard">
+    <p class="sub">알림 팝업 <span class="dim">(게임 화면에 창으로 뜸, 내릴 때까지 유지)</span></p>
+    <p>${S && S.popup ? `<span class="dim">지금 떠 있음 · ${fmtTime(S.popup.id)} 올림</span><br>${esc(S.popup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</p>
+    <p><textarea id="aPop" maxlength="300" rows="3" placeholder="300자까지 (줄바꿈 가능)" style="width:100%;box-sizing:border-box"></textarea></p>
+    <p><button id="aPopSend">팝업 올리기</button>${S && S.popup ? ' <button id="aPopClear">내리기</button>' : ''}</p>
+    </div>
     <div class="adminCard wide">
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
     <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc((S.nextMap || MAP_DATA).scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
@@ -395,6 +401,13 @@ function adminToolsDialog() {
       if (!confirm(`모든 장수의 기록에 보낼까요? 보내면 지울 수 없어요.\n\n${text}`)) return;
       if (await call('adminNotice', { text })) afterAdmin();
     };
+    $('#aPopSend').onclick = async () => {
+      const text = $('#aPop').value.trim();
+      if (!text) { alert('올릴 내용을 적어 주세요.'); return; }
+      if (!confirm(`알림 팝업을 올릴까요?${S.popup ? '\n지금 떠 있는 알림은 이걸로 바뀌어요.' : ''}\n\n${text}`)) return;
+      if (await call('adminPopup', { text })) afterAdmin();
+    };
+    if ($('#aPopClear')) $('#aPopClear').onclick = async () => { if (!confirm('알림 팝업을 내릴까요?')) return; if (await call('adminPopup', { clear: true })) afterAdmin(); };
     $('#aoSave').onclick = async () => {
       const v = id => +$(id).value;
       if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked, label: $('#aoL').value.trim() })) afterAdmin();
@@ -1819,6 +1832,23 @@ function enterGame() {
   showWarns();
 }
 
+// 알림 팝업 (2026-11-11): 관리자가 올린 알림을 게임 화면에서 창으로. [닫기]는 이번 접속만, [다시 보지 않기]는 이 브라우저에서 이 알림을 다시 띄우지 않는다
+let popupShown = 0; // 이번 접속에서 이미 띄운 알림 id
+function showPopup() {
+  const p = S && S.popup;
+  if (!p || popupShown === p.id || $('#game').hidden || !$('#modal').hidden || !$('#adminPage').hidden) return;
+  let hidden = 0;
+  try { hidden = +localStorage.getItem('popupHide') || 0; } catch (e) { /* 저장 못 하는 브라우저 */ }
+  if (hidden === p.id) return;
+  popupShown = p.id;
+  openModal(`<h2>알림</h2>
+    <p class="dim small">${fmtTime(p.id)}</p>
+    <p class="popText">${esc(p.text).replace(/\n/g, '<br>')}</p>
+    <div class="modalBtns"><button id="popHide" class="btnLeft">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
+    $('#popHide').onclick = () => { try { localStorage.setItem('popupHide', p.id); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
+  });
+}
+
 // 안 읽은 관리자 경고 (2026-11-02): 게임 화면에 있을 때 알림 창으로 하나씩 띄운다. [확인했어요]를 누르면 서버에서 읽음으로 지운다
 let warnOpen = false;
 function showWarns() {
@@ -2545,6 +2575,7 @@ document.addEventListener('keydown', e => {
 // 1초마다: 남은 시간·시계 갱신. 턴이 넘어가고 1~6초 뒤(사람마다 무작위)이거나 1분이 지났으면 서버에서 새로 받아 온다
 setInterval(() => {
   if (!S || $('#game').hidden) return;
+  showPopup(); // 다른 창이 열려 있으면 닫힌 뒤에 뜬다
   const turnPassed = nextTurn(lastFetch + S.timeOffset) <= now() - turnWait; // 서버가 턴을 처리할 1초 여유 + 흩어 묻기 0~5초
   if (!busy && !document.hidden && (turnPassed || Date.now() - lastFetch > 60 * 1000)) { refresh(); return; }
   updateTurn();
