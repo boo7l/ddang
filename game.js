@@ -2039,7 +2039,7 @@ function renderCommands() {
     slot = 0;
     queueCall('clear', {}, q => q.fill(null));
   });
-  $('#qTop').onclick = () => { slot = 0; renderCommands(); }; // 휴대폰: 바로 다음 턴 칸으로 (고른 칸이 보이게 예약표도 맨 위로)
+  $('#qTop').onclick = () => { slot = 0; renderCommands(); }; // PC·휴대폰: 바로 다음 턴 칸으로 (PC는 2026-11-10부터) (고른 칸이 보이게 예약표도 맨 위로)
   // 천하통일로 시즌이 끝나면: 버튼은 그대로 보이지만 아무 작동도 하지 않는다
   if (S.unified) {
     $('#commands').querySelectorAll('button').forEach(b => { b.disabled = true; b.onclick = null; });
