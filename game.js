@@ -341,6 +341,10 @@ function adminToolsDialog() {
     <p><button id="aMsgSend">보내기</button></p>
     </div>
     <div class="adminCard">
+    <p class="sub">패치노트 NEW</p>
+    <p><label><input type="checkbox" id="aNoteNew"${S && S.noteNew ? ' checked' : ''}> 첫 화면 📜 패치노트 단추에 빨간 <b>NEW</b> 표시</label></p>
+    </div>
+    <div class="adminCard">
     <p class="sub">알림 팝업 <span class="dim">(게임 화면에 창으로 뜸, 내릴 때까지 유지)</span></p>
     <p>${S && S.popup ? `<span class="dim">지금 떠 있음 · ${fmtTime(S.popup.id)} 올림</span><br>${esc(S.popup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</p>
     <p><textarea id="aPop" maxlength="300" rows="3" placeholder="300자까지 (줄바꿈 가능)" style="width:100%;box-sizing:border-box"></textarea></p>
@@ -401,6 +405,7 @@ function adminToolsDialog() {
       if (!confirm(`모든 장수의 기록에 보낼까요? 보내면 지울 수 없어요.\n\n${text}`)) return;
       if (await call('adminNotice', { text })) afterAdmin();
     };
+    $('#aNoteNew').onchange = async e => { if (await call('adminNoteNew', { on: e.target.checked })) afterAdmin(); else e.target.checked = !e.target.checked; };
     $('#aPopSend').onclick = async () => {
       const text = $('#aPop').value.trim();
       if (!text) { alert('올릴 내용을 적어 주세요.'); return; }
@@ -488,6 +493,7 @@ async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
     const s = await api('status');
+    if (NOTE_NEW !== !!s.noteNew) { NOTE_NEW = !!s.noteNew; renderNotes(); }
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
@@ -1194,11 +1200,12 @@ function showScreen(id) {
 const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가 미리 되어 있다 (이 브라우저에서만)
 
 // 첫 화면 패치노트 (patchnotes.js). 단추는 하나, 팝업에서 좌우로 넘겨 지난 업데이트를 본다 (2026-10-31, 그 전엔 업데이트마다 단추)
+let NOTE_NEW = false; // 패치노트 NEW 표시 (서버 status의 noteNew)
 function renderNotes() {
   const box = $('#notes');
   if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
-  // 빨간 NEW: 최신 패치노트에 isNew: true가 있는 동안 항상 보인다. 내릴 때는 patchnotes.js에서 지운다 (2026-10-31)
-  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${PATCH_NOTES[0].isNew ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button></div>`;
+  // 빨간 NEW: 관리 페이지의 'NEW 표시' 체크가 켜져 있는 동안 보인다 (2026-11-11, 그 전엔 patchnotes.js의 isNew). 서버 status가 알려 준다
+  box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${NOTE_NEW ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button></div>`;
   box.querySelector('.noteBtn').onclick = () => noteDialog(0);
   box.querySelector('.boardBtn').onclick = () => boardDialog();
 }
