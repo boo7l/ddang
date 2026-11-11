@@ -122,7 +122,7 @@ function unifyDialog(u = S.unified) {
     <h3>공적 순위 <span class="dim small">· 상위 10명</span></h3>
     <table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table>
     <p class="dim">이번 시즌은 여기서 끝났어요. 다음 시즌을 기다려 주세요.</p>
-    <div class="modalBtns"><button id="unifyHide" class="btnLeft">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
+    <div class="modalBtns"><button id="unifyHide" class="btnLeft hideBtn">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
     $('#unifyHide').onclick = () => { try { localStorage.setItem('unifyHide', String(S.season)); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
   });
 }
@@ -1865,7 +1865,7 @@ function showPopup() {
   openModal(`<h2>알림</h2>
     <p class="dim small">${fmtTime(p.id)}</p>
     <p class="popText">${esc(p.text).replace(/\n/g, '<br>')}</p>
-    <div class="modalBtns"><button id="popHide" class="btnLeft">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
+    <div class="modalBtns"><button id="popHide" class="btnLeft hideBtn">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
     $('#popHide').onclick = () => { try { localStorage.setItem('popupHide', p.id); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
   });
 }
