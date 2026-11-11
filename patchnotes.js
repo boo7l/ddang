@@ -3,7 +3,6 @@
 const PATCH_NOTES = [
   {
     title: '시즌 6 주요 업데이트',
-    isNew: true,
     date: '11월 8일',
     groups: [
       { head: '🆕 시즌6 시나리오 · 초한쟁패', items: [
