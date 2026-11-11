@@ -231,7 +231,10 @@ const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
 // fid 세력 성 가운데, fromId에서 그 세력 땅만 밟고 maxSteps칸 안에 갈 수 있는 성들 (이동 목적지)
 // (fromId가 아직 내 성이 아니어도 된다: 예약표에서 출진 뒤 그 성에 있을 거라고 짐작할 때)
 // 먼 길(RULES.farRoads)은 한 번에 그 길 하나만: 첫 칸으로만 탈 수 있고, 건너간 성에서 더 가지 못한다 (2026-11-03)
-const isFarRoad = (a, b) => (RULES.farRoads || []).includes(a.name + '-' + b.name) || (RULES.farRoads || []).includes(b.name + '-' + a.name);
+// 2026-11-11: 지도 파일에 farRoads([성 id, 성 id] 쌍)가 있으면 그것을 쓴다 (지도 편집기에서 연결마다 켜고 끈다). 없으면 예전 지도처럼 RULES.farRoads(성 이름)
+const isFarRoad = (a, b) => (typeof MAP !== 'undefined' && MAP && Array.isArray(MAP.farRoads)
+  ? MAP.farRoads.some(([p, q]) => (p === a.id && q === b.id) || (p === b.id && q === a.id))
+  : (RULES.farRoads || []).includes(a.name + '-' + b.name) || (RULES.farRoads || []).includes(b.name + '-' + a.name));
 // anyPath (2026-11-03 시즌 5, 뼈에게 닿기를): 남의 성·공백지를 지나도 된다. 도착하는 곳은 여전히 아군 성
 function linkedOwnCities(fromId, fid, maxSteps = Infinity, anyPath = false) {
   const seen = new Set([fromId]), limited = maxSteps !== Infinity;
