@@ -73,7 +73,7 @@ function renderInfo() {
     <h2 class="infoHead">성 정보${home ? ' <button class="mini homeBtn" id="infoHome" title="내가 있는 성 보기">📍</button>' : ''}</h2>`
     + `
     <table class="stats">
-      <tr><th>이름</th><td>${c.name}</td></tr>
+      <tr><th>이름</th><td>${c.name}${typeof recentCaptureIcon === 'function' ? recentCaptureIcon(c) : ''}</td></tr>
       <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${f.name}` : '<span class="dim">공백지</span>'}</td></tr>
       <tr><th>규모</th><td>${GRADE_NAME[c.grade]} <span class="grade">${'★'.repeat(c.grade)}</span></td></tr>
       <tr class="wide"><th>이웃</th><td>${neighbors(c).map(n => n.name).join(' · ')}</td></tr>
