@@ -1283,13 +1283,12 @@ async function boardDialog(page = 0, kind = '') {
       <textarea maxlength="${d.postMax}" rows="2" placeholder="${esc(d.me.name)}(으)로 글 남기기 (${d.postMax}자까지)"></textarea>
       <button type="submit" class="main">글쓰기</button></form>` : `<p class="dim">${d.me ? '정지된 계정은 글을 쓸 수 없어요.' : '로그인하면 글과 댓글을 쓸 수 있어요.'}</p>`}
     <ul class="boardList">${items}</ul>
-    <p class="boardKeep dim small">작성일로부터 3개월이 지나면 삭제됩니다</p><!-- 2026-11-11 기획자 -->
     <div class="notePager">
       <button id="boardPrev"${page > 0 ? '' : ' disabled'}>◀ 이전</button>
       <span class="dim">${page + 1} / ${pages}</span>
       <button id="boardNext"${page + 1 < pages ? '' : ' disabled'}>다음 ▶</button>
     </div>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    <div class="modalBtns"><span class="boardKeep dim small">작성일로부터 3개월이 지나면 삭제됩니다</span><button data-close class="main">닫기</button></div>`, box => {
     box.querySelector('#boardPrev').onclick = () => boardDialog(page - 1, kind);
     box.querySelector('#boardNext').onclick = () => boardDialog(page + 1, kind);
     box.querySelectorAll('[data-kind]').forEach(b => { b.onclick = () => boardDialog(0, b.dataset.kind); });
