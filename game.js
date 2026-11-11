@@ -816,7 +816,7 @@ function draftDialog() {
   const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
   const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
-  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gType = gcs.guardType || RULES.guardUnit.type, gMax = RULES.guardMax[from.grade], gFull = defendingIn(from.id, p.faction).length >= RULES.defenseMax; // 이 성 수비대장. 방어 모드 장수가 꽉 차면 못 한다
+  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gType = gcs.guardType || RULES.guardUnit.type, gMax = RULES.guardMax[from.grade], gFull = false; // 이 성 수비대장. 2026-11-11부터 방어 모드 장수가 꽉 차도 수비대 징병이 된다
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');

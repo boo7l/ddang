@@ -548,7 +548,7 @@ function runDraft(g, o) {
 function runGuardDraft(g, type) {
   const city = cityById(g.city), cs = S.cities[g.city], max = RULES.guardMax[city.grade];
   if (city.faction !== g.faction) return '우리 세력 성이 아님';
-  if (defendingIn(g.city, g.faction).length >= RULES.defenseMax) return `방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어 수비대 징병 불가`; // 2026-11-04
+  // 2026-11-11: 방어 모드 장수가 5명 꽉 차도 수비대 징병은 된다 (2026-11-04~11-10엔 막았다. 수비대장은 유저 5명 제한과 따로 늘 함께 싸우는데 충원만 막혀 버그처럼 보였다)
   const curType = cs.guardType || RULES.guardUnit.type;
   if ((cs.guard || 0) >= max && curType === type) return '수비대 병력이 이미 최대치';
   const peace = cs.peace, rate = peaceDraft(peace);
