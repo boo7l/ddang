@@ -122,8 +122,12 @@ function unifyDialog(u = S.unified) {
     <h3>공적 순위 <span class="dim small">· 상위 10명</span></h3>
     <table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table>
     <p class="dim">이번 시즌은 여기서 끝났어요. 다음 시즌을 기다려 주세요.</p>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+    <div class="modalBtns"><button id="unifyHide" class="btnLeft">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
+    $('#unifyHide').onclick = () => { try { localStorage.setItem('unifyHide', String(S.season)); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
+  });
 }
+// 천하통일 창 [다시 보지 않기] (2026-11-11): 누른 시즌에는 들어와도 저절로 뜨지 않는다. [결과 보기]로는 언제든 본다. 새 시즌이면 다시 뜬다
+const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === String(S.season); } catch (e) { return false; } };
 
 // ===== 관리 페이지 (2026-11-06: 🛠 관리 창 + 👁 관리자 보기 팝업을 한 페이지로. 예전 팝업 방식은 git 태그 backup-admin-popup-20261106) =====
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
@@ -1896,7 +1900,7 @@ function renderAll() {
   renderInfo();
   renderLog();
   renderChat();
-  if (S.unified && !celebrated) { celebrated = true; unifyDialog(); }
+  if (S.unified && !celebrated) { celebrated = true; if (!unifyHidden()) unifyDialog(); }
   // 탐색에서 특성 주머니를 주웠으면 한 번 저절로 연다 (다른 창이 떠 있으면 다음에)
   if (me().traitFound && pouchShown !== me().traitFound.join() && $('#modal').hidden) pouchDialog();
   const tf = me().treasureFound; // 또 찾은 보물 (2026-11-10): 한 번 저절로 연다
