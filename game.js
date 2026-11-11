@@ -522,7 +522,7 @@ async function renderHof() {
   if (error || !data || !data.length) { box.innerHTML = ''; return; }
   HOF = data;
   box.innerHTML = `<button class="hofEntry">🏆 명예의 전당 <span class="hofLast">· 지난 통일 ${hofSw(HOF[0].winner_color)}${esc(HOF[0].winner || '?')}</span></button>`;
-  box.querySelector('.hofEntry').onclick = () => { hofCur = 0; hofStart = 0; showScreen('hofPage'); hofRender(); scrollTo(0, 0); };
+  box.querySelector('.hofEntry').onclick = () => { hofCur = 0; hofStart = 0; showScreen('hofPage'); hofMedalMode(false); scrollTo(0, 0); };
 }
 function hofRender() {
   const n = hofPerPage();
@@ -545,6 +545,23 @@ function hofRender() {
     ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}
     ${HOF_NOTES[h.season] ? `<p class="hofNote dim">${esc(HOF_NOTES[h.season])}</p>` : ''}${h.rp ? '<p class="replayRow"><button id="hofReplay" class="replayBtn">▶ 세력 변화 보기</button></p>' : ''}${hofTitles(h.titles)}`;
   if ($('#hofReplay')) $('#hofReplay').onclick = () => openReplay(h);
+}
+
+// 훈장 순위 (2026-11-11 시안 A): 명예의 전당 오른쪽 위 단추. 시즌 정산과 따로라 시즌 줄을 숨기고 이 표만 보여 준다
+let hofMedal = false;
+async function hofMedalMode(on) {
+  hofMedal = on;
+  document.querySelector('#hofPage .seasonBar').hidden = on;
+  $('#hofMedalBtn').hidden = on;
+  if (!on) { hofRender(); return; }
+  $('#hofView').innerHTML = '<p class="dim center">불러오는 중…</p>';
+  let list = [];
+  try { list = (await api('medalRank')).list || []; } catch (e) { $('#hofView').innerHTML = '<p class="bad center">불러오지 못했어요. 잠시 뒤에 다시 눌러 주세요.</p>'; return; }
+  if (!hofMedal) return; // 그사이 돌아갔으면 그리지 않는다
+  let rank = 0, prev = null;
+  const rows = list.map((x, i) => { const n = x.seasons.length; if (n !== prev) { rank = i + 1; prev = n; } return `<tr${rank === 1 ? ' class="top"' : ''}><td class="num">${rank}</td><td>${esc(x.name)}</td><td>${medalBadge(n)}</td><td class="dim">${x.seasons.map(s => 'S' + s).join(' · ')}</td></tr>`; }).join('');
+  $('#hofView').innerHTML = `<p class="medalHead">🎖 역대 훈장 순위</p>${list.length ? `<div class="hofScroll"><table class="hofTable2 medalTable"><tr><th></th><th>게임 아이디</th><th>훈장</th><th>받은 시즌</th></tr>${rows}</table></div>` : '<p class="dim center">아직 훈장을 받은 사람이 없어요.</p>'}
+    <p class="medalNote dim">시즌 3부터 5명씩 주어지는 훈장. 훈장이 있는 아이디로 생성된 장수는 훈장 1개당 통무지 +${RULES.medalBonus}</p>`;
 }
 
 // 특별 타이틀 (2026-11-11, 시즌 6부터): 구분선 아래에 '경세지재 · 이름 (내정 170번)'. 서버가 시즌 끝에 저장한다 (hall_of_fame.titles)
@@ -620,7 +637,8 @@ function replayDialog(h, R) {
 }
 // 명예의 전당 시즌별 맨 아랫줄 안내 (2026-11-03)
 const HOF_NOTES = {};
-$('#hofBack').onclick = () => showTitle();
+$('#hofBack').onclick = () => (hofMedal ? hofMedalMode(false) : showTitle()); // 훈장 순위에서는 시즌 기록으로 돌아간다
+$('#hofMedalBtn').onclick = () => hofMedalMode(true);
 $('#chipPrev').onclick = () => { hofStart -= hofPerPage(); hofRender(); };
 $('#chipNext').onclick = () => { hofStart += hofPerPage(); hofRender(); };
 $('#hofChips').onclick = e => { const b = e.target.closest('button'); if (b) { hofCur = +b.dataset.i; hofRender(); } };

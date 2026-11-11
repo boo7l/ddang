@@ -871,6 +871,11 @@ details.fold > summary:hover h2 { color: var(--title); }
 #hofPage .pageTitle { flex: 1; text-align: center; color: var(--title); white-space: nowrap; }
 #hofPage .pageHead .spacer { width: 104px; }
 #hofPage .back { width: 104px; white-space: nowrap; }
+#hofPage .medalBtn { width: 104px; white-space: nowrap; padding-left: 4px; padding-right: 4px; } /* 훈장 순위 단추 (2026-11-11): 돌아가기와 같은 폭이라 현판이 가운데에 */
+#hofPage .medalBtn[hidden] { display: block; visibility: hidden; } /* 훈장 화면에서는 숨기되 자리는 남겨 현판이 안 움직이게 */
+.medalHead { text-align: center; color: var(--title); margin: 0 0 8px; }
+.medalNote { text-align: center; margin: 10px 0 0; line-height: 1.6; }
+#hofView .center { text-align: center; }
 .seasonBar { display: flex; gap: 4px; margin-bottom: 12px; align-items: stretch; }
 .seasonChips { flex: 1; min-width: 0; display: flex; gap: 4px; }
 .seasonChips button { flex: 1 1 0; min-width: 0; padding-left: 2px; padding-right: 2px; white-space: nowrap; }
@@ -891,6 +896,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 @media (max-width: 700px) {
   #hofPage { margin: 8px; }
   #hofPage .pageHead .spacer { display: none; }
+  #hofPage .pageHead { flex-wrap: wrap; } /* 폰 (2026-11-11): 현판은 윗줄 가운데, 돌아가기·훈장 순위 단추는 아랫줄 양끝 (좁아서 현판이 단추를 덮었다) */
+  #hofPage .pageHead .pageTitle { order: -1; flex-basis: 100%; }
+  #hofPage .medalBtn { margin-left: auto; }
   /* 2026-11-11: 표가 넓으면 표만 옆으로 밀어서 본다. 이름은 한 줄, 훈장·소속 이름까지 다 보인다 (그 전엔 긴 이름을 두 줄로 접고 소속은 색 네모만) */
   .hofScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--gold-dark) var(--panel-dark); }
   .hofTable2 th, .hofTable2 td { padding: 2px 4px; white-space: nowrap; }
