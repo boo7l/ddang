@@ -705,9 +705,11 @@ function capture(g, to, oldFaction, lines) {
     return;
   }
   lines.push({ a: seize(cs) });
-  const cut = captureDamage(cs, to.grade);
+  const rep = RULES.captureRepeatTurns, repeat = rep > 0 && cs.capturedTurn != null && S.turn - cs.capturedTurn <= rep; // 연속 함락 면제 (시즌 7부터)
+  const cut = captureDamage(cs, to.grade, repeat);
+  cs.capturedTurn = S.turn;
   cs.wall = RULES.captureWall[to.grade];
-  lines.push({ a: `함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다` });
+  lines.push({ a: `함락의 혼란으로 ${Object.keys(cut).map(k => `${DOMESTIC[k].label} -${cut[k]}`).join(' · ')}${repeat ? ' (얼마 전 함락돼 농업·상업은 그대로)' : ''} · 무너진 성벽을 방어 ${cs.wall}까지 다시 세웠다` });
   lines.push(...retreatFrom(to, oldFaction, g.faction, g));
   g.city = to.id;
 }
