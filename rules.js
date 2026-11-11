@@ -133,8 +133,9 @@ const RULES = {
   // 함락 때 농업·상업은 그 성 최대치 대비 얼마나 찼는지에 따라 깎인다 (2026-11-07 시즌 6): 50% 이상 15%, 25~50% 10%, 25% 미만 5%.
   // 그 전엔 일괄 10% (100 미만이면 5%). 잘 키운 성일수록 많이 잃어 중반 이후 다시 쌓을 일이 생기게
   captureCutDev: [{ from: 0.5, rate: 0.15 }, { from: 0.25, rate: 0.10 }, { from: 0, rate: 0.05 }],
-  // 연속 함락 면제 (2026-11-12 기획자, 시즌 7부터): 최근 12턴 안에 이미 함락된 성은 농업·상업이 안 깎인다 (치안만). 뺏고 뺏기는 격전지가 너무 황폐해져서
-  get captureRepeatTurns() { return seasonNow() >= 7 ? 12 : 0; },
+  // 연속 함락 완화 (2026-11-12 기획자, 시즌 7부터): 최근 5턴 안에 이미 함락된 성은 농업·상업이 원래 비율의 절반만 깎인다 (치안은 그대로). 뺏고 뺏기는 격전지가 너무 황폐해져서
+  get captureRepeatTurns() { return seasonNow() >= 7 ? 5 : 0; },
+  captureRepeatRate: 0.5,
   // 성벽 공격 (기획서 7장): 지키는 부대가 없거나 모두 쓰러뜨리면, 남은 병력의 3~4%만큼 성의 방어를 깎고, 깎은 양의 4배(siegeLoss)만큼 병력을 잃는다.
   // 방어가 0이 되어야 점령. 점령하면 방어를 성 크기만큼 다시 세운다
   siegeRate: { min: 0.03, max: 0.04 }, // 2026-11-07 시즌 6: 3~4.5%에서 (템포 안정화). 2026-11-02 3~5%에서
@@ -223,10 +224,10 @@ const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math
 const troopsMax = g => effStats(g).lea * RULES.troopsPerLea + (gTrait(g).troopsBonus || 0); // 개인 특성 마성의 장수 +1,000 (2026-11-08)
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
 // 농업·상업은 그 성 최대치 대비 찬 비율로 깎는 비율이 정해진다 (RULES.captureCutDev, 2026-11-07). 치안은 RULES.captureCut
-function captureDamage(cs, grade, peaceOnly = false) {
+function captureDamage(cs, grade, repeat = false) {
   const out = {};
-  for (const k of peaceOnly ? ['peace'] : ['agri', 'comm', 'peace']) {
-    const rate = k === 'peace' ? RULES.captureCut : RULES.captureCutDev.find(t => cs[k] >= devMax(grade, k) * t.from).rate;
+  for (const k of ['agri', 'comm', 'peace']) {
+    const rate = k === 'peace' ? RULES.captureCut : RULES.captureCutDev.find(t => cs[k] >= devMax(grade, k) * t.from).rate * (repeat ? RULES.captureRepeatRate : 1);
     out[k] = Math.floor(cs[k] * rate);
     cs[k] -= out[k];
   }
