@@ -1031,7 +1031,7 @@ async function deleteGeneralDialog() {
 
 - 장수·병력·금·공적·능력치·기록이 모두 사라져요. 되돌릴 수 없어요.
 - 계정(아이디)은 그대로예요.
-- 지운 뒤 ${RULES.recreateWait}턴 동안은 새 장수를 만들 수 없어요.`)) return;
+- 지운 뒤 ${Math.round(RULES.recreateWait / MIN / 60)}시간 동안은 새 장수를 만들 수 없어요.`)) return;
   if (await call('deleteGeneral')) { slot = 0; showTitle(); } // 지운 뒤에는 메인 화면으로 (2026-11-07, 그 전엔 바로 장수 생성). 입장하기를 누르면 장수 생성으로 간다
 }
 
@@ -1480,9 +1480,9 @@ function showCreate() {
   renderFacePick();
   renderCreateStats();
   // 장수를 지운 뒤 기다리는 중이면 알려 준다 (그때까지 결정 단추는 서버가 막는다)
-  const wait = S && S.myRecreateAt ? S.myRecreateAt - S.turn : 0;
+  const wait = S && S.myRecreateUntil ? S.myRecreateUntil - now() : 0; // 2026-11-11: 턴 → 실제 시간 (게임 시각 ms)
   $('#cWait').hidden = wait <= 0;
-  $('#cWait').textContent = wait > 0 ? `장수를 지운 뒤라 ${wait}턴 뒤(${dateText(S.myRecreateAt)})부터 새 장수를 만들 수 있어요.` : '';
+  $('#cWait').textContent = wait > 0 ? `장수를 지운 뒤라 약 ${Math.ceil(wait / MIN)}분 뒤(${fmtClock(S.myRecreateUntil)})부터 새 장수를 만들 수 있어요.` : '';
 }
 
 // 얼굴 고르기: 큰 미리보기 + 작은 얼굴 목록
