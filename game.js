@@ -2158,7 +2158,7 @@ const chatOf = fid => (S.chat && S.chat[fid]) || [];
 // 훈장 그림: 금메달 + 빨강·흰색·파랑 끈 (8×9 도트, 2026-10-27 기획자가 고름)
 const MEDAL = '<svg viewBox="0 0 8 9" shape-rendering="crispEdges"><rect x="1" y="0" width="2" height="3" fill="#c0392b"/><rect x="3" y="0" width="2" height="3" fill="#f0e0b0"/><rect x="5" y="0" width="2" height="3" fill="#2c4a8a"/><rect x="2" y="3" width="4" height="1" fill="#8a5a10"/><rect x="1" y="4" width="6" height="4" fill="#f2c230"/><rect x="2" y="8" width="4" height="1" fill="#b07a10"/><rect x="3" y="5" width="2" height="2" fill="#fff3a0"/><rect x="6" y="5" width="1" height="3" fill="#c08a10"/></svg>';
 // 훈장 표시: 2개까지는 그림 그대로, 3개부터는 그림 하나에 ×개수 (자리를 덜 차지하게, 2026-10-31)
-const medalBadge = n => (n ? `<span class="medal" title="훈장 ${n}개">${n >= 3 ? `${MEDAL}<small>×${n}</small>` : MEDAL.repeat(n)}</span>` : '');
+const medalBadge = n => (n ? `<span class="medal" title="훈장 ${n}개">${n >= 3 ? `${MEDAL}<small>${n}</small>` : MEDAL.repeat(n)}</span>` : '');
 const medalOf = id => medalBadge((S && S.medals && S.medals[id]) || 0);
 // 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
 // linkFaction을 주면, 그 세력에 이름이 같은 장수가 딱 한 명 있을 때만 이름을 눌러 정보 창을 볼 수 있다 (2026-11-01. 채팅에는 이름만 저장되어 있다)
