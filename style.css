@@ -873,6 +873,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 #hofPage .back { width: 104px; white-space: nowrap; }
 #hofPage .medalBtn { width: 104px; white-space: nowrap; padding-left: 4px; padding-right: 4px; } /* 훈장 순위 단추 (2026-11-11): 돌아가기와 같은 폭이라 현판이 가운데에 */
 #hofPage .medalBtn[hidden] { display: block; visibility: hidden; } /* 훈장 화면에서는 숨기되 자리는 남겨 현판이 안 움직이게 */
+.boardKeep { text-align: center; margin: 8px 0 0; } /* 게시판 보관 기간 안내 (2026-11-11) */
 .medalHead { text-align: center; color: var(--title); margin: 0 0 8px; }
 .medalNote { text-align: center; margin: 10px 0 0; line-height: 1.6; }
 #hofView .center { text-align: center; }
