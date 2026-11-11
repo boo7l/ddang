@@ -548,11 +548,12 @@ function hofRender() {
 }
 
 // 훈장 순위 (2026-11-11 시안 A): 명예의 전당 오른쪽 위 단추. 시즌 정산과 따로라 시즌 줄을 숨기고 이 표만 보여 준다
+const MEDAL_RANK = false; // 훈장 순위 단추 보이기 (2026-11-11 기획자: 일단 숨김, 나중에 다시 켤 수 있음 → true로)
 let hofMedal = false;
 async function hofMedalMode(on) {
   hofMedal = on;
   document.querySelector('#hofPage .seasonBar').hidden = on;
-  $('#hofMedalBtn').hidden = on;
+  $('#hofMedalBtn').hidden = on || !MEDAL_RANK; // 숨겨도 자리는 남아 현판이 가운데에 (style.css .medalBtn[hidden])
   if (!on) { hofRender(); return; }
   $('#hofView').innerHTML = '<p class="dim center">불러오는 중…</p>';
   let list = [];
