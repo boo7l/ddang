@@ -2311,13 +2311,14 @@ function homeCityId() { return S && MY_ID && me() ? me().city : null; }
 // 최근 함락 아이콘 (2026-11-12, 시즌 7부터): 함락 뒤 captureRepeatTurns(5)턴 안에 다시 함락되면 농업·상업이 절반만 깎인다.
 // 턴 T에 함락되면 T+1 ~ T+5 턴의 함락이 해당 → 지금 S.turn에서 남은 턴 = T + 5 - S.turn. PC는 마우스를 대면, 폰은 누르면 설명
 let captureTipOpen = false;
-function recentCaptureIcon(c) {
+function recentCaptureTip(c) {
   const rep = RULES.captureRepeatTurns, ct = S && S.cities[c.id] && S.cities[c.id].capturedTurn;
   const left = rep > 0 && ct != null ? ct + rep - S.turn : 0;
-  if (left <= 0) return '';
-  const tip = `최근 함락된 성 · 앞으로 ${left}턴 안에 다시 함락되면 농업·상업이 절반만 깎여요`;
-  return ` <button class="link capIcon" data-captip title="${tip}">🔥</button>${captureTipOpen ? `<div class="dim capTip">${tip}</div>` : ''}`;
+  return left > 0 ? `최근 함락된 성 · 앞으로 ${left}턴 안에 다시 함락되면 농업·상업이 절반만 깎여요` : '';
 }
+function recentCaptureIcon(c) { const tip = recentCaptureTip(c); return tip ? ` <button class="link capIcon" data-captip title="${tip}">🔥</button>` : ''; }
+// 폰에서 아이콘을 누르면 설명을 이웃 아래 한 줄로 (이름 칸은 좁아서)
+function recentCaptureRow(c) { const tip = captureTipOpen && recentCaptureTip(c); return tip ? `<tr class="wide"><td colspan="2" class="dim capTip">🔥 ${tip}</td></tr>` : ''; }
 document.addEventListener('pointerdown', e => { // 성 정보는 1초마다 다시 그려져서 누르는 순간 처리 (📍와 같은 방식)
   if (!e.target.closest('[data-captip]') || matchMedia('(hover: hover)').matches) return; // PC는 툴팁(title)으로
   captureTipOpen = !captureTipOpen;

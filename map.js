@@ -77,6 +77,7 @@ function renderInfo() {
       <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${f.name}` : '<span class="dim">공백지</span>'}</td></tr>
       <tr><th>규모</th><td>${GRADE_NAME[c.grade]} <span class="grade">${'★'.repeat(c.grade)}</span></td></tr>
       <tr class="wide"><th>이웃</th><td>${neighbors(c).map(n => n.name).join(' · ')}</td></tr>
+      ${typeof recentCaptureRow === 'function' ? recentCaptureRow(c) : ''}
       ${cityDetailRows(c)}
     </table>`;
 }
