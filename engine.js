@@ -27,6 +27,7 @@ const traitOf = fid => {
   if (!f) return {};
   const t = f.trait && cleanTrait(f.trait);
   if (t) return { name: t.name, desc: traitDesc(t.fx), ...t.fx };
+  if (typeof MAP !== 'undefined' && MAP && MAP.nameTraits === false) return {}; // 지도에서 '규칙 파일 특성'을 끈 경우 (2026-11-11 영웅집결: 특성 없이)
   return FACTION_TRAITS[f.name] || {};
 };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%

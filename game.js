@@ -446,7 +446,7 @@ function mapPreview(m) {
   const cells = (m.cities || []).map(c => { const f = F[c.faction]; return `<div class="rpCity g${c.grade}${f ? '' : ' empty'}" style="grid-column:${c.x + 1};grid-row:${c.y + 1};${f ? `background:${esc(f.color)}` : ''};font-size:${cw < 34 ? 12 : 14}px">${esc(c.name)}</div>`; }).join('');
   const rows = (m.factions || []).map(f => {
     const n = (m.cities || []).filter(c => c.faction === f.id).length;
-    const t = f.trait && cleanTrait(f.trait), old = !t && FACTION_TRAITS[f.name];
+    const t = f.trait && cleanTrait(f.trait), old = !t && m.nameTraits !== false && FACTION_TRAITS[f.name]; // 지도에서 규칙 파일 특성을 껐으면 없음
     return `<tr><td><span class="swatch" style="background:${esc(f.color)}"></span>${esc(f.name)}</td><td class="num">${n}</td><td>${t ? `<b>${esc(t.name)}</b> <span class="dim">${esc(traitDesc(t.fx))}</span>` : old ? `<b>${esc(old.name)}</b> <span class="dim">${esc(old.desc)} (규칙 파일)</span>` : '<span class="dim">특성 없음</span>'}</td></tr>`;
   }).join('');
   const blank = (m.cities || []).filter(c => !c.faction).length;
