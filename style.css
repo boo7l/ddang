@@ -890,10 +890,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 @media (max-width: 700px) {
   #hofPage { margin: 8px; }
   #hofPage .pageHead .spacer { display: none; }
-  .hofTable2 th, .hofTable2 td { padding: 2px 1px; white-space: nowrap; }
-  .hofTable2 td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; min-width: 68px; } /* 긴 이름만 두 줄로 */
-  .hofTable2 .medal { white-space: nowrap; } /* 표 안 훈장도 보인다 (2026-11-11, 그 전엔 칸이 모자라 숨김). 그림과 개수는 한 덩어리로 */
-  .hofTable2 .fName { display: none; }  /* 소속은 색 네모만 */
+  /* 2026-11-11: 표가 넓으면 표만 옆으로 밀어서 본다. 이름은 한 줄, 훈장·소속 이름까지 다 보인다 (그 전엔 긴 이름을 두 줄로 접고 소속은 색 네모만) */
+  .hofScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--gold-dark) var(--panel-dark); }
+  .hofTable2 th, .hofTable2 td { padding: 2px 4px; white-space: nowrap; }
 }
 
 /* 고정 공지 (2026-11-02): 성 정보 위 주황 띠. 지도 칸 너비를 넓히지 않게 width 0 + min-width 100% */
