@@ -892,7 +892,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #hofPage .pageHead .spacer { display: none; }
   .hofTable2 th, .hofTable2 td { padding: 2px 1px; white-space: nowrap; }
   .hofTable2 td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; min-width: 68px; } /* 긴 이름만 두 줄로 */
-  .hofTable2 .medal { display: none; } /* 칸이 모자라 표 안 훈장 그림은 뺀다. 훈장 칸과 개국공신 줄에 나온다 */
+  .hofTable2 .medal { white-space: nowrap; } /* 표 안 훈장도 보인다 (2026-11-11, 그 전엔 칸이 모자라 숨김). 그림과 ×개수는 한 덩어리로 */
   .hofTable2 .fName { display: none; }  /* 소속은 색 네모만 */
 }
 
