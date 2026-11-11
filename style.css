@@ -927,7 +927,6 @@ details.fold > summary:hover h2 { color: var(--title); }
 
 /* 명예의 전당 특별 타이틀 (2026-11-11): 세력 변화 보기 아래 구분선 */
 .hofDiv { border: 0; border-top: 1px solid var(--gold-dark); margin: 16px 0 10px; }
-.hofTitleHead { margin: 0 0 6px; text-align: center; color: var(--title); }
 .hofTitles { list-style: none; margin: 0 auto; padding: 0; max-width: 420px; }
 .hofTitles li { display: flex; align-items: baseline; gap: 10px; padding: 3px 4px; border-bottom: 1px dotted var(--gold-dark); }
 .hofTitles .tName { color: var(--title); min-width: 72px; white-space: nowrap; }
