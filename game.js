@@ -1014,7 +1014,8 @@ async function resignDialog() {
 
 - 거느린 병사는 모두 흩어져요.
 - 예약해 둔 명령은 모두 지워져요.
-- 공적·금·능력치는 그대로예요.
+${RULES.resignMeritCut ? `- 공적이 ${Math.round(RULES.resignMeritCut * 100)}% 줄어요. (지금 ${fmt(p.merit)} → ${fmt(p.merit - Math.floor(p.merit * RULES.resignMeritCut))})
+- 금·능력치는 그대로예요.` : '- 공적·금·능력치는 그대로예요.'}
 - 세력을 새로 골라 들어가요.
 - ${f.name} 세력에는 ${RULES.rejoinWait}턴 동안 다시 들어갈 수 없어요.`)) return;
   if (await call('resign')) showJoin();

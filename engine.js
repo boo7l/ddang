@@ -1414,14 +1414,16 @@ function runTransport(g, o) {
 // ----- 하야 (예약 없이 바로) -----
 // 세력을 떠나 재야가 된다. 병사는 세력의 것이라 흩어지고, 공적·금·능력치는 그대로 (멸망했을 때와 같다).
 // 남은 예약은 모두 지워지고, 다음에 들어오면 세력 선택부터 다시 한다. 떠난 세력에는 RULES.rejoinWait턴 동안 못 들어간다
-function runResign(g) {
+function runResign(g, kicked = false) { // kicked: 관리자 추방 (공적은 깎지 않는다)
   if (!g.faction) return '세력에 소속되어 있지 않아요.';
   const f = factionById(g.faction), city = cityById(g.city);
   const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
+  const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 공적 -10% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
+  if (cut > 0) g.merit -= cut;
   Object.assign(g, { faction: null, city: null, troops: 0, unitType: null });
   g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait }; // 떠난 세력에는 한동안 다시 못 들어간다
   clearOrders(g);
-  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}`);
+  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 공적 -${fmt(cut)} (${fmt(g.merit)})` : ''}`);
   return '';
 }
 
