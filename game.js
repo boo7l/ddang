@@ -327,8 +327,16 @@ const openText = ({ season, at, label }) => { const k = new Date(at + 9 * 360000
 function testCardHtml() {
   if (!S) return '';
   const facs = playable(), gens = allGenerals().filter(g => g.faction).sort((a, b) => String(a.faction).localeCompare(String(b.faction)) || b.merit - a.merit);
-  const acts = g => !g.test ? '<span class="dim small">직접 조작</span>' : [['cmdAccept', '수락'], ['cmdDecline', '사양'], ['cmdResign', '내려놓기']].map(([a, l]) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}">${l}</button>`).join(' ')
-    + ` <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
+  // 테스트 장수가 지금 할 수 있는 대도독 행동만 단추로 (2026-11-13: 모든 단추를 늘 보여 주니 헷갈렸다)
+  const acts = g => {
+    if (!g.test) return '<span class="dim small">직접 조작</span>';
+    const b = (a, l) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}">${l}</button>`;
+    const h = (S.cmdHand || {})[g.faction], c = commanderOf(g.faction), t = now();
+    if (h && h.to === g.id && h.until > t) return `<span class="small">⏳ 넘겨받기 대기 (${Math.max(1, Math.ceil((h.until - t) / MIN))}분)</span> ${b('cmdAccept', '수락')} ${b('cmdDecline', '사양')}`;
+    if (c === g) return `${b('cmdResign', '내려놓기')} <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
+    if (!c) return b('cmdAccept', '도독직 수락');
+    return '<span class="dim small">-</span>';
+  };
   return `<h2>🧪 테스트 장수</h2>
     <p class="dim small">관리자만 · 문이 닫힌 시즌에서만 추가 · 새 시즌 시작하면 사라지고 시즌 번호에 안 세요</p>
     <p>세력 <select id="atF">${facs.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select>
