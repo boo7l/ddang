@@ -2033,7 +2033,8 @@ function noticeDialog() {
   openModal(`<h2>📌 공지</h2>
     <p class="dim small">세력 채팅창 위에 고정돼요. ${RULES.commander.noticeLen}자까지 · 비우고 저장하면 내려요.</p>
     <p><input id="nText" maxlength="${RULES.commander.noticeLen}" value="${cur ? esc(cur.text) : ''}" style="width:100%;box-sizing:border-box"></p>
-    <div class="modalBtns"><button id="nSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
+    <div class="modalBtns"><button id="nSave" class="main">저장</button>${cur ? '<button id="nDel" class="danger">공지 내리기</button>' : ''}<button data-close>닫기</button></div>`, box => {
+    const del = box.querySelector('#nDel'); if (del) del.onclick = async () => { closeModal(); await call('noticeSet', { text: '' }); renderAll(); }; // 공지 내리기 단추 (2026-11-13 기획자)
     box.querySelector('#nSave').onclick = async () => { const t = box.querySelector('#nText').value; closeModal(); await call('noticeSet', { text: t }); renderAll(); };
   });
 }
@@ -2418,7 +2419,8 @@ function renderChat() {
   }
   $('#chatFaction').textContent = `· ${factionById(me().faction).name}`;
   const pin = (S.notices || {})[me().faction], pinEl = box.querySelector('.chatPin'); // 대도독 공지 (2026-11-13)
-  if (pinEl) { pinEl.hidden = !pin; pinEl.innerHTML = pin ? `📌 ${esc(pin.text)} <span class="dim small">· 🚩 ${esc(pin.by)}</span>` : ''; }
+  if (pinEl) { pinEl.hidden = !pin; pinEl.innerHTML = pin ? `📌 ${esc(pin.text)} <span class="dim small">· 🚩 ${esc(pin.by)}</span>${isCommander(me()) ? ' <button class="mini x pinDel" title="공지 내리기">✕</button>' : ''}` : ''; }
+  if (pinEl && !pinEl.onclick) pinEl.onclick = async e => { if (!e.target.closest('.pinDel') || !confirm('공지를 내릴까요?')) return; await call('noticeSet', { text: '' }); renderAll(); }; // 대도독은 고정 줄의 ✕로도 내린다 (2026-11-13)
   renderChatList();
 }
 function renderChatList() {
