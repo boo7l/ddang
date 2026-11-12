@@ -41,7 +41,8 @@ const fmtClock = t => { const d = kst(t); return `${pad(d.getUTCHours())}:${pad(
 // 숫자 뒤 을/를: 끝자리를 읽는 소리로 정한다 (2 이·4 사·5 오·9 구는 를, 나머지와 0으로 끝나면 을)
 const numJosa = n => ([2, 4, 5, 9].includes(Math.floor(n) % 10) ? '를' : '을');
 const josa = (word, pair) => { // josa('낙양', '을를') → '낙양을'
-  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  const last = word[word.length - 1], digit = '영일이삼사오육칠팔구'['0123456789'.indexOf(last)]; // 숫자로 끝나면 읽는 소리로 (테스트1 → 일 → '이', 2026-11-13)
+  const code = (digit || last || '').charCodeAt(0) - 0xac00;
   const jong = code >= 0 && code <= 11171 ? code % 28 : 0;
   if (pair === '으로') return word + (jong === 0 || jong === 8 ? '로' : '으로');
   return word + (jong ? pair[0] : pair[1]);

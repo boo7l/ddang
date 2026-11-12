@@ -323,6 +323,30 @@ const openText = ({ season, at, label }) => { const k = new Date(at + 9 * 360000
 
 // ===== 관리 창 (관리자만, 어느 화면에서든 오른쪽 위 "🛠 관리") =====
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
+// 🧪 테스트 장수 칸 (2026-11-13, 관리자): 문이 닫힌 시즌에서 테스트 장수를 넣고, 공적을 바꾸고, 대신 대도독 행동을 시킨다
+function testCardHtml() {
+  if (!S) return '';
+  const facs = playable(), gens = allGenerals().filter(g => g.faction).sort((a, b) => String(a.faction).localeCompare(String(b.faction)) || b.merit - a.merit);
+  const acts = g => !g.test ? '<span class="dim small">직접 조작</span>' : [['cmdAccept', '수락'], ['cmdDecline', '사양'], ['cmdResign', '내려놓기']].map(([a, l]) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}">${l}</button>`).join(' ')
+    + ` <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
+  return `<div class="adminCard wide">
+    <p class="sub">🧪 테스트 장수 <span class="dim">(문이 닫힌 시즌에서만 추가 · 새 시즌 시작하면 사라짐 · 시즌 번호에 안 셈)</span></p>
+    <p>세력 <select id="atF">${facs.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select>
+      수 <input id="atN" type="number" min="1" max="10" value="5" style="width:4em"> 공적 <input id="atM" type="number" min="0" value="600" style="width:6em">
+      <button id="atAdd">추가</button> <button id="atClear">테스트 장수 모두 지우기</button></p>
+    ${gens.length ? `<div class="adminScroll"><table class="stats rank"><tr><th>장수</th><th>세력</th><th>공적</th><th>대도독 (테스트 장수 대신)</th></tr>${gens.map(g => `<tr><td>${esc(g.name)}${flagOf(g.id)}${g.test ? ' <span class="dim small">테스트</span>' : ''}</td><td>${esc(factionById(g.faction).name)}</td>
+      <td><input type="number" min="0" value="${g.merit || 0}" data-tmerit="${esc(g.id)}" style="width:6em"></td><td>${acts(g)}</td></tr>`).join('')}</table></div>` : '<p class="dim">세력에 든 장수가 없어요.</p>'}
+  </div>`;
+}
+function bindTestCard(box) {
+  const run = async body => { if (await call('adminTest', body)) adminToolsDialog(); };
+  const add = box.querySelector('#atAdd'); if (!add) return;
+  add.onclick = () => run({ op: 'add', faction: $('#atF').value, n: +$('#atN').value, merit: +$('#atM').value });
+  box.querySelector('#atClear').onclick = () => { if (confirm('테스트 장수를 모두 지울까요?')) run({ op: 'clear' }); };
+  box.querySelectorAll('[data-tmerit]').forEach(i => { i.onchange = () => run({ op: 'merit', id: i.dataset.tmerit, merit: +i.value }); });
+  box.querySelectorAll('[data-tas]').forEach(b => { b.onclick = () => run({ op: 'as', id: b.dataset.tid, action: b.dataset.tas }); });
+  box.querySelectorAll('.tHand').forEach(s => { s.onchange = () => { if (s.value) run({ op: 'as', id: s.dataset.tid, action: 'cmdHand', body: { to: s.value } }); }; });
+}
 function adminToolsDialog() {
   const state = !S ? '-' : S.unified ? '천하통일 (턴 멈춤)' : S.paused ? '⏸ 멈춤' : '흐르는 중';
   const door = S && S.closed ? '🔒 닫힘 (관리자만 들어옴)' : S && S.unified ? '🔓 열림 (시즌 종료: 구경·채팅만)' : '🔓 열림';
@@ -375,10 +399,12 @@ function adminToolsDialog() {
     <p><button id="amUpload" disabled>업로드</button></p>
     <p class="dim small">올린 지도는 "새 시즌 시작"(직접 또는 자동 오픈 예약)을 할 때 쓰여요. 지금 시즌에는 영향이 없어요.</p>
     </div>
+    ${testCardHtml()}
     <div class="adminCard wide danger">
     <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
     <p><button id="aSeason">새 시즌 시작</button> <span class="dim small">${S && S.nextMap ? `올려 둔 지도(${esc(S.nextMap.scenario || '이름 없음')})로` : `기본 지도(${esc(MAP_DATA.scenario || '?')})로`} 열려요</span> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     </div></div>`, box => {
+    bindTestCard(box);
     // 다음 시즌 지도 올리기 (2026-11-06): 파일을 고르면 이 화면에서 먼저 검사·미리 보기, 올리기를 누르면 서버가 다시 검사해서 둔다
     let picked = null, pickedName = '';
     $('#amFile').onchange = async e => {
