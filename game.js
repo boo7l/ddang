@@ -329,17 +329,27 @@ function testCardHtml() {
   const facs = playable(), gens = allGenerals().filter(g => g.faction).sort((a, b) => String(a.faction).localeCompare(String(b.faction)) || b.merit - a.merit);
   const acts = g => !g.test ? '<span class="dim small">직접 조작</span>' : [['cmdAccept', '수락'], ['cmdDecline', '사양'], ['cmdResign', '내려놓기']].map(([a, l]) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}">${l}</button>`).join(' ')
     + ` <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
-  return `<div class="adminCard wide">
-    <p class="sub">🧪 테스트 장수 <span class="dim">(문이 닫힌 시즌에서만 추가 · 새 시즌 시작하면 사라짐 · 시즌 번호에 안 셈)</span></p>
+  return `<h2>🧪 테스트 장수</h2>
+    <p class="dim small">관리자만 · 문이 닫힌 시즌에서만 추가 · 새 시즌 시작하면 사라지고 시즌 번호에 안 세요</p>
     <p>세력 <select id="atF">${facs.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select>
       수 <input id="atN" type="number" min="1" max="10" value="5" style="width:4em"> 공적 <input id="atM" type="number" min="0" value="600" style="width:6em">
       <button id="atAdd">추가</button> <button id="atClear">테스트 장수 모두 지우기</button></p>
     ${gens.length ? `<div class="adminScroll"><table class="stats rank"><tr><th>장수</th><th>세력</th><th>공적</th><th>대도독 (테스트 장수 대신)</th></tr>${gens.map(g => `<tr><td>${esc(g.name)}${flagOf(g.id)}${g.test ? ' <span class="dim small">테스트</span>' : ''}</td><td>${esc(factionById(g.faction).name)}</td>
-      <td><input type="number" min="0" value="${g.merit || 0}" data-tmerit="${esc(g.id)}" style="width:6em"></td><td>${acts(g)}</td></tr>`).join('')}</table></div>` : '<p class="dim">세력에 든 장수가 없어요.</p>'}
-  </div>`;
+      <td><input type="number" min="0" value="${g.merit || 0}" data-tmerit="${esc(g.id)}" style="width:5em"></td><td>${acts(g)}</td></tr>`).join('')}</table></div>` : '<p class="dim">세력에 든 장수가 없어요.</p>'}`;
+}
+// 예약표 오른쪽 칸 (2026-11-13 기획자): 관리자가 문이 닫힌 시즌을 볼 때만. 1초마다 다시 그리지 않고 내용이 바뀔 때만, 입력 중이면 건너뛴다
+let testColHtml = '';
+function renderTestCol(force = false) {
+  const col = $('#testCol'); if (!col) return;
+  const on = IS_ADMIN && S && S.closed;
+  col.hidden = !on;
+  if (!on) return;
+  const box = $('#testBox'), html = testCardHtml();
+  if (!force && (html === testColHtml || box.contains(document.activeElement))) return;
+  testColHtml = html; box.innerHTML = html; bindTestCard(box);
 }
 function bindTestCard(box) {
-  const run = async body => { if (await call('adminTest', body)) adminToolsDialog(); };
+  const run = async body => { if (await call('adminTest', body)) renderTestCol(true); };
   const add = box.querySelector('#atAdd'); if (!add) return;
   add.onclick = () => run({ op: 'add', faction: $('#atF').value, n: +$('#atN').value, merit: +$('#atM').value });
   box.querySelector('#atClear').onclick = () => { if (confirm('테스트 장수를 모두 지울까요?')) run({ op: 'clear' }); };
@@ -399,12 +409,10 @@ function adminToolsDialog() {
     <p><button id="amUpload" disabled>업로드</button></p>
     <p class="dim small">올린 지도는 "새 시즌 시작"(직접 또는 자동 오픈 예약)을 할 때 쓰여요. 지금 시즌에는 영향이 없어요.</p>
     </div>
-    ${testCardHtml()}
     <div class="adminCard wide danger">
     <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
     <p><button id="aSeason">새 시즌 시작</button> <span class="dim small">${S && S.nextMap ? `올려 둔 지도(${esc(S.nextMap.scenario || '이름 없음')})로` : `기본 지도(${esc(MAP_DATA.scenario || '?')})로`} 열려요</span> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     </div></div>`, box => {
-    bindTestCard(box);
     // 다음 시즌 지도 올리기 (2026-11-06): 파일을 고르면 이 화면에서 먼저 검사·미리 보기, 올리기를 누르면 서버가 다시 검사해서 둔다
     let picked = null, pickedName = '';
     $('#amFile').onchange = async e => {
@@ -1950,6 +1958,7 @@ function renderAll() {
   renderInfo();
   renderLog();
   renderChat();
+  renderTestCol();
   if (S.unified && !celebrated) { celebrated = true; if (!unifyHidden()) unifyDialog(); }
   // 탐색에서 특성 주머니를 주웠으면 한 번 저절로 연다 (다른 창이 떠 있으면 다음에)
   if (me().traitFound && pouchShown !== me().traitFound.join() && $('#modal').hidden) pouchDialog();

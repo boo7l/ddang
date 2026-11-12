@@ -503,7 +503,10 @@ aside.cmdCol { width: 310px; }
 .map { --cell: 58px; padding: 10px; }
 aside.mid { width: 360px; } /* 2026-10-31 기록 창이 이 칸으로 오면서 318px에서 넓힘 */
 aside.cmdCol { width: 292px; }
-aside.cmdCol.queueCol { width: 370px; } /* 예약표: "출진 → 낙양" 같은 긴 명령도 한 줄에 */
+aside.cmdCol.queueCol { width: 370px; }
+aside.cmdCol.testCol { width: 400px; } /* 관리자 테스트 장수 칸 (2026-11-13) */
+#testBox select { max-width: 7em; }
+#testCol[hidden] { display: none !important; } /* 휴대폰 명령 탭 규칙(display: block)보다 앞서게 */ /* 예약표: "출진 → 낙양" 같은 긴 명령도 한 줄에 */
 #info { min-height: 190px; }
 #log { max-height: 380px; } /* 2026-10-31 지도 아래에서 가운데 칸으로 옮기며 236px에서 늘림 */
 .cmds { gap: 5px; }
