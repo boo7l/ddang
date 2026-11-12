@@ -543,7 +543,10 @@ table.rank .num { text-align: right; padding-right: 12px; }
 #chat .chatList li.sysNote { color: var(--dim, #9aa); padding: 2px 6px; } /* 세력 알림 한 줄 (2026-11-13 대도독) */
 .cmdFlag { margin-left: 2px; } /* 대도독 깃발 */
 #cmdr p { margin: 4px 0; }
-.city .pmark { position: absolute; top: 1px; right: 2px; font-size: 13px; line-height: 1; pointer-events: none; } /* 대도독 방침 표시 (2026-11-13) */
+.city .pmark { position: absolute; top: -6px; right: -6px; z-index: 3; width: 18px; height: 18px; border-radius: 50%; background: rgba(0, 0, 0, .85); border: 2px solid var(--pol); display: flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; pointer-events: none; } /* 대도독 방침 표시 (2026-11-13): 검은 동그라미 위 아이콘 + 칸 테두리 깜빡임으로 크기는 그대로 눈에 띄게 */
+.city.polDef { --pol: #5ab0ff; } .city.polAtk { --pol: #ff4a3a; }
+.city.polDef::after, .city.polAtk::after { content: ""; position: absolute; inset: 0; border: 3px solid var(--pol); pointer-events: none; animation: polBlink 1.2s steps(1) infinite; }
+@keyframes polBlink { 50% { border-color: transparent; } }
 #chat .chatPin { margin: 0 0 6px; padding: 4px 8px; background: rgba(232, 200, 140, .12); border-left: 3px solid var(--title); } /* 고정 공지 */
 #chat .chatForm { display: flex; gap: 6px; }
 #chat .chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }

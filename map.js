@@ -43,6 +43,7 @@ function drawMap(el, opts = {}) {
         if (c.id === opts.homeId) div.classList.add('home');
         if (opts.focusFaction && c.faction !== opts.focusFaction) div.classList.add('faded');
         const mk = opts.mark ? opts.mark(c) : '';
+        if (mk) div.classList.add(mk === '🛡' ? 'polDef' : 'polAtk'); // 방침 칸 테두리 (2026-11-13)
         div.innerHTML = `<span class="name">${c.name}</span><span class="grade">${'★'.repeat(c.grade)}</span>${mk ? `<span class="pmark">${mk}</span>` : ''}`;
         div.title = `${c.name} (${f ? f.name : '공백지'} · ${GRADE_NAME[c.grade]})`;
         if (opts.onClick) div.onclick = () => opts.onClick(c);
