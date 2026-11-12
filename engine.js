@@ -296,10 +296,13 @@ function advance() {
     const foodRate = runRegionEvents(month); // 지역 이벤트 (2026-11-04): 금 수입·수확보다 먼저
     // 금: 장수마다 자기가 있는 성의 상업에 따라 자기 금으로
     if (RULES.goldMonths.includes(month)) {
+      const heads = {}; // 성 정원 (2026-11-12, 시즌 7부터): 성마다 그 세력 장수 수
+      for (const g of allGenerals()) if (g.faction) heads[g.faction + '|' + g.city] = (heads[g.faction + '|' + g.city] || 0) + 1;
       for (const g of allGenerals()) {
         if (!g.faction) continue;
-        const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${cityById(g.city).name} 상업 ${cs.comm}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
+        const c = cityById(g.city), n = heads[g.faction + '|' + g.city], crowd = crowdRate(c.grade, n);
+        const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${crowd < 1 ? ` · 정원 초과 ${n}/${RULES.crowdCap[c.grade]}명으로 상업 몫 -${Math.round((1 - crowd) * 100)}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
       }
     }
     // 군량 시세: 매달 RULES.foodBuy.steps 확률로 -2~+2 (4~8, 2026-11-10)

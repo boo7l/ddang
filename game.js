@@ -2348,7 +2348,9 @@ function cityDetailRows(c) {
   if (p && p.faction && c.faction && (c.faction === p.faction || cs.spied)) {
     const list = allGenerals().filter(g => g.faction === c.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
     const open = cityMembersOpen && list.length;
-    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${open ? `<div class="cityMembers">${list.map(g =>
+    const cap = seasonNow() >= RULES.crowdFromSeason ? RULES.crowdCap[c.grade] : 0, crowd = cap ? crowdRate(c.grade, list.length) : 1; // 성 정원 (2026-11-12, 시즌 7부터)
+    const capText = cap ? ` <span class="${crowd < 1 ? 'warn' : 'dim'}" title="정원을 넘으면 이 성 장수 모두 금 수입(상업 몫)이 줄어요">/ 정원 ${cap}${crowd < 1 ? ` · 상업 수입 -${Math.round((1 - crowd) * 100)}%` : ''}</span>` : '';
+    rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${capText}${open ? `<div class="cityMembers">${list.map(g =>
       `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
