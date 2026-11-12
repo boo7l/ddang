@@ -1407,7 +1407,7 @@ async function boardDialog(page = 0, kind = '') {
   $('#modalBox').classList.add('wideBox');
 }
 // 개발자 노트 (2026-11-13): patchnotes.js에서 { dev: '글' }을 항목 사이(items 안)나 파트 사이(groups 안) 아무 데나 넣으면 작은 상자로 보인다
-const devNoteHtml = t => `<div class="devNote"><span class="devHead">✍ 개발자 노트</span>${t}</div>`;
+const devNoteHtml = t => `<div class="devNote">${t}</div>`; // 머리글 없이 글만 (2026-11-13 기획자)
 const noteGroupsHtml = groups => groups.map(gr => gr.dev ? `<div class="notePaper devPaper">${devNoteHtml(gr.dev)}</div>`
   : `<div class="notePaper"><p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => (t && t.dev ? `<li class="devLi">${devNoteHtml(t.dev)}</li>` : `<li>${t}</li>`)).join('')}</ul></div>`).join('');
 // i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
