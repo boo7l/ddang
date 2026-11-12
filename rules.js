@@ -590,10 +590,11 @@ const EXPLORE = [ // 2026-11-08 기획자: 금 18 → 15 · 특성 주머니 5 �
 const TREASURES = {
   손자병법서: { stat: 'lea', bonus: 7 }, 병법이십사편: { stat: 'lea', bonus: 6 }, 맹덕신서: { stat: 'lea', bonus: 5 }, 육도: { stat: 'lea', bonus: 4 }, 삼략: { stat: 'lea', bonus: 3 },
   청룡언월도: { stat: 'war', bonus: 7 }, 방천화극: { stat: 'war', bonus: 6 }, 장팔사모: { stat: 'war', bonus: 5 }, 청공검: { stat: 'war', bonus: 4 }, 의천검: { stat: 'war', bonus: 3 },
-  둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 노자: { stat: 'int', bonus: 4 }, 장자: { stat: 'int', bonus: 3 },
+  둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 도덕경: { stat: 'int', bonus: 4 }, 남화경: { stat: 'int', bonus: 3 }, // 2026-11-13 시즌 7: 노자 → 도덕경, 장자 → 남화경 (TREASURE_RENAME)
 };
 const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.02, takeRate: 0.03, sellPer: 600, foundTurns: 5 }; // foundTurns: 보물이 있는데 또 찾으면 고를 시간 (턴, 시즌 7부터, 2026-11-10) · // 2026-11-07 기획자: 5%·5% → 3%·3%, 2026-11-08 실종만 3% → 2%. sellPer: 팔기 = 가점 × 600금 (2026-11-08)
-const treasuresOf = g => (g.treasures || []).filter(n => TREASURES[n]);
+const TREASURE_RENAME = { 노자: '도덕경', 장자: '남화경' }; // 옛 이름으로 가진 보물은 새 이름으로 읽는다
+const treasuresOf = g => (g.treasures || []).map(n => TREASURE_RENAME[n] || n).filter(n => TREASURES[n]);
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
