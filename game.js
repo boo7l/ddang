@@ -1983,8 +1983,13 @@ function renderCommander() {
     body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds two"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
       : `<p class="cmds two"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
   } else if (!c) {
-    const why = commanderBlock(p);
-    body += why ? `<p class="dim small">${esc(why)}</p>` : '<p class="cmds one"><button data-cmdr="cmdAccept" class="main">도독직 수락</button></p>';
+    // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
+    const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
+    const req = [[mates.length >= R.minMembers, `세력 장수 ${R.minMembers}명 이상 (지금 ${mates.length}명)`],
+      [(p.merit || 0) >= R.minMerit, `공적 ${fmt(R.minMerit)} 이상 (지금 ${fmt(p.merit || 0)})`],
+      ...(!(S.cmdEver || {})[p.faction] ? [[rank === 1, `첫 대도독은 세력 공적 1위 (지금 ${rank}위)`]] : [])];
+    body += `<p class="small">${req.map(([ok, t]) => `<span class="${ok ? '' : 'dim'}">${ok ? '✔' : '✘'} ${t}</span>`).join('<br>')}</p>`;
+    if (!commanderBlock(p)) body += '<p class="cmds one"><button data-cmdr="cmdAccept" class="main">도독직 수락</button></p>';
   }
   box.innerHTML = `<h2>🚩 대도독</h2>${body}`;
   box.onclick = async e => {
