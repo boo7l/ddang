@@ -1127,7 +1127,8 @@ function helpDialog(page = 0) {
       <li>실행할 수 없는 명령(금이 모자람 등)은 <b>실패 → 대기</b>로 넘어가요. 결과는 <b>기록</b> 창에서 확인해요.</li></ul>`],
     ['💰 금과 군량', `<ul>
       <li><b>💰금</b> (내 것): 1·4·7·10월에 내가 있는 성의 <b>상업 수치</b>에 따라 들어와요. 징병·수련·상점·군량 구매에 써요. 내정은 금 없이 턴만 써요.</li>
-      <li><b>🌾군량</b> (성마다 따로): 4·10월에 그 성의 <b>농업 수치</b>에 따라 수확하고, 병사는 머무는 성의 군량을 매달 먹어요. 출진하면 병력의 ${Math.round(RULES.marchFoodRate * 100)}%만큼이 소비돼요.</li></ul>`],
+      <li><b>🌾군량</b> (성마다 따로): 4·10월에 그 성의 <b>농업 수치</b>에 따라 수확하고, 병사는 머무는 성의 군량을 매달 먹어요. 출진하면 병력의 ${Math.round(RULES.marchFoodRate * 100)}%만큼이 소비돼요.</li>
+      ${seasonNow() >= RULES.crowdFromSeason ? `<li><b>🏯성 정원</b>: 한 성에 머무는 우리 세력 장수가 정원(소성 ${RULES.crowdCap[1]} · 중성 ${RULES.crowdCap[2]} · 대도시 ${RULES.crowdCap[3]}명)을 넘으면, 그 성 장수 모두의 금 수입 중 <b>상업 몫</b>이 줄어요. 많이 넘을수록 더 크게 줄고, 기본 수입 ${RULES.goldBase}은 그대로예요. 성 정보의 장수 칸에서 볼 수 있어요.</li>` : ''}</ul>`], // 성 정원 (2026-11-13 도움말, 시즌 7부터)
     ['📊 능력치', `<ul>
       <li><b>통솔</b>: 최대 병력(통솔 × ${RULES.troopsPerLea}), 징병, 치안, 보병</li>
       <li><b>무력</b>: 축성, 기병, <b>일기토</b>(양쪽 무력 ${RULES.duel.minWar} 이상이면 전투 중 가끔), <b>돌격</b>(무력 ${RULES.charge.minWar} 이상이면 전투 중 가끔), 모든 병종 전투력에 보너스 (무력 10마다 +${Math.round(RULES.warPer1 * 10 * 1000) / 10}%)</li>
@@ -1160,7 +1161,13 @@ function helpDialog(page = 0) {
       <li><b>방어가 0이 되면 점령</b>이에요. 점령하면 방어는 성 크기에 따라 조금 다시 세워져요.</li>
       <li>방어가 높은 성을 지키는 부대는 받는 피해가 줄어요. (방어 1,000이면 피해 ${wallCutStepped() ? 25 : 30}% 감소)</li>
       <li><b>충차</b>는 방어를 더 많이 깎고, <b>정란</b>은 수비 부대와 싸울 때 강해지고, <b>벽력거</b>는 싸우기 전에 먼저 쏴요.</li></ul>
-    </div>`],
+      ${seasonNow() >= RULES.fieldFromSeason ? `<p class="helpSub">🏕 야전</p><ul>
+      <li>같은 턴에 두 성이 <b>서로를 향해 출진</b>하면, 성 밖 들판에서 먼저 1:1로 맞붙어요. (예약 순서대로)</li>
+      <li>들판에는 <b>성벽이 없어서</b> 양쪽 모두 공격하는 쪽으로 싸워요.</li>
+      <li>야전을 모두 이기면 남은 합으로 그대로 상대 성을 공격해요. 야전과 공성을 합쳐 ${RULES.roundsMax}합이에요.</li>
+      <li>${RULES.roundsMax}합 안에 승부가 나지 않으면 양쪽 모두 자기 성으로 돌아가요.</li>
+      <li><b>55도발 · 병기 · 설득민수 · 관통맨</b>은 야전에서 통하지 않아요.</li></ul>` : ''}
+    </div>`], // 야전 (2026-11-13 도움말, 시즌 7부터)
     ['📋 명령 한눈에', `
       <p class="sub">내정 <span class="dim">(금 없이 1턴)</span></p><ul>
       <li><b>농업</b>: 성의 농업을 올려요. 4·10월 수확 때 군량이 더 들어와요. (지력)</li>
@@ -1182,6 +1189,24 @@ function helpDialog(page = 0) {
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
       <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키워요. 많은 금을 쓰는 대신 공적과 능력 경험치를 얻을 수 있어요.</li></ul>`],
+    // 대도독 · 동맹 (2026-11-13 도움말, 시즌 7부터): 숫자는 RULES.commander에서
+    ...(seasonNow() >= RULES.commander.fromSeason ? [['🚩 대도독', (R => `<div class="helpScroll">
+      <p>세력마다 한 명 둘 수 있는 길잡이예요. 다른 장수에게 명령을 내리지는 못하고, 공지 · 방침 · 동맹을 맡아요. 대도독 칸은 명령 창 아래에 있어요.</p>
+      <p class="helpSub">🚩 대도독 되기</p><ul>
+      <li>공적 ${fmt(R.minMerit)} 이상이고 세력 장수가 ${R.minMembers}명 이상이면 <b>도독직 수락</b>으로 오를 수 있어요. 세력의 첫 대도독은 세력 공적 1위만 될 수 있어요.</li>
+      <li>공적 ${fmt(R.minMerit)} 이상인 같은 세력 장수에게 <b>넘길</b> 수 있어요. 받는 장수가 ${R.handWait / (60 * MIN)}시간 안에 수락해야 넘어가요.</li>
+      <li>직접 <b>내려놓을</b> 수 있어요. ${R.offline / (60 * MIN)}시간 넘게 접속하지 않거나, 공적이 ${fmt(R.minMerit)} 아래로 떨어지거나, 세력 장수가 ${R.minMembers}명 아래로 줄면 자리를 잃어요.</li>
+      <li>대도독은 이름 옆에 🚩가 붙어요.</li></ul>
+      <p class="helpSub">📌 공지 · 🧭 방침</p><ul>
+      <li><b>공지</b>: 세력 채팅 맨 위에 고정돼요. (${R.noticeLen}자)</li>
+      <li><b>방침</b>: 방어할 성과 공격 목표를 하나씩 정하면 우리 세력 지도에 🛡 · 🎯로 표시돼요. 안내일 뿐 강제는 없어요.</li></ul>
+      <p class="helpSub">🤝 동맹</p><ul>
+      <li>양쪽 세력 모두 대도독이 있어야 해요. 기간을 ${R.allyMin}~${R.allyMax}턴 중에 정해 제안하고, 상대 대도독이 ${R.handWait / (60 * MIN)}시간 안에 수락하면 맺어져요.</li>
+      <li>동맹 중에는 서로 <b>출진 · 파괴 · 유언</b>을 할 수 없어요. 예약은 되지만 실행할 때 막히고, 금 · 군량은 들지 않아요. 첩보는 돼요.</li>
+      <li>세력당 ${R.allyMax2}개까지 맺을 수 있어요.</li>
+      <li><b>파기</b>하면 ${R.allyBreakTurns}턴 뒤에 풀려요. (그동안은 아직 동맹) 파기한 세력 장수 모두 공적 -${R.allyBreakMerit}, 대도독은 -${R.allyBreakMeritCmd}예요.</li>
+      <li>기간이 끝나서 풀리면 벌칙은 없어요.</li></ul>
+    </div>`)(RULES.commander)]] : []),
     // 작은 팁 (2026-11-10): 제목 상자만 보이고, 누르면 펼쳐지고 다시 누르면 접힌다 (details)
     ['💡 작은 팁', `<div class="tipBoxes">
       <details class="tipBox"><summary>특성</summary><p>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></p></details>
