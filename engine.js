@@ -64,6 +64,25 @@ function addLog(g, text, all = false) {
 }
 const logAll = text => allGenerals().forEach(g => addLog(g, text, true)); // 전체 메시지: 기록 창에 노란색으로 보인다 (2026-11-02)
 
+// ===== 대도독 (2026-11-13, 시즌 7부터, 기획서 "대도독 · 동맹") =====
+// S.commanders: 세력 id → 대도독 장수 id. S.cmdEver: 대도독이 한 번이라도 있었던 세력 (첫 대도독만 공적 1위여야 한다)
+// S.cmdHand: 세력 id → { from, to, until } 넘기는 중 (받는 장수가 until(게임 시각 ms)까지 수락해야 넘어간다)
+const commanderOn = () => seasonNow() >= RULES.commander.fromSeason;
+const commanderOf = fid => { const id = fid && (S.commanders || {})[fid], g = id && S.generals[id]; return g && g.faction === fid ? g : null; };
+const isCommander = g => !!(g && g.faction && commanderOf(g.faction) === g);
+const membersOf = fid => allGenerals().filter(g => g.faction === fid);
+// 대도독이 될 수 없는 이유 ('' = 될 수 있다). hand: 넘겨받는 경우 (공적 1위 조건 없음)
+function commanderBlock(g, hand = false) {
+  const R = RULES.commander;
+  if (!commanderOn()) return `대도독은 시즌 ${R.fromSeason}부터 있어요.`;
+  if (!g || !g.faction) return '세력에 소속해야 해요.';
+  const n = membersOf(g.faction).length;
+  if (n < R.minMembers) return `세력 장수가 ${R.minMembers}명 이상이어야 해요. (지금 ${n}명)`;
+  if ((g.merit || 0) < R.minMerit) return `공적이 ${fmt(R.minMerit)} 이상이어야 해요. (지금 ${fmt(g.merit || 0)})`;
+  if (!hand && !(S.cmdEver || {})[g.faction] && membersOf(g.faction).some(o => o.merit > g.merit)) return '세력의 첫 대도독은 공적 1위여야 해요.';
+  return '';
+}
+
 // ===== 세계 만들기 =====
 function newWorld(season = 1) {
   const t = Date.now();

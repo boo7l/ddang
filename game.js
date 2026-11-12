@@ -300,7 +300,7 @@ function adminDialog(tab = 'users', fid = null) {
     fid = fid || (fs[0] && fs[0].id);
     const list = fid ? chatOf(fid) : [];
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
-      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
+      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter && !m.letter.sys ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
   }
   adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
@@ -469,7 +469,7 @@ function rankRows(list) {
   const shown = list.map((g, i) => [g, i]).filter(([, i]) => i < 10 || i === myIdx);
   return shown.map(([g, i]) => {
     const mine = isMe(g);
-    return `${i >= 10 ? '<tr><td colspan="4" class="dim center">…</td></tr>' : ''}<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}${medalOf(g.id)}</td>
+    return `${i >= 10 ? '<tr><td colspan="4" class="dim center">…</td></tr>' : ''}<tr class="${mine ? 'mine' : ''}"><td class="num">${i + 1}</td><td>${esc(g.name)}${flagOf(g.id)}${medalOf(g.id)}</td>
       <td>${g.faction ? `<span class="swatch" style="background:${factionById(g.faction).color}"></span>${esc(factionById(g.faction).name)}` : '<span class="dim">재야</span>'}</td>
       <td class="num">${fmt(g.merit)}</td></tr>`;
   }).join('');
@@ -1919,6 +1919,7 @@ function renderAll() {
   if (!me().faction) { showJoin(); return; }
   renderGeneral();
   renderMembers();
+  renderCommander();
   renderCommands();
   renderInfo();
   renderLog();
@@ -1931,12 +1932,54 @@ function renderAll() {
 }
 
 // 우리 세력 장수: 누가 어디에 얼마나 있는지 (공적 순). 남의 예약·금은 서버가 보내 주지 않는다
+// 대도독 칸 (2026-11-13, 시즌 7부터): 지금 대도독 · 넘겨받기 수락 · 도독직 수락 · 넘기기 · 내려놓기
+function renderCommander() {
+  const box = $('#cmdr'), p = me();
+  if (!box) return;
+  if (!commanderOn() || !p || !p.faction) { box.hidden = true; return; }
+  box.hidden = false;
+  const R = RULES.commander, c = commanderOf(p.faction), h = (S.cmdHand || {})[p.faction], t = now();
+  const hand = h && h.until > t ? h : null, left = hand ? Math.max(1, Math.ceil((hand.until - t) / MIN)) : 0;
+  const name = g => `<button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>`;
+  let body = `<p>대도독: ${c ? `🚩 ${name(c)}` : '<span class="dim">없음</span>'}</p>`;
+  if (hand && hand.to === p.id) body += `<p>${esc(S.generals[hand.from] ? josa(S.generals[hand.from].name, '이가') : '')} 대도독을 넘기려 해요. <span class="dim">(${left}분 남음)</span></p>
+    <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
+  else if (c === p) {
+    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds two"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
+      : `<p class="cmds two"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
+  } else if (!c) {
+    const why = commanderBlock(p);
+    body += why ? `<p class="dim small">${esc(why)}</p>` : '<p class="cmds one"><button data-cmdr="cmdAccept" class="main">도독직 수락</button></p>';
+  }
+  box.innerHTML = `<h2>🚩 대도독</h2>${body}`;
+  box.onclick = async e => {
+    const gb = e.target.closest('[data-gid]'); if (gb) { memberDialog(gb.dataset.gid); return; }
+    const b = e.target.closest('[data-cmdr]'); if (!b || busy) return;
+    const a = b.dataset.cmdr;
+    if (a === 'cmdAccept' && !confirm(hand && hand.to === p.id ? '대도독을 넘겨받을까요?' : '대도독을 맡을까요?')) return;
+    if (a === 'cmdResign' && !confirm('대도독을 내려놓을까요?')) return;
+    if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); return; }
+    if (a === 'cmdHandPick') { commanderHandDialog(); return; }
+    await call(a);
+  };
+}
+// 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
+function commanderHandDialog() {
+  const p = me(), list = membersOf(p.faction).filter(g => g !== p && (g.merit || 0) >= RULES.commander.minMerit).sort((a, b) => b.merit - a.merit);
+  openModal(`<h2>🚩 대도독 넘기기</h2>
+    <p class="dim small">받는 장수가 ${RULES.commander.handWait / MIN}분 안에 수락하면 넘어가요.</p>
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>공적</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">넘기기</button></td></tr>`).join('')}</table></div>`
+      : `<p class="dim">공적 ${fmt(RULES.commander.minMerit)} 이상인 장수가 없어요.</p>`}
+    <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
+    box.onclick = async e => { const b = e.target.closest('[data-hand]'); if (!b) return; const g = S.generals[b.dataset.hand]; if (!g || !confirm(`${g.name}에게 대도독을 넘길까요?`)) return; closeModal(); await call('cmdHand', { to: g.id }); };
+  });
+}
 function renderMembers() {
   const p = me(), f = factionById(p.faction);
   const list = allGenerals().filter(g => g.faction === p.faction).sort((a, b) => b.merit - a.merit);
   $('#membersTitle').textContent = `· ${f.name} ${list.length}명`;
   $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>공적</th></tr>${list.map(g => `
-      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>${medalOf(g.id)}</td><td>${esc(cityById(g.city).name)}</td>
+      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}${medalOf(g.id)}</td><td>${esc(cityById(g.city).name)}</td>
         <td class="num">${g.unitType ? `${g.unitType[0]} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
   $('#members').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
 }
@@ -1956,7 +1999,7 @@ function memberDialog(id) {
   const gear = Object.keys(SHOP).filter(k => gearCount(g, k)).map(k => `${k} ${gearCount(g, k)}`).join(' · ');
   const siege = Object.keys(SIEGE).filter(k => g.siege && g.siege[k]).join(' · ');
   const guarding = g.defense && g.troops > 0; // 장수 창과 같이 병력이 없으면 꺼짐
-  openModal(`<div class="mHead"><span id="mFace"></span><div><div class="mName">${esc(g.name)}</div><div><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</div></div></div>
+  openModal(`<div class="mHead"><span id="mFace"></span><div><div class="mName">${esc(g.name)}${flagOf(g.id)}</div><div><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</div></div></div>
     <table class="mTable">
       <tr><th>위치</th><td>${esc(cityById(g.city).name)}</td></tr>
       <tr><th>특성</th><td>${t ? `<span class="oddsTier t${tierNo}">${esc(t.name)}</span> <span class="dim">(${t.tier})</span><span class="mDesc">${esc(t.desc)}</span>` : none}</td></tr>
@@ -1993,7 +2036,7 @@ function renderGeneral() {
   $('#general').innerHTML = `
     <h2>장수</h2>
     <div class="gHead"><div class="gFaceCol"><span id="gFace"></span>${medalOf(p.id)}</div><div>
-      <p class="gname">${esc(p.name)}</p>
+      <p class="gname">${esc(p.name)}${flagOf(p.id)}</p>
       <table class="stats">
         <tr><th>세력</th><td><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
@@ -2187,6 +2230,8 @@ const MEDAL = '<svg viewBox="0 0 8 9" shape-rendering="crispEdges"><rect x="1" y
 // 훈장 표시: 2개까지는 그림 그대로, 3개부터는 그림 하나에 개수 (자리를 덜 차지하게, 2026-10-31. 2026-11-11 × 뺌)
 const medalBadge = n => (n ? `<span class="medal" title="훈장 ${n}개">${n >= 3 ? `${MEDAL}<small>${n}</small>` : MEDAL.repeat(n)}</span>` : '');
 const medalOf = id => medalBadge((S && S.medals && S.medals[id]) || 0);
+// 대도독 깃발 (2026-11-13, 시즌 7부터): 이름 바로 뒤에 🚩
+const flagOf = id => (S && S.commanders && commanderOn() && Object.values(S.commanders).includes(id) && S.generals[id] && S.commanders[S.generals[id].faction] === id ? '<span class="cmdFlag" title="대도독">🚩</span>' : '');
 // 채팅에 보이는 이름: 장수 이름(보낼 때 있던 성). 성이 적혀 있지 않은 예전 글은 그 장수가 지금 있는 성으로
 // linkFaction을 주면, 그 세력에 이름이 같은 장수가 딱 한 명 있을 때만 이름을 눌러 정보 창을 볼 수 있다 (2026-11-01. 채팅에는 이름만 저장되어 있다)
 const chatWho = (m, linkFaction) => {
@@ -2195,7 +2240,7 @@ const chatWho = (m, linkFaction) => {
   const f = g && FACES.find(x => x.id === g.face); // 닉네임은 장수 얼굴 색 (2026-10-30). 장수를 못 찾으면 기본 색
   const nm = f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name);
   const same = linkFaction ? allGenerals().filter(x => x.faction === linkFaction && x.name === m.name) : [];
-  return (same.length === 1 ? `<button class="link chatName" data-gid="${esc(same[0].id)}">${nm}</button>` : nm) + (g ? medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
+  return (same.length === 1 ? `<button class="link chatName" data-gid="${esc(same[0].id)}">${nm}</button>` : nm) + (g ? flagOf(g.id) + medalOf(g.id) : '') + (c ? `<span class="dim">(${esc(c.name)})</span>` : '');
 };
 async function sendChat(text) {
   text = text.trim().slice(0, CHAT_LEN);
@@ -2267,6 +2312,7 @@ const fName = fid => { const f = factionById(fid); return f ? esc(f.name) : '?';
 // 서신의 이름: 얼굴 색만 (어느 성에 있는지는 적지 않는다)
 const letterWho = m => { const g = allGenerals().find(x => x.name === m.name), f = g && FACES.find(x => x.id === g.face); return f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name); };
 function letterLine(m, p) {
+  if (m.letter.sys) return `<li class="sysNote"><span class="t">${fmtClock(m.t)}</span>${esc(m.text)}</li>`; // 세력 알림 한 줄 (2026-11-13 대도독)
   const other = m.letter.other, sw = factionById(other) ? `<span class="swatch" style="background:${factionById(other).color}"></span>` : '';
   return m.letter.dir === 'in'
     ? `<li class="letter"><span class="t">${fmtClock(m.t)}</span>📜 ${sw}<b>${fName(other)}</b> 세력 ${letterWho(m)}의 서신: ${esc(m.text)}${citiesOfFaction(other).length && me().faction ? ` <button class="mini" data-reply="${esc(other)}">답장</button>` : ''}</li>`
@@ -2351,7 +2397,7 @@ function cityDetailRows(c) {
     const cap = seasonNow() >= RULES.crowdFromSeason ? RULES.crowdCap[c.grade] : 0, crowd = cap ? crowdRate(c.grade, list.length) : 1; // 성 정원 (2026-11-12, 시즌 7부터)
     const capText = cap ? ` <span class="${crowd < 1 ? 'warn' : 'dim'}" title="정원을 넘으면 이 성 장수 모두 금 수입(상업 몫)이 줄어요">/ 정원 ${cap}${crowd < 1 ? ` · 상업 수입 -${Math.round((1 - crowd) * 100)}%` : ''}</span>` : '';
     rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${capText}${open ? `<div class="cityMembers">${list.map(g =>
-      `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
+      `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
