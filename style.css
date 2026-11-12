@@ -1123,3 +1123,9 @@ td.nowrap { white-space: nowrap; }
 .pmLegend i { display: inline-block; width: 14px; height: 10px; margin-right: 4px; vertical-align: middle; }
 .pmLegend .pmHome { outline: 2px solid #fff; outline-offset: -2px; }
 .pmLegend .pmCan { outline: 2px dashed var(--title); outline-offset: -2px; }
+/* 패치노트 개발자 노트 상자 (2026-11-13): patchnotes.js에 { dev: '글' } (항목 사이 또는 파트 사이) */
+.notePaper .devNote { margin: 6px 0; padding: 6px 10px; font-size: 14px; color: #4a3a2a; background: rgba(255, 250, 235, .55); border: 1px dashed #7a5426; border-left: 3px solid #8c2a10; }
+.notePaper .devNote .devHead { display: block; color: #8c2a10; margin-bottom: 2px; }
+.notePaper li.devLi { list-style: none; margin-left: -20px; }
+.notePaper.devPaper { padding: 8px 12px; }
+.notePaper.devPaper .devNote { margin: 0; }

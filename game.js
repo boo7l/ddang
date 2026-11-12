@@ -1381,13 +1381,17 @@ async function boardDialog(page = 0, kind = '') {
   });
   $('#modalBox').classList.add('wideBox');
 }
+// 개발자 노트 (2026-11-13): patchnotes.js에서 { dev: '글' }을 항목 사이(items 안)나 파트 사이(groups 안) 아무 데나 넣으면 작은 상자로 보인다
+const devNoteHtml = t => `<div class="devNote"><span class="devHead">✍ 개발자 노트</span>${t}</div>`;
+const noteGroupsHtml = groups => groups.map(gr => gr.dev ? `<div class="notePaper devPaper">${devNoteHtml(gr.dev)}</div>`
+  : `<div class="notePaper"><p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => (t && t.dev ? `<li class="devLi">${devNoteHtml(t.dev)}</li>` : `<li>${t}</li>`)).join('')}</ul></div>`).join('');
 // i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
 function noteDialog(i) {
   const n = PATCH_NOTES[i], older = PATCH_NOTES[i + 1], newer = PATCH_NOTES[i - 1];
   const short = x => x.title.replace(' 주요 업데이트', '');
   openModal(`
     <h2>📜 ${n.title} <span class="dim small">(${n.date})</span></h2>
-    <div class="help notesPop">${n.groups.map(gr => `<div class="notePaper"><p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => `<li>${t}</li>`).join('')}</ul></div>`).join('')}</div>
+    <div class="help notesPop">${noteGroupsHtml(n.groups)}</div>
     <div class="notePager">
       <button id="noteOlder"${older ? '' : ' disabled'}>◀ ${older ? short(older) : ''}</button>
       <span class="dim">${PATCH_NOTES.length - i} / ${PATCH_NOTES.length}</span>
