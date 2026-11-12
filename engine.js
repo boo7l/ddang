@@ -72,6 +72,10 @@ const commanderOn = () => seasonNow() >= RULES.commander.fromSeason;
 const commanderOf = fid => { const id = fid && (S.commanders || {})[fid], g = id && S.generals[id]; return g && g.faction === fid ? g : null; };
 const isCommander = g => !!(g && g.faction && commanderOf(g.faction) === g);
 const membersOf = fid => allGenerals().filter(g => g.faction === fid);
+// 동맹 (2026-11-13, 3단계): S.alliances = [{ a, b, since, end, turns, breaker? }]. end 턴이 되면 풀린다 (그 턴부터 서로 칠 수 있다)
+const allyRec = (a, b) => (S.alliances || []).find(x => ((x.a === a && x.b === b) || (x.a === b && x.b === a)) && S.turn < x.end);
+const allied = (a, b) => !!(a && b && a !== b && allyRec(a, b));
+const alliesOf = fid => (S.alliances || []).filter(x => (x.a === fid || x.b === fid) && S.turn < x.end).map(x => (x.a === fid ? x.b : x.a));
 // 대도독이 될 수 없는 이유 ('' = 될 수 있다). hand: 넘겨받는 경우 (공적 1위 조건 없음)
 function commanderBlock(g, hand = false) {
   const R = RULES.commander;
@@ -784,6 +788,7 @@ function runAttack(g, o, mark) {
     addMerit(g, RULES.merit.move);
     return '';
   }
+  if (allied(g.faction, to.faction)) return `${factionById(to.faction).name} 세력과 동맹 중이라 출진하지 않음`; // 동맹 (2026-11-13): 금·군량을 쓰기 전에 막는다
   if (g.troops <= 0) return '병력이 없음';
   const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
@@ -810,7 +815,7 @@ const fieldOn = () => (S.season || 1) >= RULES.fieldFromSeason;
 // x가 o(출진) 명령을 지금 실행할 수 있는지 (금·군량은 쓰지 않고 보기만 한다). 못 나가는 장수는 야전 상대가 아니다
 function canMarch(x, o) {
   const from = x.city && cityById(x.city), to = cityById(o.to);
-  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || x.troops <= 0) return false;
+  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || allied(x.faction, to.faction) || x.troops <= 0) return false; // 동맹 상대에게는 출진하지 않으니 야전도 없다
   if (x.attackTurn && x.attackTurn + RULES.attackCooldown - S.turn > 0) return false;
   return S.cities[from.id].food >= marchFood(x.troops, x.faction) && x.gold >= attackGoldOf(x.troops);
 }
@@ -1267,6 +1272,7 @@ function runPlot(g, kind, o) {
   const cs = S.cities[c.id], name = PLOT_NAME[kind];
   if (!c.faction || c.faction === g.faction) return `${josa(c.name, '은는')} 이제 ${c.faction ? '아군 성' : '빈 땅'}`;
   if (!neighborsOf(MAP, cityById(g.city)).includes(c)) return `${josa(c.name, '은는')} 이웃 성이 아님`;
+  if (allied(g.faction, c.faction)) return `${factionById(c.faction).name} 세력과 동맹 중이라 ${PLOT_NAME[kind]}하지 않음`; // 동맹 중 파괴·유언 금지 (첩보는 된다, 2026-11-13)
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다, 2026-10-26)
   if (why) return why;
   const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +8%p

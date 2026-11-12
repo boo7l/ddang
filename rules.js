@@ -110,7 +110,7 @@ const RULES = {
   crowdCap: { 1: 10, 2: 15, 3: 20 }, // 성 정원 (2026-11-12 시즌 7부터, 시범 도입이라 널널하게): 넘으면 그 성 장수 모두 금 수입의 상업 몫 × (정원 ÷ 인원)². 기본 100은 그대로. 농성 짱박기 대책
   crowdFromSeason: 7,
   // 대도독 (2026-11-13, 시즌 7부터, 기획서 "대도독 · 동맹"): 세력마다 한 명. 자격이 되는 장수가 직접 수락해야 오른다
-  commander: { fromSeason: 7, minMerit: 500, minMembers: 5, offline: 12 * 60 * 60 * 1000, handWait: 60 * 60 * 1000, seenEvery: 10 * 60 * 1000, noticeLen: 50 }, // noticeLen: 공지 글자 수 // offline: 이만큼(실제 시간) 접속이 없으면 자리를 잃는다. handWait: 넘겨받을 장수가 수락할 시간. seenEvery: 마지막 접속 시각을 적는 간격
+  commander: { fromSeason: 7, minMerit: 500, minMembers: 5, offline: 12 * 60 * 60 * 1000, handWait: 60 * 60 * 1000, seenEvery: 10 * 60 * 1000, noticeLen: 50, allyMin: 12, allyMax: 36, allyMax2: 2, allyBreakTurns: 5, allyBreakMerit: 30, allyBreakMeritCmd: 100 }, // 동맹 (2026-11-13): 기간 12~36턴, 세력당 2개, 파기하면 5턴 뒤 풀림 + 파기한 세력 장수 공적 -30 · 대도독 -100(포함) // noticeLen: 공지 글자 수 // offline: 이만큼(실제 시간) 접속이 없으면 자리를 잃는다. handWait: 넘겨받을 장수가 수락할 시간. seenEvery: 마지막 접속 시각을 적는 간격
   get meritIncome() { return seasonNow() >= 7 ? 0.00005 : 0.0001; }, // 2026-11-12 시즌 7부터 공적 200마다 1% (기획자). 공적 보너스: 공적 100마다 수입 1% 더 (1,000이면 10%. 2026-10-25 0.0001 → 0.0002, 2026-10-31 다시 0.0001)
   foodPerAgri: 3.5,         // 임시: 수확 군량 = 그 성의 농업 × 3.5 (× 치안 보정. 2026-10-25 3 → 3.5, 2026-10-26 기본 500을 더한 만큼 3.3으로, 2026-11-02 3.5)
   foodBase: 500,            // 수확마다 성마다 기본으로 더 들어오는 군량: 수확 = (농업 × 3.5 + 500) × 치안 보정 (2026-10-25, 농업 낮은 성 보완)

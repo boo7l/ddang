@@ -333,7 +333,7 @@ function testCardHtml() {
     const b = (a, l) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}">${l}</button>`;
     const h = (S.cmdHand || {})[g.faction], c = commanderOf(g.faction), t = now();
     if (h && h.to === g.id && h.until > t) return `<span class="small">⏳ 넘겨받기 대기 (${Math.max(1, Math.ceil((h.until - t) / MIN))}분)</span> ${b('cmdAccept', '수락')} ${b('cmdDecline', '사양')}`;
-    if (c === g) return `${b('cmdResign', '내려놓기')} <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
+    if (c === g) return `${allyTestHtml(g)}${b('cmdResign', '내려놓기')} <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
     if (!c) return b('cmdAccept', '도독직 수락');
     return '<span class="dim small">-</span>';
   };
@@ -356,13 +356,22 @@ function renderTestCol(force = false) {
   if (!force && (html === testColHtml || box.contains(document.activeElement))) return;
   testColHtml = html; box.innerHTML = html; bindTestCard(box);
 }
+// 테스트 대도독의 동맹 단추 (2026-11-13): 받은 제안 수락·거절, 동맹 파기, 새 제안(24턴)
+function allyTestHtml(g) {
+  const t = now(), x = (a, l, k, v) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}" data-${k}="${esc(v)}">${l}</button> `;
+  let h = (S.allyOffers || []).filter(o => o.to === g.faction && o.until > t).map(o => x('allyAccept', `${fName(o.from)} 동맹 수락`, 'from', o.from) + x('allyReject', '거절', 'from', o.from)).join('');
+  h += (S.alliances || []).filter(a => (a.a === g.faction || a.b === g.faction) && S.turn < a.end && !a.breaker).map(a => x('allyBreak', `${fName(a.a === g.faction ? a.b : a.a)} 파기`, 'with', a.a === g.faction ? a.b : a.a)).join('');
+  h += `<select class="tAlly" data-tid="${esc(g.id)}"><option value="">동맹 제안(24턴)…</option>${playable().filter(f => f.id !== g.faction && commanderOf(f.id)).map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select><br>`;
+  return h;
+}
 function bindTestCard(box) {
   const run = async body => { if (await call('adminTest', body)) { renderTestCol(true); if (me() && me().faction) renderAll(); } };
   const add = box.querySelector('#atAdd'); if (!add) return;
   add.onclick = () => run({ op: 'add', faction: $('#atF').value, n: +$('#atN').value, merit: +$('#atM').value });
   box.querySelector('#atClear').onclick = () => { if (confirm('테스트 장수를 모두 지울까요?')) run({ op: 'clear' }); };
   box.querySelectorAll('[data-tmerit]').forEach(i => { i.onchange = () => run({ op: 'merit', id: i.dataset.tmerit, merit: +i.value }); });
-  box.querySelectorAll('[data-tas]').forEach(b => { b.onclick = () => run({ op: 'as', id: b.dataset.tid, act: b.dataset.tas }); });
+  box.querySelectorAll('[data-tas]').forEach(b => { b.onclick = () => run({ op: 'as', id: b.dataset.tid, act: b.dataset.tas, from: b.dataset.from, with: b.dataset.with }); });
+  box.querySelectorAll('.tAlly').forEach(s => { s.onchange = () => { if (s.value) run({ op: 'as', id: s.dataset.tid, act: 'allyPropose', to: s.value, turns: 24 }); }; });
   box.querySelectorAll('.tHand').forEach(s => { s.onchange = () => { if (s.value) run({ op: 'as', id: s.dataset.tid, act: 'cmdHand', to: s.value }); }; });
 }
 function adminToolsDialog() {
@@ -854,7 +863,7 @@ function attackDialog() {
     }
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f ? f.color : 'var(--empty)'}"></span>
-      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>
+      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
@@ -998,7 +1007,7 @@ function plotDialog(kind) {
   const opts = spyTargetsFrom(from.id, me().faction).map(c => {
     const f = factionById(c.faction), cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
-      <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>
+      <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>${allyTag(c)}
       <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall === undefined ? '?' : cs.wall}` : ''}</span></label>`;
   }).join('');
   const effect = kind === 'destroy'
@@ -1988,7 +1997,7 @@ function renderCommander() {
   if (hand && hand.to === p.id) body += `<p>${esc(S.generals[hand.from] ? josa(S.generals[hand.from].name, '이가') : '')} 대도독을 넘기려 해요. <span class="dim">(${left}분 남음)</span></p>
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
-    body += '<p class="cmds two"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button></p>';
+    body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
     body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds two"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
       : `<p class="cmds two"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
   } else if (!c) {
@@ -2000,6 +2009,7 @@ function renderCommander() {
     body += `<p class="small">${req.map(([ok, t]) => `<span class="${ok ? '' : 'dim'}">${ok ? '✔' : '✘'} ${t}</span>`).join('<br>')}</p>`;
     if (!commanderBlock(p)) body += '<p class="cmds one"><button data-cmdr="cmdAccept" class="main">도독직 수락</button></p>';
   }
+  body += allyBoxHtml(p, c === p);
   box.innerHTML = `<h2>🚩 대도독</h2>${body}`;
   box.onclick = async e => {
     const gb = e.target.closest('[data-gid]'); if (gb) { memberDialog(gb.dataset.gid); return; }
@@ -2010,6 +2020,8 @@ function renderCommander() {
     if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); renderAll(); return; }
     if (a === 'cmdHandPick') { commanderHandDialog(); return; }
     if (a === 'notice') { noticeDialog(); return; }
+    if (a === 'ally') { allyDialog(); return; }
+    if (a === 'allyAccept' || a === 'allyReject') { const from = b.dataset.from; if (a === 'allyAccept' && !confirm(`${fName(from)} 세력과 동맹을 맺을까요?`)) return; await call(a, { from }); renderAll(); return; }
     if (a === 'policy') { policyDialog(); return; }
     await call(a);
     renderAll(); // 누르자마자 칸·🚩가 바뀌게 (2026-11-13)
@@ -2036,6 +2048,39 @@ function policyDialog() {
     <p>🎯 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select></p>
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
     box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
+  });
+}
+// ===== 동맹 (2026-11-13, 3단계) =====
+const allyLeft = x => x.end - S.turn; // 남은 턴
+const myAllies = () => { const fid = me() && me().faction; return (S.alliances || []).filter(x => (x.a === fid || x.b === fid) && S.turn < x.end).map(x => ({ ...x, other: x.a === fid ? x.b : x.a })); };
+const allyTag = c => (c.faction && me() && allied(me().faction, c.faction) ? ' <span class="allyTag">🤝 동맹</span>' : ''); // 출진·계략 창: 지금 동맹이면 표시 (예약은 되지만 실행 때 막힌다)
+// 대도독 칸 아래: 우리 세력 동맹 (모두 보임) + 받은 제안 (대도독은 수락·거절 단추)
+function allyBoxHtml(p, isCmd) {
+  const al = myAllies(), now0 = now();
+  const got = (S.allyOffers || []).filter(o => o.to === p.faction && o.until > now0);
+  let h = al.length ? `<p>🤝 동맹: ${al.map(x => `<b>${fName(x.other)}</b> <span class="dim">(${x.breaker ? `💔 ${allyLeft(x)}턴 뒤 풀림` : `남은 ${allyLeft(x)}턴`})</span>`).join(', ')}</p>` : '';
+  for (const o of got) h += `<p class="allyOffer">🤝 <b>${fName(o.from)}</b> 세력이 ${o.turns}턴 동맹을 제안했어요 <span class="dim">(${Math.max(1, Math.ceil((o.until - now0) / MIN))}분 남음)</span>${isCmd ? ` <button class="mini" data-cmdr="allyAccept" data-from="${esc(o.from)}">수락</button> <button class="mini" data-cmdr="allyReject" data-from="${esc(o.from)}">거절</button>` : ' <span class="dim small">· 대도독이 정해요</span>'}</p>`;
+  return h;
+}
+// 🤝 동맹 창 (대도독): 지금 동맹(파기) · 보낸 제안(취소) · 새 제안(세력 + 기간 숫자)
+function allyDialog() {
+  const p = me(), R = RULES.commander, al = myAllies(), now0 = now();
+  const sent = (S.allyOffers || []).filter(o => o.from === p.faction && o.until > now0);
+  const others = playable().filter(f => f.id !== p.faction && !allied(p.faction, f.id));
+  openModal(`<h2>🤝 동맹</h2>
+    <p class="dim small">양쪽 대도독이 있어야 맺을 수 있어요. 동맹 중에는 서로 출진·파괴·유언을 못 해요 (첩보는 돼요). 세력당 ${R.allyMax2}개까지.</p>
+    <p class="sub">지금 동맹</p>
+    ${al.length ? al.map(x => `<p><b>${fName(x.other)}</b> <span class="dim">${x.breaker ? `💔 파기됨 · ${allyLeft(x)}턴 뒤(${dateText(x.end)}) 풀림` : `남은 ${allyLeft(x)}턴 · ${dateText(x.end)}에 풀림`}</span>${x.breaker ? '' : ` <button class="mini danger" data-break="${esc(x.other)}">파기</button>`}</p>`).join('') : '<p class="dim">없음</p>'}
+    ${sent.length ? `<p class="sub">보낸 제안</p>${sent.map(o => `<p><b>${fName(o.to)}</b> ${o.turns}턴 <span class="dim">(${Math.max(1, Math.ceil((o.until - now0) / MIN))}분 남음)</span> <button class="mini" data-cancel="${esc(o.to)}">취소</button></p>`).join('')}` : ''}
+    <p class="sub">새 제안</p>
+    ${al.length >= R.allyMax2 ? `<p class="dim">동맹이 이미 ${R.allyMax2}개예요.</p>` : `<p><select id="aTo">${others.map(f => `<option value="${esc(f.id)}"${commanderOf(f.id) ? '' : ' disabled'}>${esc(f.name)}${commanderOf(f.id) ? '' : ' (대도독 없음)'}</option>`).join('')}</select>
+      <input id="aTurns" type="number" min="${R.allyMin}" max="${R.allyMax}" value="24" style="width:4em">턴 <span class="dim small">(${R.allyMin}~${R.allyMax})</span> <button id="aSend" class="main">제안</button></p>`}
+    <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
+    const done = async (action, body) => { closeModal(); await call(action, body); renderAll(); };
+    const send = box.querySelector('#aSend');
+    if (send) send.onclick = () => { const to = box.querySelector('#aTo').value; if (!to) return; done('allyPropose', { to, turns: +box.querySelector('#aTurns').value }); };
+    box.querySelectorAll('[data-cancel]').forEach(b => { b.onclick = () => done('allyCancel', { to: b.dataset.cancel }); });
+    box.querySelectorAll('[data-break]').forEach(b => { b.onclick = () => { if (confirm(`${fName(b.dataset.break)} 세력과의 동맹을 파기할까요?\n\n· ${R.allyBreakTurns}턴 뒤에 풀려요 (그때까지는 동맹)\n· 우리 세력 장수 모두 공적 -${R.allyBreakMerit}, 대도독은 -${R.allyBreakMeritCmd}`)) done('allyBreak', { with: b.dataset.break }); }; });
   });
 }
 // 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
