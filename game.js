@@ -1998,8 +1998,8 @@ function renderCommander() {
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
     body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
-    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds two"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
-      : `<p class="cmds two"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
+    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds two cmdSmall"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
+      : `<p class="cmds two cmdSmall"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
   } else if (!c) {
     // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
     const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
