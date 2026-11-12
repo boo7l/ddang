@@ -293,7 +293,6 @@ function advance() {
     S.turn++; // 게임 속 한 달이 흐른다
     runOrders(mark);
     trimDefense();
-    for (const g of allGenerals()) if (g.treasureFound && S.turn >= g.treasureFound.until) chooseFoundTreasure(g, 'sell', true); // 고를 시간이 지난 보물은 저절로 판다 (2026-11-10)
     // 개인 특성 기강 잡기 (2026-10-28): 기강 잡기 장수가 머무는 성은 매턴 치안 +2 (여럿이 있어도 성마다 한 번)
     const drilled = new Set();
     for (const g of allGenerals()) if (g.faction && g.city && gTrait(g).peaceTurn && !drilled.has(g.city)) {
@@ -1158,7 +1157,7 @@ function runExplore(g) {
         g.treasureFound = { name, until: S.turn + TREASURE_RULES.foundTurns };
         const st = STATS.find(x => x.key === TREASURES[name].stat);
         text = `★★★ 또 다른 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${st.name} +${TREASURES[name].bonus})
-지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요. (${TREASURE_RULES.foundTurns}턴 안에 고르지 않으면 저절로 팔린다)`;
+지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요.`; // 자동 판매 없음 (2026-11-13 기획자: 고를 때까지 기다린다)
         break;
       }
       g.treasures = [...treasuresOf(g), name];

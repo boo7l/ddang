@@ -1708,7 +1708,6 @@ function treasureFoundDialog() {
   // 바꾸면 능력치가 어떻게 되는지: 새 보물 능력치는 + 새 가점 − (같은 능력치면) 원래 가점
   const after = effStats(g)[nst.key] + nu.bonus - (ot && ot.stat === nu.stat ? ot.bonus : 0);
   const gold = nu.bonus * TREASURE_RULES.sellPer, got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold));
-  const left = Math.max(0, f.until - S.turn);
   openModal(`
     <h2>💎 또 다른 보물을 발견했다!</h2>
     <p>보물은 장수 한 명당 1개까지예요. 새 보물로 바꾸거나, 상인에게 팔 수 있어요.</p>
@@ -1718,7 +1717,7 @@ function treasureFoundDialog() {
       <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${nst.name} +${nu.bonus}</div><div class="dim small">바꾸면 ${nst.name} ${after}</div></div>
     </div>
     <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b> → 팔면 <b>${fmt(g.gold + got)}</b>${got < gold ? ` <span class="bad">(최대치 ${fmt(RULES.playerGoldMax)}이라 ${fmt(gold - got)}은 못 받아요)</span>` : ''}</p>
-    <p class="dim small">· 바꾸면 ${ot ? `${esc(old)}${josa(old, '은는').slice(-1)} 세상으로 돌아가요 (금 없음)` : '그대로 손에 넣어요'}<br>· 팔면 ${esc(f.name)}${josa(f.name, '을를').slice(-1)} 금 ${fmt(gold)}에 팔아요 (가점 1당 ${fmt(TREASURE_RULES.sellPer)})<br>· ${TREASURE_RULES.foundTurns}턴 안에 고르지 않으면 자동으로 팔려요 (남은 턴 ${left})</p>
+    <p class="dim small">· 바꾸면 ${ot ? `${esc(old)}${josa(old, '은는').slice(-1)} 세상으로 돌아가요 (금 없음)` : '그대로 손에 넣어요'}<br>· 팔면 ${esc(f.name)}${josa(f.name, '을를').slice(-1)} 금 ${fmt(gold)}에 팔아요 (가점 1당 ${fmt(TREASURE_RULES.sellPer)})</p>
     <div class="modalBtns"><button data-close>나중에</button><button id="tfSell">팔기 (금 +${fmt(got)})</button><button id="tfSwap" class="main">${ot ? `${esc(josa(f.name, '으로'))} 바꾸기` : `${esc(f.name)} 갖기`}</button></div>`, box => {
     box.querySelector('#tfSell').onclick = async () => {
       if (!confirm(`「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요? 되돌릴 수 없어요.`)) return;
