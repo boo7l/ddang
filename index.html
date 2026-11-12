@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/Sam3KRFont.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261113002712">
+<link rel="stylesheet" href="style.css?v=20261113002908">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -130,7 +130,6 @@
     <!-- 둘째 칸: 장수 · 세력 · 개발자 도구 -->
     <aside class="mid">
       <div id="general" class="win"></div>
-      <div id="cmdr" class="win" hidden></div><!-- 대도독 칸 (2026-11-13, 시즌 7부터) -->
       <!-- 접었다 펼 수 있는 창 (처음엔 접힘): 제목을 누르면 열린다 -->
       <details class="win fold"><summary><h2>우리 세력 장수 <span class="dim" id="membersTitle"></span></h2></summary><div id="members"></div></details>
       <details class="win fold"><summary><h2>세력</h2></summary><ul id="legend"></ul><p id="legendTrait" class="traitLine"></p></details>
@@ -139,6 +138,7 @@
     <!-- 셋째 칸: 명령 버튼 -->
     <aside class="cmdCol">
       <div id="commands" class="win"></div>
+      <div id="cmdr" class="win" hidden></div><!-- 대도독 칸 (2026-11-13, 시즌 7부터): 명령 창 아래 (기획자) -->
       <p class="resignRow"><button id="cResign" class="mini danger" title="예약 없이 바로 세력을 떠나요">하야</button> <button id="cDelete" class="mini danger" title="장수를 지우고 처음부터 다시 만들어요">장수 삭제</button></p><!-- 예약 명령이 아니라서 명령 창 밖에 둔다 -->
     </aside>
     <!-- 넷째 칸: 명령 예약표 -->
@@ -161,15 +161,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261113002712"></script>
-  <script src="mapcore.js?v=20261113002712"></script>
-  <script src="data/map.js?v=20261113002712"></script>
-  <script src="rules.js?v=20261113002712"></script>
-  <script src="faces.js?v=20261113002712"></script>
-  <script src="patchnotes.js?v=20261113002712"></script>
-  <script src="mapbg.js?v=20261113002712"></script>
-  <script src="map.js?v=20261113002712"></script>
-  <script src="engine.js?v=20261113002712"></script>
-  <script src="game.js?v=20261113002712"></script>
+  <script src="server.js?v=20261113002908"></script>
+  <script src="mapcore.js?v=20261113002908"></script>
+  <script src="data/map.js?v=20261113002908"></script>
+  <script src="rules.js?v=20261113002908"></script>
+  <script src="faces.js?v=20261113002908"></script>
+  <script src="patchnotes.js?v=20261113002908"></script>
+  <script src="mapbg.js?v=20261113002908"></script>
+  <script src="map.js?v=20261113002908"></script>
+  <script src="engine.js?v=20261113002908"></script>
+  <script src="game.js?v=20261113002908"></script>
 </body>
 </html>
