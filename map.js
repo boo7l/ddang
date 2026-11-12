@@ -42,7 +42,8 @@ function drawMap(el, opts = {}) {
         if (near.includes(c.id)) div.classList.add('near');
         if (c.id === opts.homeId) div.classList.add('home');
         if (opts.focusFaction && c.faction !== opts.focusFaction) div.classList.add('faded');
-        div.innerHTML = `<span class="name">${c.name}</span><span class="grade">${'★'.repeat(c.grade)}</span>`;
+        const mk = opts.mark ? opts.mark(c) : '';
+        div.innerHTML = `<span class="name">${c.name}</span><span class="grade">${'★'.repeat(c.grade)}</span>${mk ? `<span class="pmark">${mk}</span>` : ''}`;
         div.title = `${c.name} (${f ? f.name : '공백지'} · ${GRADE_NAME[c.grade]})`;
         if (opts.onClick) div.onclick = () => opts.onClick(c);
       }
@@ -57,6 +58,7 @@ function render() {
   drawMap($('#map'), {
     selectedId: selected && selected.id,
     homeId: homeCityId(),
+    mark: typeof policyMark === 'function' ? policyMark : null, // 대도독 방침 🛡·🎯 (2026-11-13)
     onClick: c => { selected = selected === c ? null : c; render(); },
   });
   renderInfo();

@@ -543,6 +543,8 @@ table.rank .num { text-align: right; padding-right: 12px; }
 #chat .chatList li.sysNote { color: var(--dim, #9aa); padding: 2px 6px; } /* 세력 알림 한 줄 (2026-11-13 대도독) */
 .cmdFlag { margin-left: 2px; } /* 대도독 깃발 */
 #cmdr p { margin: 4px 0; }
+.city .pmark { position: absolute; top: 1px; right: 2px; font-size: 13px; line-height: 1; pointer-events: none; } /* 대도독 방침 표시 (2026-11-13) */
+#chat .chatPin { margin: 0 0 6px; padding: 4px 8px; background: rgba(232, 200, 140, .12); border-left: 3px solid var(--title); } /* 고정 공지 */
 #chat .chatForm { display: flex; gap: 6px; }
 #chat .chatForm input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
 .guardSw { display: block; margin: 8px 0 4px; padding: 6px 8px; border: 1px dotted var(--gold-dark); cursor: pointer; } /* 징병 창 수비대장 징병 체크 (2026-11-04) */

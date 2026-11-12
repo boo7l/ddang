@@ -1988,6 +1988,7 @@ function renderCommander() {
   if (hand && hand.to === p.id) body += `<p>${esc(S.generals[hand.from] ? josa(S.generals[hand.from].name, '이가') : '')} 대도독을 넘기려 해요. <span class="dim">(${left}분 남음)</span></p>
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
+    body += '<p class="cmds two"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button></p>';
     body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds two"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
       : `<p class="cmds two"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
   } else if (!c) {
@@ -2008,10 +2009,37 @@ function renderCommander() {
     if (a === 'cmdResign' && !confirm('대도독을 내려놓을까요?')) return;
     if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); renderAll(); return; }
     if (a === 'cmdHandPick') { commanderHandDialog(); return; }
+    if (a === 'notice') { noticeDialog(); return; }
+    if (a === 'policy') { policyDialog(); return; }
     await call(a);
     renderAll(); // 누르자마자 칸·🚩가 바뀌게 (2026-11-13)
   };
 }
+// 공지 (2026-11-13): 50자, 비우고 저장하면 내린다
+function noticeDialog() {
+  const p = me(), cur = (S.notices || {})[p.faction];
+  openModal(`<h2>📌 공지</h2>
+    <p class="dim small">세력 채팅창 위에 고정돼요. ${RULES.commander.noticeLen}자까지 · 비우고 저장하면 내려요.</p>
+    <p><input id="nText" maxlength="${RULES.commander.noticeLen}" value="${cur ? esc(cur.text) : ''}" style="width:100%;box-sizing:border-box"></p>
+    <div class="modalBtns"><button id="nSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
+    box.querySelector('#nSave').onclick = async () => { const t = box.querySelector('#nText').value; closeModal(); await call('noticeSet', { text: t }); renderAll(); };
+  });
+}
+// 방침 (2026-11-13): 방어할 성(우리 성) 1 · 공격 목표(다른 세력·공백지) 1. 안내일 뿐 강제 없음
+function policyDialog() {
+  const p = me(), cur = (S.policy || {})[p.faction] || {};
+  const opt = (list, sel) => '<option value="">없음</option>' + list.map(c => `<option value="${esc(c.id)}"${c.id === sel ? ' selected' : ''}>${esc(c.name)}${c.faction ? '' : ' (공백지)'}</option>`).join('');
+  const own = MAP.cities.filter(c => c.faction === p.faction), other = MAP.cities.filter(c => c.faction !== p.faction).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  openModal(`<h2>🧭 방침</h2>
+    <p class="dim small">우리 세력 지도에만 표시돼요. 안내일 뿐 강제는 없어요.</p>
+    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select></p>
+    <p>🎯 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select></p>
+    <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
+    box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
+  });
+}
+// 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
+const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction]; return !pol ? '' : c.id === pol.def ? '🛡' : c.id === pol.atk ? '🎯' : ''; };
 // 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
 function commanderHandDialog() {
   const p = me(), list = membersOf(p.faction).filter(g => g !== p && (g.merit || 0) >= RULES.commander.minMerit).sort((a, b) => b.merit - a.merit);
@@ -2323,6 +2351,7 @@ function renderChat() {
   const box = $('#chat');
   if (!box.querySelector('.chatForm')) {
     box.innerHTML = `<h2>세력 채팅 <span class="dim" id="chatFaction"></span></h2>
+      <p class="chatPin" hidden></p>
       <ul class="chatList"></ul>
       <form class="chatForm" autocomplete="off">
         <input type="text" id="chatInput" maxlength="${CHAT_LEN}" placeholder="우리 세력에게 한마디">
@@ -2343,6 +2372,8 @@ function renderChat() {
     };
   }
   $('#chatFaction').textContent = `· ${factionById(me().faction).name}`;
+  const pin = (S.notices || {})[me().faction], pinEl = box.querySelector('.chatPin'); // 대도독 공지 (2026-11-13)
+  if (pinEl) { pinEl.hidden = !pin; pinEl.innerHTML = pin ? `📌 ${esc(pin.text)} <span class="dim small">· 🚩 ${esc(pin.by)}</span>` : ''; }
   renderChatList();
 }
 function renderChatList() {
@@ -2448,6 +2479,7 @@ function cityDetailRows(c) {
     rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${capText}${open ? `<div class="cityMembers">${list.map(g =>
       `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
+  { const mk = policyMark(c); if (mk) rows.push(`<tr class="wide"><th>방침</th><td>${mk} ${mk === '🛡' ? '방어할 성' : '공격 목표'} <span class="dim">(대도독)</span></td></tr>`); } // 2026-11-13
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
