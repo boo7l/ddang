@@ -847,6 +847,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   .opt { flex-wrap: wrap; }
   .opt > b, .opt > .dim { white-space: nowrap; }
   .opt .r { margin-left: 0; flex-basis: 100%; padding-left: 26px; } /* 고르는 칸: 성 이름 줄 아래에 설명 */
+  .opt .r.foodR { margin-left: auto; flex-basis: auto; padding-left: 0; white-space: nowrap; } /* 이동·군량 수송의 군량은 성 이름 줄 오른쪽에 그대로 (2026-11-13 기획자: 두 줄로 늘릴 필요 없음). 너무 길면 저절로 다음 줄 */
   #whoName, #who .wideOnly { display: none; } /* 제목줄 단추를 한 줄에 */
   .hdrRight button { padding: 2px 6px; }
   #cFaceBig { display: none; } /* 얼굴은 아래 목록에서 고른 칸이 표시된다 */
