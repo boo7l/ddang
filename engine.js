@@ -302,7 +302,7 @@ function advance() {
         if (!g.faction) continue;
         const c = cityById(g.city), n = heads[g.faction + '|' + g.city], crowd = crowdRate(c.grade, n);
         const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${crowd < 1 ? ` · 정원 초과 ${n}/${RULES.crowdCap[c.grade]}명으로 상업 몫 -${Math.round((1 - crowd) * 100)}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${crowd < 1 ? ` · 정원초과로 -${Math.round((1 - crowd) * 100)}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
       }
     }
     // 군량 시세: 매달 RULES.foodBuy.steps 확률로 -2~+2 (4~8, 2026-11-10)
