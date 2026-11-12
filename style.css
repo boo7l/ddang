@@ -77,6 +77,11 @@ body {
 }
 .win h2::before { content: "◆ "; color: var(--seal); }
 
+/* 창마다 바탕색 (2026-11-13): 붉은색의 이웃 색만 써서 하는 일별로 구별. 내 장수·명령은 붉은 옻칠 그대로 */
+#game details.fold, #cmdr { --panel: #3c0c18; }  /* 자줏빛 붉음: 우리 세력 장수 · 세력 · 대도독 */
+#info, #queueBox { --panel: #3a1a0c; }            /* 밤색: 성 정보 · 명령 예약 */
+#log, #chat { --panel: #200806; }                 /* 붉은 먹색: 기록 · 채팅 (글이 많은 창) */
+
 /* 제목줄: 낙관 도장 + 게임 이름, 아래에 번개무늬(回) 띠 */
 header.titlebar { --panel: #380c08; } /* 상단 바만 조금 짙은 옻칠 (2026-10-29 시안 A #2a0a07에서 한 단계 밝게. 창 바탕 #4a0e0a보다는 어둡다) */
 .titlebar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 12px 18px 22px; }
