@@ -362,8 +362,8 @@ function bindTestCard(box) {
   add.onclick = () => run({ op: 'add', faction: $('#atF').value, n: +$('#atN').value, merit: +$('#atM').value });
   box.querySelector('#atClear').onclick = () => { if (confirm('테스트 장수를 모두 지울까요?')) run({ op: 'clear' }); };
   box.querySelectorAll('[data-tmerit]').forEach(i => { i.onchange = () => run({ op: 'merit', id: i.dataset.tmerit, merit: +i.value }); });
-  box.querySelectorAll('[data-tas]').forEach(b => { b.onclick = () => run({ op: 'as', id: b.dataset.tid, action: b.dataset.tas }); });
-  box.querySelectorAll('.tHand').forEach(s => { s.onchange = () => { if (s.value) run({ op: 'as', id: s.dataset.tid, action: 'cmdHand', body: { to: s.value } }); }; });
+  box.querySelectorAll('[data-tas]').forEach(b => { b.onclick = () => run({ op: 'as', id: b.dataset.tid, act: b.dataset.tas }); });
+  box.querySelectorAll('.tHand').forEach(s => { s.onchange = () => { if (s.value) run({ op: 'as', id: s.dataset.tid, act: 'cmdHand', to: s.value }); }; });
 }
 function adminToolsDialog() {
   const state = !S ? '-' : S.unified ? '천하통일 (턴 멈춤)' : S.paused ? '⏸ 멈춤' : '흐르는 중';
