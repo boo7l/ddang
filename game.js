@@ -349,7 +349,7 @@ function renderTestCol(force = false) {
   testColHtml = html; box.innerHTML = html; bindTestCard(box);
 }
 function bindTestCard(box) {
-  const run = async body => { if (await call('adminTest', body)) renderTestCol(true); };
+  const run = async body => { if (await call('adminTest', body)) { renderTestCol(true); if (me() && me().faction) renderAll(); } };
   const add = box.querySelector('#atAdd'); if (!add) return;
   add.onclick = () => run({ op: 'add', faction: $('#atF').value, n: +$('#atN').value, merit: +$('#atM').value });
   box.querySelector('#atClear').onclick = () => { if (confirm('테스트 장수를 모두 지울까요?')) run({ op: 'clear' }); };
@@ -1998,9 +1998,10 @@ function renderCommander() {
     const a = b.dataset.cmdr;
     if (a === 'cmdAccept' && !confirm(hand && hand.to === p.id ? '대도독을 넘겨받을까요?' : '대도독을 맡을까요?')) return;
     if (a === 'cmdResign' && !confirm('대도독을 내려놓을까요?')) return;
-    if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); return; }
+    if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); renderAll(); return; }
     if (a === 'cmdHandPick') { commanderHandDialog(); return; }
     await call(a);
+    renderAll(); // 누르자마자 칸·🚩가 바뀌게 (2026-11-13)
   };
 }
 // 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
@@ -2011,7 +2012,7 @@ function commanderHandDialog() {
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>공적</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">넘기기</button></td></tr>`).join('')}</table></div>`
       : `<p class="dim">공적 ${fmt(RULES.commander.minMerit)} 이상인 장수가 없어요.</p>`}
     <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
-    box.onclick = async e => { const b = e.target.closest('[data-hand]'); if (!b) return; const g = S.generals[b.dataset.hand]; if (!g || !confirm(`${g.name}에게 대도독을 넘길까요?`)) return; closeModal(); await call('cmdHand', { to: g.id }); };
+    box.onclick = async e => { const b = e.target.closest('[data-hand]'); if (!b) return; const g = S.generals[b.dataset.hand]; if (!g || !confirm(`${g.name}에게 대도독을 넘길까요?`)) return; closeModal(); await call('cmdHand', { to: g.id }); renderAll(); };
   });
 }
 function renderMembers() {
