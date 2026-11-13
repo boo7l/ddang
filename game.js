@@ -2026,8 +2026,8 @@ function renderCommander() {
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
     body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
-    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 위임하는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="fire">해고</button><button data-cmdr="cmdHandCancel">위임 취소</button><button data-cmdr="cmdResign">반납</button></p>`
-      : `<p class="cmds three"><button data-cmdr="fire">해고</button><button data-cmdr="cmdHandPick">위임</button><button data-cmdr="cmdResign">반납</button></p>`;
+    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 위임하는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="fire">🚪 해고</button><button data-cmdr="cmdHandCancel">📜 취소</button><button data-cmdr="cmdResign">🏳 반납</button></p>`
+      : `<p class="cmds three"><button data-cmdr="fire">🚪 해고</button><button data-cmdr="cmdHandPick">📜 위임</button><button data-cmdr="cmdResign">🏳 반납</button></p>`;
   } else if (!c) {
     // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
     const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
@@ -2119,7 +2119,7 @@ const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction
 function fireDialog() {
   const p = me(), R = RULES.commander;
   const list = membersOf(p.faction).filter(fireable).sort((a, b) => a.seenAt - b.seenAt); // 24시간 넘은 장수만 (2026-11-13 기획자)
-  openModal(`<h2>해고</h2>
+  openModal(`<h2>🚪 해고</h2>
     <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (공적은 그대로)</p>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td>${agoText(g.seenAt)} 💤</td><td><button class="mini danger" data-fire="${esc(g.id)}">해고</button></td></tr>`).join('')}</table></div>`
       : `<p class="dim">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수가 없어요.</p>`}
@@ -2135,7 +2135,7 @@ function fireDialog() {
 // 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
 function commanderHandDialog() {
   const p = me(), list = membersOf(p.faction).filter(g => g !== p && (g.merit || 0) >= RULES.commander.minMerit).sort((a, b) => b.merit - a.merit);
-  openModal(`<h2>🚩 대도독 위임</h2>
+  openModal(`<h2>📜 대도독 위임</h2>
     <p class="dim small">받는 장수가 ${RULES.commander.handWait / MIN}분 안에 수락하면 넘어가요.</p>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>공적</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">위임</button></td></tr>`).join('')}</table></div>`
       : `<p class="dim">공적 ${fmt(RULES.commander.minMerit)} 이상인 장수가 없어요.</p>`}
