@@ -2130,7 +2130,7 @@ function renderMembers() {
   const list = allGenerals().filter(g => g.faction === p.faction).sort((a, b) => b.merit - a.merit);
   $('#membersTitle').textContent = `· ${f.name} ${list.length}명`;
   $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>공적</th></tr>${list.map(g => `
-      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}${medalOf(g.id)}</td><td>${esc(cityById(g.city).name)}</td>
+      <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}${medalOf(g.id)}${fireable(g) ? '<span title="오래 접속하지 않음 (해고할 수 있어요)">💤</span>' : ''}</td><td>${esc(cityById(g.city).name)}</td>
         <td class="num">${g.unitType ? `${g.unitType[0]} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
   $('#members').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
 }
@@ -2141,9 +2141,14 @@ function allyOrders(g) {
   const list = g.nextOrders || (g.queue ? g.queue.slice(0, ALLY_QUEUE_SHOW).map(shortOrder) : null);
   return list ? list.map(t => (t === '대기' ? '<span class="dim">대기</span>' : esc(t))).join(', ') : '';
 }
+// 해고 (2026-11-13): 대도독에게만 세력 장수의 마지막 접속(seenAt)이 오고, fireOffline(24시간) 넘게 접속하지 않은 장수를 해고할 수 있다
+const amCommander = () => !!(me() && me().faction && commanderOf(me().faction) === me());
+const fireable = g => amCommander() && g !== me() && g.faction === me().faction && g.seenAt > 0 && Date.now() - g.seenAt >= RULES.commander.fireOffline;
+const agoText = t => { const m = Math.floor((Date.now() - t) / MIN); return m < 60 ? `${Math.max(1, m)}분 전` : m < 24 * 60 ? `${Math.floor(m / 60)}시간 전` : `${Math.floor(m / 60 / 24)}일 ${Math.floor(m / 60) % 24}시간 전`; };
 function memberDialog(id) {
   const g = S.generals[id];
   if (!g) return;
+  const seenRow = amCommander() && g !== me() && g.faction === me().faction ? `<tr><th>마지막 접속</th><td>${g.seenAt ? `${agoText(g.seenAt)}${fireable(g) ? ' 💤' : ''}` : '<span class="dim">기록 없음</span>'}</td></tr>` : '';
   const f = factionById(g.faction), t = GENERAL_TRAITS[g.trait], none = '<span class="dim">없음</span>';
   const tierNo = t ? { SSR: 0, SR: 1, R: 2, N: 3 }[t.tier] : 3; // 색은 특성 확률표(.oddsTier)와 같다
   const eff = effStats(g);
@@ -2163,9 +2168,14 @@ function memberDialog(id) {
       <tr><th>공적</th><td>${fmt(g.merit)}</td></tr>
       <tr><th>훈장</th><td>${(S.medals && S.medals[id]) || 0}개</td></tr>
       ${allyOrders(g) ? `<tr><th>예약</th><td>${allyOrders(g)}</td></tr>` : ''}
+      ${seenRow}
     </table>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+    <div class="modalBtns">${fireable(g) ? '<button id="mFire" class="danger btnLeft">해고</button>' : ''}<button data-close class="main">닫기</button></div>`);
   $('#mFace').replaceWith(faceCanvas(g.face || FACES[0].id));
+  if ($('#mFire')) $('#mFire').onclick = async () => {
+    if (!confirm(`${g.name}을(를) 해고할까요?\n- ${RULES.commander.fireOffline / HOUR}시간 넘게 접속하지 않은 장수예요.\n- 재야가 되고 거느리던 병력은 흩어져요. 공적은 그대로예요.`)) return;
+    if (await call('cmdFire', { to: g.id })) { closeModal(); renderAll(); }
+  };
   $('#modalBox').classList.add('memberBox');
 }
 
