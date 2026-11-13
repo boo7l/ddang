@@ -1263,7 +1263,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
   const rows = [...EXPLORE].sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   openModal(`
     <h2>탐색 확률표</h2>
-    <p>금 ${RULES.myGoldCost.explore} · 1턴 · 공적 +${RULES.merit.explore}</p>
+    <p>금 ${RULES.myGoldCost.explore} · 공적 +${RULES.merit.explore}</p>
     <table class="oddsTable">${rows}</table>
     <div class="modalBtns"><button id="exploreBack" class="main">◀ ${backName}</button></div>`, box => {
     box.querySelector('#exploreBack').onclick = () => (typeof from === 'function' ? from() : helpDialog(from));
