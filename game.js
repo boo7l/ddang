@@ -891,7 +891,8 @@ const draftLockUnit = (p, at) => {
   if (last === 'guard') return GUARD_UNIT;
   return p.troops > 0 ? p.unitType : null;
 };
-const draftReserve = unit => { try { localStorage.setItem(DRAFT_LAST_KEY, unit === GUARD_UNIT ? 'guard' : 'own'); } catch (e) { /* 이번만 */ } reserve(unit === GUARD_UNIT ? { cmd: 'draft', unit: GUARD_UNIT, who: 'guard' } : { cmd: 'draft', unit }); };
+// 징병을 한 번 하면 병과 고정을 자동으로 켠다 (2026-11-14 기획자)
+const draftReserve = unit => { draftLock = true; try { localStorage.setItem(DRAFT_LAST_KEY, unit === GUARD_UNIT ? 'guard' : 'own'); localStorage.setItem(DRAFT_LOCK_KEY, '1'); } catch (e) { /* 이번만 */ } reserve(unit === GUARD_UNIT ? { cmd: 'draft', unit: GUARD_UNIT, who: 'guard' } : { cmd: 'draft', unit }); };
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
   const lockUnit = draftLockUnit(p, slot);
