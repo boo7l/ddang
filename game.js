@@ -2026,8 +2026,8 @@ function renderCommander() {
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
     body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
-    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button></p>`
-      : `<p class="cmds three"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button></p>`;
+    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button><button data-cmdr="fire">💤 해고</button></p>`
+      : `<p class="cmds three"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button><button data-cmdr="fire">💤 해고</button></p>`;
   } else if (!c) {
     // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
     const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
@@ -2048,6 +2048,7 @@ function renderCommander() {
     if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); renderAll(); return; }
     if (a === 'cmdHandPick') { commanderHandDialog(); return; }
     if (a === 'notice') { noticeDialog(); return; }
+    if (a === 'fire') { fireDialog(); return; }
     if (a === 'ally') { allyDialog(); return; }
     if (a === 'allyAccept' || a === 'allyReject') { const from = b.dataset.from; if (a === 'allyAccept' && !confirm(`${fName(from)} 세력과 동맹을 맺을까요?`)) return; await call(a, { from }); renderAll(); return; }
     if (a === 'policy') { policyDialog(); return; }
@@ -2114,6 +2115,23 @@ function allyDialog() {
 }
 // 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
 const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction]; return !pol ? '' : c.id === pol.def ? '🛡' : c.id === pol.atk ? '🎯' : ''; };
+// 💤 해고 창 (2026-11-13 기획자: 대도독 칸에서): 세력 장수를 오래 접속 안 한 순으로. 24시간 넘은 장수만 [해고]
+function fireDialog() {
+  const p = me(), R = RULES.commander;
+  const list = membersOf(p.faction).filter(g => g !== p).sort((a, b) => (a.seenAt || 0) - (b.seenAt || 0));
+  openModal(`<h2>💤 해고</h2>
+    <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (공적은 그대로)</p>
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="${fireable(g) ? '' : 'dim'}">${g.seenAt ? agoText(g.seenAt) : '기록 없음'}${fireable(g) ? ' 💤' : ''}</td><td>${fireable(g) ? `<button class="mini danger" data-fire="${esc(g.id)}">해고</button>` : ''}</td></tr>`).join('')}</table></div>`
+      : '<p class="dim">다른 장수가 없어요.</p>'}
+    <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
+    box.onclick = async e => {
+      const b = e.target.closest('[data-fire]'); if (!b) return;
+      const g = S.generals[b.dataset.fire];
+      if (!g || !confirm(`${g.name}을(를) 해고할까요?\n재야가 되고 거느리던 병력은 흩어져요. 공적은 그대로예요.`)) return;
+      if (await call('cmdFire', { to: g.id })) { renderAll(); fireDialog(); }
+    };
+  });
+}
 // 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
 function commanderHandDialog() {
   const p = me(), list = membersOf(p.faction).filter(g => g !== p && (g.merit || 0) >= RULES.commander.minMerit).sort((a, b) => b.merit - a.merit);
@@ -2170,12 +2188,8 @@ function memberDialog(id) {
       ${allyOrders(g) ? `<tr><th>예약</th><td>${allyOrders(g)}</td></tr>` : ''}
       ${seenRow}
     </table>
-    <div class="modalBtns">${fireable(g) ? '<button id="mFire" class="danger btnLeft">해고</button>' : ''}<button data-close class="main">닫기</button></div>`);
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
   $('#mFace').replaceWith(faceCanvas(g.face || FACES[0].id));
-  if ($('#mFire')) $('#mFire').onclick = async () => {
-    if (!confirm(`${g.name}을(를) 해고할까요?\n- ${RULES.commander.fireOffline / HOUR}시간 넘게 접속하지 않은 장수예요.\n- 재야가 되고 거느리던 병력은 흩어져요. 공적은 그대로예요.`)) return;
-    if (await call('cmdFire', { to: g.id })) { closeModal(); renderAll(); }
-  };
   $('#modalBox').classList.add('memberBox');
 }
 
