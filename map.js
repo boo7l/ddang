@@ -100,7 +100,8 @@ function renderLegend() {
   const f = legendPick && MAP.factions.find(x => x.id === legendPick), t = f && traitOf(f.id).name ? traitOf(f.id) : null; // 지도 파일 특성 먼저 (2026-11-06)
   const members = f && typeof S !== 'undefined' && S ? Object.values(S.generals).filter(g => g.faction === f.id).length : 0;
   box.innerHTML = !f ? '세력을 누르면 정보가 보여요.'
-    : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? `<span class="tNameW">${t.name}</span>` : '없음'}${t ? `<br>${t.desc}` : ''}`;
+    : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? `<span class="tNameW">${t.name}</span>` : '없음'}${t ? `<br>${t.desc}` : ''}`
+      + (typeof factionAllyText === 'function' && seasonNow() >= RULES.commander.fromSeason ? `<br><b>동맹</b> : ${factionAllyText(f.id).replace(/<br>/g, ', ')}` : ''); // 동맹 (2026-11-14, 특성 아래)
 }
 
 function renderCheck() {
