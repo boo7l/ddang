@@ -107,7 +107,7 @@ const RULES = {
   regionEventRest: 6, // 숨은 규칙 (화면·도움말에 적지 않는다): 이벤트가 터진 구역은 이 턴 수(반년) 동안 이벤트가 안 일어난다
   // 수입 (임시값)
   goldBase: 100, goldPerComm: 0.8, // 금 수입 = (100 + 장수가 있는 성의 상업 × 0.8) × (1 + 공적 × meritIncome) × 치안 보정 (2026-10-31, 그 전엔 상업 × 1. 저점을 올리고 고점을 낮춤)
-  crowdCap: { 1: 10, 2: 15, 3: 20 }, // 성 정원 (2026-11-12 시즌 7부터, 시범 도입이라 널널하게): 넘으면 그 성 장수 모두 금 수입의 상업 몫 × (정원 ÷ 인원)². 기본 100은 그대로. 농성 짱박기 대책
+  crowdCap: { 1: 10, 2: 15, 3: 20 }, crowdPow: 1.5, // crowdPow: (정원 ÷ 인원)의 지수 (2026-11-13 기획자 2 → 1.5) // 성 정원 (2026-11-12 시즌 7부터, 시범 도입이라 널널하게): 넘으면 그 성 장수 모두 금 수입의 상업 몫 × (정원 ÷ 인원)². 기본 100은 그대로. 농성 짱박기 대책
   crowdFromSeason: 7,
   // 대도독 (2026-11-13, 시즌 7부터, 기획서 "대도독 · 동맹"): 세력마다 한 명. 자격이 되는 장수가 직접 수락해야 오른다
   commander: { fromSeason: 7, minMerit: 500, minMembers: 5, offline: 12 * 60 * 60 * 1000, handWait: 60 * 60 * 1000, seenEvery: 10 * 60 * 1000, noticeLen: 80, allyMin: 12, allyMax: 36, allyMax2: 2, allyBreakTurns: 5, allyBreakMerit: 30, allyBreakMeritCmd: 80 }, // 동맹 (2026-11-13): 기간 12~36턴, 세력당 2개, 파기하면 5턴 뒤 풀림 + 파기한 세력 장수 공적 -30 · 대도독 -80(포함, 2026-11-13 100 → 80) // noticeLen: 공지 글자 수 // offline: 이만큼(실제 시간) 접속이 없으면 자리를 잃는다. handWait: 넘겨받을 장수가 수락할 시간. seenEvery: 마지막 접속 시각을 적는 간격
@@ -259,8 +259,8 @@ function turnAfter(t, i) {
 
 // 금 수입(1·4·7·10월): 장수가 있는 성의 상업에 따라 정해진다
 // 장수의 금 수입: 있는 성의 상업에 공적 보너스와 치안 보정을 곱한다
-// 정원 초과 (2026-11-12, 시즌 7부터): 상업 몫에 곱하는 비율 = (정원 ÷ 인원)², 정원 안이면 1. 인원 = 그 성에 머무는 그 세력 장수 수
-const crowdRate = (grade, count) => (seasonNow() >= RULES.crowdFromSeason && count > RULES.crowdCap[grade] ? (RULES.crowdCap[grade] / count) ** 2 : 1);
+// 정원 초과 (2026-11-12, 시즌 7부터): 상업 몫에 곱하는 비율 = (정원 ÷ 인원)^crowdPow (1.5, 2026-11-13 2에서), 정원 안이면 1. 인원 = 그 성에 머무는 그 세력 장수 수
+const crowdRate = (grade, count) => (seasonNow() >= RULES.crowdFromSeason && count > RULES.crowdCap[grade] ? (RULES.crowdCap[grade] / count) ** RULES.crowdPow : 1);
 const goldIncome = (cs, merit = 0, crowd = 1) => Math.floor((RULES.goldBase + cs.comm * RULES.goldPerComm * crowd) * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
 // 수확(4·10월): 그 성의 농업에 따라 군량이 들어온다 (상한까지만)
 function harvestFood(cs, grade, rate = 0) { // rate: 지역 이벤트(풍작 +0.3 · 가뭄 -0.3)로 이번 수확량이 바뀌는 비율
