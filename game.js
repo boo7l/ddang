@@ -527,7 +527,7 @@ function rankRows(list) {
 }
 
 function rankDialog() {
-  if (!S) return;
+  if (!S || rankLocked()) return;
   const list = meritRanking(), rows = rankRows(list);
   openModal(`<h2>🏆 공적 순위 <span class="dim small">· ${dateText(S.turn)} · 상위 10명 (장수 ${list.length}명)</span></h2>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table></div>` : '<p class="dim">아직 장수가 없어요.</p>'}
@@ -2615,7 +2615,8 @@ $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 // 정보: 이번 시즌 장수가 없으면 흐리게 (2026-11-07, 그 전엔 숨김). 메인 화면에서 아직 세계를 안 받았으면 받아 와서 정한다
-const menuRecordSync = () => { $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S; };
+const menuRecordSync = () => { $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
+const rankLocked = () => !!preparing && !IS_ADMIN; // 문이 닫혀 있으면 관리자 말고는 순위를 못 연다 (2026-11-13 기획자: 관리자 테스트가 보이지 않게)
 $('#menuBtn').onclick = async e => {
   e.stopPropagation();
   menuRecordSync();
