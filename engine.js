@@ -116,6 +116,17 @@ function ensureCities() {
   for (const c of MAP.cities) for (const k of Object.keys(DOMESTIC)) S.cities[c.id][k] = Math.min(S.cities[c.id][k], devMax(c.grade, k));
 }
 
+// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두 공적 +30, 대도독 +50 (한 턴 최대와 상관없이)
+function destroyReward(fid, gone) {
+  if (seasonNow() < 7) return;
+  const R = RULES.destroyMerit, cmd = commanderOf(fid), name = factionById(gone).name;
+  for (const g of membersOf(fid)) {
+    const m = g === cmd ? R.commander : R.member;
+    g.merit = (g.merit || 0) + m;
+    addLog(g, `☆ ${name} 세력을 멸망시켰다. 공적 +${m} (${fmt(g.merit)})`);
+  }
+  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다! 우리 세력 장수 모두 공적 +${R.member}${cmd ? ` (대도독 +${R.commander})` : ""}`);
+}
 // 성의 주인. 처음엔 지도 파일대로, 점령하면 S.owners에 기록해서 지도에 덮어쓴다
 function applyOwners() {
   for (const c of MAP.cities) if (c.id in S.owners) c.faction = S.owners[c.id];
@@ -126,6 +137,7 @@ function setOwner(c, fid) {
   S.owners[c.id] = fid;
   if (before !== fid) (S.ownerLog = S.ownerLog || []).push([S.turn, c.id, fid || '']);
   if (before && citiesOfFaction(before).length === 0) logAll(`☆ ${factionById(before).name} 세력이 멸망했다.`);
+  if (before && fid && citiesOfFaction(before).length === 0) destroyReward(fid, before);
   checkUnify(fid);
 }
 

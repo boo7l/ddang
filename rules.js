@@ -54,6 +54,7 @@ const RULES = {
     // 시즌 7부터 (2026-11-12 기획자): 함락 30 → 20, 공백지 30 → 20, 일기토 승리·책략·돌격 20 → 15
     get win() { return seasonNow() >= 7 ? 20 : 30; }, get blank() { return seasonNow() >= 7 ? 20 : 30; },
     get duel() { return seasonNow() >= 7 ? 15 : 20; }, get scheme() { return seasonNow() >= 7 ? 15 : 20; }, get charge() { return seasonNow() >= 7 ? 15 : 20; } }, // 2026-10-28 계략은 시도 10 + 성공 20. 2026-10-31 공백지 차지 50 → 30, 일기토 승리·책략 성공 25 → 20
+  destroyMerit: { member: 30, commander: 50 }, // 적 세력을 멸망시킨 세력 장수 모두 / 대도독 (2026-11-13, 시즌 7부터, engine destroyReward)
   meritTurnMax: 100,        // 한 장수가 한 턴에 얻는 공적의 최대치 (2026-10-28: 함락·일기토·책략·피해·성벽 공적이 겹쳐도 100까지)
   meritPerKill: 300,        // 피해 공적: 전투에서 없앤 적 병력 300명당 공적 1 (공격·수비 모두, 2026-10-26. 2026-10-31 200명에서)
   meritPerWall: 30,         // 성벽 공적: 성벽 공격으로 깎은 방어 30당 공적 1 (2026-10-26)
