@@ -1452,7 +1452,7 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (공적은 �
   if (!g.faction) return '세력에 소속되어 있지 않아요.';
   const f = factionById(g.faction), city = cityById(g.city);
   const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
-  const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 공적 -10% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
+  const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 공적 -15% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
   if (cut > 0) g.merit -= cut;
   Object.assign(g, { faction: null, city: null, troops: 0, unitType: null });
   g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait }; // 떠난 세력에는 한동안 다시 못 들어간다
