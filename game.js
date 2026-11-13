@@ -1249,7 +1249,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
   const text = {
     gold: e => `금 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
     food: e => `그 성 군량 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
-    troops: e => `병력 +${range(e)} <span class="dim">(지금 병종, 없으면 보병)</span>`,
+    troops: e => `병력 +${range(e)} <span class="dim">(지금 병종, 없으면 보병)</span><br>내 병력이 상한이면 수비대로 배치`,
     item: () => '장비 하나 (명마·명검·서적) 획득',
     feast: e => `그 성 치안 +${e.peace}, 농업·상업 각각 +${e.min}~${e.max}`,
     none: () => '아무 일 없음',

@@ -1129,10 +1129,15 @@ function runExplore(g) {
       break;
     }
     case 'troops': {
-      const n = Math.min(randInt(e.min, e.max), troopsMax(g) - g.troops);
+      const all = randInt(e.min, e.max), n = Math.max(0, Math.min(all, troopsMax(g) - g.troops));
       if (!g.unitType) g.unitType = '보병'; // 병사가 없던 장수에게 온 의병은 보병
       g.troops += n;
-      text = n > 0 ? `소문을 들은 의병 ${fmt(n)}명이 찾아와 합류했다!` : '의병들이 찾아왔지만 더 거느릴 수 없어 돌려보냈다.';
+      // 내 병력이 상한이라 못 받은 의병은 그 성(우리 세력 성) 수비대로 (2026-11-13 기획자). 수비대 병종 그대로, 성 규모별 최대치까지
+      const city = cityById(g.city), cs = S.cities[g.city];
+      const toGuard = city && city.faction === g.faction ? Math.max(0, Math.min(all - n, RULES.guardMax[city.grade] - (cs.guard || 0))) : 0;
+      if (toGuard > 0) { cs.guard = (cs.guard || 0) + toGuard; cs.guardType = cs.guardType || RULES.guardUnit.type; }
+      const guardText = toGuard > 0 ? `${n > 0 ? ' ' : ''}${city.name} 수비대에 ${fmt(toGuard)}명을 배치했다. (${fmt(cs.guard)}/${fmt(RULES.guardMax[city.grade])})` : '';
+      text = n > 0 ? `소문을 들은 의병 ${fmt(n)}명이 찾아와 합류했다!${guardText}` : toGuard > 0 ? `소문을 들은 의병들이 찾아왔다. 더 거느릴 수 없어 ${guardText}` : '의병들이 찾아왔지만 더 거느릴 수 없어 돌려보냈다.';
       break;
     }
     case 'item': {
