@@ -1197,15 +1197,19 @@ function helpDialog(page = 0) {
       <li>공적 ${fmt(R.minMerit)} 이상인 같은 세력 장수에게 <b>위임</b>할 수 있어요. 받는 장수가 ${R.handWait / (60 * MIN)}시간 안에 수락해야 넘어가요.</li>
       <li>직접 <b>반납</b>할 수 있어요. ${R.offline / (60 * MIN)}시간 넘게 접속하지 않거나, 공적이 ${fmt(R.minMerit)} 아래로 떨어지거나, 세력 장수가 ${R.minMembers}명 아래로 줄면 자리를 잃어요.</li>
       <li>대도독은 이름 옆에 🚩가 붙어요.</li></ul>
-      <p class="helpSub">📌 공지 · 🧭 방침</p><ul>
-      <li><b>공지</b>: 세력 채팅 맨 위에 고정돼요. (${R.noticeLen}자)</li>
-      <li><b>방침</b>: 방어할 성과 공격 목표를 하나씩 정하면 우리 세력 지도에 🛡 · 🎯로 표시돼요. 안내일 뿐 강제는 없어요.</li></ul>
+      <p class="helpSub">📌 공지</p><ul>
+      <li>세력 채팅 맨 위에 고정돼요. (${R.noticeLen}자)</li></ul>
+      <p class="helpSub">🧭 방침</p><ul>
+      <li>방어할 성과 공격 목표를 하나씩 정하면 우리 세력 지도에 🛡 · 🎯로 표시돼요. 안내일 뿐 강제는 없어요.</li></ul>
       <p class="helpSub">🤝 동맹</p><ul>
       <li>양쪽 세력 모두 대도독이 있어야 해요. 기간을 ${R.allyMin}~${R.allyMax}턴 중에 정해 제안하고, 상대 대도독이 ${R.handWait / (60 * MIN)}시간 안에 수락하면 맺어져요.</li>
       <li>동맹 중에는 서로 <b>출진 · 파괴 · 유언</b>을 할 수 없어요. 예약은 되지만 실행할 때 막히고, 금 · 군량은 들지 않아요. 첩보는 돼요.</li>
       <li>세력당 ${R.allyMax2}개까지 맺을 수 있어요.</li>
       <li><b>파기</b>하면 ${R.allyBreakTurns}턴 뒤에 풀려요. (그동안은 아직 동맹) 파기한 세력 장수 모두 공적 -${R.allyBreakMerit}, 대도독은 -${R.allyBreakMeritCmd}예요.</li>
       <li>기간이 끝나서 풀리면 벌칙은 없어요.</li></ul>
+      <p class="helpSub">🚪 해고</p><ul>
+      <li>${R.fireOffline / HOUR}시간 넘게 접속하지 않은 세력 장수를 해고할 수 있어요.</li>
+      <li>해고된 장수는 재야가 되고 거느리던 병력은 흩어져요. 공적은 그대로예요.</li></ul>
     </div>`)(RULES.commander)]] : []),
     // 작은 팁 (2026-11-10): 제목 상자만 보이고, 누르면 펼쳐지고 다시 누르면 접힌다 (details)
     ['💡 작은 팁', `<div class="tipBoxes">
