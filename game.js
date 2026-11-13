@@ -881,11 +881,21 @@ function unitAtSlot(p, i) {
 const DRAFT_LOCK_KEY = 'ddang-draft-lock';
 let draftLock = false;
 try { draftLock = localStorage.getItem(DRAFT_LOCK_KEY) === '1'; } catch (e) { /* 저장소를 못 쓰면 꺼진 채 */ }
+// 수비대도 병과처럼 고정할 수 있다 (2026-11-14 기획자): 고정 대상 = 이 칸 앞의 마지막 징병 예약(수비대 징병이면 '수비대'),
+// 없으면 이 브라우저에서 마지막으로 한 징병이 수비대였을 때 '수비대', 아니면 지금 병사가 있을 때 지금 병종
+const DRAFT_LAST_KEY = 'ddang-draft-last', GUARD_UNIT = '수비대';
+const draftLockUnit = (p, at) => {
+  const q = p.queue.slice(0, at).reverse().find(o => o && o.cmd === 'draft');
+  if (q) return q.who === 'guard' ? GUARD_UNIT : q.unit;
+  let last = ''; try { last = localStorage.getItem(DRAFT_LAST_KEY) || ''; } catch (e) { /* 없음 */ }
+  if (last === 'guard') return GUARD_UNIT;
+  return p.troops > 0 ? p.unitType : null;
+};
+const draftReserve = unit => { try { localStorage.setItem(DRAFT_LAST_KEY, unit === GUARD_UNIT ? 'guard' : 'own'); } catch (e) { /* 이번만 */ } reserve(unit === GUARD_UNIT ? { cmd: 'draft', unit: GUARD_UNIT, who: 'guard' } : { cmd: 'draft', unit }); };
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
-  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft' && o.who !== 'guard');
-  const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
-  if (draftLock && lockUnit) { reserve({ cmd: 'draft', unit: lockUnit }); return; }
+  const lockUnit = draftLockUnit(p, slot);
+  if (draftLock && lockUnit) { draftReserve(lockUnit); return; }
   const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
   const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
@@ -898,11 +908,11 @@ function draftDialog() {
     <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>`,
   opts, '예약', (t, box) => {
     if (box.querySelector('#draftGuard').checked) { // 수비대장 징병 (2026-11-04)
-      reserve({ cmd: 'draft', unit: '수비대', who: 'guard' }); // 2026-11-14: 수비대는 병종 없음
+      draftReserve(GUARD_UNIT); // 2026-11-14: 수비대는 병종 없음
       return;
     }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
-    reserve({ cmd: 'draft', unit: t });
+    draftReserve(t);
   }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
@@ -2315,8 +2325,7 @@ function renderCommands() {
       ${o ? `<button class="mini x" data-x="${i}" title="이 칸 비우기">✕</button>` : ''}</li>`).join('');
   const at = cityAtSlot(me(), slot);
   // 이 칸 때 가지고 있을 병종: 앞 칸에 징병 예약이 있으면 그 병종, 없으면 지금 병사가 있을 때만 지금 병종 ('병과 고정'은 이때만 보인다)
-  const queuedDraft = p.queue.slice(0, slot).reverse().find(o => o && o.cmd === 'draft' && o.who !== 'guard');
-  const lockUnit = queuedDraft ? queuedDraft.unit : p.troops > 0 ? p.unitType : null;
+  const lockUnit = draftLockUnit(p, slot); // 수비대도 고정 대상 (2026-11-14)
   const lockStat = trainLockStat(p, slot); // '능력 고정'은 고정할 능력치가 있을 때만 보인다
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기'), btn('rumor', '유언', '치안 낮추기'), btn('spy', '첩보', '적 성 엿보기')].join('');
@@ -2342,7 +2351,7 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
     <p class="sub">🌾 내정</p>
     <div class="cmds cg-dom">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
-    <p class="sub subRow">⚔️ 군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
+    <p class="sub subRow">⚔️ 군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종(수비대 포함)으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
     <div class="cmds cg-mil">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정` : '통솔')}
       ${btn('attack', '출진', attackBlocked(p, slot) ? COOL : '이웃 성 공격')}
