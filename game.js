@@ -1884,6 +1884,12 @@ function renderJoin() {
   renderJoinInfo();
 }
 
+// 세력 정보의 동맹 줄 (2026-11-14): 그 세력이 지금 맺은 동맹 · 남은 턴 (파기 선언이면 💔)
+const factionAllyText = fid => {
+  const al = (S.alliances || []).filter(x => (x.a === fid || x.b === fid) && S.turn < x.end);
+  return al.length ? al.map(x => `<b>${esc(fName(x.a === fid ? x.b : x.a))}</b> <span class="dim">(${x.breaker ? `💔 ${allyLeft(x)}턴 뒤 풀림` : `남은 ${allyLeft(x)}턴`})</span>`).join('<br>') : '<span class="dim">없음</span>';
+};
+
 function renderJoinInfo() {
   const box = $('#jInfo');
   if (!joinPick) { box.innerHTML = '<h2>세력 정보</h2><p class="dim">세력을 고르면 정보가 나와요.</p>'; return; }
@@ -1896,6 +1902,7 @@ function renderJoinInfo() {
       <tr><th>장수</th><td>${memberCount(f.id)}명 <span class="dim">(소속한 유저 수)</span></td></tr>
       <tr><th>성</th><td>${cities.length}개</td></tr>
       ${traitOf(f.id).name ? `<tr><th>특성</th><td><b class="hi">${traitOf(f.id).name}</b><br>${traitOf(f.id).desc}</td></tr>` : ''}
+      ${seasonNow() >= RULES.commander.fromSeason ? `<tr><th>동맹</th><td>${factionAllyText(f.id)}</td></tr>` : ''}
     </table>
     <p class="sub">시작할 성 <span class="dim">(지도에서 눌러도 돼요)</span></p>
     <div class="picks" id="jCities">${cities.map(c =>
