@@ -959,7 +959,8 @@ function trainDialog() {
       <span class="r">${bar(xp(st.key), expNeed(p.stats[st.key]))} <span class="dim">${xp(st.key)}/${expNeed(p.stats[st.key])}</span></span></label>`).join('');
   pickDialog('수련', `<p>능력치 하나를 골라 경험치를 집중해서 쌓습니다 (한 번에 ${RULES.statExp.train.min}~${RULES.statExp.train.max}). 경험치가 다 차면 그 능력치가 1 올라요.</p>
     <p class="dim">${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => {
-      try { localStorage.setItem(TRAIN_STAT_KEY, v); } catch (e) { /* 이번만 */ }
+      trainLock = true; // 수련을 한 번 하면 능력 고정을 자동으로 켠다 (2026-11-14 기획자, 징병과 같이)
+      try { localStorage.setItem(TRAIN_STAT_KEY, v); localStorage.setItem(TRAIN_LOCK_KEY, '1'); } catch (e) { /* 이번만 */ }
       reserve({ cmd: 'train', stat: v });
     });
   $('#modalBox .opts').classList.add('train');
