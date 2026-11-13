@@ -561,8 +561,8 @@ function runDomestic(g, key) {
 // ----- 징병 -----
 function runDraft(g, o) {
   const city = cityById(g.city), type = o.unit;
+  if (o.who === 'guard') return runGuardDraft(g); // 수비대는 병종 없음 (2026-11-14). 예전 예약(unit: 보병 등)도 그대로 된다
   if (!UNIT_TYPES[type]) return '없는 병종';
-  if (o.who === 'guard') return runGuardDraft(g, type);
   if (g.troops >= troopsMax(g) && g.unitType === type) return '병력이 이미 최대치';
   const peace = S.cities[g.city].peace, rate = peaceDraft(peace);
   if (!rate) return `${city.name}의 치안이 너무 낮음 (${peace}, ${RULES.peaceLow} 미만은 징병 불가)`;
@@ -587,26 +587,24 @@ function runDraft(g, o) {
 
 // 수비대 징병 (2026-11-04 시즌 5, 화면 이름은 '수비대 징병'. 부대 이름은 그대로 수비대장): 내 사병 대신 머무는 성의 수비대장 병력을 모은다. 양·금·치안·공적·경험치는 보통 징병과 같다.
 // 최대치는 RULES.guardMax (성 규모별). 다른 병종을 모으면 있던 수비대 병력은 흩어진다. 0인 성에서도 다시 모을 수 있다
-function runGuardDraft(g, type) {
+function runGuardDraft(g) {
   const city = cityById(g.city), cs = S.cities[g.city], max = RULES.guardMax[city.grade];
   if (city.faction !== g.faction) return '우리 세력 성이 아님';
   // 2026-11-11: 방어 모드 장수가 5명 꽉 차도 수비대 징병은 된다 (2026-11-04~11-10엔 막았다. 수비대장은 유저 5명 제한과 따로 늘 함께 싸우는데 충원만 막혀 버그처럼 보였다)
-  const curType = cs.guardType || RULES.guardUnit.type;
-  if ((cs.guard || 0) >= max && curType === type) return '수비대 병력이 이미 최대치';
+  if ((cs.guard || 0) >= max) return '수비대 병력이 이미 최대치';
   const peace = cs.peace, rate = peaceDraft(peace);
   if (!rate) return `${city.name}의 치안이 너무 낮음 (${peace}, ${RULES.peaceLow} 미만은 징병 불가)`;
   const why = pay(g, 'draft');
   if (why) return why;
   let note = '';
-  if ((cs.guard || 0) > 0 && curType !== type) { note = ` · 있던 수비대 ${curType} ${fmt(cs.guard)}명은 흩어졌다`; cs.guard = 0; }
+  delete cs.guardType; // 2026-11-14: 수비대는 병종 없음 (다른 병종이라 흩어지는 일도 없다)
   const t = traitOf(g.faction);
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0))), max - (cs.guard || 0));
+  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (gTrait(g).draft || 0))), max - (cs.guard || 0));
   cs.guard = (cs.guard || 0) + gain;
-  cs.guardType = type;
   addRecord(g, 'drafted', gain);
   const drop = Math.min(cs.peace, Math.round(gain / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0))));
   cs.peace -= drop;
-  addLog(g, `${city.name}: 수비대에 ${type}을 모았다. 수비대 +${fmt(gain)} (${fmt(cs.guard)}/${fmt(max)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
+  addLog(g, `${city.name}: 수비대를 모았다. 수비대 +${fmt(gain)} (${fmt(cs.guard)}/${fmt(max)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
   gainStatExp(g, 'lea', RULES.statExp.draft);
   return '';
@@ -665,7 +663,7 @@ function defendersOf(c) {
   if (c.faction && cs.guard > 0) {
     const st = RULES.guardStat;
     list.push({ name: '수비대장', troops: cs.guard, stats: { lea: st, war: st, int: st },
-      type: cs.guardType || RULES.guardUnit.type, guard: true, faction: c.faction }); // 병종은 수비대장 징병으로 바뀐다 (2026-11-04)
+      type: null, guard: true, faction: c.faction }); // 2026-11-14: 수비대는 병종 없음 (상성 없음) // 병종은 수비대장 징병으로 바뀐다 (2026-11-04)
   }
   for (const g of allGenerals()) {
     if (g.city === c.id && g.faction === c.faction && g.defense && g.troops > 0) list.push(unitOf(g));
@@ -862,7 +860,7 @@ function runField(g, att, from, to, mark) {
   sides.push(cur);
   const lines = [`⚔ ${from.name}~${to.name} 사이 야전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! 들판에서 ${factionById(foe.faction).name} 세력 ${foe.name} 부대와 맞닥뜨렸다!`];
   const notes = []; // [세력 id, 알림 문구]: 같은 세력 장수들에게
-  const tag = u => `${u.name}(${u.type} ${fmt(u.troops)})`;
+  const tag = u => `${u.name}(${u.type ? u.type + ' ' : ''}${fmt(u.troops)})`;
   const PER_SORTIE = ['dueled', 'schemed', 'charged']; // 출진 한 번(5합)에 한 번씩만 일어나는 것
   let n = 0;
   while (foe) {
@@ -966,7 +964,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
     const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다…` : '';
-    lines.push(`▶ ${d.name}(${d.type} ${fmt(d.troops)})과 맞붙었다${edge}`);
+    lines.push(`▶ ${d.name}(${d.type ? d.type + ' ' : ''}${fmt(d.troops)})과 맞붙었다${edge}`);
     const r = fightRounds(att, d, cs.wall, left);
     cs.wall -= r.pierced; // 개인 특성 관통맨: 합 중에 깎은 방어. 0이 돼도 수비 부대를 쓰러뜨려야 점령한다
     pierced += r.pierced;
@@ -1135,7 +1133,7 @@ function runExplore(g) {
       // 내 병력이 상한이라 못 받은 의병은 그 성(우리 세력 성) 수비대로 (2026-11-13 기획자). 수비대 병종 그대로, 성 규모별 최대치까지
       const city = cityById(g.city), cs = S.cities[g.city];
       const toGuard = city && city.faction === g.faction ? Math.max(0, Math.min(all - n, RULES.guardMax[city.grade] - (cs.guard || 0))) : 0;
-      if (toGuard > 0) { cs.guard = (cs.guard || 0) + toGuard; cs.guardType = cs.guardType || RULES.guardUnit.type; }
+      if (toGuard > 0) cs.guard = (cs.guard || 0) + toGuard;
       const guardNow = `(수비대 ${fmt(cs.guard || 0)}/${fmt(RULES.guardMax[city.grade])})`;
       text = !toGuard ? (n > 0 ? `소문을 들은 의병 ${fmt(n)}명이 찾아와 합류했다!` : '의병들이 찾아왔지만 더 거느릴 수 없어 돌려보냈다.')
         : n > 0 ? `소문을 들은 의병 ${fmt(n + toGuard)}명이 찾아왔다! ${fmt(n)}명은 부대에 합류하고, 남은 ${fmt(toGuard)}명은 ${city.name} 수비대에 배치했다. ${guardNow}`

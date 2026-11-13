@@ -159,7 +159,7 @@ const RULES = {
   matchup: 0.2,             // 상성: 이기는 병종 +20% (지는 병종 감점은 없음)
   matchupS7: 0.15,          // 시즌 7부터 +15% (2026-11-10 기획자, 시즌 7 패치노트에 넣음). matchupOf()
   warPer1: 0.0015,          // 병종과 상관없이 무력 1마다 전투력 +0.15%, 공격·수비 모두 (무력 100이면 +15%). 화면·패치노트에는 '10마다 +1.5%'. 2026-11-06 시즌 6: 10마다 +1%(10 단위로 끊음)에서. 2026-11-04 시즌 5: 20마다 +1%에서 10마다로
-  guardUnit: { type: '보병' },  // 수비대장의 기본 병종 (훈련도는 2026-11-06 기능째 지움)
+  guardUnit: { type: null },  // 2026-11-14 기획자: 수비대는 병종 없음 (상성 없음). 그 전: 기본 보병, 수비대 징병으로 바꿈. 수비대장의 기본 병종 (훈련도는 2026-11-06 기능째 지움)
 
   npcOnly: [],              // 플레이어가 고를 수 없는 세력 이름 (지금은 없음. 동탁 NPC는 보류)
   get resignMeritCut() { return seasonNow() >= 7 ? 0.15 : 0; }, // 하야하면 공적 -15% (2026-11-13 -10% → -15%) (시즌 7부터, 2026-11-11 기획자: 하야로 갈아타는 플레이 대가. 세력이 멸망해 재야가 되면 깎지 않는다)
@@ -419,13 +419,14 @@ const FACTION_TRAITS = {
 // 부대 하나: { name, troops, stats, type(병종) }
 // 부대 전투력 = 병력(곡선) × (0.5 + 병종 능력치 ÷ 120) (2026-11-04 시즌 5: 0.4 + ÷100에서, 고점을 살짝 내림 · 70 vs 110 차이 36% → 31%. 2026-10-25 0.5에서 0.4로 낮췄었음)
 function unitPower(u) {
-  const stat = u.stats[UNIT_TYPES[u.type].stat];
+  const ut = UNIT_TYPES[u.type], stat = ut ? u.stats[ut.stat] : u.stats.lea; // 수비대는 병종이 없다 (2026-11-14, 능력치는 모두 같음)
   const c = RULES.troopCurve, eff = u.troops > 0 ? c.ref * Math.pow(u.troops / c.ref, c.exp) : 0; // 병력 곡선
   return eff * (0.5 + stat / 120);
 }
 // 상성 보정: a가 b에게 강하면 1.2 (시즌 7부터 1.15). 약할 때 깎는 것은 없다 (너무 세서 뺐다)
 function matchupOf(a, b) {
   const season = typeof S !== 'undefined' && S ? S.season || 1 : 1; // 전투 시뮬레이터처럼 S가 없으면 지금 값
+  if (!UNIT_TYPES[a.type] || !UNIT_TYPES[b.type]) return 1; // 병종 없는 수비대는 상성을 주지도 받지도 않는다 (2026-11-14)
   if (UNIT_TYPES[a.type].beats === b.type) return 1 + (season >= 7 ? RULES.matchupS7 : RULES.matchup);
   return 1;
 }

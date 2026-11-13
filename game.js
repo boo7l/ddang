@@ -835,7 +835,7 @@ function pickMap(title, ids, homeId, picked, onPick) {
 // 첩보가 유효한 성은 수비 장수도 이름·병종·병력까지 (2026-10-30)
 function defenseText(c, defs, sep) {
   const ours = c.faction === me().faction || !!(S.cities[c.id] || {}).spied;
-  const out = ours ? defs.map(d => (d.guard ? `<span class="guardDef">${esc(d.name)} · ${d.type} ${fmt(d.troops)}</span>` : `${esc(d.name)} · ${d.type} ${fmt(d.troops)}`)) : []; // 수비대장은 살짝 회색 (2026-11-06)
+  const out = ours ? defs.map(d => (d.guard ? `<span class="guardDef">${esc(d.name)} · ${fmt(d.troops)}</span>` : `${esc(d.name)} · ${d.type} ${fmt(d.troops)}`)) : []; // 수비대장은 살짝 회색 (2026-11-06)
   if (!ours && defs.some(d => d.guard)) out.push('<span class="guardDef">수비대 있음</span>'); // 첩보가 없으면 수비대도 있는지만 (2026-11-04)
   if (!ours && defs.some(d => !d.guard)) out.push('장수 수비 있음');
   return out.join(sep);
@@ -889,7 +889,7 @@ function draftDialog() {
   const lea = effStats(p).lea, bonus = Math.floor(p.merit * RULES.draftPerMerit);
   const lo = lea * RULES.draftPerLea.min + bonus, hi = lea * RULES.draftPerLea.max + bonus;
   const statName = k => STATS.find(s => s.key === k).name;
-  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gType = gcs.guardType || RULES.guardUnit.type, gMax = RULES.guardMax[from.grade], gFull = false; // 이 성 수비대장. 2026-11-11부터 방어 모드 장수가 꽉 차도 수비대 징병이 된다
+  const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gMax = RULES.guardMax[from.grade], gFull = false; // 이 성 수비대장. 2026-11-11부터 방어 모드 장수가 꽉 차도 수비대 징병이 된다
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
@@ -898,22 +898,20 @@ function draftDialog() {
     <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>`,
   opts, '예약', (t, box) => {
     if (box.querySelector('#draftGuard').checked) { // 수비대장 징병 (2026-11-04)
-      if (gNow > 0 && t !== gType && !confirm(`수비대에 ${t}을 모으면 지금 있는 수비대 ${gType} ${fmt(gNow)}명은 모두 흩어져요. 예약할까요?`)) return false;
-      reserve({ cmd: 'draft', unit: t, who: 'guard' });
+      reserve({ cmd: 'draft', unit: '수비대', who: 'guard' }); // 2026-11-14: 수비대는 병종 없음
       return;
     }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     reserve({ cmd: 'draft', unit: t });
-  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${gType} ${fmt(gNow)} / ${fmt(gMax)})</span></label>
+  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
   const ownNow = $('#draftNow').textContent;
   gBox.onchange = () => {
-    $('#draftNow').textContent = gBox.checked ? `다른 병종을 모으면 지금 수비대 병력은 모두 흩어져요.` : ownNow;
-    const want = gBox.checked ? gType : cur;
-    const r = $('#modalBox').querySelector(`input[name=tgt][value="${want}"]`);
-    if (r) { r.checked = true; $('#mOk').disabled = false; }
+    $('#draftNow').textContent = gBox.checked ? '수비대는 병종 없이 모아요.' : ownNow;
+    $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => { r.disabled = gBox.checked; }); // 수비대 징병이면 병종 선택을 막는다
+    if (gBox.checked) { const r = $('#modalBox').querySelector('input[name=tgt]'); if (r && !$('#modalBox').querySelector('input[name=tgt]:checked')) r.checked = true; $('#mOk').disabled = false; }
   };
 }
 
