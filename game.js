@@ -333,7 +333,7 @@ function testCardHtml() {
     const b = (a, l) => `<button class="mini" data-tas="${a}" data-tid="${esc(g.id)}">${l}</button>`;
     const h = (S.cmdHand || {})[g.faction], c = commanderOf(g.faction), t = now();
     if (h && h.to === g.id && h.until > t) return `<span class="small">⏳ 넘겨받기 대기 (${Math.max(1, Math.ceil((h.until - t) / MIN))}분)</span> ${b('cmdAccept', '수락')} ${b('cmdDecline', '사양')}`;
-    if (c === g) return `${allyTestHtml(g)}${b('cmdResign', '내려놓기')} <select class="tHand" data-tid="${esc(g.id)}"><option value="">넘기기…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
+    if (c === g) return `${allyTestHtml(g)}${b('cmdResign', '반납')} <select class="tHand" data-tid="${esc(g.id)}"><option value="">위임…</option>${gens.filter(o => o.faction === g.faction && o !== g).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select>`;
     if (!c) return b('cmdAccept', '도독직 수락');
     return '<span class="dim small">-</span>';
   };
@@ -1194,8 +1194,8 @@ function helpDialog(page = 0) {
       <p>세력마다 한 명 둘 수 있는 길잡이예요. 다른 장수에게 명령을 내리지는 못하고, 공지 · 방침 · 동맹을 맡아요. 대도독 칸은 명령 창 아래에 있어요.</p>
       <p class="helpSub">🚩 대도독 되기</p><ul>
       <li>공적 ${fmt(R.minMerit)} 이상이고 세력 장수가 ${R.minMembers}명 이상이면 <b>도독직 수락</b>으로 오를 수 있어요. 세력의 첫 대도독은 세력 공적 1위만 될 수 있어요.</li>
-      <li>공적 ${fmt(R.minMerit)} 이상인 같은 세력 장수에게 <b>넘길</b> 수 있어요. 받는 장수가 ${R.handWait / (60 * MIN)}시간 안에 수락해야 넘어가요.</li>
-      <li>직접 <b>내려놓을</b> 수 있어요. ${R.offline / (60 * MIN)}시간 넘게 접속하지 않거나, 공적이 ${fmt(R.minMerit)} 아래로 떨어지거나, 세력 장수가 ${R.minMembers}명 아래로 줄면 자리를 잃어요.</li>
+      <li>공적 ${fmt(R.minMerit)} 이상인 같은 세력 장수에게 <b>위임</b>할 수 있어요. 받는 장수가 ${R.handWait / (60 * MIN)}시간 안에 수락해야 넘어가요.</li>
+      <li>직접 <b>반납</b>할 수 있어요. ${R.offline / (60 * MIN)}시간 넘게 접속하지 않거나, 공적이 ${fmt(R.minMerit)} 아래로 떨어지거나, 세력 장수가 ${R.minMembers}명 아래로 줄면 자리를 잃어요.</li>
       <li>대도독은 이름 옆에 🚩가 붙어요.</li></ul>
       <p class="helpSub">📌 공지 · 🧭 방침</p><ul>
       <li><b>공지</b>: 세력 채팅 맨 위에 고정돼요. (${R.noticeLen}자)</li>
@@ -2012,7 +2012,7 @@ function renderAll() {
 }
 
 // 우리 세력 장수: 누가 어디에 얼마나 있는지 (공적 순). 남의 예약·금은 서버가 보내 주지 않는다
-// 대도독 칸 (2026-11-13, 시즌 7부터): 지금 대도독 · 넘겨받기 수락 · 도독직 수락 · 넘기기 · 내려놓기
+// 대도독 칸 (2026-11-13, 시즌 7부터): 지금 대도독 · 넘겨받기 수락 · 도독직 수락 · 해고 · 위임 · 반납
 function renderCommander() {
   const box = $('#cmdr'), p = me();
   if (!box) return;
@@ -2022,12 +2022,12 @@ function renderCommander() {
   const hand = h && h.until > t ? h : null, left = hand ? Math.max(1, Math.ceil((hand.until - t) / MIN)) : 0;
   const name = g => `<button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>`;
   let body = `<p>대도독: ${c ? `🚩 ${name(c)}` : '<span class="dim">없음</span>'}</p>`;
-  if (hand && hand.to === p.id) body += `<p>${esc(S.generals[hand.from] ? josa(S.generals[hand.from].name, '이가') : '')} 대도독을 넘기려 해요. <span class="dim">(${left}분 남음)</span></p>
+  if (hand && hand.to === p.id) body += `<p>${esc(S.generals[hand.from] ? josa(S.generals[hand.from].name, '이가') : '')} 대도독을 위임하려 해요. <span class="dim">(${left}분 남음)</span></p>
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
     body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
-    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 넘기는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="cmdHandCancel">넘기기 취소</button><button data-cmdr="cmdResign">내려놓기</button><button data-cmdr="fire">💤 해고</button></p>`
-      : `<p class="cmds three"><button data-cmdr="cmdHandPick">넘기기</button><button data-cmdr="cmdResign">내려놓기</button><button data-cmdr="fire">💤 해고</button></p>`;
+    body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 위임하는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="fire">해고</button><button data-cmdr="cmdHandCancel">위임 취소</button><button data-cmdr="cmdResign">반납</button></p>`
+      : `<p class="cmds three"><button data-cmdr="fire">해고</button><button data-cmdr="cmdHandPick">위임</button><button data-cmdr="cmdResign">반납</button></p>`;
   } else if (!c) {
     // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
     const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
@@ -2044,7 +2044,7 @@ function renderCommander() {
     const b = e.target.closest('[data-cmdr]'); if (!b || busy) return;
     const a = b.dataset.cmdr;
     if (a === 'cmdAccept' && !confirm(hand && hand.to === p.id ? '대도독을 넘겨받을까요?' : '대도독을 맡을까요?')) return;
-    if (a === 'cmdResign' && !confirm('대도독을 내려놓을까요?')) return;
+    if (a === 'cmdResign' && !confirm('대도독을 반납할까요?')) return;
     if (a === 'cmdHandCancel') { await call('cmdHand', { to: '' }); renderAll(); return; }
     if (a === 'cmdHandPick') { commanderHandDialog(); return; }
     if (a === 'notice') { noticeDialog(); return; }
@@ -2118,11 +2118,11 @@ const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction
 // 💤 해고 창 (2026-11-13 기획자: 대도독 칸에서): 세력 장수를 오래 접속 안 한 순으로. 24시간 넘은 장수만 [해고]
 function fireDialog() {
   const p = me(), R = RULES.commander;
-  const list = membersOf(p.faction).filter(g => g !== p).sort((a, b) => (a.seenAt || 0) - (b.seenAt || 0));
-  openModal(`<h2>💤 해고</h2>
+  const list = membersOf(p.faction).filter(fireable).sort((a, b) => a.seenAt - b.seenAt); // 24시간 넘은 장수만 (2026-11-13 기획자)
+  openModal(`<h2>해고</h2>
     <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (공적은 그대로)</p>
-    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="${fireable(g) ? '' : 'dim'}">${g.seenAt ? agoText(g.seenAt) : '기록 없음'}${fireable(g) ? ' 💤' : ''}</td><td>${fireable(g) ? `<button class="mini danger" data-fire="${esc(g.id)}">해고</button>` : ''}</td></tr>`).join('')}</table></div>`
-      : '<p class="dim">다른 장수가 없어요.</p>'}
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td>${agoText(g.seenAt)} 💤</td><td><button class="mini danger" data-fire="${esc(g.id)}">해고</button></td></tr>`).join('')}</table></div>`
+      : `<p class="dim">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수가 없어요.</p>`}
     <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
     box.onclick = async e => {
       const b = e.target.closest('[data-fire]'); if (!b) return;
@@ -2135,9 +2135,9 @@ function fireDialog() {
 // 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
 function commanderHandDialog() {
   const p = me(), list = membersOf(p.faction).filter(g => g !== p && (g.merit || 0) >= RULES.commander.minMerit).sort((a, b) => b.merit - a.merit);
-  openModal(`<h2>🚩 대도독 넘기기</h2>
+  openModal(`<h2>🚩 대도독 위임</h2>
     <p class="dim small">받는 장수가 ${RULES.commander.handWait / MIN}분 안에 수락하면 넘어가요.</p>
-    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>공적</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">넘기기</button></td></tr>`).join('')}</table></div>`
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>공적</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">위임</button></td></tr>`).join('')}</table></div>`
       : `<p class="dim">공적 ${fmt(RULES.commander.minMerit)} 이상인 장수가 없어요.</p>`}
     <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
     box.onclick = async e => { const b = e.target.closest('[data-hand]'); if (!b) return; const g = S.generals[b.dataset.hand]; if (!g || !confirm(`${g.name}에게 대도독을 넘길까요?`)) return; closeModal(); await call('cmdHand', { to: g.id }); renderAll(); };
