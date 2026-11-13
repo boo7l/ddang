@@ -465,7 +465,12 @@ const defensePower = (d, wall, a) => {
 // 일기토: 무력 높은 쪽이 이길 확률이 높다 (50% + 무력 차이 × 1%, 10~90%)
 // 책략·돌격 병력 배율 (2026-11-07 시즌 6): 쓰는 쪽 병력이 5,000보다 적으면 피해가 줄어든다 (2천 명 0.76배). 5,000 이상은 1배
 const troopScale = (u, R) => Math.min(1, Math.pow(Math.max(0, u.troops) / R.troopRef, R.troopExp));
-const duelWinRate = (myWar, theirWar) => Math.min(0.9, Math.max(0.1, 0.5 + (myWar - theirWar) / 100));
+// 일기토 승률 (2026-11-13 기획자, 시즌 7부터): 무력 차이 10까지는 1점당 1%, 10을 넘는 부분은 1점당 1.5% (최대 90%). 그 전: 1점당 1%
+const duelWinRate = (myWar, theirWar) => {
+  const d = myWar - theirWar, x = Math.abs(d);
+  const v = seasonNow() >= 7 && x > 10 ? 10 + (x - 10) * 1.5 : x;
+  return Math.min(0.9, Math.max(0.1, 0.5 + Math.sign(d) * v / 100));
+};
 
 // 공격 부대 하나와 수비 부대 하나가 남은 합 수(left)만큼 맞붙는다. 한쪽이 전멸하면 멈춘다.
 // 병력을 직접 줄이고 { used(쓴 합 수), lines(합마다 한 줄), atkLost, defLost }를 돌려준다
