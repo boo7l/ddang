@@ -1887,7 +1887,7 @@ function renderJoin() {
 // 세력 정보의 동맹 줄 (2026-11-14): 그 세력이 지금 맺은 동맹 · 남은 턴 (파기 선언이면 💔)
 const factionAllyText = fid => {
   const al = (S.alliances || []).filter(x => (x.a === fid || x.b === fid) && S.turn < x.end);
-  return al.length ? al.map(x => `<b>${esc(fName(x.a === fid ? x.b : x.a))}</b> <span class="dim">(${x.breaker ? `💔 ${allyLeft(x)}턴 뒤 풀림` : `남은 ${allyLeft(x)}턴`})</span>`).join('<br>') : '<span class="dim">없음</span>';
+  return al.length ? al.map(x => `<b>${esc(fName(x.a === fid ? x.b : x.a))}</b> <span class="dim">(${x.breaker ? `💔 ${allyLeft(x)}턴 뒤 풀림` : `${allyLeft(x)}턴 남음`})</span>`).join('<br>') : '<span class="dim">없음</span>';
 };
 
 function renderJoinInfo() {
@@ -2109,7 +2109,7 @@ const allyTag = c => (c.faction && me() && allied(me().faction, c.faction) ? ' <
 function allyBoxHtml(p, isCmd) {
   const al = myAllies(), now0 = now();
   const got = (S.allyOffers || []).filter(o => o.to === p.faction && o.until > now0);
-  let h = al.length ? `<p>🤝 동맹: ${al.map(x => `<b>${fName(x.other)}</b> <span class="dim">(${x.breaker ? `💔 ${allyLeft(x)}턴 뒤 풀림` : `남은 ${allyLeft(x)}턴`})</span>`).join(', ')}</p>` : '';
+  let h = al.length ? `<p>🤝 동맹: ${al.map(x => `<b>${fName(x.other)}</b> <span class="dim">(${x.breaker ? `💔 ${allyLeft(x)}턴 뒤 풀림` : `${allyLeft(x)}턴 남음`})</span>`).join(', ')}</p>` : '';
   for (const o of got) h += `<p class="allyOffer">🤝 <b>${fName(o.from)}</b> 세력이 ${o.turns}턴 동맹을 제안했어요 <span class="dim">(${Math.max(1, Math.ceil((o.until - now0) / MIN))}분 남음)</span>${isCmd ? ` <button class="mini" data-cmdr="allyAccept" data-from="${esc(o.from)}">수락</button> <button class="mini" data-cmdr="allyReject" data-from="${esc(o.from)}">거절</button>` : ' <span class="dim small">· 대도독이 정해요</span>'}</p>`;
   return h;
 }
@@ -2121,7 +2121,7 @@ function allyDialog() {
   openModal(`<h2>🤝 동맹</h2>
     <p class="dim small">양쪽 대도독이 있어야 맺을 수 있어요. 동맹 중에는 서로 출진·파괴·유언을 못 해요 (첩보는 돼요). 세력당 ${R.allyMax2}개까지.</p>
     <p class="sub">지금 동맹</p>
-    ${al.length ? al.map(x => `<p><b>${fName(x.other)}</b> <span class="dim">${x.breaker ? `💔 파기됨 · ${allyLeft(x)}턴 뒤(${dateText(x.end)}) 풀림` : `남은 ${allyLeft(x)}턴 · ${dateText(x.end)}에 풀림`}</span>${x.breaker ? '' : ` <button class="mini danger" data-break="${esc(x.other)}">파기</button>`}</p>`).join('') : '<p class="dim">없음</p>'}
+    ${al.length ? al.map(x => `<p><b>${fName(x.other)}</b> <span class="dim">${x.breaker ? `💔 파기됨 · ${allyLeft(x)}턴 뒤(${dateText(x.end)}) 풀림` : `${allyLeft(x)}턴 남음 · ${dateText(x.end)}에 풀림`}</span>${x.breaker ? '' : ` <button class="mini danger" data-break="${esc(x.other)}">파기</button>`}</p>`).join('') : '<p class="dim">없음</p>'}
     ${sent.length ? `<p class="sub">보낸 제안</p>${sent.map(o => `<p><b>${fName(o.to)}</b> ${o.turns}턴 <span class="dim">(${Math.max(1, Math.ceil((o.until - now0) / MIN))}분 남음)</span> <button class="mini" data-cancel="${esc(o.to)}">취소</button></p>`).join('')}` : ''}
     <p class="sub">새 제안</p>
     ${al.length >= R.allyMax2 ? `<p class="dim">동맹이 이미 ${R.allyMax2}개예요.</p>` : `<p><select id="aTo">${others.map(f => `<option value="${esc(f.id)}"${commanderOf(f.id) ? '' : ' disabled'}>${esc(f.name)}${commanderOf(f.id) ? '' : ' (대도독 없음)'}</option>`).join('')}</select>
