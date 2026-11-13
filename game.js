@@ -1128,7 +1128,7 @@ function helpDialog(page = 0) {
     ['💰 금과 군량', `<ul>
       <li><b>💰금</b> (내 것): 1·4·7·10월에 내가 있는 성의 <b>상업 수치</b>에 따라 들어와요. 징병·수련·상점·군량 구매에 써요. 내정은 금 없이 턴만 써요.</li>
       <li><b>🌾군량</b> (성마다 따로): 4·10월에 그 성의 <b>농업 수치</b>에 따라 수확하고, 병사는 머무는 성의 군량을 매달 먹어요. 출진하면 병력의 ${Math.round(RULES.marchFoodRate * 100)}%만큼이 소비돼요.</li>
-      ${seasonNow() >= RULES.crowdFromSeason ? `<li><b>🏯성 정원</b>: 한 성에 머무는 우리 세력 장수가 정원(소성 ${RULES.crowdCap[1]} · 중성 ${RULES.crowdCap[2]} · 대도시 ${RULES.crowdCap[3]}명)을 넘으면, 그 성 장수 모두의 금 수입 중 <b>상업 몫</b>이 줄어요. 많이 넘을수록 더 크게 줄고, 기본 수입 ${RULES.goldBase}은 그대로예요. 성 정보의 장수 칸에서 볼 수 있어요.</li>` : ''}</ul>`], // 성 정원 (2026-11-13 도움말, 시즌 7부터)
+      ${seasonNow() >= RULES.crowdFromSeason ? `<li><b>🏯성 정원</b>: 한 성에 머무는 우리 세력 장수가 정원(소성 ${RULES.crowdCap[1]} · 중성 ${RULES.crowdCap[2]} · 대도시 ${RULES.crowdCap[3]}명)을 넘으면, 그 성 장수 모두의 금 수입 중 <b>상업 몫</b>이 줄어요. 많이 넘을수록 더 크게 줄어요. 성 정보의 장수 칸에서 볼 수 있어요.</li>` : ''}</ul>`], // 성 정원 (2026-11-13 도움말, 시즌 7부터)
     ['📊 능력치', `<ul>
       <li><b>통솔</b>: 최대 병력(통솔 × ${RULES.troopsPerLea}), 징병, 치안, 보병</li>
       <li><b>무력</b>: 축성, 기병, <b>일기토</b>(양쪽 무력 ${RULES.duel.minWar} 이상이면 전투 중 가끔), <b>돌격</b>(무력 ${RULES.charge.minWar} 이상이면 전투 중 가끔), 모든 병종 전투력에 보너스 (무력 10마다 +${Math.round(RULES.warPer1 * 10 * 1000) / 10}%)</li>
