@@ -1255,7 +1255,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
     none: () => '아무 일 없음',
     bandit: e => `병사가 있으면 병력 -${Math.round(e.minRate * 100)}~${Math.round(e.maxRate * 100)}%<br>없으면 금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%`,
     master: e => `무작위 능력치 +${e.gain}`,
-    pouch: () => '특성 3장 중 하나로 바꾸거나 지금 특성 유지',
+    pouch: () => `특성 3장 중 하나로 바꾸거나 지금 특성 유지${seasonNow() >= 7 ? '<br>R 최소 1장 보장(다시 뽑기 포함)' : ''}`,
     spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
     treasure: () => `전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>${seasonNow() >= 7 ? '이미 보물이 있으면 교환 가능, 남은 보물이 없으면 장비 발견' : '이미 보물이 있으면 장비 발견'}`, // 시즌 7부터 바꾸기·팔기 (2026-11-13 표 문구)
   };
