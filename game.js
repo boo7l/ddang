@@ -2338,18 +2338,18 @@ function renderCommands() {
   $('#commands').innerHTML = `
     <h2>명령</h2>
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
-    <p class="sub">내정</p>
+    <p class="sub">🌾 내정</p>
     <div class="cmds cg-dom">${Object.entries(DOMESTIC).map(([k, d]) => btn(k, d.name, statName(d.stat))).join('')}</div>
-    <p class="sub subRow">군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
+    <p class="sub subRow">⚔️ 군사${lockUnit ? `<label class="lockSw" title="켜 두면 징병을 누르자마자 지금 병종으로 예약해요"><input type="checkbox" id="draftLock"${draftLock ? ' checked' : ''}> 병과 고정</label>` : ''}</p>
     <div class="cmds cg-mil">
       ${btn('draft', '징병', draftLock && lockUnit ? `${lockUnit} 고정` : '통솔')}
       ${btn('attack', '출진', attackBlocked(p, slot) ? COOL : '이웃 성 공격')}
       ${btn('move', '이동', '')}
       ${btn('siege', '병기', '')}
     </div>
-    <p class="sub">계략</p>
+    <p class="sub">🎭 계략</p>
     <div class="cmds cg-plot">${plot}</div>
-    ${etc ? `<p class="sub subRow">기타${lockStat ? `<label class="lockSw" title="켜 두면 수련을 누르자마자 지금 능력치로 예약해요"><input type="checkbox" id="trainLock"${trainLock ? ' checked' : ''}> 능력 고정</label>` : ''}</p>
+    ${etc ? `<p class="sub subRow">🎒 기타${lockStat ? `<label class="lockSw" title="켜 두면 수련을 누르자마자 지금 능력치로 예약해요"><input type="checkbox" id="trainLock"${trainLock ? ' checked' : ''}> 능력 고정</label>` : ''}</p>
     <div class="cmds cg-etc">${etc}</div>` : ''}
     <div class="qBtnsM">${qBtns}</div>
 `;
