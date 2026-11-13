@@ -1136,8 +1136,10 @@ function runExplore(g) {
       const city = cityById(g.city), cs = S.cities[g.city];
       const toGuard = city && city.faction === g.faction ? Math.max(0, Math.min(all - n, RULES.guardMax[city.grade] - (cs.guard || 0))) : 0;
       if (toGuard > 0) { cs.guard = (cs.guard || 0) + toGuard; cs.guardType = cs.guardType || RULES.guardUnit.type; }
-      const guardText = toGuard > 0 ? `${n > 0 ? ' ' : ''}${city.name} 수비대에 ${fmt(toGuard)}명을 배치했다. (${fmt(cs.guard)}/${fmt(RULES.guardMax[city.grade])})` : '';
-      text = n > 0 ? `소문을 들은 의병 ${fmt(n)}명이 찾아와 합류했다!${guardText}` : toGuard > 0 ? `소문을 들은 의병들이 찾아왔다. 더 거느릴 수 없어 ${guardText}` : '의병들이 찾아왔지만 더 거느릴 수 없어 돌려보냈다.';
+      const guardNow = `(수비대 ${fmt(cs.guard || 0)}/${fmt(RULES.guardMax[city.grade])})`;
+      text = !toGuard ? (n > 0 ? `소문을 들은 의병 ${fmt(n)}명이 찾아와 합류했다!` : '의병들이 찾아왔지만 더 거느릴 수 없어 돌려보냈다.')
+        : n > 0 ? `소문을 들은 의병 ${fmt(n + toGuard)}명이 찾아왔다! ${fmt(n)}명은 부대에 합류하고, 남은 ${fmt(toGuard)}명은 ${city.name} 수비대에 배치했다. ${guardNow}`
+        : `소문을 들은 의병 ${fmt(toGuard)}명이 찾아왔다! 부대가 가득 차 ${city.name} 수비대에 배치했다. ${guardNow}`;
       break;
     }
     case 'item': {
