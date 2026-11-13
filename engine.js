@@ -1264,6 +1264,7 @@ function runSpy(g, o) {
   addRecord(g, 'plotTry');
   if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0)) { // 책사 +8%p
     addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
+    if (PLOT.failExp) gainStatExp(g, 'int', PLOT.failExp); // 실패해도 지력 경험치 (시즌 7부터)
     return '';
   }
   const cs = S.cities[c.id], until = S.turn + RULES.spyTurns;
@@ -1297,6 +1298,7 @@ function runPlot(g, kind, o) {
   addMerit(g, RULES.merit.plot); // 계략은 시도만 해도 공적 10, 성공하면 20 더 (2026-10-28)
   if (r === 'fail') {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
+    if (PLOT.failExp) gainStatExp(g, 'int', PLOT.failExp); // 실패해도 지력 경험치 (시즌 7부터)
     return '';
   }
   // 개인 특성 침착 (2026-10-28): 그 성에 침착 장수가 머물면 계략 피해가 줄어든다 (여럿이어도 한 번만)
