@@ -867,7 +867,7 @@ function attackDialog() {
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
-    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${fmt(attackGoldOf(p.troops))} (병력 1,000당 ${RULES.attackGold.per1000}) · 출진 군량 ${fmt(marchFood(p.troops, p.faction))} (병력 × ${RULES.marchFoodRate}${traitOf(p.faction).food ? ` · 세력 특성 ${Math.round(traitOf(p.faction).food * 100)}%` : ''}, 결과와 상관없이 사라짐) · 예상은 지금 병력 기준</p>`,
+    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${fmt(attackGoldOf(p.troops))} (병력 1,000당 ${RULES.attackGold.per1000}) · 출진 군량 ${fmt(marchFood(p.troops, p.faction))} (병력 × ${RULES.marchFoodRate}${traitOf(p.faction).food ? ` · 세력 특성 ${Math.round(traitOf(p.faction).food * 100)}%` : ''}) · 예상은 지금 병력 기준</p>`,
   rows, '예약', v => reserve({ cmd: 'attack', to: v }), '', 'narrow');
 }
 
