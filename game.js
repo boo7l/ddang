@@ -781,14 +781,17 @@ function openModal(html, onMount) {
 function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox'); }
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
-function pickDialog(title, intro, opts, okText, onOk, extra = '', optsClass = '') { // optsClass: 'narrow'면 선택 줄의 가로 폭을 줄인다 (출진·이동·수송, 2026-11-08)
+// 비용 줄 (2026-11-14 기획자): "금 200 / 1,500" = 드는 값 / 지금 가진 값. 지금 모자라면 가볍게 "부족" 표시만 (예약이라 실행 때 모일 수도 있다)
+const costLine = (label, cost, have, note = '') => `<span class="costLine${cost != null && have < cost ? ' short' : ''}">${label} <b class="hi">${cost == null ? '-' : fmt(cost)}</b> / ${fmt(have)}${note ? ` <span class="dim small">(${note})</span>` : ''}${cost != null && have < cost ? ' <span class="shortTag">부족</span>' : ''}</span>`;
+// foot: 단추 줄 왼쪽에 쓰는 비용 줄 (2026-11-14, costLine)
+function pickDialog(title, intro, opts, okText, onOk, extra = '', optsClass = '', foot = '') { // optsClass: 'narrow'면 선택 줄의 가로 폭을 줄인다 (출진·이동·수송, 2026-11-08)
   openModal(`
     <h2>${title} <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
     ${intro}
     ${opts && pickIds(opts).length ? `<div class="pickHead"><span class="dim small">${pickIds(opts).length}곳 중에서 고르세요</span><button type="button" id="pickMapBtn">지도</button></div>` : ''}
     ${opts ? `<div class="opts${optsClass ? ' ' + optsClass : ''}">${opts}</div>` : '<p class="bad">고를 수 있는 대상이 없어요. (이 턴에 있을 성 기준)</p>'}
     ${extra}
-    <div class="modalBtns"><button data-close>취소</button><button id="mOk" class="main" disabled>${okText}</button></div>`, box => {
+    <div class="modalBtns">${foot ? `<div class="costFoot">${foot}</div>` : ''}<button data-close>취소</button><button id="mOk" class="main" disabled>${okText}</button></div>`, box => {
     box.querySelectorAll('input[name=tgt]').forEach(r => { r.onchange = () => { $('#mOk').disabled = false; }; });
     if (box.querySelector('input[name=tgt]:checked')) $('#mOk').disabled = false;
     $('#mOk').onclick = () => { const v = box.querySelector('input[name=tgt]:checked'); if (onOk(v.value, box) !== false) closeModal(); };
@@ -867,8 +870,9 @@ function attackDialog() {
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
-    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 금 ${fmt(attackGoldOf(p.troops))} (병력 1,000당 ${RULES.attackGold.per1000}) · 출진 군량 ${fmt(marchFood(p.troops, p.faction))} (병력 × ${RULES.marchFoodRate}${traitOf(p.faction).food ? ` · 세력 특성 ${Math.round(traitOf(p.faction).food * 100)}%` : ''}) · 예상은 지금 병력 기준</p>`,
-  rows, '예약', v => reserve({ cmd: 'attack', to: v }), '', 'narrow');
+    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 예상은 지금 병력 기준</p>`,
+  rows, '예약', v => reserve({ cmd: 'attack', to: v }), '', 'narrow',
+  costLine('금', attackGoldOf(p.troops), p.gold, `병력 1,000당 ${RULES.attackGold.per1000}`) + costLine('군량', marchFood(p.troops, p.faction), (S.cities[from.id] || {}).food || 0, `병력 × ${RULES.marchFoodRate}${traitOf(p.faction).food ? ` · 세력 특성 ${Math.round(traitOf(p.faction).food * 100)}%` : ''}`));
 }
 
 // 고른 칸이 실행될 때의 병종: 그 앞 칸에 예약한 징병이 있으면 그 병종, 없으면 지금 병종
@@ -904,7 +908,7 @@ function draftDialog() {
   const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
       <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
-  pickDialog('징병', `<p><b class="hi">금 ${RULES.myGoldCost.draft}</b>으로 ${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
+  pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
     ${p.troops > 0 ? `<p id="draftHave">현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))}</p>` : ""}
     <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>`,
   opts, '예약', (t, box) => {
@@ -915,7 +919,7 @@ function draftDialog() {
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     draftReserve(t);
   }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
-    <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`);
+    <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`, '', costLine('금', RULES.myGoldCost.draft, p.gold));
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
   const ownNow = $('#draftNow').textContent;
@@ -976,11 +980,13 @@ function siegeDialog() {
       <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
   pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
-    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'} · 내 금 ${fmt(p.gold)}</p>`, opts, '예약', v => {
+    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
     reserve({ cmd: 'siege', type: v });
-  });
+  }, '', '', `<span id="siegeCost">${costLine('금', null, p.gold)}</span>`);
+  // 고른 병기 값으로 비용 줄을 바꾼다 (2026-11-14)
+  $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => r.addEventListener('change', () => { $('#siegeCost').innerHTML = costLine('금', siegePrice(p, r.value), p.gold); }));
 }
 
 // 상점: 예약 없이 바로 산다 (턴을 쓰지 않고, 공적은 없다). 사면 창을 그대로 두고 값만 다시 보여 준다
@@ -993,10 +999,9 @@ function shopDialog(msg = '') {
   }).join('');
   openModal(`<h2>상점 <span class="dim small">· 바로 사요 (턴을 쓰지 않아요)</span></h2>
     <p>하나 살 때마다 그 능력치가 ${SHOP.명검.bonus} 올라요. 여러 번 살 수 있지만, 같은 물건은 살 때마다 비싸져요. (능력치 최대 ${RULES.statMax})</p>
-    <p class="dim">지금 내 금 <b class="hi">${fmt(p.gold)}</b></p>
     <div class="opts">${rows}</div>
     ${msg ? `<p class="hi">${esc(msg)}</p>` : ''}
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    <div class="modalBtns"><div class="costFoot"><span class="costLine">내 금 <b class="hi">${fmt(p.gold)}</b></span></div><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-buy]').forEach(b => {
       b.onclick = async () => {
         const item = b.dataset.buy;
