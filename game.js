@@ -1224,7 +1224,7 @@ function helpDialog(page = 0) {
       <li>기간이 끝나서 풀리면 벌칙은 없어요.</li></ul>
       <p class="helpSub">🚪 해고</p><ul>
       <li>${R.fireOffline / HOUR}시간 넘게 접속하지 않은 세력 장수를 해고할 수 있어요.</li>
-      <li>해고된 장수는 재야가 되고 거느리던 병력은 흩어져요. 공적은 그대로예요.</li></ul>
+      <li>해고된 장수는 재야가 되고 거느리던 병력은 흩어져요.</li></ul>
     </div>`)(RULES.commander)]] : []),
     // 작은 팁 (2026-11-10): 제목 상자만 보이고, 누르면 펼쳐지고 다시 누르면 접힌다 (details)
     ['💡 작은 팁', `<div class="tipBoxes">
