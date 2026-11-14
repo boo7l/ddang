@@ -2627,7 +2627,7 @@ function cityDetailRows(c) {
     rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${capText}${open ? `<div class="cityMembers">${list.map(g =>
       `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
-  { const mk = policyMark(c); if (mk) rows.push(`<tr class="wide"><th>방침</th><td>${mk} ${mk === '🛡' ? '방어할 성' : '공격 목표'} <span class="dim">(대도독)</span></td></tr>`); } // 2026-11-13
+  { const mk = policyMark(c); if (mk) rows.push(`<tr class="wide"><th>방침</th><td>${mk} ${mk === '🛡' ? '방어할 성' : '공격 목표'}</td></tr>`); } // 2026-11-13
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;
 }
