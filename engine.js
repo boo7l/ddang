@@ -913,7 +913,7 @@ function endField(st, text) {
   if (x.troops <= 0) {
     addRecord(x, 'losses');
     const t = x.siege && Object.keys(x.siege).find(k => x.siege[k]);
-    if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; out.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
+    if (t) siegeBreak(x, t, out); // 기술자 보수면 한 번 버팀 (2026-11-14)
     loseTreasures(x, st.by);
   }
   healAfter(x, st.lost, out);
@@ -1030,7 +1030,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   // 전투에서 전멸한 부대의 병기는 50% 확률로 부서진다 (공격한 장수와 수비 장수 모두)
   for (const x of [g, ...defs.filter(d => d.ref).map(d => d.ref)]) {
     const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
-    if (t && Math.random() < SIEGE_EFFECT.breakChance) { x.siege = {}; lines.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`); }
+    if (t) siegeBreak(x, t, lines); // 기술자 보수면 한 번 버팀 (2026-11-14)
   }
   const topDealer = [...dealtBy].sort((x, y) => y[1] - x[1])[0];
   if (g.troops <= 0) loseTreasures(g, topDealer ? topDealer[0] : null);
@@ -1111,6 +1111,7 @@ function runExplore(g) {
   const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n) || (x.treasureFound && x.treasureFound.name === n))); // 고르는 중인 보물도 주인이 있는 셈
   // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지). 시즌 7부터는 이미 있어도 바꿀지 팔지 고른다 (2026-11-10, 고르는 중이면 장비 발견)
   if (e.key === 'treasure' && (!freeTreasures.length || (treasuresOf(g).length && (seasonNow() < 7 || g.treasureFound)))) e = EXPLORE.find(x => x.key === 'item');
+  if (e.key === 'engineer' && !RULES.features.siege) e = EXPLORE.find(x => x.key === 'none'); // 병기 기능이 꺼져 있으면 허탕
   let text, warExp = 0;
   addRecord(g, 'ex_' + e.key); // 탐색 결과별 횟수 (2026-11-08, 시즌 기록용: ex_gold · ex_treasure · ex_bandit …)
   switch (e.key) {
@@ -1202,6 +1203,21 @@ function runExplore(g) {
       g.traitFound = drawTraits(g.trait ? [g.trait] : [], seasonNow() >= 7 ? null : ['SSR', 'SR', 'R']); // 시즌 7부터 첫 주머니는 보장 없음, R 이상이 없으면 다시 뽑기에서 보장 (2026-11-13). 그 전: R 이상 1장은 꼭
       g.traitFoundRerolls = TRAIT_REROLLS; // 다시 뽑기 1번 (2026-10-30)
       text = '길가에서 비단 주머니를 주웠다! 특성 3장 중 하나로 바꿀 수 있다. (장수 창에서 열어 보세요)';
+      break;
+    }
+    case 'engineer': { // 기술자 (2026-11-14, 시즌 7): 병기가 있으면 보수 (부서질 때 1번 버팀, 겹치지 않음), 없으면 병기 하나를 받는다 (보수 없이)
+      const have = Object.keys(SIEGE).find(t => g.siege && g.siege[t]);
+      if (have) {
+        if (g.siegeFix) { text = `떠돌이 기술자를 만났지만, ${josa(have, '은는')} 이미 튼튼하게 보수되어 있었다.`; break; }
+        g.siegeFix = true;
+        text = `★ 떠돌이 기술자가 ${josa(have, '을를')} 보수해 주었다! 부대가 전멸해 병기가 부서질 때 한 번 버틴다.`;
+        break;
+      }
+      let r = Math.random() * Object.values(e.give).reduce((a, b) => a + b, 0), type = Object.keys(e.give)[0];
+      for (const [k, w] of Object.entries(e.give)) { r -= w; if (r < 0) { type = k; break; } }
+      g.siege = { [type]: true };
+      delete g.siegeFix;
+      text = `★ 떠돌이 기술자에게서 ${josa(type, '을를')} 얻어 부대에 갖췄다! (${SIEGE[type].desc})`;
       break;
     }
     case 'bandit': {
@@ -1357,6 +1373,7 @@ function runSiege(g, o) {
   // 부대마다 병기는 하나만. 다른 병기를 가지고 있었으면 버린다
   const old = Object.keys(g.siege).find(t => g.siege[t]);
   g.siege = { [o.type]: true };
+  delete g.siegeFix; // 새 병기에는 기술자 보수가 없다 (2026-11-14)
   addMerit(g, RULES.merit.siege);
   addLog(g, `${city.name}: ${josa(o.type, '을를')} 만들어 부대에 갖췄다! (${w.desc}) 내 금 -${fmt(price)}` + (old ? ` · 가지고 있던 ${josa(old, '은는')} 버렸다` : ''));
   return '';

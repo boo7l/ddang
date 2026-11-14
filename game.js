@@ -980,7 +980,7 @@ function siegeDialog() {
       <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
   pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
-    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}</p>`, opts, '예약', v => {
+    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}${p.siegeFix ? ' (보수됨, 새로 만들면 보수가 사라져요)' : ''}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
     reserve({ cmd: 'siege', type: v });
@@ -1272,10 +1272,11 @@ function exploreOddsDialog(from, backName = '도움말로') {
     master: e => `무작위 능력치 +${e.gain}`,
     pouch: () => `특성 3장 중 하나로 바꾸거나 지금 특성 유지${seasonNow() >= 7 ? '<br>R 최소 1장 보장(다시 뽑기 포함)' : ''}`,
     spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
+    engineer: e => `병기가 있으면 보수: 부서질 때 1번 버팀 (겹치지 않음)<br>없으면 병기 하나 획득 (${Object.entries(e.give).map(([k, w]) => `${k} ${w}%`).join(' · ')})`,
     treasure: () => `전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>${seasonNow() >= 7 ? '이미 보물이 있으면 교환 가능, 남은 보물이 없으면 장비 발견' : '이미 보물이 있으면 장비 발견'}`, // 시즌 7부터 바꾸기·팔기 (2026-11-13 표 문구)
   };
-  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', treasure: '★ 보물' };
-  const rows = [...EXPLORE].sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', engineer: '기술자', treasure: '★ 보물' };
+  const rows = EXPLORE.filter(e => e.weight > 0).sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   openModal(`
     <h2>탐색 확률표</h2>
     <p>금 ${RULES.myGoldCost.explore} · 공적 +${RULES.merit.explore}</p>
@@ -2244,7 +2245,7 @@ function renderGeneral() {
         <tr><th>군량</th><td>${fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
-        ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
+        ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}${p.siegeFix ? ' <span class="dim">(보수됨)</span>' : ''}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
         ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span> <button class="mini gSell" data-sell="${esc(n)}">팔기</button>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
