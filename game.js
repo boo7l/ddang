@@ -1739,11 +1739,14 @@ function treasureFoundDialog() {
     <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b>${got < gold || oGot < oGold ? `<br><span class="bad small">(금 최대치 ${fmt(RULES.playerGoldMax)}을 넘는 만큼은 못 받아요)</span>` : ''}</p>
     <div class="modalBtns trBtns"><button data-close>나중에</button><button id="tfSell">${ot ? `${esc(old)} 선택<br><span class="sub">(${esc(f.name)} 판매)</span>` : `${esc(f.name)} 판매`}</button><button id="tfSwap" class="main">${esc(f.name)} 선택${ot ? `<br><span class="sub">(${esc(old)} 판매)</span>` : ""}</button></div>`, box => {
     box.querySelector('#tfSell').onclick = async () => {
-      if (!confirm(`「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요? 되돌릴 수 없어요.`)) return;
+      if (!confirm(ot ? `「${old}」${josa(old, '을를').slice(-1)} 갖고, 「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요?
+되돌릴 수 없어요.` : `「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요?
+되돌릴 수 없어요.`)) return; // 어느 단추든 한 번 더 묻는다 (2026-11-14)
       if (await call('treasureFound', { pick: 'sell' })) { closeModal(); renderAll(); }
     };
     box.querySelector('#tfSwap').onclick = async () => {
-      if (ot && !confirm(`「${old}」${josa(old, '을를').slice(-1)} 금 ${fmt(oGot)}에 팔고 「${f.name}」${josa(f.name, '을를').slice(-1)} 가질까요? 되돌릴 수 없어요.`)) return;
+      if (!confirm(ot ? `「${f.name}」${josa(f.name, '을를').slice(-1)} 갖고, 「${old}」${josa(old, '을를').slice(-1)} 금 ${fmt(oGot)}에 팔까요?
+되돌릴 수 없어요.` : `「${f.name}」${josa(f.name, '을를').slice(-1)} 가질까요?`)) return;
       if (await call('treasureFound', { pick: 'swap' })) { closeModal(); renderAll(); }
     };
   });
