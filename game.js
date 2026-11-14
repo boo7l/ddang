@@ -1132,7 +1132,8 @@ function moveDialog() {
 // ===== 도움말 (초심자 안내) =====
 // 핵심만 짧게. 숫자는 rules.js에서 가져와서 규칙을 고쳐도 안내가 따라간다
 // 한 번에 한 항목씩: 위의 항목 단추나 이전·다음으로 넘겨 본다
-function helpDialog(page = 0) {
+// 도움말 (2026-11-14 기획자: 첫 화면은 섹션 목록, 하나씩 눌러 들어간다). page -1 = 목록
+function helpDialog(page = -1) {
   const turnMin = RULES.turnLength / MIN, nightMin = RULES.night.turnLength / MIN;
   const pages = [
     ['🎯 목표', '<p>세력에 들어가 동료들과 함께 이웃 성을 하나씩 차지해, 천하를 손에 넣는 게임이에요.</p>'],
@@ -1236,21 +1237,25 @@ function helpDialog(page = 0) {
       <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</p></details>
       <details class="tipBox"><summary>수비대장</summary><p><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요. 군량은 먹지 않아요.</p></details></div>`],
   ];
+  if (page < 0 || !pages[page]) { // 첫 화면: 섹션 단추 목록
+    openModal(`
+    <h2>땅국지 도움말</h2>
+    <div class="helpIndex">${pages.map(([t], i) => { const m = t.match(/^(\S+)\s+(.*)$/); return `<button data-page="${i}"><span class="hiIc">${m ? m[1] : ''}</span><span class="hiT">${m ? m[2] : t}</span></button>`; }).join('')}</div>
+    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+      box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog(+b.dataset.page); });
+    });
+    $('#modalBox').classList.add('wideBox');
+    return;
+  }
   const [title, body] = pages[page];
-  const last = page === pages.length - 1;
   openModal(`
     <h2>땅국지 도움말</h2>
-    <div class="helpTabs">${pages.map(([t], i) => `<button data-page="${i}" class="${i === page ? 'on' : ''}">${t}</button>`).join('')}</div>
     <div class="help"><h3>${title}</h3>${body}</div>
     <div class="modalBtns helpNav">
-      <button data-close>닫기</button>
-      <button id="helpPrev"${page ? '' : ' disabled'}>◀ 이전</button>
-      <span class="dim helpPage">${page + 1} / ${pages.length}</span>
-      ${last ? '<button data-close class="main">알겠어요</button>' : '<button id="helpNext" class="main">다음 ▶</button>'}
+      <button id="helpList">☰ 목록으로</button>
+      <button data-close class="main">닫기</button>
     </div>`, box => {
-    box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog(+b.dataset.page); });
-    $('#helpPrev').onclick = () => helpDialog(page - 1);
-    if (!last) $('#helpNext').onclick = () => helpDialog(page + 1);
+    $('#helpList').onclick = () => helpDialog(-1);
     const ex = box.querySelector('#helpExplore');
     if (ex) ex.onclick = () => exploreOddsDialog(page);
     const to = box.querySelector('#helpTraitOdds');
