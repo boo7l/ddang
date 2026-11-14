@@ -1737,7 +1737,7 @@ function treasureFoundDialog() {
       <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${trLabel(f.name).replace(' · ', '<br>')}</div><div class="dim small">바꾸면 ${after}</div><div class="dim small">팔면 금 +${fmt(gold)}</div></div>
     </div>
     <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b>${got < gold || oGot < oGold ? `<br><span class="bad small">(금 최대치 ${fmt(RULES.playerGoldMax)}을 넘는 만큼은 못 받아요)</span>` : ''}</p>
-    <div class="modalBtns trBtns"><button data-close>나중에</button><button id="tfSell">${esc(f.name)} 팔기</button><button id="tfSwap" class="main">${ot ? `${esc(old)} 팔기` : `${esc(f.name)} 갖기`}</button></div>`, box => {
+    <div class="modalBtns trBtns"><button data-close>나중에</button><button id="tfSell">${ot ? `${esc(old)} 선택<br><span class="sub">(${esc(f.name)} 판매)</span>` : `${esc(f.name)} 판매`}</button><button id="tfSwap" class="main">${esc(f.name)} 선택${ot ? `<br><span class="sub">(${esc(old)} 판매)</span>` : ""}</button></div>`, box => {
     box.querySelector('#tfSell').onclick = async () => {
       if (!confirm(`「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요? 되돌릴 수 없어요.`)) return;
       if (await call('treasureFound', { pick: 'sell' })) { closeModal(); renderAll(); }

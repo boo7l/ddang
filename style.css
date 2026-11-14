@@ -1114,6 +1114,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .trCard .nw { white-space: nowrap; } /* '통솔 -1' 같은 덩어리는 중간에서 줄을 안 바꾼다 (2026-11-14) */
 .trBtns { flex-wrap: wrap; } /* 보물 고르기 단추: 글자를 쪼개지 않고, 좁으면 단추째 다음 줄로 (2026-11-14) */
 .trBtns button { white-space: nowrap; padding: 6px 12px; }
+.trBtns button .sub { font-size: 14px; opacity: 0.85; } /* 두 줄 단추 아랫줄: (옥새 판매) */
 /* 성 정보 제목 오른쪽 📍 내 성 단추 (2026-11-10) */
 #info h2.infoHead { display: flex; align-items: center; }
 #info .homeBtn { margin-left: auto; font-size: 13px; padding: 1px 6px; line-height: 1.4; }
