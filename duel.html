@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115002024">
+<link rel="stylesheet" href="style.css?v=20261115003726">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -242,7 +242,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115002024"></script>
+<script src="duel_rules.js?v=20261115003726"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -688,7 +688,13 @@ const WS = { shown: 0, first: true, off: 0, pub: null, mine: null, poll: 0, wake
 const wNow = () => Date.now() + WS.off; // 서버 시각
 const BR = (() => { try { return parent.duelBridge; } catch (e) { return null; } })(); // 게임 창이 주는 연결 (api · sb · 음악 설정 · 닫기)
 function webApi(action, o = {}) { return BR.api(action, { id: WEB.id, ...o }); }
+let webBusy = null; // 묻는 중이면 겹쳐 묻지 않는다 (2026-11-15: 알림·주기 묻기·마감 묻기가 겹쳐 서버에서 부딪쳤다)
 async function webFetch() {
+  if (webBusy) return webBusy;
+  webBusy = webFetch1().finally(() => { webBusy = null; });
+  return webBusy;
+}
+async function webFetch1() {
   try { const d = await webApi('duelView'); if (d.error) { log('⚠ ' + d.error); return; } webGot(d); } catch (e) { /* 다음에 다시 */ }
 }
 function webGot(d) {

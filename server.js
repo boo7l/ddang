@@ -68,6 +68,8 @@ async function api(action, payload = {}) {
     if (!error) return data;
     const status = error.context && error.context.status;
     if (status === 503 && attempt === 0) { await new Promise(ok => setTimeout(ok, 1000 + Math.random() * 1000)); continue; }
+    // 서버가 12초 넘게 걸려 끊었으면(504, 2026-11-15) 읽기 요청만 바로 한 번 더 (명령은 두 번 처리될 수 있어서 다시 보내지 않는다)
+    if (status === 504 && attempt === 0 && /^(state|duelView|status|seen|boardList|miniList|medalRank)$/.test(action)) continue;
     // 로그인이 풀렸으면(401: 컴퓨터가 잠들었다 깨는 등으로 토큰이 만료) 한 번 새로 받아서 다시 보낸다 (2026-11-07)
     if (status === 401 && attempt === 0) { try { await sb.auth.refreshSession(); } catch (e) { /* 아래에서 처리 */ } continue; }
     let msg = error.message;
