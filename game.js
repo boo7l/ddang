@@ -1719,6 +1719,24 @@ function slipHtml(id, i, animate, on) {
 
 // 보물을 가진 채 또 찾은 보물 (2026-11-10, 시즌 7부터): 바꿀지 팔지 고른다. 처음 한 번 저절로 뜨고, 고르기 전까지 장수 창 단추로 다시 연다
 let treasureShown = '';
+// 보물을 새로 손에 넣으면 (탐색·함락·빼앗기, 보물이 없던 장수) 축하 창을 한 번 띄운다 (2026-11-14).
+// 본 보물 목록은 이 브라우저에 장수별로 기억한다. 처음 보는 브라우저에서는 지금 가진 것을 본 것으로 치고 띄우지 않는다
+let trSeenMem = {};
+const trSeenKey = g => 'trSeen_' + g.id;
+function trSeenGet(g) { try { const v = localStorage.getItem(trSeenKey(g)); return v === null ? null : JSON.parse(v); } catch (e) { return g.id in trSeenMem ? trSeenMem[g.id] : null; } }
+function trSeenSet(g, list) { trSeenMem[g.id] = list; try { localStorage.setItem(trSeenKey(g), JSON.stringify(list)); } catch (e) {} }
+function treasureGotCheck() {
+  const g = me(); if (!g) return;
+  const now = treasuresOf(g), seen = trSeenGet(g);
+  if (seen === null) { trSeenSet(g, now); return; }
+  const fresh = now.find(n => !seen.includes(n));
+  if (now.join() !== seen.join()) trSeenSet(g, now);
+  if (!fresh) return;
+  openModal(`
+    <h2>💎 전설의 보물을 손에 넣었다!</h2>
+    <div class="trCards"><div class="trCard new"><div class="nm${fresh.length >= 6 ? ' long' : ''}">💎 ${esc(fresh)}</div><div>${trLabel(fresh).replace(' · ', '<br>')}</div></div></div>
+    <div class="modalBtns"><button data-close class="main">확인</button></div>`);
+}
 function treasureFoundDialog() {
   const g = me(), f = g && g.treasureFound;
   if (!f || !TREASURES[f.name]) return;
@@ -1747,7 +1765,7 @@ function treasureFoundDialog() {
     box.querySelector('#tfSwap').onclick = async () => {
       if (!confirm(ot ? `「${f.name}」${josa(f.name, '을를').slice(-1)} 갖고, 「${old}」${josa(old, '을를').slice(-1)} 금 ${fmt(oGot)}에 팔까요?
 되돌릴 수 없어요.` : `「${f.name}」${josa(f.name, '을를').slice(-1)} 가질까요?`)) return;
-      if (await call('treasureFound', { pick: 'swap' })) { closeModal(); renderAll(); }
+      if (await call('treasureFound', { pick: 'swap' })) { trSeenSet(me(), treasuresOf(me())); closeModal(); renderAll(); }
     };
   });
 }
@@ -2038,6 +2056,7 @@ function renderAll() {
   if (me().traitFound && pouchShown !== me().traitFound.join() && $('#modal').hidden) pouchDialog();
   const tf = me().treasureFound; // 또 찾은 보물 (2026-11-10): 한 번 저절로 연다
   if (tf && treasureShown !== tf.name + tf.until && $('#modal').hidden) treasureFoundDialog();
+  else if ($('#modal').hidden) treasureGotCheck();
 }
 
 // 우리 세력 장수: 누가 어디에 얼마나 있는지 (공적 순). 남의 예약·금은 서버가 보내 주지 않는다
