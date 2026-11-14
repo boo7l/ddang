@@ -2127,7 +2127,7 @@ function policyDialog() {
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
     box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
     // 해제 (2026-11-14 기획자): 그 방침 하나만 바로 지운다. 다른 하나는 지금 저장된 값 그대로
-    box.querySelectorAll('[data-pclear]').forEach(b => { b.onclick = async () => { const k = b.dataset.pclear, def = k === 'def' ? '' : cur.def || '', atk = k === 'atk' ? '' : cur.atk || ''; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); }; });
+    box.querySelectorAll('[data-pclear]').forEach(b => { b.onclick = async () => { const k = b.dataset.pclear, def = k === 'def' ? '' : cur.def || '', atk = k === 'atk' ? '' : cur.atk || ''; if (await call('policySet', { def, atk })) { render(); renderAll(); policyDialog(); } }; }); // 창은 닫지 않고 새 상태로 다시 그린다
   });
 }
 // ===== 동맹 (2026-11-13, 3단계) =====
