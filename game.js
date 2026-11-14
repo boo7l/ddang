@@ -1732,9 +1732,9 @@ function treasureFoundDialog() {
     <h2>💎 또 다른 보물을 발견했다!</h2>
     <p>보물은 장수 한 명당 1개까지예요. 하나를 갖고, 다른 하나는 상인에게 팔아요.</p>
     <div class="trCards">
-      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm">💎 ${esc(old)}</div><div>${trLabel(old).replace(' · ', '<br>')}</div><div class="dim small">팔면 금 +${fmt(oGold)}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
+      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm${old.length >= 6 ? " long" : ""}">💎 ${esc(old)}</div><div>${trLabel(old).replace(' · ', '<br>')}</div><div class="dim small">팔면 금 +${fmt(oGold)}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
       <div class="trArrow">⇄</div>
-      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${trLabel(f.name).replace(' · ', '<br>')}</div><div class="dim small">바꾸면 ${after}</div><div class="dim small">팔면 금 +${fmt(gold)}</div></div>
+      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm${f.name.length >= 6 ? " long" : ""}">💎 ${esc(f.name)}</div><div>${trLabel(f.name).replace(' · ', '<br>')}</div><div class="dim small">바꾸면 ${after}</div><div class="dim small">팔면 금 +${fmt(gold)}</div></div>
     </div>
     <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b>${got < gold || oGot < oGold ? `<br><span class="bad small">(금 최대치 ${fmt(RULES.playerGoldMax)}을 넘는 만큼은 못 받아요)</span>` : ''}</p>
     <div class="modalBtns trBtns"><button data-close>나중에</button><button id="tfSell">${ot ? `${esc(old)} 선택<br><span class="sub">(${esc(f.name)} 판매)</span>` : `${esc(f.name)} 판매`}</button><button id="tfSwap" class="main">${esc(f.name)} 선택${ot ? `<br><span class="sub">(${esc(old)} 판매)</span>` : ""}</button></div>`, box => {

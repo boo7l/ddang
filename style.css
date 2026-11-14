@@ -1112,8 +1112,11 @@ details.fold > summary:hover h2 { color: var(--title); }
 .trArrow { align-self: center; color: var(--gold); font-size: 20px; }
 #modalBox .trGold { text-align: center; margin: 8px 0; }
 .trCard .nw { white-space: nowrap; } /* '통솔 -1' 같은 덩어리는 중간에서 줄을 안 바꾼다 (2026-11-14) */
-.trBtns { flex-wrap: wrap; } /* 보물 고르기 단추: 글자를 쪼개지 않고, 좁으면 단추째 다음 줄로 (2026-11-14) */
-.trBtns button { white-space: nowrap; padding: 6px 12px; }
+.trBtns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.trBtns button[data-close] { grid-column: 1 / -1; order: 3; justify-self: center; padding: 4px 18px; } /* 나중에: 선택 단추 둘 아래 가운데 */ /* 보물 고르기 단추: 나중에 + 선택 단추 둘을 같은 너비로. 긴 이름(병법이십사편)은 단추 안에서 낱말 단위로 줄바꿈 (2026-11-14) */
+.trBtns button { padding: 6px 10px; word-break: keep-all; }
+.trCard .nm { white-space: nowrap; }
+.trCard .nm.long { font-size: 16px; } /* 6글자 보물 이름도 한 줄에 */
 .trBtns button .sub { font-size: 14px; opacity: 0.85; } /* 두 줄 단추 아랫줄: (옥새 판매) */
 /* 성 정보 제목 오른쪽 📍 내 성 단추 (2026-11-10) */
 #info h2.infoHead { display: flex; align-items: center; }
