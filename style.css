@@ -66,6 +66,15 @@ body {
   padding: 16px 18px;
   margin-bottom: 12px;
 }
+/* 모서리 점을 창 내용 위에 한 번 더 얹는다 (2026-11-14): 바탕에만 있으면 제목 띠·지도·표 같은 내용이 덮어 가려졌다. 스크롤되는 창(#modalBox)은 점이 같이 밀려 올라가므로 바탕 점만 쓴다 */
+.win:not(#modalBox)::before {
+  content: ""; position: absolute; inset: 6px; z-index: 5; pointer-events: none;
+  background:
+    linear-gradient(var(--gold), var(--gold)) top left / 6px 6px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) top right / 6px 6px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom left / 6px 6px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom right / 6px 6px no-repeat;
+}
 /* 창 제목: 금색 띠 위의 글씨 */
 .win h2 {
   margin: -4px 0 12px;
