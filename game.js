@@ -2122,10 +2122,12 @@ function policyDialog() {
   const own = MAP.cities.filter(c => c.faction === p.faction), other = MAP.cities.filter(c => c.faction !== p.faction).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   openModal(`<h2>🧭 방침</h2>
     <p class="dim small">우리 세력 지도에만 표시돼요. 안내일 뿐 강제는 없어요.</p>
-    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select></p>
-    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select></p>
+    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select>${cur.def ? ' <button class="mini" data-pclear="def">해제</button>' : ''}</p>
+    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select>${cur.atk ? ' <button class="mini" data-pclear="atk">해제</button>' : ''}</p>
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
     box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
+    // 해제 (2026-11-14 기획자): 그 방침 하나만 바로 지운다. 다른 하나는 지금 저장된 값 그대로
+    box.querySelectorAll('[data-pclear]').forEach(b => { b.onclick = async () => { const k = b.dataset.pclear, def = k === 'def' ? '' : cur.def || '', atk = k === 'atk' ? '' : cur.atk || ''; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); }; });
   });
 }
 // ===== 동맹 (2026-11-13, 3단계) =====
