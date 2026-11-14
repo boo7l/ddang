@@ -1146,6 +1146,6 @@ td.nowrap { white-space: nowrap; }
 .pmLegend .pmCan { outline: 2px dashed var(--title); outline-offset: -2px; }
 /* 패치노트 개발자 노트 상자 (2026-11-13): patchnotes.js에 { dev: '글' } (항목 사이 또는 파트 사이) */
 .notePaper .devNote { margin: 6px 0; padding: 6px 10px; color: #4a3a2a; background: rgba(255, 250, 235, .55); border: 1px dashed #7a5426; border-left: 3px solid #8c2a10; }
-.notePaper li.devLi { list-style: none; margin-left: -20px; }
+.notePaper li.devLi { list-style: none; margin-left: 0; } /* 2026-11-14 기획자: 위 항목 글과 같은 줄에서 시작 (한 단계 들여쓰기, 예전 -20px) */
 .notePaper.devPaper { padding: 8px 12px; }
 .notePaper.devPaper .devNote { margin: 0; }
