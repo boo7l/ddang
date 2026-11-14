@@ -80,6 +80,7 @@ function applyView(d) {
   MAP.cities.forEach((c, i) => { c.faction = ORIGIN[i]; });
   if (S) applyOwners();
   syncChatChannel();
+  tourSync(); // 무술대회 단추·창 (2026-11-14)
 }
 
 // 서버에 요청하고 세계를 받아 온다. 성공하면 true (실패 이유는 알림 창으로)
@@ -1521,6 +1522,132 @@ function openMinigame() {
   document.body.appendChild(w);
 }
 $('#miniLink').onclick = openMinigame;
+
+// ===== 무술대회 (2026-11-14, 기획서 "무술대회") =====
+// 관리자가 대회를 열면 📜 도움말 옆에 [🏟 무술대회] 단추가 생긴다 (신청 중엔 반짝). 창: 신청 · 신청자 · 대진표 · 경기 보기.
+// 경기 화면은 duel.html을 iframe으로 띄운다 (서버와는 duelBridge로 이 창의 로그인을 그대로 쓴다)
+window.duelBridge = { api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel() };
+const TOUR_SHOW_DONE = 3 * 3600e3; // 대회가 끝나고 3시간 동안은 단추를 남겨 결과를 볼 수 있게
+const tourT = () => (S && S.tourney) || null;
+const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
+const tourMatchName = slot => ({ m0: '8강 1경기', m1: '8강 2경기', m2: '8강 3경기', m3: '8강 4경기', s0: '4강 1경기', s1: '4강 2경기', f: '결승' })[slot];
+let tourAlerted = {}; // 내 경기 알림을 이미 띄운 경기
+function tourSync() {
+  const T = tourT(), b = $('#tourBtn');
+  if (!b) return;
+  b.hidden = !tourVisible(T);
+  b.classList.toggle('glow', !!T && T.phase === 'entry' && !(T.entries || []).some(e => e.uid === MY_ID));
+  if ($('#tourBox')) tourRender(); // 창이 열려 있으면 새로
+  // 내 경기가 3분 안에 시작하면 한 번 알려 준다 (게임 화면에 있을 때)
+  const my = T && T.phase === 'run' && T.matches.find(m => m.at && m.win == null && m.p.includes(MY_ID));
+  if (my && my.at - Date.now() < 3 * 60e3 && my.at - Date.now() > -60e3 && !tourAlerted[T.id + my.slot] && !$('#duelWrap') && !$('#game').hidden) {
+    tourAlerted[T.id + my.slot] = true;
+    if (confirm(`🏟 무술대회 ${tourMatchName(my.slot)}이(가) 곧 시작해요 (${fmtClock(my.at)}).\n지금 경기장에 들어갈까요?\n(시작할 때 경기 화면에 없으면 컴퓨터가 대신 싸우고 무력 -15)`)) tourOpenDuel(T, my);
+  }
+}
+if ($('#tourBtn')) $('#tourBtn').onclick = () => tourDialog();
+function tourDialog() {
+  openModal(`<div id="tourBox"></div><div class="modalBtns"><button data-close class="main">닫기</button></div>`);
+  $('#modalBox').classList.add('wideBox', 'tourModal');
+  tourRender();
+}
+function tourRender() {
+  const box = $('#tourBox'), T = tourT(), R = RULES.tourney;
+  if (!box) return;
+  if (!T) { box.innerHTML = '<h2>🏟 무술대회</h2><p class="dim">열린 대회가 없어요.</p>'; return; }
+  const g = me(), mine = T.entries.some(e => e.uid === MY_ID);
+  const PH = { entry: `📝 참가 신청 중 · ${fmtTime(T.entryEnd)}까지 (${R.max}명이 차면 바로 마감)`, run: '⚔ 경기 진행 중', done: '🏆 대회 끝', cancel: '✖ 취소된 대회' };
+  let html = `<h2>🏟 무술대회${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''}</p>`;
+  if (T.phase === 'entry') {
+    const war = g ? effStats(g).war : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
+    const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `무력 ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : g.faction && sameFac >= R.max / 2 ? `우리 세력은 이미 ${R.max / 2}명이 신청했어요.` : '';
+    html += `<div class="tourEntry">
+      <p>참가비 <b>금 ${fmt(R.fee)}</b> · 무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · 신청하면 취소할 수 없어요</p>
+      <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · 무력 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · 무력 경험치 ${R.prize[1].warExp}</p>
+      ${mine ? '<p class="hi">✔ 신청했어요. 대진이 정해지면 경기 시각이 나와요.</p>' : `<p><button id="tourEnter" class="main"${why ? ' disabled' : ''}>참가 신청 (금 ${fmt(R.fee)})</button> ${why ? `<span class="dim small">${why}</span>` : ''}</p>`}
+    </div>
+    <p class="sub">신청한 장수 ${T.entries.length} / ${R.max}</p>
+    <div class="tourList">${T.entries.map(e => `<span class="tourWho${e.uid === MY_ID ? ' me' : ''}">${tourChip(e.faction)}${esc(e.name)} <span class="dim small">무력 ${e.war}</span></span>`).join('') || '<span class="dim">아직 없어요</span>'}</div>`;
+  } else if (T.matches && T.matches.length) {
+    const fin = T.matches.find(m => m.slot === 'f');
+    html += tourBracketHtml(T);
+    if (T.champ) html += `<p class="tourChamp">👑 우승 <b>${esc(T.champ.name)}</b> · 준우승 ${esc(T.runner.name)}</p>`;
+    else if (fin) html += `<p class="dim small center">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · 무력 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · 무력 경험치 ${R.prize[1].warExp}</p>`;
+    html += '<p class="dim small center">경기를 누르면 경기장이 열려요 (내 경기는 직접 두고, 다른 경기는 관전).</p>';
+  }
+  box.innerHTML = html;
+  if ($('#tourEnter')) $('#tourEnter').onclick = async () => {
+    if (!confirm(`무술대회에 참가할까요?\n참가비 금 ${fmt(R.fee)}을 내고, 신청하면 취소할 수 없어요.`)) return;
+    if (await call('tourneyEnter')) tourRender();
+  };
+  box.querySelectorAll('[data-slot]').forEach(el => { el.onclick = () => { const m = T.matches.find(x => x.slot === el.dataset.slot); if (m && m.at && !m.bye) tourOpenDuel(T, m); }; });
+  if (box.querySelector('.tbLines')) requestAnimationFrame(() => tourLines(T));
+}
+function tourChip(fid) { return `<span class="tbChip" style="background:${fid ? factionById(fid).color : '#777'}" title="${fid ? esc(factionById(fid).name) : '재야'}"></span>` }
+// 대진표 (lab/bracket.html 모양): 8강 왼쪽 2경기 · 4강 · 가운데 결승 · 4강 · 8강 오른쪽 2경기. 휴대폰은 위에서 아래로
+function tourBracketHtml(T) {
+  const M = slot => T.matches.find(m => m.slot === slot);
+  const facOf = uid => { const e = T.entries.find(x => x.uid === uid); return e ? e.faction : null; };
+  const warOf = (m, k) => (m.wars ? m.wars[k] : (T.entries.find(x => x.uid === m.p[k]) || {}).war);
+  const slotHtml = (m, k) => {
+    if (m.bye && k === 1) return '<div class="tbSlot bye"><span class="tbChip" style="background:#3a2a1a"></span><span class="tbNm">부전승</span></div>';
+    if (!m.p[k]) return '<div class="tbSlot empty"><span class="tbChip" style="background:#3a2a1a"></span><span class="tbNm">미정</span></div>';
+    const cls = m.win != null && !m.bye ? (m.win === k ? 'won' : 'lost') : '';
+    const hp = m.hp && !m.bye ? (m.hp[k] === 0 ? 'KO' : m.hp[k]) : '';
+    return `<div class="tbSlot ${cls}${m.p[k] === MY_ID ? ' me' : ''}">${tourChip(facOf(m.p[k]))}<span class="tbNm">${esc(m.names[k])}</span><span class="tbWar">무${warOf(m, k) || ''}</span><span class="tbHp">${hp}</span></div>`;
+  };
+  const matchHtml = slot => {
+    const m = M(slot);
+    if (!m) return '';
+    const live = m.at && m.win == null && m.at <= Date.now();
+    const badge = m.bye ? '<span class="tbBadge bye">부전승</span>' : m.win != null ? '<span class="tbBadge done">끝</span>' : live ? '<span class="tbBadge live">● LIVE</span>' : m.at ? `<span class="tbBadge wait">${fmtClock(m.at)}</span>` : '';
+    const click = m.at && !m.bye;
+    return `<div class="tbMatch${live ? ' live' : ''}${click ? ' click' : ''}${m.p.includes(MY_ID) ? ' mine' : ''}" id="tb-${slot}"${click ? ` data-slot="${slot}"` : ''}>${badge}${slotHtml(m, 0)}${slotHtml(m, 1)}</div>`;
+  };
+  if (T.size === 8) return `<div class="tbWrap" style="grid-template-columns:1fr 1fr 1.15fr 1fr 1fr">
+    <div class="tbCol c8l"><div class="tbHead">8강</div>${matchHtml('m0')}${matchHtml('m1')}</div>
+    <div class="tbCol c4l"><div class="tbHead">4강</div>${matchHtml('s0')}</div>
+    <div class="tbFin"><div class="tbTrophy">🏆</div><div class="tbHead">결승</div>${matchHtml('f')}</div>
+    <div class="tbCol c4r"><div class="tbHead">4강</div>${matchHtml('s1')}</div>
+    <div class="tbCol c8r"><div class="tbHead">8강</div>${matchHtml('m2')}${matchHtml('m3')}</div>
+    <svg class="tbLines"></svg></div>`;
+  return `<div class="tbWrap" style="grid-template-columns:1fr 1.15fr 1fr">
+    <div class="tbCol c4l"><div class="tbHead">4강</div>${matchHtml('s0')}</div>
+    <div class="tbFin"><div class="tbTrophy">🏆</div><div class="tbHead">결승</div>${matchHtml('f')}</div>
+    <div class="tbCol c4r"><div class="tbHead">4강</div>${matchHtml('s1')}</div>
+    <svg class="tbLines"></svg></div>`;
+}
+// 경기 칸을 잇는 선 (넓은 화면만): 이긴 쪽이 올라간 선은 금색
+function tourLines(T) {
+  const svg = document.querySelector('#tourBox .tbLines'), wrap = document.querySelector('#tourBox .tbWrap');
+  if (!svg || !wrap || innerWidth <= 700) return;
+  const box = wrap.getBoundingClientRect();
+  const pairs = T.size === 8 ? [['m0', 's0'], ['m1', 's0'], ['m2', 's1'], ['m3', 's1'], ['s0', 'f'], ['s1', 'f']] : [['s0', 'f'], ['s1', 'f']];
+  svg.innerHTML = pairs.map(([from, to]) => {
+    const ea = document.getElementById('tb-' + from), eb = document.getElementById('tb-' + to);
+    if (!ea || !eb) return '';
+    const a = ea.getBoundingClientRect(), b = eb.getBoundingClientRect(), left = a.left < b.left;
+    const x1 = (left ? a.right : a.left) - box.left, y1 = a.top + a.height / 2 - box.top, x2 = (left ? b.left : b.right) - box.left, y2 = b.top + b.height / 2 - box.top, mx = (x1 + x2) / 2;
+    const m = T.matches.find(x => x.slot === from);
+    return `<path class="${m && m.win != null ? 'hot' : ''}" d="M${x1} ${y1} H${mx} V${y2} H${x2}"/>`;
+  }).join('');
+}
+// 경기장 (duel.html): 게임 위에 크게 띄운다. 게임 배경음악은 잠시 멈춘다
+function tourOpenDuel(T, m) {
+  tourCloseDuel();
+  const w = document.createElement('div');
+  w.id = 'duelWrap';
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.querySelector('.duelClose').onclick = tourCloseDuel;
+  document.body.appendChild(w);
+  bgmHold(true);
+}
+function tourCloseDuel() {
+  const w = $('#duelWrap');
+  if (!w) return;
+  w.querySelector('iframe').src = 'about:blank'; // 실시간 알림 끊기
+  w.remove(); bgmHold(false);
+}
 
 function showTitle(msg) {
   showScreen('title');

@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>무술대회</title>
+<link rel="stylesheet" href="style.css?v=20261114234743">
+<!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
+     lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
+     서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
+<style>
+  @font-face { font-family: "Sam3"; src: url("fonts/Sam3KRFont.woff") format("woff"); }
+  body { background: var(--bg); margin: 0; padding: 8px; font-family: "Sam3", monospace; font-size: 16px; color: var(--text); }
+  .lab { max-width: 1250px; margin: 0 auto; padding: 8px 14px 10px; }
+  /* 대결 화면: 왼쪽 경기, 오른쪽 기록창 (2026-11-14). 좁은 화면에서는 기록창이 아래로 */
+  #pPlay:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) 410px; /* 기록창 230 → 320 → 360 → 410 (글씨 키움) (2026-11-14, 한 합이 한 줄에 들어가게) */ column-gap: 14px; align-items: start; }
+  #pPlay > * { grid-column: 1; }
+  #pPlay > .sideCol { grid-column: 2; grid-row: 1 / span 30; align-self: stretch; display: flex; flex-direction: column; } /* 왼쪽 내용 높이만큼 늘어난다 */
+  .sndBar { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; margin: 4px 0 6px; font-size: 14px; white-space: nowrap; }
+  .sndBar button { padding: 3px 6px; }
+  .sideCol #log { flex: 1 1 0; min-height: 200px; max-height: none; margin-top: 0; display: block; } /* #log: 게임 style.css의 #log { max-height: 380px }를 이기려면 같은 # 선택자가 필요 */
+  .lab h2 { margin: 0 0 6px; font-size: 18px; font-weight: normal; color: var(--title); }
+  .lab > h2, .tabs, #pPlay > .row, #pSim, #pRule { display: none !important; }
+  body { padding-top: 4px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 6px; }
+  .tabs button.on { background: var(--gold); color: #2a0604; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 6px; }
+  .row input[type=number] { width: 64px; }
+  #cv { display: block; width: 100%; max-width: 608px; margin: 0 auto; /* 2026-11-14: 한 화면에 다 들어오게 조금 줄임 (320×180의 1.9배, 2026-11-14 544 → 608) */ image-rendering: pixelated; border: 2px solid var(--gold-dark); background: #000; }
+  .bars { display: grid; grid-template-columns: minmax(0, 1fr) 84px minmax(0, 1fr); /* 2026-11-14: 양쪽 칸 폭 고정. 글자(체력 100→85, 1합→10합) 길이에 따라 칸이 늘어 이긴 쪽 체력바가 커져 보였음 */ gap: 10px; align-items: center; margin: 4px auto; width: 100%; max-width: 608px; }
+  .side .nm { color: var(--title); }
+  .side.right { text-align: right; }
+  .hp { height: 12px; background: #2a0604; border: 1px solid var(--gold-dark); margin: 3px 0; position: relative; }
+  .hp i { position: absolute; top: 0; bottom: 0; left: 0; background: #3a8ae0; /* 나(왼쪽) = 파랑 (2026-11-14 기획자, 빨강에서) */ transition: width .4s; }
+  .side.right .hp i { left: auto; right: 0; background: #e04a2a; /* 상대(오른쪽) = 빨강 */ }
+  .sp { font-size: 14px; color: var(--label); }
+  .sp s { color: #776; }
+  .round { text-align: center; color: var(--label); font-size: 14px; }
+  .stage { position: relative; width: 100%; max-width: 608px; margin: 0 auto; }
+  .reveal { position: absolute; top: 8px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; }
+  .reveal > span { color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  .resBox { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center; }
+  .resBox:empty, .reveal:empty { display: none; }
+  .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .fxText { position: absolute; transform: translate(-50%, -50%); font-size: 24px; white-space: nowrap; text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000; animation: fxUp 1.4s ease-out forwards; }
+  @keyframes fxUp { 0% { opacity: 0; margin-top: 8px; } 12% { opacity: 1; margin-top: 0; } 70% { opacity: 1; } 100% { opacity: 0; margin-top: -26px; } }
+  .banner { position: absolute; left: 0; right: 0; top: 30%; transform: translateY(-50%); text-align: center; pointer-events: none; opacity: 0; }
+  .banner.show { animation: bannerIn .35s ease-out forwards; }
+  @keyframes bannerIn { from { opacity: 0; transform: translateY(-50%) scale(2.2); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
+  .banner .t { font-size: 46px; letter-spacing: 6px; color: #ffd860; text-shadow: 0 0 2px #2a0604, 3px 3px 0 #2a0604, -3px 3px 0 #2a0604, 3px -3px 0 #2a0604, -3px -3px 0 #2a0604, 0 0 18px rgba(255,200,60,.6); }
+  .banner.k-lose .t { color: #9fb8ff; text-shadow: 0 0 2px #0a0a2a, 3px 3px 0 #0a0a2a, -3px 3px 0 #0a0a2a, 3px -3px 0 #0a0a2a, -3px -3px 0 #0a0a2a, 0 0 18px rgba(120,150,255,.5); }
+  .banner.k-draw .t { color: #eee; }
+  .banner .s { margin-top: 6px; font-size: 17px; color: #fbefd0; text-shadow: 0 0 3px #000, 2px 2px 0 #000; opacity: 0; animation: subIn .3s .4s forwards; }
+  @keyframes subIn { to { opacity: 1; } }
+  .timer { height: 6px; background: #2a0604; margin: 3px auto 0; width: 100%; max-width: 608px; } /* width: 칸 안에서 가운데 맞춤하면 폭이 0으로 줄어서 */
+  .timer i { display: block; height: 100%; background: var(--gold); width: 100%; }
+  .playRow { display: grid; grid-template-columns: 172px minmax(0, 1fr) 172px; align-items: center; gap: 8px; } /* 손패가 정가운데 오게 오른쪽에도 같은 폭 빈칸 (2026-11-14) */
+  .tri { width: 172px; } /* 2026-11-14 글씨가 작다는 의견으로 키움 */
+  .tri .ar { stroke: #ffd860; stroke-width: 4; fill: none; }
+  .tri text.win { font-size: 13px; fill: #ffd860; }
+  .tri text { text-anchor: middle; font-family: Sam3, monospace; }
+  .tri text.ic { font-size: 18px; }
+  .tri text.nm { font-size: 15px; fill: #2a0604; font-weight: bold; }
+  .tri .nd circle { stroke: #8a5a14; stroke-width: 2; }
+  .tri .nd.win circle { stroke: #7dff8a; stroke-width: 4; }
+  .tri .nd.lose circle { stroke: #ff6a4a; stroke-width: 4; }
+  .tri .nd.me circle { stroke: #ffd860; stroke-width: 4; }
+  .triCap { text-align: center; font-size: 13px; color: var(--label); margin: 2px 0 0; }
+  .hand { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 78px; }
+  .card { width: 56px; height: 74px; border: 2px solid var(--gold-dark); border-radius: 4px; background: #f3e2b8; color: #2a0604;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 15px; }
+  .card .ic { font-size: 22px; line-height: 1.1; }
+  .card.atk { background: #f6c9b8; } .card.tec { background: #d9c8f2; } .card.def { background: #c3dcf0; }
+  .card.deal { animation: dealIn .32s ease-out backwards; } /* 재정비: 새 카드가 한 장씩 뒤집히며 들어옴 (2026-11-14) */
+  @keyframes dealIn { from { opacity: 0; transform: translateY(14px) rotateY(90deg) scale(.85); } to { opacity: 1; transform: none; } }
+  .card.sel { border-color: var(--title); box-shadow: 0 0 10px var(--title); transform: translateY(-6px); }
+  .card.back { background: repeating-linear-gradient(45deg, #6a1a12 0 6px, #4a0e0a 6px 12px); cursor: default; }
+  .card.big { width: 58px; height: 74px; cursor: default; font-size: 15px; box-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  .card.big .ic { font-size: 22px; }
+  /* 공개 카드 (2026-11-14): 누구 카드인지 + 우세한 쪽 강조 */
+  .rv { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+  .rv .who { font-size: 12px; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  .rv.won .card { border-color: #ffd860; box-shadow: 0 0 0 2px #ffd860, 0 0 14px #ffd860; }
+  .rv.lost .card { opacity: .55; filter: grayscale(.7); }
+  .reveal > .vs { color: #fff; font-size: 18px; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+  .card.spc { background: #ffe9a0; }
+  .resCard { text-align: center; padding: 4px 16px; background: rgba(42,6,4,.92) !important; border: 2px solid var(--gold); background: var(--panel-dark); }
+  .resCard .big { font-size: 26px; margin-bottom: 2px; }
+  .resCard.win .big { color: var(--title); } .resCard.lose .big { color: #9fb8ff; }
+  .resCard button { margin-top: 6px; }
+  .opHand { display: flex; gap: 4px; justify-content: center; }
+  .opHand .card { width: 30px; height: 40px; cursor: default; }
+  .card.sp { background: #fbfbf4; border-color: #b9b39a; } /* 흰 특수 카드 (필살·회피) */
+  .opHand .card.white { background: #fbfbf4; border-color: #b9b39a; } /* 상대의 특수 카드: 흰 뒷면만 */
+  .opHand .card.white .q { color: #8a7a5a; font-weight: bold; } /* 필살인지 회피인지 모르니 물음표 (2026-11-14) */
+  .opHand .card.oc .ic { font-size: 16px; }
+  /* 관전: 두 장수의 손패를 작게 (2026-11-14 기획자). 상대가 보는 것과 같게 유형(색)만, 특수 카드는 ? */
+  .miniHand { display: none; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
+  body.watch .miniHand { display: flex; }
+  .side.right .miniHand { justify-content: flex-end; }
+  .miniHand .card { width: 22px; height: 28px; cursor: default; padding: 0; }
+  .miniHand .card .ic { font-size: 12px; }
+  .miniHand .card.white { background: #fbfbf4; border-color: #b9b39a; }
+  .miniHand .card.white .q { color: #8a7a5a; font-weight: bold; }
+  .opHand .card.mWin { border-color: #7dff8a; box-shadow: 0 0 5px #7dff8a; } /* 2026-11-14 얇게: 테두리 2px만 */ /* 내 카드로 이기는 상대 카드 */
+  .opHand .card.mLose { border-color: #ff6a4a; box-shadow: 0 0 5px #ff6a4a; } /* 내 카드가 지는 상대 카드 */
+  .acts { display: flex; justify-content: center; gap: 64px; margin-top: 8px; } /* 2026-11-14: 재정비·제출 둘 다 살짝 크게, 사이를 넓게 (잘못 누르지 않게) */
+  .acts button { min-width: 130px; padding: 8px 18px; font-size: 16px; }
+  .acts button.sel { background: var(--title); color: #2a0604; }
+  .log { max-height: 180px; overflow-y: auto; font-size: 14px; background: var(--panel-dark); padding: 6px 8px; margin-top: 10px; border: 1px solid var(--gold-dark); }
+  .log div { padding: 1px 0; }
+  .sideCol #log { font-size: 15px; line-height: 1.5; }
+  .sideCol #log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 한 합 = 한 줄 */
+  body.watch .sideCol #log div { white-space: normal; overflow: visible; padding: 2px 0 2px 1.2em; text-indent: -1.2em; } /* 관전: 이름이 길면 잘리지 않고 두 줄로 (2026-11-14). 둘째 줄은 들여 씀 */
+  table.sim { border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+  table.sim th, table.sim td { border: 1px solid var(--gold-dark); padding: 4px 8px; text-align: center; }
+  .note { font-size: 14px; color: var(--label); }
+  [hidden] { display: none !important; }
+  body.watch .tabs, body.watch #pPlay > .row, body.watch .opHand, body.watch .playRow, body.watch .acts, body.watch .lab > h2 { display: none !important; }
+  body.watch .side .nm b, body.live .side .nm b { color: var(--title); display: block; overflow: hidden; text-overflow: ellipsis; } /* 웹: 참가자 화면도 이름 한 줄 따로 (2026-11-14) */ /* 관전: 이름은 한 줄 따로, 무력·체력은 그 아래 (긴 이름 대비) */
+  body.watch .rv { width: 116px; } /* 긴 이름이 옆 이름과 겹치지 않게 칸 폭을 잡는다 */
+  body.watch .rv .who { max-width: 116px; white-space: normal; text-align: center; line-height: 1.2; word-break: keep-all; }
+  /* ===== 휴대폰 · 좁은 화면 (2026-11-14) =====
+     위에서 아래로: 설정 → 전투 그림(가득) → 시간 → 체력 → 상대 손패 → 기록(한 줄, 누르면 펼침) → 작은 상성표 → 손패 → 단추 → 소리 */
+  @media (max-width: 860px) {
+    body { padding: 4px; font-size: 15px; }
+    .lab { padding: 6px 8px 10px; }
+    .lab h2 { font-size: 15px; margin-bottom: 4px; }
+    .tabs button { padding: 4px 8px; font-size: 14px; }
+    #pPlay:not([hidden]) { display: flex; flex-direction: column; align-items: stretch; } /* 넓은 화면의 align-items: start가 남으면 줄들이 왼쪽에 쪼그라든다 */
+    #pPlay > .row { order: 0; gap: 6px; font-size: 14px; }
+    #pPlay > .row input[type=number] { width: 52px; }
+    #pPlay > .stage { order: 1; max-width: none; }
+    #pPlay > .timer { order: 2; max-width: none; }
+    #pPlay > .bars { order: 3; max-width: none; gap: 6px; font-size: 12px; }
+    .bars .nm, .bars .sp { white-space: nowrap; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+    #pPlay > .opHand { order: 4; margin-top: 2px; }
+    #pPlay > .sideCol { display: contents; } /* 안의 기록창·소리 줄을 따로 배치 */
+    .sideCol #log { display: none; } /* 2026-11-14 기획자: 휴대폰은 합마다 결과 기록 줄을 아예 안 보여 줌 */
+    #pPlay > .playRow { order: 6; }
+    #pPlay > .acts { order: 7; }
+    .sndBar { order: 9; margin: 10px 0 0; flex-wrap: wrap; justify-content: center; } /* 소리 조절은 맨 아래로 */
+    .sideCol #log { flex: none; height: 30px; min-height: 0; overflow: hidden; cursor: pointer; position: relative; padding-right: 64px; }
+    .sideCol #log::after { content: '▼ 전체'; position: absolute; right: 8px; top: 6px; font-size: 12px; color: var(--label); }
+    .sideCol #log.open { height: 200px; overflow-y: auto; }
+    .sideCol #log.open::after { content: '▲ 접기'; }
+    .card.big { width: 44px; height: 56px; font-size: 12px; }
+    .card.big .ic { font-size: 17px; }
+    .rv .who { font-size: 11px; }
+    .playRow { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 6px; }
+    .playRow > div:last-child { display: none; } /* 넓은 화면에서 손패를 가운데 맞추던 빈칸 */
+    .tri { width: 100px; }
+    .hand { gap: 4px; min-height: 0; flex-wrap: nowrap; width: 100%; justify-content: center; }
+    .card { width: 44px; height: 60px; font-size: 12px; }
+    .card .ic { font-size: 17px; }
+    .card.sel { transform: translateY(-4px); }
+    .opHand .card { width: 24px; height: 32px; }
+    .opHand .card.oc .ic { font-size: 13px; }
+    .acts { gap: 40px; margin-top: 10px; } /* 휴대폰: 같은 크기 두 단추, 사이를 넓게 */
+    .acts button { flex: 1; min-width: 0; padding: 11px 4px; font-size: 15px; white-space: nowrap; }
+    .resCard .big { font-size: 20px; }
+    .banner .t { font-size: 30px; letter-spacing: 3px; }
+    .fxText { font-size: 17px; }
+    .banner .s { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="win lab">
+  <h2>⚔ 무술대회 카드 대결 <span class="dim">(로컬 연구용)</span></h2>
+  <div class="tabs"><button id="tPlay" class="on">대결 해 보기</button><button id="tSim">승률 시뮬레이션</button><button id="tRule">규칙</button></div>
+
+  <!-- 대결 -->
+  <div id="pPlay">
+    <div class="row">무력 나 <input id="myWar" type="number" value="100" min="30" max="130"> 상대 <input id="opWar" type="number" value="100" min="30" max="130">
+      <button id="start" class="main">대결 시작</button> </div>
+    <audio id="bgm" loop preload="none"></audio><!-- ?v=: 곡을 다시 녹음하면 숫자를 올린다 (브라우저가 옛 파일을 기억해 두고 틀지 않게) --><!-- 무술대회 곡 (preview/bgm/make_midi.js tourney → tools/save_bgm.js) -->
+    <div class="stage"><!-- 카드 공개·결과는 그림 위에 겹쳐 띄운다 (2026-11-14: 아래 칸에 끼어 배치가 밀리고 겹쳐서) -->
+      <canvas id="cv" width="320" height="180"></canvas>
+      <div class="reveal" id="reveal"></div>
+      <div class="resBox" id="resBox"></div>
+      <div class="fx" id="fx"></div>
+      <div class="banner" id="banner"><div class="t"></div><div class="s"></div></div><!-- 승패 큰 글씨: 그림에 그리면 1.9배로 늘어나 깨져서 글자로 띄운다 (2026-11-14) -->
+    </div>
+    <div class="timer"><i id="timer"></i></div><!-- 제한 시간 막대: 전투 그림 바로 아래, 같은 폭 (2026-11-14) -->
+    <div class="bars">
+      <div class="side"><div class="nm">나 <span class="dim" id="myInfo"></span></div><div class="hp"><i id="myHp"></i></div><div class="sp" id="mySp"></div><div class="miniHand" id="myMini"></div></div>
+      <div class="round" id="round">-</div>
+      <div class="side right"><div class="nm"><span class="dim" id="opInfo"></span> 상대</div><div class="hp"><i id="opHp"></i></div><div class="sp" id="opSp"></div><div class="miniHand" id="opMini"></div></div>
+    </div>
+    <div class="opHand" id="opHand"></div>
+    <div class="playRow">
+      <!-- 상성 삼각형 (2026-11-14): 화살표가 가리키는 쪽을 이긴다. 카드를 고르면 이기는 상대(초록)·지는 상대(빨강)가 빛난다 -->
+      <svg class="tri" viewBox="0 0 170 152" aria-label="상성: 속공은 강타를, 강타는 역습을, 역습은 속공을 이긴다">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ffd860"/></marker></defs>
+        <path d="M101 55 L123 92" class="ar" marker-end="url(#ah)"/><path d="M108 124 L64 124" class="ar" marker-end="url(#ah)"/><path d="M46 94 L68 57" class="ar" marker-end="url(#ah)"/>
+        <text x="128" y="68" class="win">이김</text><text x="86" y="145" class="win">이김</text><text x="42" y="68" class="win">이김</text>
+        <g class="nd" data-t="atk"><circle cx="85" cy="28" r="25" fill="#f6c9b8"/><text x="85" y="24" class="ic">⚡</text><text x="85" y="42" class="nm">속공</text></g>
+        <g class="nd" data-t="tec"><circle cx="138" cy="120" r="25" fill="#d9c8f2"/><text x="138" y="116" class="ic">💪</text><text x="138" y="134" class="nm">강타</text></g>
+        <g class="nd" data-t="def"><circle cx="32" cy="120" r="25" fill="#c3dcf0"/><text x="32" y="116" class="ic">🔄</text><text x="32" y="134" class="nm">역습</text></g>
+      </svg>
+      <div class="hand" id="hand"></div>
+      <div></div>
+    </div>
+    <div class="acts"><!-- 2026-11-14: 재정비(왼쪽, 작게)와 제출(가운데, 크게)을 떨어뜨려 잘못 누르지 않게. 필살·회피는 손패의 흰 카드 -->
+      <button id="bShuffle">🔀 재정비</button>
+      <button id="bSubmit" class="main">제출</button>
+    </div>
+    <div class="sideCol"><!-- 오른쪽 칸 (2026-11-14): 소리 조절 한 줄 + 기록창. 소리 단추가 설정 줄에 있으면 폭에 따라 줄이 자꾸 바뀌어서 옮김 -->
+      <div class="sndBar"><button id="sndBtn">🔊 ON</button></div><!-- 음악·효과음 한 단추 (2026-11-14) -->
+      <div class="log" id="log"><div class="dim">기록</div></div>
+    </div>
+  </div>
+
+  <!-- 시뮬레이션 -->
+  <div id="pSim" hidden>
+    <p class="note">컴퓨터끼리 겨룬 승률이에요. 컴퓨터는 단순하게 둬요(무작위 + 큰 카드를 조금 더 냄 + 필살·회피를 가끔). 사람끼리 겨루면 읽기 싸움이라 결과가 달라질 수 있어요.</p>
+    <div class="row">경기 수(칸마다) <input id="simN" type="number" value="2000" min="100" max="20000" step="100"> <button id="simGo" class="main">돌리기</button></div>
+    <div id="simOut"></div>
+  </div>
+
+  <!-- 규칙 -->
+  <div id="pRule" hidden style="color:var(--text); font-size: 17px; line-height: 1.8">
+    <ul>
+      <li>둘이 <b>동시에</b> 카드를 내요. 제한 시간 10초, 넘기면 손패에서 무작위 한 장.</li>
+      <li>카드 9종: ⚡ 속공 · 💪 강타 · 🔄 역습 × 소 · 중 · 대. 상성: 속공 &gt; 강타 &gt; 역습 &gt; 속공.</li>
+      <li>같은 종류면 큰 쪽 승, 크기까지 같으면 비김.</li>
+      <li>이긴 쪽이 공격: 피해 = 낸 카드 크기 (소 10 · 중 15 · 대 20) × 무력 배율. 배율은 두 장수의 무력 차이 1점마다 1%씩: 높은 쪽은 오르고 낮은 쪽은 내려요 (10점 차이면 1.1배 · 0.9배). 같은 무력이면 둘 다 1배.</li>
+      <li>낸 카드만큼 무작위로 다시 받아요 (소 40% · 중 35% · 대 25%).</li>
+      <li>최대 손패: 무력 90 미만 4 (최소 4장) · 90~99 5 · 100~109 6 · 110 이상 7.</li>
+      <li>체력 100. 15합이 지나면 체력 많은 쪽 승리 (같으면 무승부, 임시).</li>
+      <li>특수 카드와 재정비 (2026-11-14)
+        <ul><li>🔀 재정비: 손패를 모두 다시 받아요 (특수 카드도 같은 확률로). 경기마다 2번, 같은 합에 두 번은 못 해요. 그 합에도 카드를 낼 수 있어요. 상대도 알 수 있어요.</li>
+        <li>상대 손패는 유형(색)만 보이고, 크기(대·중·소)는 안 보여요.</li>
+        <li>💥 필살 (흰 카드): 모든 카드를 이기고 피해 25 × 무력 배율. 회피에만 막혀요.</li>
+        <li>💨 회피 (흰 카드): 상대의 모든 카드와 필살을 피해요. 둘 다 회피면 헛수.</li>
+        <li>카드 한 장 뽑을 확률: 유형마다 소 12% · 중 10% · 대 7%, 필살 6%, 회피 7%. 특수 카드도 손패 칸을 차지해요. 손에는 특수 카드가 모두 합쳐 3장까지, 같은 종류는 2장까지 (필살·회피·회피는 되고, 회피 3장이나 필살 3장은 안 돼요).</li>
+        <li>상대 손패는 일반 카드는 유형(색)만, 특수 카드는 흰 뒷면만 보여요 (필살인지 회피인지 몰라요).</li></ul></li>
+    </ul>
+  </div>
+</div>
+
+<script src="duel_rules.js?v=20261114234743"></script>
+<script>
+'use strict';
+// 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
+// 손패·단추·설정은 숨기고 두 장수(둘 다 컴퓨터)가 자동으로 겨룬다. 재정비는 양쪽 다 보이지 않는다
+const WATCH = location.hash.startsWith('#watch') ? (() => { const q = new URLSearchParams(location.hash.slice(7)); return { a: q.get('a') || '청군', b: q.get('b') || '홍군', aw: +q.get('aw') || 100, bw: +q.get('bw') || 100 }; })() : null;
+// 실시간 모드 (2026-11-14): node lab/duel_server.js 를 켜고 http://localhost:8787/lab/martial.html#live&seat=0 (청군) · seat=1 (홍군) · seat=w (관전)
+// 판정은 서버가 한다. 내 쪽이 늘 왼쪽(빨강)에 오도록 VIEW로 순서를 바꿔 그린다 (관전은 청군이 왼쪽)
+// 웹 (2026-11-14): duel.html#web&id=경기id. 자리(0·1·관전)는 서버가 알려 준다
+const WEB = location.hash.startsWith('#web') ? { id: new URLSearchParams(location.hash.slice(5)).get('id') } : null;
+let LIVE = WEB ? { seat: 'w', names: ['', ''] } : location.hash.startsWith('#live') ? (() => { const q = new URLSearchParams(location.hash.slice(6)); const v = q.get('seat'); return { seat: v === '1' ? 1 : v === 'w' ? 'w' : 0, names: ['청군', '홍군'] }; })() : null;
+let VIEW = LIVE && LIVE.seat === 1 ? [1, 0] : [0, 1]; // 화면 왼쪽·오른쪽 = 서버의 몇 번 자리
+const SPECT = () => !!WATCH || (!!LIVE && LIVE.seat === 'w'); // 관전하는 중인가 (기록·결과를 이름으로)
+const NAME = () => WATCH ? [WATCH.a, WATCH.b] : SPECT() ? VIEW.map(i => LIVE.names[i]) : ['나', '상대'];
+// ===================== 규칙: duel_rules.js (서버와 같이 쓴다, 2026-11-14) =====================
+// ===================== 시뮬레이션 =====================
+document.getElementById('simGo').onclick = () => {
+  const N = Math.max(100, +document.getElementById('simN').value || 2000);
+  const wars = [70, 80, 90, 100, 110, 120];
+  let html = '<table class="sim"><tr><th>내 무력 ↓ / 상대 →</th>' + wars.map(w => `<th>${w}</th>`).join('') + '</tr>';
+  for (const a of wars) {
+    html += `<tr><th>${a} <span class="dim">(${handMax(a)}장)</span></th>`;
+    for (const b of wars) {
+      let w = 0, d = 0;
+      for (let i = 0; i < N; i++) { const r = simMatch(a, b); if (r === 0) w++; else if (r === null) d++; }
+      const p = w / N * 100, hue = Math.round(p * 1.2);
+      html += `<td style="background:hsl(${hue} 55% 22%)">${p.toFixed(0)}%${d ? `<br><span class="dim">무 ${(d / N * 100).toFixed(0)}%</span>` : ''}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</table><p class="note">칸 = 왼쪽 무력이 위쪽 무력을 이긴 비율. 참고: 지금 일기토(시즌 7)는 무력 차이 10 → 60%, 20 → 75%, 30 → 90%.</p>';
+  document.getElementById('simOut').innerHTML = html;
+};
+
+// ===================== 소리 (2026-11-14) =====================
+// 음악: <audio> 반복 재생 (파일로 열면 fetch가 막혀서 WebAudio 대신). 처음엔 꺼짐, 단추로 켠다. 소리 크기 20% (게임 BGM과 같게)
+// 효과음: 파일 없이 WebAudio로 고전 게임식 합성 (네모파·세모파·잡음). 심벌 같은 쨍한 잡음은 짧고 작게
+const BGM_VOL = 0.2; // 음악 크기 20% (게임 BGM과 같게). 2026-11-14 음량 막대는 뺌
+const SND = { ctx: null, on: true, bgm: true }; // 2026-11-14 기획자: 이 화면은 음악·효과음 모두 켜진 채로 시작
+try { if (parent !== window && parent.duelBridge && !parent.duelBridge.bgmOn()) { SND.on = SND.bgm = false; } } catch (e) { /* 혼자 열었다 */ } // 웹: 게임에서 음악을 꺼 두었으면 꺼진 채로 (단추로 켤 수 있다)
+setTimeout(() => { const b = document.getElementById('sndBtn'); if (b) b.textContent = SND.on ? '🔊 ON' : '🔇 OFF'; }, 0);
+function ac() { if (!SND.ctx) SND.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (SND.ctx.state === 'suspended') SND.ctx.resume(); return SND.ctx; }
+function tone(type, f0, f1, dur, vol, when = 0) {
+  const c = ac(), t = c.currentTime + when, o = c.createOscillator(), g2 = c.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+  g2.gain.setValueAtTime(vol, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g2).connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function noise(dur, vol, f0, f1, q = 1, when = 0, type = 'bandpass') {
+  const c = ac(), t = c.currentTime + when, n = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(), fl = c.createBiquadFilter(), g2 = c.createGain();
+  src.buffer = buf; fl.type = type; fl.Q.value = q; fl.frequency.setValueAtTime(f0, t); fl.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t + dur);
+  g2.gain.setValueAtTime(vol, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(fl).connect(g2).connect(c.destination); src.start(t); src.stop(t + dur + 0.02);
+}
+const SFX = {
+  pick:   () => tone('square', 660, 660, 0.05, 0.05),                                                  // 카드 고르기
+  submit: () => { tone('square', 523, 523, 0.06, 0.06); tone('square', 784, 784, 0.08, 0.06, 0.06); },  // 제출
+  flip:   () => { noise(0.05, 0.12, 3000, 1500, 1); noise(0.05, 0.12, 3000, 1500, 1, 0.09); },           // 카드 뒤집기
+  gallop: () => [0, 0.12, 0.24].forEach(w => { tone('triangle', 140, 70, 0.08, 0.22, w); noise(0.05, 0.08, 800, 300, 1, w, 'lowpass'); }), // 말발굽
+  hit:    () => { noise(0.18, 0.35, 5000, 600, 0.8); tone('square', 220, 55, 0.22, 0.18, 0.03); tone('triangle', 90, 40, 0.25, 0.35, 0.03); }, // 베기 + 맞음
+  clash:  () => { tone('square', 1320, 1250, 0.35, 0.07); tone('square', 1760, 1700, 0.3, 0.05); noise(0.08, 0.2, 6000, 3000, 2); },   // 칼 부딪힘
+  kill:   () => { tone('sawtooth', 200, 1200, 0.35, 0.10); tone('square', 300, 1800, 0.35, 0.06); noise(0.4, 0.45, 4000, 200, 0.7, 0.36); tone('triangle', 110, 30, 0.6, 0.5, 0.36); tone('square', 80, 30, 0.5, 0.2, 0.36); }, // 기 모으기 → 큰 일격
+  dodge:  () => noise(0.25, 0.25, 600, 4000, 1.5),                                                       // 휙 (회피)
+  idle:   () => tone('triangle', 300, 200, 0.15, 0.12),                                                  // 헛수
+  shuffle: () => { for (let k = 0; k < 9; k++) noise(0.03, 0.10, 3500 - k * 120, 1800, 1.2, k * 0.035); noise(0.08, 0.12, 2200, 900, 1, 0.34); }, // 재정비: 카드 섞는 촤르륵 (2026-11-14)
+  tick:   () => tone('square', 1000, 1000, 0.03, 0.04),                                                  // 남은 3초
+  win:    () => { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone('square', f, f, 0.11, 0.06, i * 0.1)); [523, 784, 1047].forEach(f => tone('triangle', f, f, 0.8, 0.12, 0.62)); tone('square', 1047, 1047, 0.5, 0.03, 0.62); [0.62, 0.8].forEach(w => noise(0.12, 0.3, 500, 120, 0.7, w, 'lowpass')); }, // 승리 팡파르. 2026-11-14: 끝의 '뿌웅'(낮게 미끄러지는 북) → 짧은 잡음 북 두 번, 화음은 세모파로 부드럽게
+  lose:   () => { [440, 415, 392, 330].forEach((f, i) => tone('triangle', f, f, i === 3 ? 0.9 : 0.22, 0.13, i * 0.24)); tone('triangle', 82, 41, 1.2, 0.35, 0.72); }, // 패배: 처지는 음 + 낮게 가라앉는 소리
+};
+const sfx = k => { if (SND.on) try { SFX[k](); } catch (e) { /* 소리 장치 없음 */ } };
+// ===== 배경음악 (2026-11-14): 인트로를 한 번 틀고, 그 끝에 맞춰 루프를 틈 없이 반복 (WebAudio).
+// 곡 데이터는 audio/bgm_tourney_b.js (파일로 열어도 되게 글자로 담음). 데이터가 없으면(?bgm=a) <audio> 반복으로
+const MUS = { intro: null, loop: null, gain: null, nodes: [], ready: false, loading: false };
+const b64buf = b => { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; };
+async function bgmLoad() { // 웹: 인트로(+루프 한 바퀴) 파일과 루프 파일을 받아 온다 (2026-11-14). 음악을 켤 때만 받는다 (약 5MB)
+  if (MUS.loading) return; MUS.loading = true;
+  try {
+    const c = ac(), get = u => fetch(u).then(x => x.arrayBuffer()).then(b => c.decodeAudioData(b));
+    [MUS.intro, MUS.loop] = await Promise.all([get('audio/bgm_tourney_intro.wav'), get('audio/bgm_tourney.wav')]);
+    MUS.ready = true; if (SND.bgm && c.state === 'running') bgmPlay();
+  } catch (e) { console.warn('BGM', e); }
+}
+function bgmPlay() {
+  if (!SND.bgm) return;
+  if (!MUS.ready) return; // 아직 받는 중 (다 받으면 bgmLoad가 튼다)
+  if (MUS.nodes.length) return; // 이미 나오는 중
+  const c = ac(), t0 = c.currentTime + 0.05;
+  MUS.gain = c.createGain(); MUS.gain.gain.value = BGM_VOL; MUS.gain.connect(c.destination);
+  let at = t0;
+  if (MUS.intro) { const s1 = c.createBufferSource(); s1.buffer = MUS.intro; s1.connect(MUS.gain); s1.start(at); at += MUS.intro.duration; MUS.nodes.push(s1); }
+  const s2 = c.createBufferSource(); s2.buffer = MUS.loop; s2.loop = true; s2.connect(MUS.gain); s2.start(at); MUS.nodes.push(s2); // 인트로 끝 바로 그 순간부터 루프
+}
+function bgmStop() {
+  MUS.nodes.forEach(n => { try { n.stop(); } catch (e) { /* 이미 멈춤 */ } }); MUS.nodes = [];
+  document.getElementById('bgm').pause();
+}
+// 소리 단추 하나로 음악·효과음을 같이 켜고 끈다 (2026-11-14 기획자). 다시 켜면 인트로부터
+document.getElementById('sndBtn').onclick = () => {
+  SND.bgm = SND.on = !SND.on;
+  if (SND.bgm) { ac(); if (!MUS.ready) bgmLoad(); bgmPlay(); } else bgmStop();
+  document.getElementById('sndBtn').textContent = SND.on ? '🔊 ON' : '🔇 OFF';
+};
+// 음악은 켜진 채로 시작. 브라우저는 사용자가 한 번 누르기 전엔 소리를 막으니, 첫 클릭·키 입력 때 튼다
+(function bgmAutoStart() {
+  if (SND.bgm) bgmLoad();
+  const once = () => { ac(); bgmPlay(); window.removeEventListener('pointerdown', once, true); window.removeEventListener('keydown', once, true); };
+  window.addEventListener('pointerdown', once, true); window.addEventListener('keydown', once, true);
+})();
+// 결과가 나오는 동안 음악을 낮춘다
+function bgmDuck(on) {
+  const v = on ? BGM_VOL * 0.35 : BGM_VOL;
+  if (MUS.gain) MUS.gain.gain.setTargetAtTime(v, ac().currentTime, 0.1);
+  document.getElementById('bgm').volume = v;
+}
+
+// ===================== 그림 (미니게임 도트 장수 재사용) =====================
+const cv = document.getElementById('cv'), g = cv.getContext('2d');
+g.imageSmoothingEnabled = false;
+const img = n => { const i = new Image(); i.src = `img/duel/${n}.png`; return i; };
+// 그림: lab/img (GPT Image 원본 lab/raw → tools/pixelize.html로 도트 변환, 2026-11-14). 말 탄 장수 3동작: 서 있기 · 돌격 · 찌르기. b = 상대(파란 갑옷)
+// 3 = 승리 (말이 앞발 들고 언월도 치켜듦), 4 = 패배 (말에서 내려 무릎 꿇음, 무기 떨굼) — 2026-11-14 lab/raw/horse_end.png
+const BG = img('arena'), SPR = [0, 1, 2, 3, 4].map(k => img('horse' + k)), SPR_B = [0, 1, 2, 3, 4].map(k => img('horse' + k + 'b'));
+const ANCHOR = [37, 40, 37, 42, 33]; // 2026-11-14 장수 약 15% 키움 (원본에서 덜 줄여 다시 만듦, 예전 그림은 img/old). // 동작마다 말 몸통 가운데가 그림 왼쪽에서 몇 칸인지 (위치가 흔들리지 않게)
+const W = 320, H = 180, GROUND = 168, HOME = [70, 250], REACH = 84; // GROUND: 말발굽 위치 (대회장 흙바닥). REACH: 찌를 때 상대와의 거리
+const st = { x: [...HOME], fr: [0, 0], flash: [0, 0], ghost: [0, 0], shake: 0, bigFlash: 0, texts: [], spark: 0, t: 0, result: null, confetti: [] }; // result: 끝났을 때 큰 글씨 (2026-11-14)
+function whiteOf(src) { const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); return c; }
+function drawFighter(i) {
+  const set = i === 0 ? SPR_B : SPR, // 나(왼쪽)는 파란 갑옷, 상대는 빨간 갑옷 (2026-11-14 기획자)
+  s = set[st.fr[i]];
+  if (!s || !s.width) return;
+  const bob = st.fr[i] === 0 ? Math.round(Math.sin(st.t / 300 + i) * 1) : 0;
+  const x = Math.round(st.x[i]), y = GROUND - s.height + bob;
+  g.save();
+  if (i === 1) { g.translate(x, 0); g.scale(-1, 1); g.translate(-x, 0); }
+  const dx = x - ANCHOR[st.fr[i]];
+  g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x, GROUND - 1, 32, 4, 0, 0, Math.PI * 2); g.fill(); // 발밑 그림자
+  if (st.ghost[i] > 0) { g.globalAlpha = 0.35 * st.ghost[i]; g.drawImage(s, dx + 18, y); g.globalAlpha = 1; }
+  g.drawImage(st.flash[i] > 0 && Math.floor(st.t / 60) % 2 ? whiteOf(s) : s, dx, y);
+  g.restore();
+}
+// 끝났을 때 (2026-11-14): 승리 = 금빛 + 꽃가루, 패배 = 어둡게, 가운데 띠에 큰 글씨가 커졌다 작아지며 들어온다
+let bannerFor = null;
+function syncBanner(R) {
+  const b = document.getElementById('banner'); if (!b || bannerFor === R) return;
+  bannerFor = R;
+  b.className = 'banner';
+  if (!R) return;
+  b.querySelector('.t').textContent = R.title; b.querySelector('.s').textContent = R.sub || '';
+  void b.offsetWidth; b.className = 'banner show k-' + R.kind; // 연출 다시 시작 ('win'은 게임 style.css의 창 테두리 이름이라 k- 붙임)
+}
+function drawResult(now) {
+  const R = st.result, age = (now - R.t0) / 1000, k = Math.min(1, age / 0.35);
+  if (R.kind === 'lose') { g.fillStyle = `rgba(10,10,40,${0.5 * k})`; g.fillRect(0, 0, W, H); }
+  if (R.kind === 'win') {
+    g.fillStyle = `rgba(255,200,60,${0.12 * k})`; g.fillRect(0, 0, W, H);
+    if (st.confetti.length < 80 && Math.random() < 0.6) st.confetti.push({ x: Math.random() * W, y: -4, vx: (Math.random() - 0.5) * 0.6, vy: 0.6 + Math.random() * 0.8, c: ['#ffd860', '#ff5a3a', '#ffffff', '#ffb020'][Math.floor(Math.random() * 4)] });
+    for (const p of st.confetti) { p.x += p.vx + Math.sin((now / 300) + p.y / 20) * 0.3; p.y += p.vy; g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
+    st.confetti = st.confetti.filter(p => p.y < H + 4);
+  }
+  const bh = 62 * k; g.fillStyle = 'rgba(0,0,0,0.7)'; g.fillRect(0, H / 2 - 36 - bh / 2, W, bh); // 가운데 띠: 제목 + 부제를 함께 감싼다
+  syncBanner(R);
+  g.textBaseline = 'alphabetic';
+}
+function render(now) {
+  st.t = now || 0;
+  const sh = st.shake > 0 ? (Math.random() * 2 - 1) * st.shake : 0;
+  g.save(); g.translate(Math.round(sh), 0);
+  if (BG.width) g.drawImage(BG, 7, 4, W, H, 0, 0, W, H); // 배경 334×188에서 가운데 320×180
+  g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(-4, 0, W + 8, H); // 배경만 한 단계 어둡게 (2026-11-14, 0.26도 해 봤다가 되돌림) (장수가 더 또렷하게, 2026-11-14) else { g.fillStyle = '#300'; g.fillRect(0, 0, W, H); }
+  drawFighter(0); drawFighter(1);
+  if (st.spark > 0) { g.fillStyle = '#fff6a0'; const cx = (st.x[0] + st.x[1]) / 2; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, r = 4 + (1 - st.spark) * 10; g.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(GROUND - 60 + Math.sin(a) * r), 2, 2); } }
+  g.restore();
+  if (st.bigFlash > 0) { g.fillStyle = `rgba(${st.flashRGB || '255,60,30'},${st.bigFlash * 0.5})`; g.fillRect(0, 0, W, H); }
+  if (st.result) drawResult(now || 0); else if (bannerFor) syncBanner(null);
+  ['flash', 'ghost'].forEach(k => st[k] = st[k].map(v => Math.max(0, v - 0.02)));
+  st.shake = Math.max(0, st.shake - 0.2); st.bigFlash = Math.max(0, st.bigFlash - 0.02); st.spark = Math.max(0, st.spark - 0.03);
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function tween(i, to, ms) { const from = st.x[i], t0 = performance.now(); return new Promise(res => { const step = () => { const k = Math.min(1, (performance.now() - t0) / ms); st.x[i] = from + (to - from) * k; if (k < 1) requestAnimationFrame(step); else res(); }; step(); }); }
+// 떠오르는 글씨 (필살!, -30, 회피! 등): 그림에 그리면 1.9배로 늘어 깨져서 그림 위에 글자로 띄운다 (2026-11-14). x·y는 그림 좌표(320×180)
+const say = (s, x, c = '#ffd860', y = 60) => {
+  const el = document.createElement('div'); el.className = 'fxText'; el.textContent = s; el.style.color = c;
+  el.style.left = (x / W * 100) + '%'; el.style.top = (y / H * 100) + '%';
+  document.getElementById('fx').appendChild(el); setTimeout(() => el.remove(), 1500);
+};
+
+// 한 합 연출
+async function animate(j, a, b) {
+  const atk = j.win, mid = (HOME[0] + HOME[1]) / 2;
+  if (j.how === 'tie') {
+    st.fr = [1, 1]; sfx('gallop'); await Promise.all([tween(0, mid - REACH / 2, 220), tween(1, mid + REACH / 2, 220)]);
+    st.fr = [2, 2]; st.spark = 1; st.shake = 2; sfx('clash'); // 2026-11-14: '챙!' 글자는 뺌 (불꽃·소리만)
+    await sleep(300); st.fr = [1, 1]; await Promise.all([tween(0, HOME[0], 260), tween(1, HOME[1], 260)]); st.fr = [0, 0]; return;
+  }
+  if (j.how === 'idle') { // 헛수 (2026-11-14): 둘 다 회피. 회피한 쪽은 뒤로 빠지고, 상대는 나오다 멈춘다
+    const dodgers = [0, 1].filter(i => (i === 0 ? a : b).k === 'dodge');
+    const movers = [0, 1].filter(i => !dodgers.includes(i));
+    movers.forEach(i => { st.fr[i] = 1; });
+    await Promise.all([
+      ...dodgers.map(i => { st.ghost[i] = 1; return tween(i, HOME[i] + (i === 0 ? -20 : 20), 140); }),
+      ...movers.map(i => tween(i, HOME[i] + (i === 0 ? 24 : -24), 220)),
+    ]);
+    sfx('idle'); // 2026-11-14: 그림 위 '헛수' 글자는 뺌
+    await sleep(450);
+    await Promise.all([0, 1].map(i => tween(i, HOME[i], 240))); st.fr = [0, 0]; return;
+  }
+  if (j.how === 'dodged') {
+    const d = j.dodger, o = 1 - d, toward = d === 0 ? HOME[0] + REACH + 20 : HOME[1] - REACH - 20;
+    st.fr[o] = 1; sfx('gallop'); await tween(o, toward, 220); st.fr[o] = 2; st.ghost[d] = 1; sfx('dodge');
+    const back = d === 0 ? HOME[0] - 20 : HOME[1] + 20; await tween(d, back, 120); say('회피!', st.x[d], '#9fe8ff');
+    await sleep(350); st.fr[o] = 1; await Promise.all([tween(o, HOME[o], 260), tween(d, HOME[d], 260)]); st.fr = [0, 0]; return;
+  }
+  const def = 1 - atk, hit = atk === 0 ? HOME[1] - REACH : HOME[0] + REACH;
+  if (j.how === 'kill') { const blue = atk === 0; say('필살!', HOME[atk], blue ? '#6ab0ff' : '#ff5a3a', 50); st.flashRGB = blue ? '40,120,255' : '255,60,30'; st.bigFlash = 1; // 필살 깜빡임: 나(왼쪽·파랑)는 파랑, 상대는 빨강 (2026-11-14)
+  sfx('kill'); await sleep(350); } else sfx('gallop');
+  st.fr[atk] = 1; await tween(atk, hit, j.how === 'kill' ? 160 : 240);
+  st.fr[atk] = 2; st.flash[def] = 1; st.shake = j.how === 'kill' ? 5 : 2; if (j.how !== 'kill') sfx('hit');
+  say(`-${j.dmg}`, HOME[def], '#ff6a4a', 78);
+  await tween(def, HOME[def] + (def === 1 ? 10 : -10), 100);
+  await sleep(300); st.fr[atk] = 1;
+  await Promise.all([tween(atk, HOME[atk], 260), tween(def, HOME[def], 200)]); st.fr = [0, 0];
+}
+
+// ===================== 대결 (나 대 컴퓨터) =====================
+const $ = id => document.getElementById(id);
+let F = null, round = 0, pick = null, busy = false, timerId = 0, deadline = 0, over = true, lastTick = 0;
+function log(s) { const d = document.createElement('div'); d.textContent = s; $('log').prepend(d); }
+function cardEl(c, cls = '') { return isSp(c) ? `<div class="card sp ${c.t} ${cls}"><span class="ic">${T[c.t].ic}</span>${T[c.t].name}<b>&nbsp;</b></div>` : `<div class="card ${c.t} ${cls}"><span class="ic">${T[c.t].ic}</span>${T[c.t].name}<b>${SIZE_NAME[c.s]}</b></div>`; } // 필살·회피 = 흰 카드 (2026-11-14)
+// 공개 칸 한쪽: 위에 꼬리표(우세·회피·비김), 카드, 아래에 누구 것인지
+function rvEl(a, who) { return `<div class="rv">${actEl(a)}<span class="who">${who}</span></div>`; }
+// 판정이 나면 우세한 쪽 카드를 빛내고 진 쪽은 흐리게
+function markReveal(j) {
+  const sides = document.querySelectorAll('#reveal .rv'); if (sides.length < 2) return;
+  sides.forEach((el, i) => {
+    el.classList.remove('won', 'lost', 'tie');
+    if (j.how === 'dodged') el.classList.add(i === j.dodger ? 'won' : 'lost'); // 2026-11-14: 우세·필살·회피 글자는 빼고 빛남·흐림만
+    else if (j.win === null) el.classList.add('tie'); // 비김·헛수도 글자 없음 (2026-11-14)
+    else if (j.win === i) el.classList.add('won');
+    else el.classList.add('lost');
+  });
+}
+function actEl(a) { return a.k === 'card' ? cardEl(a.c, 'big') : a.k === 'kill' || a.k === 'dodge' ? cardEl({ t: a.k }, 'big') : `<div class="card big spc"><span class="ic">${a.k === 'kill' ? '💥' : '💨'}</span>${a.k === 'kill' ? '필살' : '회피'}</div>`; }
+// 재정비도 공개 (2026-11-14 기획자: 상대 손패 색이 보이면 어차피 드러나서). 양쪽 다 재정비 · 필살 · 회피
+function spText(f) { const n = f.shuffleLeft ?? 0; return n > 0 ? `재정비 ${n}` : '<s>재정비</s>'; } // 2026-11-14: 필살·회피는 카드라 재정비 남은 횟수만
+// 상성 표시 (2026-11-14): 커서를 올린 카드(없으면 고른 카드) 기준으로 상성 삼각형과 상대 손패에 테두리.
+// 이기는 상대 = 초록, 지는 상대 = 빨강, 같은 유형은 표시 없음
+let hoverT = null;
+function markMatchup() {
+  const sel = hoverT || (pick ? (pick.k === 'card' ? pick.c.t : pick.k) : null); // kill·dodge도 들어온다
+  document.querySelectorAll('.tri .nd').forEach(n => { const t = n.dataset.t; n.classList.toggle('me', t === sel); n.classList.toggle('win', !!sel && BEATS[sel] === t); n.classList.toggle('lose', !!sel && BEATS[t] === sel); });
+  document.querySelectorAll('#opHand .card.oc').forEach(c => { const t = TYPES.find(x => c.classList.contains(x)); c.classList.toggle('mWin', !!sel && !!t && (sel === 'kill' || BEATS[sel] === t)); c.classList.toggle('mLose', !!sel && BEATS[t] === sel); });
+}
+// 재정비 연출 (2026-11-14): 촤르륵 소리 + 그 장수 머리 위 '재정비' + 손패가 한 장씩 다시 깔림. v = 화면 왼쪽(0)·오른쪽(1)
+let fxDeal = [false, false];
+function shuffleFx(v) { sfx('shuffle'); say('재정비', HOME[v], '#ffe08a', 66); fxDeal[v] = true; }
+function draw() {
+  const [m, o] = F;
+  $('myInfo').textContent = `무력 ${m.war} · 체력 ${Math.max(0, m.hp)}`; $('opInfo').textContent = `무력 ${o.war} · 체력 ${Math.max(0, o.hp)}`;
+  $('myHp').style.width = Math.max(0, m.hp) + '%'; $('opHp').style.width = Math.max(0, o.hp) + '%';
+  $('mySp').innerHTML = spText(m); $('opSp').innerHTML = spText(o);
+  $('round').textContent = over ? '끝' : `${round} / ${MAX_ROUND}합`;
+  const dealO = fxDeal[1], dealM = fxDeal[0]; fxDeal = [false, false]; // 재정비 연출은 한 번만
+  const dl = (on, i) => on ? ` style="animation-delay:${i * 60}ms"` : '';
+  if (SPECT()) [['myMini', m], ['opMini', o]].forEach(([id, f]) => { $(id).innerHTML = f.hand.map(c => c.t === 'sp' || isSp(c) ? '<div class="card oc white"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).join(''); }); // 관전: 두 장수 손패 축약
+  $('opHand').innerHTML = o.hand.map((c, i) => (c.t === 'sp' || isSp(c) ? '<div class="card oc white" title="특수 카드 (필살 또는 회피)"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).replace('class="card oc', `${dl(dealO, i)} class="card oc${dealO ? ' deal' : ''}`)).join(''); // 상대 손패: 유형(색)은 보이고 크기(대·중·소)는 숨김 (2026-11-14 기획자)
+  $('hand').innerHTML = m.hand.map((c, i) => cardEl(c, (pick && pick.i === i ? 'sel' : '') + (dealM ? ' deal' : '')).replace('<div class="card', `<div data-i="${i}"${dl(dealM, i)} class="card`)).join('');
+  $('hand').querySelectorAll('[data-i]').forEach(el => {
+    el.onclick = () => { if (busy || over) return; pick = actOf(m, +el.dataset.i); sfx('pick'); draw(); };
+    el.onmouseenter = () => { hoverT = m.hand[+el.dataset.i].t; markMatchup(); }; // 커서만 올려도 상성 표시 (2026-11-14)
+    el.onmouseleave = () => { hoverT = null; markMatchup(); };
+    el.ondblclick = () => { if (busy || over) return; pick = actOf(m, +el.dataset.i); submit(); };
+  });
+  markMatchup();
+  $('bShuffle').textContent = `🔀 재정비 (${m.shuffleLeft ?? 0})`;
+  $('bShuffle').disabled = busy || over || !canShuffle(m, round); // 경기마다 2번, 같은 합에 한 번만
+  $('bSubmit').disabled = busy || over || !pick;
+}
+function startRound() {
+  round++; pick = null; busy = false;
+  if (aiShuffle(F[1], round)) { doShuffle(F[1], round); shuffleFx(1); log(`${round}합 ${SPECT() ? NAME()[1] : '상대'} 재정비`); } // 재정비는 공개
+  if (WATCH && aiShuffle(F[0], round)) { doShuffle(F[0], round); shuffleFx(0); log(`${round}합 ${NAME()[0]} 재정비`); }
+  deadline = performance.now() + (WATCH ? 4 : TIME) * 1000; lastTick = 0; // 관전 연구: 고르는 시간을 4초로 줄여 보여 준다
+  clearInterval(timerId);
+  timerId = setInterval(() => {
+    const left = Math.max(0, deadline - performance.now());
+    $('timer').style.width = (left / ((WATCH ? 4 : TIME) * 1000) * 100) + '%';
+    const sec = Math.ceil(left / 1000); if (!WATCH && sec <= 3 && sec > 0 && sec !== lastTick) { lastTick = sec; sfx('tick'); } // 남은 3초 째깍
+    if (WATCH && left <= 0 && !busy) { clearInterval(timerId); pick = aiAct(F[0], F[1]); submit(); return; } // 관전: 둘 다 컴퓨터
+    if (left <= 0) { clearInterval(timerId); if (!busy) { pick = randomAct(F[0]); log('시간 초과: 무작위 카드'); submit(); } }
+  }, 100);
+  draw();
+}
+// 한 합 보여 주기: 공개 → 우세 표시 → 연출 → 기록 한 줄 (체력은 부르는 쪽이 바꾼다)
+async function showRound(a, b, j) {
+  $('reveal').innerHTML = rvEl(a, NAME()[0]) + '<span class="vs">VS</span>' + rvEl(b, NAME()[1]); setTimeout(() => sfx('flip'), 120); await sleep(350);
+  markReveal(j); // 우세한 쪽 강조 (다음 합 공개 때까지 남는다)
+  await animate(j, a, b);
+  let msg = `${round}합 ${actText(a)} vs ${actText(b)} → `; // 한 합 = 기록 한 줄
+  // 결과는 내 쪽에서 본 말: 승 (피해 20) · 패 (피해 20) · 필살 승/패 · 회피 · 상대 회피 · 비김 · 헛수. 관전은 이름으로
+  if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} 회피` : j.dodger === 0 ? '회피' : '상대 회피') : j.how === 'idle' ? '헛수' : '비김';
+  else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? '필살 ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? '필살 ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
+  if (LIVE && (a.auto || b.auto)) msg += ' ⏱';
+  log(msg);
+}
+async function submit() {
+  if (busy || over || !pick) return;
+  if (WEB) return webSubmit();
+  if (LIVE) return liveSubmit();
+  busy = true; clearInterval(timerId); if (!WATCH) sfx('submit'); draw();
+  const [m, o] = F, a = pick, b = aiAct(o, m), j = judge(a, b, m, o);
+  useAct(m, a); useAct(o, b);
+  await showRound(a, b, j);
+  if (j.win !== null) F[1 - j.win].hp -= j.dmg;
+  if (m.hp <= 0 || o.hp <= 0 || round >= MAX_ROUND) return finish();
+  startRound();
+}
+// 끝: 승패 연출 (F[0] = 화면 왼쪽)
+function finish(wv = null, tie = '') { // wv: 이긴 쪽 (화면 왼쪽 0 · 오른쪽 1). 웹은 서버가 정한 승자 (15합 동점이면 무력 낮은 쪽, 2026-11-14)
+  const [m, o] = F;
+  over = true; clearInterval(timerId);
+    let res = m.hp <= 0 ? '패배' : o.hp <= 0 ? '승리' : m.hp > o.hp ? '승리 (체력)' : o.hp > m.hp ? '패배 (체력)' : '무승부';
+    if (wv !== null && res === '무승부') res = (wv === 0 ? '승리' : '패배') + ' (체력)';
+    log(SPECT() ? `=== ${m.hp > o.hp ? NAME()[0] + ' 승리' : o.hp > m.hp ? NAME()[1] + ' 승리' : '무승부'} ===` : `=== ${res} ===`); sfx(SPECT() ? (m.hp === o.hp ? 'idle' : 'win') : res.startsWith('승') ? 'win' : res.startsWith('패') ? 'lose' : 'idle');
+    if (!res.startsWith('무')) { const w = res.startsWith('승') ? 0 : 1; st.fr[w] = 3; st.fr[1 - w] = 4; } // 승자는 말을 세우고 무기를 치켜들고, 패자는 무릎 꿇는다
+    const kind = res.startsWith('승') ? 'win' : res.startsWith('패') ? 'lose' : 'draw', byHp = res.includes('체력');
+    st.result = { kind, t0: performance.now(), title: kind === 'win' ? '승 리 !' : kind === 'lose' ? '패 배 …' : '무 승 부',
+      sub: kind === 'win' ? (byHp ? `${MAX_ROUND}합 끝 · 체력 ${tie ? '같음 · 무력이 낮아 승리' : '우세'} (${m.hp} : ${o.hp})` : '상대를 쓰러뜨렸다!') : kind === 'lose' ? (byHp ? `${MAX_ROUND}합 끝 · 체력 ${tie ? '같음 · 무력이 높아 패배' : '열세'} (${m.hp} : ${o.hp})` : '쓰러지고 말았다…') : `${MAX_ROUND}합 끝 · 체력 같음` };
+    if (SPECT()) { // 관전: 누가 이겼는지만
+      const w = wv !== null ? wv : m.hp > o.hp ? 0 : o.hp > m.hp ? 1 : null, L = NAME();
+      st.result = { kind: w === null ? 'draw' : 'win', t0: performance.now(), title: w === null ? '무 승 부' : `${L[w]} 승리!`, sub: byHp ? `${MAX_ROUND}합 끝 · 체력 ${m.hp} : ${o.hp}` : `${L[w]}${josaI(L[w])} ${L[1 - w]}${josaUl(L[1 - w])} 쓰러뜨렸다!` };
+      st.confetti = []; $('reveal').innerHTML = ''; bgmDuck(true); $('timer').style.width = '0%'; draw(); return;
+    }
+    st.confetti = [];
+    $('reveal').innerHTML = ''; $('resBox').innerHTML = `<div class="resCard ${kind}"><div class="big">${kind === 'win' ? '🏆 승리' : kind === 'lose' ? '💀 패배' : '🤝 무승부'}</div><div class="dim">${st.result.sub}</div><button id="again" class="main">대진표로</button></div>`;
+    $('again').onclick = () => { try { parent.duelBridge.close(); } catch (e) { /* 혼자 열었다 */ } };
+    bgmDuck(true); // 결과 동안 음악을 낮춰 승패 소리가 잘 들리게
+    $('timer').style.width = '0%'; draw();
+}
+$('bSubmit').onclick = submit;
+$('bShuffle').onclick = () => {
+  if (busy || over || !canShuffle(F[0], round)) return;
+  if (WEB) { shuffleFx(0); pick = null; log(`${round}합 재정비`); busy = true; draw(); return webAct({ k: 'shuffle' }).then(() => { busy = false; if (WS.pub) liveQueue(() => webApply(WS.pub)); }); } // 웹: 서버가 새 손패를 돌려준다
+  if (LIVE) livePost('/api/act', { seat: LIVE.seat, act: { k: 'shuffle' } }); // 실시간: 새 손패는 서버가 보내 준다
+  doShuffle(F[0], round); shuffleFx(0); // 실시간에서도 남은 횟수·같은 합 표시는 바로 바꿔 둔다 (손패는 곧 서버 것으로)
+  pick = null; log(`${round}합 재정비`); draw();
+};
+$('start').onclick = () => {
+  if (LIVE) return livePost('/api/new', { a: '청군', b: '홍군', aw: +$('myWar').value || 100, bw: +$('opWar').value || 100 }); // 실시간: 새 경기 (8초 뒤 시작)
+  const mw = Math.max(30, Math.min(130, +$('myWar').value || 100)), ow = Math.max(30, Math.min(130, +$('opWar').value || 100));
+  F = [newFighter(mw), newFighter(ow)]; round = 0; over = false; $('log').innerHTML = ''; $('reveal').innerHTML = ''; $('resBox').innerHTML = '';
+  st.x = [...HOME]; st.fr = [0, 0]; st.result = null; st.confetti = []; bgmDuck(false);
+  log(`시작 · ${NAME()[0]} 무력${mw} ${handMax(mw)}장 vs ${NAME()[1]} 무력${ow} ${handMax(ow)}장`);
+  startRound();
+};
+// ===================== 실시간 (연습용 서버와 주고받기) =====================
+let liveQ = Promise.resolve(), opReady = false;
+const livePost = (url, o) => fetch(url, { method: 'POST', body: JSON.stringify(o) }).then(x => x.json()).then(d => { if (d.error) log('⚠ ' + d.error); }).catch(() => log('⚠ 서버에 연결하지 못했어요'));
+const liveQueue = fn => { liveQ = liveQ.then(fn).catch(e => console.error(e)); }; // 연출이 겹치지 않게 차례로
+function liveSubmit() {
+  busy = true; sfx('submit');
+  const a = { k: pick.k, i: pick.i }; // 손패 i번째 카드 (필살·회피도 카드)
+  livePost('/api/act', { seat: LIVE.seat, act: a });
+  $('reveal').innerHTML = '<span class="vs">상대를 기다리는 중…</span>';
+  draw();
+}
+// 서버가 준 상태로 F를 다시 만든다 (F[0] = 화면 왼쪽)
+function liveSetF(d) {
+  F = VIEW.map(i => {
+    const p = d.pub[i];
+    if (!SPECT() && i === LIVE.seat && d.me) return { war: d.me.war, hp: d.me.hp, hand: d.me.hand, used: d.me.used, shuffleLeft: d.me.shuffleLeft, shuffledRound: d.me.shuffledRound };
+    // 상대 손패는 유형만 온다. 재정비도 공개 (2026-11-14 기획자: 손패 색이 보이면 어차피 드러나서)
+    return { war: p.war, hp: p.hp, hand: (p.handT || []).map(t => ({ t, s: 0 })), used: {}, shuffleLeft: p.shuffleLeft }; // 상대 손패: 유형만, 특수 카드는 'sp'(흰 뒷면)
+  });
+}
+function liveTimer(leftMs) {
+  clearInterval(timerId); deadline = performance.now() + leftMs; lastTick = 0;
+  timerId = setInterval(() => {
+    const left = Math.max(0, deadline - performance.now());
+    $('timer').style.width = (left / (TIME * 1000) * 100) + '%';
+    const sec = Math.ceil(left / 1000); if (!busy && sec <= 3 && sec > 0 && sec !== lastTick) { lastTick = sec; sfx('tick'); }
+    if (left <= 0) clearInterval(timerId); // 시간이 다 되면 서버가 무작위 카드를 낸다
+  }, 100);
+}
+function liveTurn(d) {
+  const before = F ? F.map(f => f.shuffleLeft ?? SHUFFLE_N) : [SHUFFLE_N, SHUFFLE_N];
+  liveSetF(d);
+  F.forEach((f, v) => { if ((f.shuffleLeft ?? SHUFFLE_N) < before[v] && (SPECT() || v === 1)) log(`${d.round}합 ${SPECT() ? NAME()[v] : '상대'} 재정비`); }); round = d.round; over = false; pick = null; opReady = false;
+  busy = SPECT() || !d.control || d.acted;
+  if (!SPECT() && !d.control) $('reveal').innerHTML = '<span class="vs">🤖 컴퓨터가 대신 두는 중 (다음 합부터 직접)</span>';
+  else if (!SPECT()) $('reveal').querySelectorAll('.vs').forEach(x => { if (!x.closest('.rv') && x.textContent !== 'VS') x.remove(); });
+  liveTimer(d.left); draw();
+  $('round').textContent = `${round} / ${MAX_ROUND}합`;
+}
+function liveInit() {
+  document.body.classList.add('live'); if (SPECT()) document.body.classList.add('watch');
+  const row = $('myWar').parentNode; row.firstChild.textContent = '청군 무력 '; $('myWar').nextSibling.textContent = ' 홍군 ';
+  $('start').textContent = '새 경기 (8초 뒤 시작)';
+  $('log').innerHTML = `<div class="dim">🔌 실시간 연습 · ${SPECT() ? '관전' : LIVE.seat === 0 ? '청군 자리' : '홍군 자리'}</div>`;
+  F = [newFighter(100), newFighter(100)];
+  const es = new EventSource('/api/events?seat=' + LIVE.seat);
+  es.onerror = () => log('⚠ 서버 연결이 끊겼어요 (node lab/duel_server.js 가 켜져 있나요?)');
+  es.addEventListener('state', e => liveQueue(async () => {
+    const d = JSON.parse(e.data);
+    if (d.names) LIVE.names = d.names;
+    if (d.phase === 'none') { log('새 경기를 만들어 주세요 (위쪽 단추)'); return; }
+    if (d.phase === 'lobby') { over = true; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; $('resBox').innerHTML = ''; $('reveal').innerHTML = `<span class="vs">${Math.ceil(d.startIn / 1000)}초 뒤 시작 · 지금 이 창에 있으면 직접 둬요</span>`; bgmDuck(false); return; }
+    if (d.pub) { liveTurn(d); if (d.phase !== 'pick') busy = true; }
+  }));
+  es.addEventListener('start', e => liveQueue(async () => {
+    const d = JSON.parse(e.data); LIVE.names = d.names;
+    if (SPECT()) { const L = NAME(); document.querySelector('.side .nm').innerHTML = `<b>${L[0]}</b> <span class="dim" id="myInfo"></span>`; document.querySelector('.side.right .nm').innerHTML = `<b>${L[1]}</b> <span class="dim" id="opInfo"></span>`; } // 실시간 관전: 이름 표시
+    $('log').innerHTML = ''; $('reveal').innerHTML = ''; $('resBox').innerHTML = ''; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; bgmDuck(false);
+    const who = i => `${SPECT() ? d.names[i] : i === LIVE.seat ? '나' : '상대'} 무력${d.pub[i].war}${d.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(d.pub[i].war)}장`;
+    log(`시작 · ${who(VIEW[0])} vs ${who(VIEW[1])}`);
+  }));
+  es.addEventListener('shuffle', e => { const d = JSON.parse(e.data), v = VIEW.indexOf(d.seat); if (!F || (!SPECT() && d.seat === LIVE.seat)) return; shuffleFx(v); const p = d.pub; F[v].hand = p.handT.map(t => ({ t, s: 0 })); F[v].shuffleLeft = p.shuffleLeft; log(`${round}합 ${SPECT() ? NAME()[v] : '상대'} 재정비`); draw(); });
+  es.addEventListener('turn', e => liveQueue(async () => liveTurn(JSON.parse(e.data))));
+  es.addEventListener('ready', e => { const d = JSON.parse(e.data); if (!SPECT() && d.seat !== LIVE.seat) { opReady = true; $('round').textContent = `${round} / ${MAX_ROUND}합 · 상대 선택 끝`; } });
+  es.addEventListener('hand', e => { const d = JSON.parse(e.data); if (!F || SPECT()) return; if (d.shuffledRound === round && (d.shuffleLeft ?? 0) < (F[0].shuffleLeft ?? 99) + 1 && !busy) fxDeal[0] = true; F[0].hand = d.hand; F[0].used = d.used; F[0].shuffleLeft = d.shuffleLeft; F[0].shuffledRound = d.shuffledRound; if (!busy) draw(); });
+  es.addEventListener('round', e => liveQueue(async () => {
+    const d = JSON.parse(e.data), sw = VIEW[0] === 1;
+    const a = d.acts[VIEW[0]], b = d.acts[VIEW[1]];
+    const j = { ...d.j, win: d.j.win === null ? null : sw ? 1 - d.j.win : d.j.win, dodger: d.j.dodger == null ? d.j.dodger : sw ? 1 - d.j.dodger : d.j.dodger };
+    busy = true; clearInterval(timerId); round = d.round;
+    await showRound(a, b, j);
+    VIEW.forEach((i, v) => { F[v].hp = d.pub[i].hp; if (v === 1 || SPECT()) F[v].shuffleLeft = d.pub[i].shuffleLeft; });
+    draw();
+  }));
+  es.addEventListener('end', e => liveQueue(async () => {
+    const d = JSON.parse(e.data); VIEW.forEach((i, v) => { F[v].hp = d.hp[i]; });
+    finish();
+  }));
+}
+if (LIVE && !WEB) setTimeout(liveInit, 200);
+if (WEB) setTimeout(webInit, 100);
+// ===================== 웹 (실제 서버, 2026-11-14) =====================
+// 서버에 물으면 { pub(누구나), mine(내 손패), seat, serverNow }. 실시간 알림('duel-경기id')은 pub만 온다 → 참가자는 다시 물어 손패를 받는다.
+// 알림을 놓쳐도 되게 몇 초마다 묻고, 마감 시각이 지나면 바로 묻는다 (서버는 물을 때 밀린 합을 처리한다)
+const WS = { shown: 0, first: true, off: 0, pub: null, mine: null, poll: 0, wake: 0, ch: null, started: false, ended: false, lastRound: 0, readyLogged: 0 };
+const wNow = () => Date.now() + WS.off; // 서버 시각
+const BR = (() => { try { return parent.duelBridge; } catch (e) { return null; } })(); // 게임 창이 주는 연결 (api · sb · 음악 설정 · 닫기)
+function webApi(action, o = {}) { return BR.api(action, { id: WEB.id, ...o }); }
+async function webFetch() {
+  try { const d = await webApi('duelView'); if (d.error) { log('⚠ ' + d.error); return; } webGot(d); } catch (e) { /* 다음에 다시 */ }
+}
+function webGot(d) {
+  if (d.serverNow) WS.off = d.serverNow - Date.now();
+  if (d.seat !== undefined && !WS.seatKnown) { WS.seatKnown = true; LIVE.seat = d.seat === 0 || d.seat === 1 ? d.seat : 'w'; VIEW = LIVE.seat === 1 ? [1, 0] : [0, 1]; if (SPECT()) document.body.classList.add('watch'); }
+  if (!WS.seatKnown) return; // 내 자리를 알기 전에 온 알림은 버린다 (곧 다시 묻는다)
+  if (d.mine !== undefined) WS.mine = d.mine;
+  liveQueue(() => webApply(d.pub));
+}
+async function webAct(a) {
+  try { const d = await webApi('duelAct', { act: a }); if (d.error) log('⚠ ' + d.error); if (d.pub) webGot(d); } catch (e) { log('⚠ 서버에 보내지 못했어요. 다시 눌러 주세요.'); busy = false; draw(); }
+}
+function webSubmit() {
+  busy = true; sfx('submit');
+  $('reveal').innerHTML = '<span class="vs">상대를 기다리는 중…</span>'; draw();
+  webAct({ i: pick.i });
+}
+function webNames(p) {
+  LIVE.names = p.names;
+  const L = VIEW.map(i => p.names[i]);
+  document.querySelector('.side .nm').innerHTML = SPECT() ? `<b>${esc2(L[0])}</b> <span class="dim" id="myInfo"></span>` : `<b>나</b> <span class="dim" id="myInfo"></span>`;
+  document.querySelector('.side.right .nm').innerHTML = `<b>${esc2(L[1])}</b> <span class="dim" id="opInfo"></span>`;
+}
+const esc2 = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// 서버 상태로 F를 만든다 (F[0] = 화면 왼쪽). 내 손패는 mine, 나머지는 유형만
+function webSetF(p) {
+  F = VIEW.map(i => {
+    const q = p.pub[i];
+    if (!SPECT() && i === LIVE.seat && WS.mine) return { war: q.war, hp: q.hp, hand: WS.mine.hand, used: {}, shuffleLeft: WS.mine.shuffleLeft, shuffledRound: WS.mine.shuffledRound };
+    return { war: q.war, hp: q.hp, hand: q.handT.map(t => ({ t, s: 0 })), used: {}, shuffleLeft: q.shuffleLeft, shuffledRound: q.shuffledRound };
+  });
+}
+async function webApply(p) {
+  if (!p) return;
+  const prev = WS.pub; WS.pub = p;
+  if (WS.first) { WS.first = false; webNames(p); $('log').innerHTML = ''; }
+  clearTimeout(WS.wake);
+  if (p.phase === 'lobby') {
+    over = true; $('resBox').innerHTML = '';
+    const left = Math.max(0, p.startAt - wNow());
+    $('reveal').innerHTML = `<span class="vs">${left > 0 ? `${fmtLeft(left)} 뒤 시작` : '곧 시작'}${SPECT() ? '' : ' · 이 화면을 열어 두면 직접 둬요'}</span>`;
+    $('round').textContent = '대기';
+    WS.wake = setTimeout(left > 1500 ? () => webApply(WS.pub) : webFetch, Math.min(1000, left + 300)); // 1초마다 남은 시간, 시작 시각엔 서버에 묻기
+    return;
+  }
+  if (!WS.started) { // 경기 시작 줄 (처음 한 번)
+    WS.started = true; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; bgmDuck(false); $('reveal').innerHTML = '';
+    const who = i => `${SPECT() ? p.names[i] : i === LIVE.seat ? '나' : p.names[i]} 무력${p.pub[i].war}${p.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(p.pub[i].war)}장`;
+    log(`시작 · ${who(VIEW[0])} vs ${who(VIEW[1])}`);
+  }
+  // 새로 끝난 합: 처음 들어왔을 때 이미 지난 합은 기록만, 그 뒤로는 하나씩 연출
+  const fresh = WS.shown === 0 && p.log.length > 1 && !prev;
+  while (WS.shown < p.log.length) {
+    const e = p.log[WS.shown++], sw = VIEW[0] === 1;
+    const a = e.acts[VIEW[0]], b = e.acts[VIEW[1]];
+    const j = { ...e.j, win: e.j.win === null ? null : sw ? 1 - e.j.win : e.j.win, dodger: e.j.dodger == null ? e.j.dodger : sw ? 1 - e.j.dodger : e.j.dodger };
+    round = e.round;
+    if (!F) webSetF(p);
+    if (fresh && WS.shown < p.log.length) { logRound(a, b, j); }
+    else { busy = true; clearInterval(timerId); await showRound(a, b, j); }
+    VIEW.forEach((i, v) => { F[v].hp = e.hp[i]; });
+    draw();
+  }
+  // 재정비 (공개): 남은 횟수가 줄었으면 연출
+  if (prev && prev.pub && p.pub) VIEW.forEach((i, v) => { if (p.pub[i].shuffleLeft < prev.pub[i].shuffleLeft && (SPECT() || i !== LIVE.seat)) { shuffleFx(v); log(`${p.round}합 ${SPECT() ? NAME()[v] : p.names[i]} 재정비`); } });
+  webSetF(p);
+  if (p.phase === 'end') {
+    if (WS.ended) return; WS.ended = true;
+    const wv = VIEW.indexOf(p.result.win);
+    finish(wv, p.result.tie); return;
+  }
+  if (p.phase === 'pick') {
+    const newRound = p.round !== WS.lastRound; WS.lastRound = p.round; round = p.round; over = false;
+    if (newRound) { pick = null; opReady = false; $('reveal').querySelectorAll('.vs').forEach(x => { if (!x.closest('.rv') && x.textContent !== 'VS') x.remove(); }); }
+    const mine = WS.mine || {};
+    busy = SPECT() || !mine.control || !!mine.acted;
+    if (!SPECT() && !mine.control) $('reveal').innerHTML = '<span class="vs">🤖 컴퓨터가 대신 두는 중 (다음 합부터 직접)</span>';
+    else if (!SPECT() && mine.acted && !$('reveal').querySelector('.rv')) $('reveal').innerHTML = '<span class="vs">상대를 기다리는 중…</span>';
+    const left = Math.max(0, p.deadline - wNow());
+    liveTimer(left); draw();
+    const opI = VIEW[1];
+    $('round').textContent = `${round} / ${MAX_ROUND}합${!SPECT() && p.ready[opI] ? ' · 상대 선택 끝' : ''}`;
+    WS.wake = setTimeout(webFetch, left + 1100); // 마감이 지나면 서버에 물어 결과를 받는다
+  } else if (p.phase === 'show') {
+    busy = true; draw();
+    WS.wake = setTimeout(webFetch, Math.max(0, p.showUntil - wNow()) + 300);
+  }
+}
+// 늦게 들어와 연출 없이 기록만 남기는 합
+function logRound(a, b, j) {
+  let msg = `${round}합 ${actText(a)} vs ${actText(b)} → `;
+  if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} 회피` : j.dodger === 0 ? '회피' : '상대 회피') : j.how === 'idle' ? '헛수' : '비김';
+  else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? '필살 ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? '필살 ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
+  log(msg);
+}
+const fmtLeft = ms => { const s = Math.ceil(ms / 1000); return s >= 60 ? `${Math.floor(s / 60)}분 ${s % 60}초` : `${s}초`; };
+function webInit() {
+  document.body.classList.add('live');
+  $('log').innerHTML = '<div class="dim">불러오는 중…</div>';
+  F = [newFighter(100), newFighter(100)];
+  try { WS.ch = BR.sb.channel('duel-' + WEB.id).on('broadcast', { event: 'msg' }, ({ payload }) => { if (WS.seatKnown && SPECT()) webGot({ pub: payload, serverNow: payload.now }); else webFetch(); }).subscribe(); } catch (e) { /* 알림 없이 묻기만 */ }
+  webFetch();
+  WS.poll = setInterval(() => { if (!WS.ended) webFetch(); }, SPECT() ? 6000 : 4000); // 알림을 놓쳐도 따라오게 + 참가자는 '화면에 있음' 표시
+  addEventListener('pagehide', () => { try { if (WS.ch) BR.sb.removeChannel(WS.ch); } catch (e) { /* 이미 닫힘 */ } });
+}
+$('log').onclick = () => $('log').classList.toggle('open'); // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
+// 탭
+const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
+if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용
+if (location.hash === '#demo2') setTimeout(() => { pick = { k: 'kill' }; submit(); }, 500); // 그림 확인용: 필살 장면
+function josaI(w) { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? '이' : '가'; }
+function josaUl(w) { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? '을' : '를'; }
+if (WATCH) setTimeout(() => {
+  document.body.classList.add('watch');
+  document.querySelector('.side .nm').innerHTML = `<b>${WATCH.a}</b> <span class="dim" id="myInfo"></span>`;
+  document.querySelector('.side.right .nm').innerHTML = `<b>${WATCH.b}</b> <span class="dim" id="opInfo"></span>`; // 이름 먼저 (관전: 이름 줄 · 무력 줄)
+  $('myWar').value = WATCH.aw; $('opWar').value = WATCH.bw; $('start').click();
+  $('log').insertAdjacentHTML('beforeend', '<div class="dim">👁 관전 중</div>');
+}, 300);
+if (location.hash === '#demo4') setTimeout(() => { st.fr = [3, 4]; st.result = { kind: 'win', t0: performance.now() - 2000, title: '승 리 !', sub: '상대를 쓰러뜨렸다!' }; }, 500); // 그림 확인용: 승리·패배 자세
+if (location.hash === '#demo5') setTimeout(() => { st.fr = [4, 3]; st.result = { kind: 'lose', t0: performance.now() - 2000, title: '패 배 …', sub: '15합 끝 · 체력 열세 (20 : 35)' }; }, 500); // 그림 확인용: 반대
+if (location.hash === '#demo6') setTimeout(() => { pick = { k: 'card', i: 0, c: F[0].hand[0] }; submit(); }, 500); // 그림 확인용: 카드 공개 중
+if (location.hash === '#demo7') setTimeout(() => { F[0].hand[0] = { t: 'atk', s: 0 }; F[1].hand[0] = { t: 'tec', s: 2 }; aiAct = () => ({ k: 'card', i: 0, c: F[1].hand[0] }); pick = { k: 'card', i: 0, c: F[0].hand[0] }; submit(); }, 500); // 그림 확인용: 내가 우세
+if (location.hash === '#demo8') setTimeout(() => { ['1합 ⚡속공(소) vs 💪강타(대) → 승 (피해 10)', '2합 🔄역습(중) vs ⚡속공(대) → 승 (피해 15)', '3합 💪강타(대) vs 🔄역습(소) → 승 (피해 20)', '12합 💥필살 vs 🔄역습(대) → 필살 승 (피해 30)', '13합 ⚡속공(소) vs 💨회피 → 상대 회피', '14합 💨회피 vs 💨회피 → 헛수', '15합 🔄역습(대) vs 💪강타(대) → 패 (피해 24)', '15합 재정비'].forEach(log); }, 500); // 그림 확인용: 기록 줄
+if (location.hash === '#demo3') setTimeout(() => { pick = { k: 'card', i: 0, c: F[0].hand[0] }; draw(); }, 500); // 그림 확인용: 카드 고른 상태
+Object.keys(tabs).forEach(t => { $(t).onclick = () => { Object.entries(tabs).forEach(([b, p]) => { $(b).classList.toggle('on', b === t); $(p).hidden = b !== t; }); }; });
+</script>
+</body>
+</html>

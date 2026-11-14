@@ -1158,3 +1158,58 @@ td.nowrap { white-space: nowrap; }
 /* 관리 페이지 무술대회 (2026-11-14) */
 .tourStat th { white-space: nowrap; width: 1%; padding-right: 14px; }
 .tourList { margin-top: 12px; }
+
+/* ===== 무술대회 (2026-11-14) ===== */
+#tourBtn.glow { animation: tourGlow 1.2s infinite; }
+@keyframes tourGlow { 50% { box-shadow: 0 0 10px #ffd860; border-color: #ffd860; } }
+#modalBox.wideBox.tourModal { width: min(1000px, calc(100vw - 24px)); }
+.tourPh { color: var(--label); margin: 2px 0 10px; }
+.tourEntry { border: 1px solid var(--gold-dark); padding: 6px 12px; margin-bottom: 10px; background: #2a0604; }
+.tourList { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.tourWho { white-space: nowrap; }
+.tourWho.me { color: var(--title); }
+.tourChamp { text-align: center; font-size: 18px; color: var(--title); margin: 10px 0 2px; }
+.tbWrap { position: relative; display: grid; align-items: stretch; background: radial-gradient(ellipse at center, #3a0c08 0%, #200604 70%); border: 2px solid var(--gold-dark); padding: 20px 8px 14px; }
+.tbCol { display: flex; flex-direction: column; justify-content: space-around; position: relative; z-index: 1; }
+.tbHead { text-align: center; font-size: 13px; color: var(--label); }
+.tbCol > .tbHead { position: absolute; top: -16px; left: 0; right: 0; }
+.tbMatch { position: relative; margin: 10px 5px; border: 2px solid var(--gold-dark); background: #2a0604; }
+.tbMatch.click { cursor: pointer; }
+.tbMatch.click:hover { background: #3a0a06; }
+.tbMatch.mine { border-color: #6ab0ff; }
+.tbMatch.live { border-color: #ff5a3a; box-shadow: 0 0 12px rgba(255,90,58,.5); }
+.tbSlot { display: flex; align-items: center; gap: 5px; padding: 3px 6px; height: 28px; }
+.tbSlot + .tbSlot { border-top: 1px dashed #6a3a14; }
+.tbSlot.me .tbNm { color: #9fd0ff; }
+.tbChip { display: inline-block; width: 9px; height: 16px; flex-shrink: 0; border: 1px solid #000; vertical-align: middle; margin-right: 3px; }
+.tbNm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbWar { font-size: 13px; color: var(--label); }
+.tbHp { font-size: 13px; min-width: 24px; text-align: right; }
+.tbSlot.won { background: linear-gradient(90deg, rgba(255,216,96,.25), transparent); }
+.tbSlot.won .tbNm { color: var(--title); }
+.tbSlot.lost { opacity: .45; }
+.tbSlot.empty .tbNm, .tbSlot.bye .tbNm { color: #8a6a4a; }
+.tbBadge { position: absolute; top: -11px; right: 6px; font-size: 12px; padding: 0 6px; border-radius: 3px; line-height: 18px; }
+.tbBadge.live { background: #d62a1a; color: #fff; animation: tourGlow 1s infinite; }
+.tbBadge.wait { background: #4a2a10; color: var(--label); }
+.tbBadge.done { background: #3a3a3a; color: #ccc; }
+.tbBadge.bye { background: #5a4a20; color: #ffe08a; }
+.tbFin { display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+.tbTrophy { font-size: 40px; text-align: center; filter: drop-shadow(0 0 10px #ffd860); }
+svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.tbLines path { fill: none; stroke: #6a3a14; stroke-width: 2; }
+.tbLines path.hot { stroke: #ffd860; stroke-width: 3; }
+#duelWrap { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .78); }
+#duelWrap .duelBox { width: min(1240px, 98vw); height: min(900px, 98vh); background: var(--bg); border: 2px solid var(--gold); display: flex; flex-direction: column; }
+#duelWrap .duelBar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 8px; border-bottom: 1px solid var(--gold-dark); color: var(--title); }
+#duelWrap .duelBar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#duelWrap iframe { flex: 1; border: 0; width: 100%; }
+@media (max-width: 700px) {
+  .tbWrap { display: flex !important; flex-direction: column; padding: 8px 4px; }
+  .tbWrap .c8l { order: 1; } .tbWrap .c8r { order: 2; } .tbWrap .c4l { order: 3; } .tbWrap .c4r { order: 4; } .tbWrap .tbFin { order: 5; margin-top: 10px; }
+  .tbWrap .c8r > .tbHead, .tbWrap .c4r > .tbHead { display: none; }
+  .tbCol > .tbHead { position: static; text-align: left; margin: 8px 4px 0; }
+  svg.tbLines { display: none; }
+  .tbTrophy { font-size: 30px; }
+  #duelWrap .duelBox { width: 100vw; height: 100vh; border: 0; }
+}
