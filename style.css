@@ -1154,3 +1154,7 @@ td.nowrap { white-space: nowrap; }
 .notePaper li.devLi { list-style: none; margin-left: 0; } /* 2026-11-14 기획자: 위 항목 글과 같은 줄에서 시작 (한 단계 들여쓰기, 예전 -20px) */
 .notePaper.devPaper { padding: 8px 12px; }
 .notePaper.devPaper .devNote { margin: 0; }
+
+/* 관리 페이지 무술대회 (2026-11-14) */
+.tourStat th { white-space: nowrap; width: 1%; padding-right: 14px; }
+.tourList { margin-top: 12px; }

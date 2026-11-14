@@ -131,7 +131,7 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 
 // ===== 관리 페이지 (2026-11-06: 🛠 관리 창 + 👁 관리자 보기 팝업을 한 페이지로. 예전 팝업 방식은 git 태그 backup-admin-popup-20261106) =====
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
-const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['factions', '🚩 세력'], ['chat', '💬 채팅'], ['members', '🗂 가입자']];
+const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['factions', '🚩 세력'], ['chat', '💬 채팅'], ['members', '🗂 가입자'], ['tourney', '🏟 무술대회']];
 let adminTab = 'ops';
 // 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
 const ADMIN_HIDES = ['title', 'hofPage', 'create', 'trait', 'join', 'game', 'mTabs', 'refreshBtn', 'miniLink'];
@@ -152,7 +152,7 @@ function adminShow(tab, html, onMount) {
   $('#adminMain').innerHTML = html;
   if (onMount) onMount($('#adminMain'));
 }
-function openAdmin(tab = 'ops') { closeAdminSide(); if (tab === 'ops') adminToolsDialog(); else adminDialog(tab); }
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab === 'ops') adminToolsDialog(); else if (tab === 'tourney') tourneyAdminDialog(); else adminDialog(tab); }
 function adminSide(html, onMount) {
   const s = $('#adminSide');
   s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
@@ -508,7 +508,58 @@ function mapPreview(m) {
 // 운영 탭에서 무언가 바꾼 뒤: 게임 화면이면 다시 그리고, 운영 탭도 새 상태로 다시 그린다
 function afterAdmin() {
   if (!$('#game').hidden && me() && me().faction) { render(); renderLegend(); renderAll(); }
-  if (!$('#adminPage').hidden) adminToolsDialog();
+  if (!$('#adminPage').hidden) { if (adminTab === 'tourney') tourneyAdminDialog(); else adminToolsDialog(); }
+}
+
+// ===== 관리 페이지: 무술대회 (2026-11-14, tourney.js) =====
+// 대회 열기(신청 기간 · 마감 뒤 첫 경기까지) · 취소 · 신청자 · 대진과 결과. 시험 대회는 공지 없이 관리자만 보이고, 시험 참가자로 인원을 채운다
+const TOUR_PHASE = { entry: '📝 신청 받는 중', run: '⚔ 경기 진행 중', done: '🏆 끝', cancel: '✖ 취소됨' };
+const TOUR_STAGE = slot => (slot === 'f' ? '결승' : slot[0] === 's' ? '4강' : '8강');
+function tourneyAdminDialog() {
+  const T = S && S.tourney, R = RULES.tourney;
+  const live = T && (T.phase === 'entry' || T.phase === 'run');
+  const fname = id => (id ? esc(factionById(id).name) : '<span class="dim">재야</span>');
+  const entries = T ? T.entries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${esc(e.name)}</td><td>${fname(e.faction)}</td><td class="num">${e.war}</td><td class="dim">${fmtClock(e.t)}</td></tr>`).join('') : '';
+  const matches = T && T.matches ? T.matches.map(m => {
+    const nm = k => (m.p[k] ? `${m.win === k ? '<b class="hi">' : ''}${esc(m.names[k])}${m.win === k ? '</b>' : ''}` : (m.bye && k === 1 ? '<span class="dim">부전승</span>' : '<span class="dim">?</span>'));
+    const res = m.bye ? '<span class="dim">부전승</span>' : m.win != null ? `체력 ${m.hp ? m.hp.join(' : ') : '-'}${m.tie ? ' <span class="dim small">(동점 → 무력 낮은 쪽)</span>' : ''}` : m.at ? (m.at <= Date.now() ? '<b>진행 중</b>' : '대기') : '';
+    return `<tr><td>${TOUR_STAGE(m.slot)}</td><td>${nm(0)} vs ${nm(1)}</td><td class="dim">${m.at ? fmtTime(m.at) : ''}</td><td>${res}</td></tr>`;
+  }).join('') : '';
+  adminShow('tourney', `<div class="adminCards">
+    <div class="adminCard wide">
+    <p class="sub">지금 대회</p>
+    ${T ? `<table class="stats tourStat">
+      <tr><th>상태</th><td>${TOUR_PHASE[T.phase] || T.phase}${T.test ? ' <span class="hi">· 시험 대회 (공지 없음 · 관리자만 보임)</span>' : ''}</td></tr>
+      <tr><th>신청 마감</th><td>${fmtTime(T.entryEnd)}${T.phase === 'entry' ? ` <span class="dim">(${R.max}명이 차면 바로 마감)</span>` : ''}</td></tr>
+      <tr><th>신청</th><td>${T.entries.length}명${T.size ? ` · ${T.size === 8 ? '8강' : '4강'}` : ''}</td></tr>
+      ${T.champ ? `<tr><th>우승</th><td><b class="hi">${esc(T.champ.name)}</b> · 준우승 ${esc(T.runner.name)}</td></tr>` : ''}
+    </table>
+    ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">무력</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
+    ${matches ? `<table class="stats tourList"><tr><th>단계</th><th>대진</th><th>시각</th><th>결과</th></tr>${matches}</table>` : ''}
+    ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">신청 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
+      : '<p class="dim">아직 연 대회가 없어요.</p>'}
+    </div>
+    ${live ? '' : `<div class="adminCard wide">
+    <p class="sub">대회 열기</p>
+    <p>신청 기간 <input id="atHours" type="number" min="0.02" max="48" step="0.5" value="${R.entryHours}" style="width:5em"> 시간
+       · 마감 뒤 첫 경기까지 <input id="atGap" type="number" min="1" max="180" value="${R.gapMin}" style="width:5em"> 분</p>
+    <p class="dim small">참가비 금 ${fmt(R.fee)} · 무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
+    <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음</span></p>
+    <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(무력 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
+    <p><button id="atOpen">대회 열기</button></p>
+    </div>`}
+    </div>`, () => {
+    if ($('#atTest')) $('#atTest').onchange = e => { $('#atBotsRow').hidden = !e.target.checked; };
+    if ($('#atOpen')) $('#atOpen').onclick = async () => {
+      const hours = +$('#atHours').value, gap = +$('#atGap').value, test = $('#atTest').checked, bots = +$('#atBots').value;
+      if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기` : `무술대회를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기`)) return;
+      if (await call('tourneyOpen', { hours, gap, test, bots })) afterAdmin();
+    };
+    if ($('#atCancel')) $('#atCancel').onclick = async () => {
+      if (!confirm(T.phase === 'entry' ? '대회를 취소할까요? 신청한 장수에게 참가비를 돌려줘요.' : '진행 중인 대회를 취소할까요? 남은 경기는 결과가 반영되지 않고, 보상도 없어요.')) return;
+      if (await call('tourneyCancel')) afterAdmin();
+    };
+  });
 }
 
 // ===== 공적 순위 (오른쪽 위 "🏆 순위") =====
