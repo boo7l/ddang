@@ -940,7 +940,7 @@ function spyDialog() {
       <span class="r dim">${until ? `${dateText(until)} 전까지 알고 있음` : '모름'}</span></label>`;
   }).join('');
   pickDialog('첩보', `<p>${esc(from.name)}${spyRange() > 1 ? `에서 ${spyRange()}칸 안의` : '의 이웃한'} 다른 세력 성에 첩자를 보내 농업·상업·방어·치안·군량을 알아냅니다. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 성 정보와 출진 창에서 볼 수 있어요.</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot}</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }), '', 'narrow');
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((spySuccessRate(int) + (gTrait(me()).plot || 0)) * 100)}%</p>`, opts, '예약', v => reserve({ cmd: 'spy', to: v }), '', 'narrow', costLine('금', RULES.myGoldCost.plot, me().gold));
 }
 
 // '능력 고정' 스위치 (2026-11-02, 징병의 병과 고정처럼): 켜 두면 수련을 누르자마자 고정된 능력치로 예약 (고르는 창 없이). 이 브라우저에 기억
@@ -961,12 +961,12 @@ function trainDialog() {
   const opts = STATS.map(st => `<label class="opt"><input type="radio" name="tgt" value="${st.key}"${p.stats[st.key] >= RULES.statMax ? ' disabled' : ''}>
       <b>${st.name} 수련</b> <span class="dim">${p.stats[st.key]}</span>
       <span class="r">${bar(xp(st.key), expNeed(p.stats[st.key]))} <span class="dim">${xp(st.key)}/${expNeed(p.stats[st.key])}</span></span></label>`).join('');
-  pickDialog('수련', `<p>능력치 하나를 골라 경험치를 집중해서 쌓습니다 (한 번에 ${RULES.statExp.train.min}~${RULES.statExp.train.max}). 경험치가 다 차면 그 능력치가 1 올라요.</p>
-    <p class="dim">${traitOf(p.faction).freeTrain ? `금 들지 않음 (${traitOf(p.faction).name})` : `금 ${RULES.myGoldCost.train}`}</p>`, opts, '예약', v => {
+  const trainFoot = traitOf(p.faction).freeTrain ? `<span class="costLine">금 들지 않음 <span class="dim">(${esc(traitOf(p.faction).name)})</span></span>` : costLine('금', RULES.myGoldCost.train, p.gold);
+  pickDialog('수련', `<p>능력치 하나를 골라 경험치를 집중해서 쌓습니다 (한 번에 ${RULES.statExp.train.min}~${RULES.statExp.train.max}). 경험치가 다 차면 그 능력치가 1 올라요.</p>`, opts, '예약', v => {
       trainLock = true; // 수련을 한 번 하면 능력 고정을 자동으로 켠다 (2026-11-14 기획자, 징병과 같이)
       try { localStorage.setItem(TRAIN_STAT_KEY, v); localStorage.setItem(TRAIN_LOCK_KEY, '1'); } catch (e) { /* 이번만 */ }
       reserve({ cmd: 'train', stat: v });
-    });
+    }, '', '', trainFoot);
   $('#modalBox .opts').classList.add('train');
 }
 
@@ -1029,8 +1029,8 @@ function plotDialog(kind) {
     ? `성공하면 그 성의 <b>방어</b>를 ${Math.floor(int * PLOT.destroy.wallPerInt[0])}~${Math.floor(int * PLOT.destroy.wallPerInt[1])} 낮춰요.`
     : `성공하면 그 성의 <b>치안</b>을 ${Math.floor(int * PLOT.rumor.peacePerInt[0])}~${Math.floor(int * PLOT.rumor.peacePerInt[1])}, 농업·상업을 ${Math.floor(int * PLOT.rumor.devPerInt[0])}~${Math.floor(int * PLOT.rumor.devPerInt[1])}씩 낮춰요.`;
   pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 ${PLOT.critMul}배!</p>
-    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((PLOT.successRate(int) + (gTrait(p).plot || 0)) * 100)}% · 금 ${RULES.myGoldCost.plot}</p>`,
-  opts, '예약', v => reserve({ cmd: kind, to: v }), '', 'narrow');
+    <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((PLOT.successRate(int) + (gTrait(p).plot || 0)) * 100)}%</p>`,
+  opts, '예약', v => reserve({ cmd: kind, to: v }), '', 'narrow', costLine('금', RULES.myGoldCost.plot, p.gold));
 }
 
 // 군량 구매: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
