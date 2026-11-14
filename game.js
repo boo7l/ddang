@@ -537,6 +537,7 @@ function tourneyAdminDialog() {
     </table>
     ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">무력</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
     ${matches ? `<table class="stats tourList"><tr><th>단계</th><th>대진</th><th>시각</th><th>결과</th></tr>${matches}</table>` : ''}
+    ${T && T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE ? `<p><button id="atHide">무술대회 단추 내리기</button> <span class="dim small">${fmtClock((T.doneAt || 0) + TOUR_SHOW_DONE)}에 저절로 사라져요</span></p>` : ''}
     ${T && T.phase === 'entry' ? '<p><button id="atCloseNow">지금 마감</button> <span class="dim small">신청 기간을 기다리지 않고 바로 마감하고 대진을 짜요 (${R.minN - 1}명 이하면 취소·환불)</span></p>' : ''}
     ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">신청 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
       : '<p class="dim">아직 연 대회가 없어요.</p>'}
@@ -557,6 +558,7 @@ function tourneyAdminDialog() {
       if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기` : `무술대회를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기`)) return;
       if (await call('tourneyOpen', { hours, gap, test, bots })) afterAdmin();
     };
+    if ($('#atHide')) $('#atHide').onclick = async () => { if (!confirm('모두의 화면에서 무술대회 단추를 내릴까요? (결과는 이 관리 탭에서 계속 볼 수 있어요)')) return; if (await call('tourneyHide')) afterAdmin(); };
     if ($('#atCloseNow')) $('#atCloseNow').onclick = async () => {
       if (!confirm(`신청을 지금 마감할까요? (${T.entries.length}명)${T.entries.length < R.minN ? `\n${R.minN}명이 안 돼서 대회가 취소되고 참가비를 돌려줘요.` : ''}`)) return;
       if (await call('tourneyCloseNow')) afterAdmin();
@@ -1532,9 +1534,9 @@ $('#miniLink').onclick = openMinigame;
 // 관리자가 대회를 열면 📜 도움말 옆에 [🏟 무술대회] 단추가 생긴다 (신청 중엔 반짝). 창: 신청 · 신청자 · 대진표 · 경기 보기.
 // 경기 화면은 duel.html을 iframe으로 띄운다 (서버와는 duelBridge로 이 창의 로그인을 그대로 쓴다)
 window.duelBridge = { api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel() };
-const TOUR_SHOW_DONE = 3 * 3600e3; // 대회가 끝나고 3시간 동안은 단추를 남겨 결과를 볼 수 있게
+const TOUR_SHOW_DONE = 2 * 3600e3; // 대회가 끝나고 2시간 동안은 단추를 남겨 결과를 볼 수 있게 (2026-11-15 기획자: 3 → 2시간, 관리 탭에서 먼저 내릴 수 있음)
 const tourT = () => (S && S.tourney) || null;
-const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
+const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
 const tourMatchName = slot => ({ m0: '8강 1경기', m1: '8강 2경기', m2: '8강 3경기', m3: '8강 4경기', s0: '4강 1경기', s1: '4강 2경기', f: '결승' })[slot];
 let tourAlerted = {}; // 내 경기 알림을 이미 띄운 경기
 function tourSync() {
