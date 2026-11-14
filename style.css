@@ -371,6 +371,7 @@ button.pick.on, button.pick.on .dim { background: var(--title); color: var(--pan
 .amounts input { width: 100px; }
 .modalBtns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .modalBtns button { padding: 6px 18px; }
+.modalBtns:has(.costFoot) { align-items: flex-end; } /* 비용 줄이 두 줄이어도 단추 높이는 그대로 */
 .modalBtns .costFoot { margin-right: auto; align-self: center; display: flex; flex-direction: column; gap: 2px; } /* 비용 줄: 단추 줄 왼쪽 (2026-11-14) */
 .costLine .shortTag { color: #ffb070; font-size: 14px; border: 1px solid rgba(255, 176, 112, .5); padding: 0 4px; margin-left: 2px; } /* 지금 모자라면 가벼운 표시 (예약이라 참고용) */
 @media (max-width: 700px) { .modalBtns:has(.costFoot) { flex-wrap: wrap; } .modalBtns .costFoot { flex-basis: 100%; margin-bottom: 4px; } } /* 휴대폰: 비용 줄은 단추 위 한 줄 */
