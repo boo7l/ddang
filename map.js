@@ -59,7 +59,7 @@ function render() {
   drawMap($('#map'), {
     selectedId: selected && selected.id,
     homeId: homeCityId(),
-    mark: typeof policyMark === 'function' ? policyMark : null, // 대도독 방침 🛡·🎯 (2026-11-13)
+    mark: typeof policyMark === 'function' ? policyMark : null, // 대도독 방침 🛡·🗡 (2026-11-13)
     onClick: c => { selected = selected === c ? null : c; render(); },
   });
   renderInfo();

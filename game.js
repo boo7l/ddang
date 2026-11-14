@@ -1215,7 +1215,7 @@ function helpDialog(page = 0) {
       <p class="helpSub">📌 공지</p><ul>
       <li>세력 채팅 맨 위에 고정돼요. (${R.noticeLen}자)</li></ul>
       <p class="helpSub">🧭 방침</p><ul>
-      <li>방어할 성과 공격 목표를 하나씩 정하면 우리 세력 지도에 🛡 · 🎯로 표시돼요. 안내일 뿐 강제는 없어요.</li></ul>
+      <li>방어할 성과 공격 목표를 하나씩 정하면 우리 세력 지도에 🛡 · 🗡로 표시돼요. 안내일 뿐 강제는 없어요.</li></ul>
       <p class="helpSub">🤝 동맹</p><ul>
       <li>양쪽 세력 모두 대도독이 있어야 해요. 기간을 ${R.allyMin}~${R.allyMax}턴 중에 정해 제안하고, 상대 대도독이 ${R.handWait / (60 * MIN)}시간 안에 수락하면 맺어져요.</li>
       <li>동맹 중에는 서로 <b>출진 · 파괴 · 유언</b>을 할 수 없어요. 예약은 되지만 실행할 때 막히고, 금 · 군량은 들지 않아요. 첩보는 돼요.</li>
@@ -2102,7 +2102,7 @@ function policyDialog() {
   openModal(`<h2>🧭 방침</h2>
     <p class="dim small">우리 세력 지도에만 표시돼요. 안내일 뿐 강제는 없어요.</p>
     <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select></p>
-    <p>🎯 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select></p>
+    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select></p>
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
     box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
   });
@@ -2141,7 +2141,7 @@ function allyDialog() {
   });
 }
 // 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
-const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction]; return !pol ? '' : c.id === pol.def ? '🛡' : c.id === pol.atk ? '🎯' : ''; };
+const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction]; return !pol ? '' : c.id === pol.def ? '🛡' : c.id === pol.atk ? '🗡' : ''; };
 // 💤 해고 창 (2026-11-13 기획자: 대도독 칸에서): 세력 장수를 오래 접속 안 한 순으로. 24시간 넘은 장수만 [해고]
 function fireDialog() {
   const p = me(), R = RULES.commander;
