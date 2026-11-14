@@ -102,4 +102,36 @@ function simMatch(w0, w1) {
   return f[0].hp > f[1].hp ? 0 : f[1].hp > f[0].hp ? 1 : null;
 }
 
+// 규칙 설명 글 (2026-11-15 기획자: 웹에서도 읽을 수 있게). 경기장 [📖 규칙] · 무술대회 창 [📖 규칙] · 연구 화면 규칙 탭이 같이 쓴다.
+// tour: 대회 규칙 (rules.js RULES.tourney). 없으면 카드 대결 규칙만
+function rulesHtml(tour) {
+  const pct = n => `${n}%`, sz = SIZE_NAME.map((n, i) => `${n} ${pct(SIZE_P[i])}`).join(' · ');
+  const won = n => Number(n).toLocaleString('ko-KR');
+  let h = `<h3>⚔ 경기</h3><ul>
+    <li>두 장수가 <b>동시에</b> 카드를 한 장씩 내요. 제한 시간 ${TIME}초, 넘기면 손패에서 무작위 한 장.</li>
+    <li>상성: ${T.atk.ic}속공 &gt; ${T.tec.ic}강타 &gt; ${T.def.ic}역습 &gt; ${T.atk.ic}속공. 같은 종류면 큰 카드(대 &gt; 중 &gt; 소)가 이기고, 크기까지 같으면 비겨요.</li>
+    <li>이긴 쪽이 피해를 줘요: 소 ${DMG[0]} · 중 ${DMG[1]} · 대 ${DMG[2]} · 필살 ${KILL_DMG}. 무력 차이 1점마다 ${Math.round(MULT_PER * 100)}%씩 높은 쪽은 세지고 낮은 쪽은 약해져요 (10점 차이면 ${(1 + MULT_PER * 10).toFixed(1)}배 · ${(1 - MULT_PER * 10).toFixed(1)}배).</li>
+    <li>체력 ${HP}. ${MAX_ROUND}합이 지나면 체력이 많은 쪽이 이기고, 같으면 무력이 낮은 쪽이 이겨요.</li>
+  </ul><h3>🃏 손패</h3><ul>
+    <li>낸 카드만큼 무작위로 다시 받아요. 최대 손패: 무력 90 미만 ${handMax(80)}장 · 90~99 ${handMax(95)}장 · 100~109 ${handMax(105)}장 · 110 이상 ${handMax(115)}장.</li>
+    <li>한 장 뽑을 때 확률: 종류마다 ${sz}, ${T.kill.ic}필살 ${pct(KILL_P)}, ${T.dodge.ic}회피 ${pct(DODGE_P)}.</li>
+    <li>${T.kill.ic} <b>필살</b> (흰 카드): 모든 카드를 이기고 피해 ${KILL_DMG}. 회피에만 막혀요.</li>
+    <li>${T.dodge.ic} <b>회피</b> (흰 카드): 상대의 모든 카드와 필살을 피해요.</li>
+    <li>특수 카드(흰 카드)는 손에 ${SP_MAX}장까지, 같은 종류는 ${SP_SAME_MAX}장까지 들 수 있어요.</li>
+    <li>🔀 <b>재정비</b>: 손패를 모두 새로 받아요. 경기마다 ${SHUFFLE_N}번, 같은 합에는 한 번만. 재정비한 합에도 카드를 낼 수 있어요.</li>
+    <li>상대 손패는 종류(색)만 보이고 크기는 안 보여요. 흰 카드는 필살인지 회피인지 몰라요. 재정비는 상대도 알아요.</li>
+  </ul>`;
+  if (tour) {
+    const P = tour.prize;
+    h += `<h3>🏟 대회</h3><ul>
+    <li>참가비 금 ${won(tour.fee)} · 무력 ${tour.minWar} 이상 (장비·보물 포함) · 한 세력 ${tour.max / 2}명까지. 신청하면 취소할 수 없어요.</li>
+    <li>${tour.max}명이 차면 바로 마감해요. 신청이 끝났을 때 5~7명이면 부전승을 넣은 8강, 4명이면 4강, ${tour.minN - 1}명 이하면 취소하고 참가비를 돌려줘요.</li>
+    <li>대진은 무작위이고, 같은 세력은 웬만하면 첫 경기에서 만나지 않아요. 경기는 한 번에 하나씩 ${tour.slotMin}분마다 열려요.</li>
+    <li>경기가 시작될 때 경기장에 없으면 컴퓨터가 대신 싸우고 그 경기 무력 -15. 도중에 들어오면 다음 합부터 직접 둬요.</li>
+    <li>우승: 금 ${won(P[0].gold)} · 공적 ${P[0].merit} · 무력 경험치 ${P[0].warExp}<br>준우승: 금 ${won(P[1].gold)} · 공적 ${P[1].merit} · 무력 경험치 ${P[1].warExp}</li>
+    </ul>`;
+  }
+  return h;
+}
+
 if (typeof module !== 'undefined') module.exports = { T, TYPES, SPECIAL, isSp, BEATS, SIZE_NAME, SIZE_P, KILL_P, DODGE_P, DMG, KILL_DMG, HP, MAX_ROUND, TIME, SHUFFLE_N, handMax, SP_MAX, SP_SAME_MAX, blocked, MULT_PER, mult, rnd, drawCard, newFighter, sortHand, refill, canShuffle, doShuffle, cardText, actText, actOf, judge, aiShuffle, aiAct, randomAct, useAct, simMatch };

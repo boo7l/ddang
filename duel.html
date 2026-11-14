@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115004436">
+<link rel="stylesheet" href="style.css?v=20261115011428">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -18,6 +18,16 @@
   #pPlay > .sideCol { grid-column: 2; grid-row: 1 / span 30; align-self: stretch; display: flex; flex-direction: column; } /* 왼쪽 내용 높이만큼 늘어난다 */
   .sndBar { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; margin: 4px 0 6px; font-size: 14px; white-space: nowrap; }
   .sndBar button { padding: 3px 6px; }
+  /* 규칙 창 (2026-11-15) */
+  .rulesPop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .6); }
+  .rulesPop[hidden] { display: none !important; }
+  .rulesPop .box { width: min(760px, 94vw); max-height: 90vh; overflow-y: auto; background: var(--bg); border: 2px solid var(--gold); padding: 10px 16px 14px; color: var(--text); font-size: 16px; line-height: 1.7; }
+  .rulesPop h3, .rulesBody h3 { color: var(--title); font-size: 17px; margin: 10px 0 2px; font-weight: normal; }
+  .rulesPop ul, .rulesBody ul { margin: 0; padding-left: 20px; }
+  .rulesPop .rbar { display: flex; justify-content: space-between; align-items: center; color: var(--title); }
+  body.rulesOnly .lab { display: none; }
+  .rulesBody { max-width: 860px; margin: 0 auto; padding: 8px 16px; color: var(--text); font-size: 16px; line-height: 1.7; }
+
   .sideCol #log { flex: 1 1 0; min-height: 200px; max-height: none; margin-top: 0; display: block; } /* #log: 게임 style.css의 #log { max-height: 380px }를 이기려면 같은 # 선택자가 필요 */
   .lab h2 { margin: 0 0 6px; font-size: 18px; font-weight: normal; color: var(--title); }
   .lab > h2, .tabs, #pPlay > .row, #pSim, #pRule { display: none !important; }
@@ -223,7 +233,7 @@
       <button id="bSubmit" class="main">제출</button>
     </div>
     <div class="sideCol"><!-- 오른쪽 칸 (2026-11-14): 소리 조절 한 줄 + 기록창. 소리 단추가 설정 줄에 있으면 폭에 따라 줄이 자꾸 바뀌어서 옮김 -->
-      <div class="sndBar"><button id="sndBtn">🔊 ON</button></div><!-- 음악·효과음 한 단추 (2026-11-14) -->
+      <div class="sndBar"><button id="sndBtn">🔊 ON</button> <button id="rulesBtn">📖 규칙</button></div><!-- 음악·효과음 한 단추 (2026-11-14) -->
       <div class="log" id="log"><div class="dim">기록</div></div>
     </div>
   </div>
@@ -256,7 +266,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115004436"></script>
+<script src="duel_rules.js?v=20261115011428"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -312,6 +322,38 @@ function noise(dur, vol, f0, f1, q = 1, when = 0, type = 'bandpass') {
   g2.gain.setValueAtTime(vol, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   src.connect(fl).connect(g2).connect(c.destination); src.start(t); src.stop(t + dur + 0.02);
 }
+// 큰 북 둥 · 둥 · 둥 (2026-11-15 기획자: 징보다 북). 깊은 몸통 울림(음이 툭 떨어짐) + 가죽 치는 소리 + 넓은 울림. 마지막 한 번이 가장 크고 길다
+// 소리 파일 (2026-11-15): 받아 두었다가 튼다. 파일로 열면(file://) 못 받으니 합성 소리로 대신
+const CLIP = {};
+function loadClip(k, url) { try { fetch(url).then(x => x.arrayBuffer()).then(b => ac().decodeAudioData(b)).then(a => { CLIP[k] = a; }).catch(() => {}); } catch (e) { /* 못 받음 */ } }
+function playClip(buf, vol = 1) { const c = ac(), s2 = c.createBufferSource(), g2 = c.createGain(); s2.buffer = buf; g2.gain.value = vol; s2.connect(g2).connect(c.destination); s2.start(); }
+loadClip('intro', 'audio/sfx_intro.mp3');
+function bigDrums() {
+  const c = ac(), t0 = c.currentTime + 0.02, out = c.createGain();
+  out.gain.value = 0.7; // 최고 0.85쯤 (0.9면 깨짐)
+  const len = Math.floor(c.sampleRate * 1.8), ir = c.createBuffer(2, len, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4); }
+  const rev = c.createConvolver(), wet = c.createGain();
+  rev.buffer = ir; wet.gain.value = 0.35;
+  out.connect(c.destination); out.connect(rev).connect(wet).connect(c.destination);
+  [[0, 0.75, 0.9], [0.5, 0.8, 0.9], [1.0, 1.0, 1.6]].forEach(([w, v, dec]) => {
+    const t = t0 + w;
+    // 몸통: 낮은 음이 툭 떨어지며 길게 울림 (두 겹)
+    [[1, 1], [1.5, 0.35]].forEach(([m, vv]) => {
+      const o = c.createOscillator(), g2 = c.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(115 * m, t); o.frequency.exponentialRampToValueAtTime(48 * m, t + 0.18);
+      g2.gain.setValueAtTime(0.0001, t); g2.gain.exponentialRampToValueAtTime(v * vv, t + 0.008); g2.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+      o.connect(g2).connect(out); o.start(t); o.stop(t + dec + 0.05);
+    });
+    // 가죽 치는 소리: 짧고 낮은 잡음
+    const n = Math.floor(c.sampleRate * 0.12), nb = c.createBuffer(1, n, c.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < n; i++) nd[i] = Math.random() * 2 - 1;
+    const ns = c.createBufferSource(), nf = c.createBiquadFilter(), ng = c.createGain();
+    ns.buffer = nb; nf.type = 'lowpass'; nf.frequency.value = 900;
+    ng.gain.setValueAtTime(v * 0.5, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    ns.connect(nf).connect(ng).connect(out); ns.start(t);
+  });
+}
 const SFX = {
   pick:   () => tone('square', 660, 660, 0.05, 0.05),                                                  // 카드 고르기
   submit: () => { tone('square', 523, 523, 0.06, 0.06); tone('square', 784, 784, 0.08, 0.06, 0.06); },  // 제출
@@ -323,7 +365,7 @@ const SFX = {
   dodge:  () => noise(0.25, 0.25, 600, 4000, 1.5),                                                       // 휙 (회피)
   idle:   () => tone('triangle', 300, 200, 0.15, 0.12),                                                  // 헛수
   shuffle: () => { for (let k = 0; k < 9; k++) noise(0.03, 0.10, 3500 - k * 120, 1800, 1.2, k * 0.035); noise(0.08, 0.12, 2200, 900, 1, 0.34); }, // 재정비: 카드 섞는 촤르륵 (2026-11-14)
-  intro:  () => { [0, 0.28, 0.56].forEach(w => { tone('triangle', 95, 45, 0.3, 0.45, w); noise(0.08, 0.15, 500, 120, 0.7, w, 'lowpass'); }); tone('sine', 98, 96, 2.6, 0.35, 0.95); tone('sine', 196.5, 195, 2.2, 0.12, 0.95); tone('sine', 293, 291, 1.6, 0.06, 0.95); noise(0.6, 0.12, 900, 200, 0.6, 0.95, 'lowpass'); }, // 시작 인트로: 북 세 번 + 징 (2026-11-15)
+  intro:  () => (CLIP.intro ? playClip(CLIP.intro, 0.6) : bigDrums()), // 시작 인트로: 기획자가 준 소리 audio/sfx_intro.mp3 (원본 두둥.mp3, 1.06초, 원래 크기의 0.6배 — 2.5배·1배 모두 컸음 2026-11-15). 못 받으면 합성 북 (2026-11-15)
   tick:   () => tone('square', 1000, 1000, 0.03, 0.04),                                                  // 남은 3초
   win:    () => { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone('square', f, f, 0.11, 0.06, i * 0.1)); [523, 784, 1047].forEach(f => tone('triangle', f, f, 0.8, 0.12, 0.62)); tone('square', 1047, 1047, 0.5, 0.03, 0.62); [0.62, 0.8].forEach(w => noise(0.12, 0.3, 500, 120, 0.7, w, 'lowpass')); }, // 승리 팡파르. 2026-11-14: 끝의 '뿌웅'(낮게 미끄러지는 북) → 짧은 잡음 북 두 번, 화음은 세모파로 부드럽게
   lose:   () => { [440, 415, 392, 330].forEach((f, i) => tone('triangle', f, f, i === 3 ? 0.9 : 0.22, 0.13, i * 0.24)); tone('triangle', 82, 41, 1.2, 0.35, 0.72); }, // 패배: 처지는 음 + 낮게 가라앉는 소리
@@ -385,18 +427,22 @@ const ANCHOR = [37, 40, 37, 42, 33]; // 2026-11-14 장수 약 15% 키움 (원본
 const W = 320, H = 180, GROUND = 168, HOME = [70, 250], REACH = 84; // GROUND: 말발굽 위치 (대회장 흙바닥). REACH: 찌를 때 상대와의 거리
 const st = { x: [...HOME], fr: [0, 0], flash: [0, 0], ghost: [0, 0], shake: 0, bigFlash: 0, texts: [], spark: 0, t: 0, result: null, confetti: [] }; // result: 끝났을 때 큰 글씨 (2026-11-14)
 function whiteOf(src) { const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const x = c.getContext('2d'); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); return c; }
+const LEGS_AT = 76; // 서 있는 그림(98칸 높이)에서 말 다리가 시작하는 줄 (배 아래)
 function drawFighter(i) {
   const set = i === 0 ? SPR_B : SPR, // 나(왼쪽)는 파란 갑옷, 상대는 빨간 갑옷 (2026-11-14 기획자)
   s = set[st.fr[i]];
   if (!s || !s.width) return;
-  const bob = st.fr[i] === 0 ? Math.round(Math.sin(st.t / 300 + i) * 1) : 0;
-  const x = Math.round(st.x[i]), y = GROUND - s.height + bob;
+  // 가만히 있을 때 (2026-11-15 기획자: 통째로 오르내리면 떠 보여서): 다리는 땅에 붙이고, 그 위(말 몸통·머리·장수)만 숨 쉬듯 1칸 올라갔다 내려온다
+  const breathe = st.fr[i] === 0 && Math.sin(st.t / 420 + i * 1.7) > 0.2 ? -1 : 0;
+  const x = Math.round(st.x[i]), y = GROUND - s.height;
   g.save();
   if (i === 1) { g.translate(x, 0); g.scale(-1, 1); g.translate(-x, 0); }
   const dx = x - ANCHOR[st.fr[i]];
   g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x, GROUND - 1, 32, 4, 0, 0, Math.PI * 2); g.fill(); // 발밑 그림자
   if (st.ghost[i] > 0) { g.globalAlpha = 0.35 * st.ghost[i]; g.drawImage(s, dx + 18, y); g.globalAlpha = 1; }
-  g.drawImage(st.flash[i] > 0 && Math.floor(st.t / 60) % 2 ? whiteOf(s) : s, dx, y);
+  const src = st.flash[i] > 0 && Math.floor(st.t / 60) % 2 ? whiteOf(s) : s;
+  if (breathe) { const k = LEGS_AT; g.drawImage(src, 0, k, s.width, s.height - k, dx, y + k, s.width, s.height - k); g.drawImage(src, 0, 0, s.width, k + 1, dx, y + breathe, s.width, k + 1); } // 아래: 다리 그대로 · 위: 1칸 올림 (경계 한 줄을 겹쳐 틈이 안 생기게)
+  else g.drawImage(src, dx, y);
   g.restore();
 }
 // 끝났을 때 (2026-11-14): 승리 = 금빛 + 꽃가루, 패배 = 어둡게, 가운데 띠에 큰 글씨가 커졌다 작아지며 들어온다
@@ -696,6 +742,7 @@ function liveInit() {
 }
 if (LIVE && !WEB) setTimeout(liveInit, 200);
 if (WEB) setTimeout(webInit, 100);
+if (location.hash === '#rules') { SND.on = SND.bgm = false; bgmStop(); } // 규칙만 볼 때는 소리 없이
 // ===================== 웹 (실제 서버, 2026-11-14) =====================
 // 서버에 물으면 { pub(누구나), mine(내 손패), seat, serverNow }. 실시간 알림('duel-경기id')은 pub만 온다 → 참가자는 다시 물어 손패를 받는다.
 // 알림을 놓쳐도 되게 몇 초마다 묻고, 마감 시각이 지나면 바로 묻는다 (서버는 물을 때 밀린 합을 처리한다)
@@ -762,14 +809,15 @@ async function webApply(p) {
     log(`시작 · ${who(VIEW[0])} vs ${who(VIEW[1])}`);
   }
   // 새로 끝난 합: 처음 들어왔을 때 이미 지난 합은 기록만, 그 뒤로는 하나씩 연출
-  const fresh = WS.shown === 0 && p.log.length > 1 && !prev;
+  const fresh = WS.shown === 0 && !prev && (p.log.length > 1 || p.phase === 'end');
+  const still = fresh && p.phase === 'end'; // 이미 끝난 경기에 들어옴: 연출 없이 마지막 장면만 (2026-11-15 기획자: 마지막 합을 다시 보여 주지 않게)
   while (WS.shown < p.log.length) {
     const e = p.log[WS.shown++], sw = VIEW[0] === 1;
     const a = e.acts[VIEW[0]], b = e.acts[VIEW[1]];
     const j = { ...e.j, win: e.j.win === null ? null : sw ? 1 - e.j.win : e.j.win, dodger: e.j.dodger == null ? e.j.dodger : sw ? 1 - e.j.dodger : e.j.dodger };
     round = e.round;
     if (!F) webSetF(p);
-    if (fresh && WS.shown < p.log.length) { logRound(a, b, j); }
+    if (still || (fresh && WS.shown < p.log.length)) { logRound(a, b, j); }
     else { busy = true; clearInterval(timerId); await showRound(a, b, j); }
     VIEW.forEach((i, v) => { F[v].hp = e.hp[i]; });
     draw();
@@ -831,7 +879,14 @@ function webInit() {
   WS.poll = setInterval(() => { if (!WS.ended) webFetch(); }, SPECT() ? 6000 : 4000); // 알림을 놓쳐도 따라오게 + 참가자는 '화면에 있음' 표시
   addEventListener('pagehide', () => { try { if (WS.ch) BR.sb.removeChannel(WS.ch); } catch (e) { /* 이미 닫힘 */ } });
 }
-$('log').onclick = () => $('log').classList.toggle('open'); // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
+$('log').onclick = () => $('log').classList.toggle('open');
+// 규칙 (2026-11-15): 대회 규칙은 게임 창(duelBridge.tourRules)에서 받는다. 경기는 그대로 흐르니 창을 닫고 카드를 내야 한다
+const tourRulesOf = () => { try { return parent.duelBridge && parent.duelBridge.tourRules ? parent.duelBridge.tourRules() : null; } catch (e) { return null; } };
+document.body.insertAdjacentHTML('beforeend', '<div class="rulesPop" id="rulesPop" hidden><div class="box"><div class="rbar"><b>📖 무술대회 규칙</b><button id="rulesClose">✕ 닫기</button></div><div id="rulesText"></div></div></div>');
+$('rulesBtn').onclick = () => { $('rulesText').innerHTML = rulesHtml(tourRulesOf()); $('rulesPop').hidden = false; };
+$('rulesClose').onclick = () => { $('rulesPop').hidden = true; };
+$('rulesPop').onclick = e => { if (e.target.id === 'rulesPop') $('rulesPop').hidden = true; };
+if (location.hash === '#rules') { document.body.classList.add('rulesOnly'); document.body.insertAdjacentHTML('beforeend', `<div class="rulesBody">${rulesHtml(tourRulesOf())}</div>`); } // 무술대회 창의 [📖 규칙]: 규칙만 // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
 // 탭
 const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
 if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용

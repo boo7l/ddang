@@ -1533,7 +1533,7 @@ $('#miniLink').onclick = openMinigame;
 // ===== 무술대회 (2026-11-14, 기획서 "무술대회") =====
 // 관리자가 대회를 열면 📜 도움말 옆에 [🏟 무술대회] 단추가 생긴다 (신청 중엔 반짝). 창: 신청 · 신청자 · 대진표 · 경기 보기.
 // 경기 화면은 duel.html을 iframe으로 띄운다 (서버와는 duelBridge로 이 창의 로그인을 그대로 쓴다)
-window.duelBridge = { api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel() };
+window.duelBridge = { api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel(), tourRules: () => RULES.tourney };
 const TOUR_SHOW_DONE = 2 * 3600e3; // 대회가 끝나고 2시간 동안은 단추를 남겨 결과를 볼 수 있게 (2026-11-15 기획자: 3 → 2시간, 관리 탭에서 먼저 내릴 수 있음)
 const tourT = () => (S && S.tourney) || null;
 const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
@@ -1568,7 +1568,7 @@ function tourRender() {
   if (!T) { box.innerHTML = '<h2>🏟 무술대회</h2><p class="dim">열린 대회가 없어요.</p>'; return; }
   const g = me(), mine = T.entries.some(e => e.uid === MY_ID);
   const PH = { entry: `📝 참가 신청 중 · ${fmtTime(T.entryEnd)}까지 (${R.max}명이 차면 바로 마감)`, run: '⚔ 경기 진행 중', done: '🏆 대회 끝', cancel: '✖ 취소된 대회' };
-  let html = `<h2>🏟 무술대회${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''}</p>`;
+  let html = `<h2>🏟 무술대회${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''} <button id="tourRules" class="mini">📖 규칙</button></p>`;
   if (T.phase === 'entry') {
     const war = g ? effStats(g).war : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
     const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `무력 ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : g.faction && sameFac >= R.max / 2 ? `우리 세력은 이미 ${R.max / 2}명이 신청했어요.` : '';
@@ -1591,6 +1591,7 @@ function tourRender() {
     if (!confirm(`무술대회에 참가할까요?\n참가비 금 ${fmt(R.fee)}을 내고, 신청하면 취소할 수 없어요.`)) return;
     if (await call('tourneyEnter')) tourRender();
   };
+  if ($('#tourRules')) $('#tourRules').onclick = () => tourOpenRules();
   box.querySelectorAll('[data-slot]').forEach(el => { el.onclick = () => { const m = T.matches.find(x => x.slot === el.dataset.slot); if (m && m.at && !m.bye) tourOpenDuel(T, m); }; });
   if (box.querySelector('.tbLines')) requestAnimationFrame(() => tourLines(T));
 }
@@ -1652,6 +1653,15 @@ function tourOpenDuel(T, m) {
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
   bgmHold(true);
+}
+// 무술대회 규칙 (2026-11-15): 경기장과 같은 글을 같은 창 모양으로 (duel.html#rules)
+function tourOpenRules() {
+  tourCloseDuel();
+  const w = document.createElement('div');
+  w.id = 'duelWrap';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html#rules" title="무술대회 규칙"></iframe></div>';
+  w.querySelector('.duelClose').onclick = tourCloseDuel;
+  document.body.appendChild(w);
 }
 function tourCloseDuel() {
   const w = $('#duelWrap');
