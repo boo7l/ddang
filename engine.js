@@ -1429,7 +1429,9 @@ function chooseFoundTreasure(g, pick, auto = false) {
     const old = treasuresOf(g);
     delete g.treasureFound;
     g.treasures = [name];
-    addLog(g, `💎 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${trLabel(name)} (${trNow(g, name)})${old.length ? ` · 「${old.join('」「')}」${josa(old[old.length - 1], '은는').slice(-1)} 세상으로 돌아갔다` : ''}`);
+    // 2026-11-14 기획자: 원래 보물은 상인에게 판다 (그 전엔 금 없이 세상으로). 판 보물은 세상으로 돌아가 다시 나온다
+    const gold = old.reduce((a, n) => a + trSell(n), 0), got = gold ? earnGold(g, gold) : 0;
+    addLog(g, `💎 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${trLabel(name)} (${trNow(g, name)})${old.length ? ` · 「${old.join('」「')}」${josa(old[old.length - 1], '은는').slice(-1)} 상인에게 팔았다. 금 +${fmt(got)} (${fmt(g.gold)})${got < gold ? ` · 금 최대치 ${fmt(RULES.playerGoldMax)}라 ${fmt(gold - got)}은 받지 못했다` : ''}` : ''}`);
     logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${trLabel(name)})`);
     return '';
   }

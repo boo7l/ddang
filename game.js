@@ -1726,24 +1726,24 @@ function treasureFoundDialog() {
   const nu = TREASURES[f.name], old = treasuresOf(g)[0], ot = old && TREASURES[old], es = effStats(g);
   // 바꾸면 능력치가 얼마나 바뀌는지: '통솔 -1, 무력 +3, 지력 +3' (새 보물 가점 − 원래 보물 가점, 안 바뀌는 능력치는 뺀다. 2026-11-14 기획자)
   const after = STATS.map(st => [st.name, (trKeys(f.name).includes(st.key) ? nu.bonus : 0) - (ot && trKeys(old).includes(st.key) ? ot.bonus : 0)]).filter(x => x[1]).map(([n, d]) => `<span class="nw">${n} ${d > 0 ? '+' : ''}${d}</span>`).join(', ') || '그대로';
-  const gold = trSell(f.name), got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold));
+  const gold = trSell(f.name), got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold)); // 새 보물을 팔 때
+  const oGold = ot ? trSell(old) : 0, oGot = Math.max(0, Math.min(oGold, RULES.playerGoldMax - g.gold)); // 원래 보물을 팔고 바꿀 때 (2026-11-14)
   openModal(`
     <h2>💎 또 다른 보물을 발견했다!</h2>
-    <p>보물은 장수 한 명당 1개까지예요. 새 보물로 바꾸거나, 상인에게 팔 수 있어요.</p>
+    <p>보물은 장수 한 명당 1개까지예요. 하나를 갖고, 다른 하나는 상인에게 팔아요.</p>
     <div class="trCards">
-      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm">💎 ${esc(old)}</div><div>${trLabel(old).replace(' · ', '<br>')}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
+      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm">💎 ${esc(old)}</div><div>${trLabel(old).replace(' · ', '<br>')}</div><div class="dim small">팔면 금 +${fmt(oGold)}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
       <div class="trArrow">⇄</div>
-      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${trLabel(f.name).replace(' · ', '<br>')}</div><div class="dim small">바꾸면 ${after}</div></div>
+      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${trLabel(f.name).replace(' · ', '<br>')}</div><div class="dim small">바꾸면 ${after}</div><div class="dim small">팔면 금 +${fmt(gold)}</div></div>
     </div>
-    <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b> → 팔면 <b>${fmt(g.gold + got)}</b>${got < gold ? ` <span class="bad">(최대치 ${fmt(RULES.playerGoldMax)}이라 ${fmt(gold - got)}은 못 받아요)</span>` : ''}</p>
-    <p class="dim small">· 바꾸면 ${ot ? `${esc(old)}${josa(old, '은는').slice(-1)} 세상으로 돌아가요 (금 없음)` : '그대로 손에 넣어요'}<br>· 팔면 ${esc(f.name)}${josa(f.name, '을를').slice(-1)} 금 ${fmt(gold)}에 팔아요${nu.sell ? '' : ` (가점 1당 ${fmt(TREASURE_RULES.sellPer)})`}</p>
-    <div class="modalBtns trBtns"><button data-close>나중에</button><button id="tfSell">팔기</button><button id="tfSwap" class="main">${ot ? `${esc(josa(f.name, '으로'))} 바꾸기` : `${esc(f.name)} 갖기`}</button></div>`, box => {
+    <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b>${got < gold || oGot < oGold ? `<br><span class="bad small">(금 최대치 ${fmt(RULES.playerGoldMax)}을 넘는 만큼은 못 받아요)</span>` : ''}</p>
+    <div class="modalBtns trBtns"><button data-close>나중에</button><button id="tfSell">${esc(f.name)} 팔기</button><button id="tfSwap" class="main">${ot ? `${esc(old)} 팔기` : `${esc(f.name)} 갖기`}</button></div>`, box => {
     box.querySelector('#tfSell').onclick = async () => {
       if (!confirm(`「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요? 되돌릴 수 없어요.`)) return;
       if (await call('treasureFound', { pick: 'sell' })) { closeModal(); renderAll(); }
     };
     box.querySelector('#tfSwap').onclick = async () => {
-      if (ot && !confirm(`「${f.name}」${josa(f.name, '으로').slice(f.name.length)} 바꿀까요? 「${old}」${josa(old, '은는').slice(-1)} 세상으로 돌아가고 되돌릴 수 없어요.`)) return;
+      if (ot && !confirm(`「${old}」${josa(old, '을를').slice(-1)} 금 ${fmt(oGot)}에 팔고 「${f.name}」${josa(f.name, '을를').slice(-1)} 가질까요? 되돌릴 수 없어요.`)) return;
       if (await call('treasureFound', { pick: 'swap' })) { closeModal(); renderAll(); }
     };
   });
