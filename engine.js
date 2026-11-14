@@ -776,8 +776,13 @@ function loseTreasures(loser, winner, fell = false) {
     const r = Math.random();
     if (r >= TREASURE_RULES.loseRate + TREASURE_RULES.takeRate) continue;
     loser.treasures = treasuresOf(loser).filter(x => x !== n);
-    if (r < TREASURE_RULES.takeRate && winner && !treasuresOf(winner).length) { // 이긴 쪽이 이미 보물이 있으면 사라진다 (한 장수 1개까지)
+    if (r < TREASURE_RULES.takeRate && winner && !treasuresOf(winner).length) { // 이긴 쪽에 보물이 없으면 바로 갖는다 (한 장수 1개까지). 있으면 시즌 7부터 아래에서 고르게, 그 전엔 사라진다
       winner.treasures = [...treasuresOf(winner), n];
+      logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} ${fell ? '성을 함락하며' : '싸움 끝에'} ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
+    } else if (r < TREASURE_RULES.takeRate && winner && seasonNow() >= 7 && !winner.treasureFound) { // 2026-11-14 기획자 (시즌 7): 이긴 쪽이 이미 보물이 있으면 탐색·함락처럼 바꿀지 팔지 고른다 (고르는 중이면 사라진다)
+      winner.treasureFound = { name: n, until: S.turn + TREASURE_RULES.foundTurns };
+      addLog(winner, `★★★ ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다! (${trLabel(n)})
+지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요.`);
       logAll(`💎 ${winner.name}${josa(winner.name, '이가').slice(-1)} ${fell ? '성을 함락하며' : '싸움 끝에'} ${loser.name}의 보물 「${n}」${josa(n, '을를').slice(-1)} 빼앗았다!`);
     } else logAll(`💎 ${fell ? `${loser.name}${josa(loser.name, '이가').slice(-1)} 성을 잃는 혼란 속에` : `${loser.name}의 부대가 무너지는 틈에`} 보물 「${n}」${josa(n, '이가').slice(-1)} 사라졌다… (다시 어딘가에서 나타날지도)`);
   }
