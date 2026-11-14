@@ -604,7 +604,7 @@ let hofMedal = false;
 async function hofMedalMode(on) {
   hofMedal = on;
   document.querySelector('#hofPage .seasonBar').hidden = on;
-  $('#hofMedalBtn').hidden = on || !MEDAL_RANK; // 숨겨도 자리는 남아 현판이 가운데에 (style.css .medalBtn[hidden])
+  $('#hofMedalBtn').classList.toggle('ghost', on || !MEDAL_RANK); // 2026-11-14: hidden 속성은 전역 [hidden] { display: none !important }에 걸려 자리까지 사라졌다 → 클래스로 // 숨겨도 자리는 남아 현판이 가운데에 (style.css .medalBtn[hidden])
   if (!on) { hofRender(); return; }
   $('#hofView').innerHTML = '<p class="dim center">불러오는 중…</p>';
   let list = [];
