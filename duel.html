@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115000854">
+<link rel="stylesheet" href="style.css?v=20261115001206">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -37,6 +37,8 @@
   .sp s { color: #776; }
   .round { text-align: center; color: var(--label); font-size: 14px; }
   .stage { position: relative; width: 100%; max-width: 608px; margin: 0 auto; }
+  .stage.waiting::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .55); z-index: 1; } /* 경기 시작 전: 그림 위에 반투명 검정 (2026-11-15 기획자) */
+  .stage.waiting .reveal { z-index: 2; top: 50%; transform: translateY(-50%); }
   .reveal { position: absolute; top: 8px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; }
   .reveal > span { color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   .resBox { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center; }
@@ -240,7 +242,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115000854"></script>
+<script src="duel_rules.js?v=20261115001206"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -724,8 +726,9 @@ async function webApply(p) {
   const prev = WS.pub; WS.pub = p;
   if (WS.first) { WS.first = false; webNames(p); $('log').innerHTML = ''; }
   clearTimeout(WS.wake);
+  $('cv').parentNode.classList.toggle('waiting', p.phase === 'lobby'); // 시작 전에만 어둡게
   if (p.phase === 'lobby') {
-    over = true; $('resBox').innerHTML = '';
+    over = true; $('bShuffle').disabled = $('bSubmit').disabled = true; // 시작 전엔 단추를 끈다 $('resBox').innerHTML = '';
     const left = Math.max(0, p.startAt - wNow());
     $('reveal').innerHTML = `<span class="vs">${left > 0 ? `${fmtLeft(left)} 뒤 시작` : '곧 시작'}${SPECT() ? '' : ' · 이 화면을 열어 두면 직접 둬요'}</span>`;
     $('round').textContent = '대기';
@@ -785,7 +788,7 @@ function logRound(a, b, j) {
 const fmtLeft = ms => { const s = Math.ceil(ms / 1000); return s >= 60 ? `${Math.floor(s / 60)}분 ${s % 60}초` : `${s}초`; };
 function webInit() {
   document.body.classList.add('live');
-  $('log').innerHTML = '<div class="dim">불러오는 중…</div>';
+  $('log').innerHTML = '<div class="dim">불러오는 중…</div>'; $('bShuffle').disabled = $('bSubmit').disabled = true;
   F = [newFighter(100), newFighter(100)];
   try { WS.ch = BR.sb.channel('duel-' + WEB.id).on('broadcast', { event: 'msg' }, ({ payload }) => { if (WS.seatKnown && SPECT()) webGot({ pub: payload, serverNow: payload.now }); else webFetch(); }).subscribe(); } catch (e) { /* 알림 없이 묻기만 */ }
   webFetch();
