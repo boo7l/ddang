@@ -138,6 +138,8 @@ function setOwner(c, fid) {
   c.faction = fid;
   S.owners[c.id] = fid;
   if (before !== fid) (S.ownerLog = S.ownerLog || []).push([S.turn, c.id, fid || '']);
+  const pol = fid && S.policy && S.policy[fid]; // 대도독 방침: 공격 목표 성을 차지하면 공격 목표만 저절로 풀린다 (2026-11-14 기획자)
+  if (pol && pol.atk === c.id) { pol.atk = null; if (!pol.def) delete S.policy[fid]; }
   if (before && citiesOfFaction(before).length === 0) logAll(`☆ ${factionById(before).name} 세력이 멸망했다.`);
   if (before && fid && citiesOfFaction(before).length === 0) destroyReward(fid, before);
   checkUnify(fid);
