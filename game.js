@@ -1652,6 +1652,7 @@ function tourCloseDuel() {
   if (!w) return;
   w.querySelector('iframe').src = 'about:blank'; // 실시간 알림 끊기
   w.remove(); bgmHold(false);
+  if (!busy) refresh(); // 대진표로 돌아오면 결과를 바로 새로
 }
 
 function showTitle(msg) {
@@ -3105,6 +3106,7 @@ setInterval(() => {
   if (!S || $('#game').hidden) return;
   showPopup(); // 다른 창이 열려 있으면 닫힌 뒤에 뜬다
   const turnPassed = nextTurn(lastFetch + S.timeOffset) <= now() - turnWait; // 서버가 턴을 처리할 1초 여유 + 흩어 묻기 0~5초
-  if (!busy && !document.hidden && (turnPassed || Date.now() - lastFetch > 60 * 1000)) { refresh(); return; }
+  const tourWatch = $('#tourBox') && tourT() && (tourT().phase === 'entry' || tourT().phase === 'run'); // 무술대회 창을 보는 동안은 15초마다 (대진·결과가 바로 바뀌게, 2026-11-15)
+  if (!busy && !document.hidden && (turnPassed || Date.now() - lastFetch > (tourWatch ? 15 : 60) * 1000)) { refresh(); return; }
   updateTurn();
 }, 1000);
