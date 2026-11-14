@@ -866,7 +866,7 @@ function attackDialog() {
     }
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f ? f.color : 'var(--empty)'}"></span>
-      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}
+      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}${marchMult(from, c) > 1 ? ` <span class="bad small">먼 길 원정: 금 ${fmt(attackGoldOf(p.troops) * marchMult(from, c))} · 군량 ${fmt(marchFood(p.troops, p.faction) * marchMult(from, c))} (×${marchMult(from, c)})</span>` : ''}
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>

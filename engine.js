@@ -278,6 +278,8 @@ const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
 const isFarRoad = (a, b) => (typeof MAP !== 'undefined' && MAP && Array.isArray(MAP.farRoads)
   ? MAP.farRoads.some(([p, q]) => (p === a.id && q === b.id) || (p === b.id && q === a.id))
   : (RULES.farRoads || []).includes(a.name + '-' + b.name) || (RULES.farRoads || []).includes(b.name + '-' + a.name));
+// 먼 길 원정 배율 (2026-11-14, 시즌 7부터): from → to가 먼 길이면 출진 금·군량 × RULES.farMarch.mult
+const marchMult = (from, to) => (from && to && seasonNow() >= RULES.farMarch.from && isFarRoad(from, to) ? RULES.farMarch.mult : 1);
 // anyPath (2026-11-03 시즌 5, 뼈에게 닿기를): 남의 성·공백지를 지나도 된다. 도착하는 곳은 여전히 아군 성
 function linkedOwnCities(fromId, fid, maxSteps = Infinity, anyPath = false) {
   const seen = new Set([fromId]), limited = maxSteps !== Infinity;
@@ -812,9 +814,10 @@ function runAttack(g, o, mark) {
   if (g.troops <= 0) return '병력이 없음';
   const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
-  const food = marchFood(g.troops, g.faction);
+  const mm = marchMult(from, to); // 먼 길 원정이면 × 2 (2026-11-14, 시즌 7)
+  const food = marchFood(g.troops, g.faction) * mm;
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
-  const why = pay(g, 'attack', attackGoldOf(g.troops)); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
+  const why = pay(g, 'attack', attackGoldOf(g.troops) * mm); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
   if (why) return why;
   home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
   g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
@@ -837,7 +840,8 @@ function canMarch(x, o) {
   const from = x.city && cityById(x.city), to = cityById(o.to);
   if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || allied(x.faction, to.faction) || x.troops <= 0) return false; // 동맹 상대에게는 출진하지 않으니 야전도 없다
   if (x.attackTurn && x.attackTurn + RULES.attackCooldown - S.turn > 0) return false;
-  return S.cities[from.id].food >= marchFood(x.troops, x.faction) && x.gold >= attackGoldOf(x.troops);
+  const mm = marchMult(from, to);
+  return S.cities[from.id].food >= marchFood(x.troops, x.faction) * mm && x.gold >= attackGoldOf(x.troops) * mm;
 }
 // cur 쪽(cur.from → cur.to로 가는 부대)과 마주칠 다음 상대: 이번 턴에 아직 실행 전인 출진 가운데 cur.to에서 cur.from으로 오는 적 장수, 예약 순서대로
 function nextFieldFoe(cur, fought) {
@@ -852,9 +856,9 @@ function nextFieldFoe(cur, fought) {
 }
 // 야전에 끌려 나온 장수도 출진한 것: 금·군량을 쓰고 출진 쿨타임이 돈다. 이번 턴 그 출진 명령은 여기서 끝난다
 function joinField(x, to) {
-  const home = S.cities[x.city];
-  home.food -= marchFood(x.troops, x.faction);
-  pay(x, 'attack', attackGoldOf(x.troops));
+  const home = S.cities[x.city], mm = marchMult(cityById(x.city), to); // 먼 길 원정 × 2 (2026-11-14)
+  home.food -= marchFood(x.troops, x.faction) * mm;
+  pay(x, 'attack', attackGoldOf(x.troops) * mm);
   x.attackTurn = S.turn;
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(x.id);
   fieldDone.add(x.id);
