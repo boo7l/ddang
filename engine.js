@@ -1046,7 +1046,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   const base = captured ? RULES.merit.win : RULES.merit.lose;
   const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme + (att.charges || 0) * RULES.merit.charge; // 일기토 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
   const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
-  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push({ a: `${g.name} 보상: 금 +${got} · ${meritText}` }); }
+  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push({ a: `${g.name} 보상: 금 +${got} · ${meritText}` }); captureTreasure(g, to, lines); } // 함락 보물 1% (2026-11-14, 시즌 7)
   else lines.push({ a: `${g.name} ${meritText}` });
   for (const [x, dealt] of dealtBy) {
     const m = Math.floor(dealt / RULES.meritPerKill) + (eventBy.get(x) || 0);
@@ -1102,13 +1102,39 @@ function runMove(g, o) {
   return '';
 }
 
+// 주인 없는 보물 이름들 (고르는 중인 보물도 주인이 있는 셈)
+const freeTreasureNames = () => Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n) || (x.treasureFound && x.treasureFound.name === n)));
+// 그중 하나를 고른다. 가점이 높을수록 드물다 (pickWeight)
+function pickTreasure(free) {
+  let r = Math.random() * free.reduce((a, n) => a + TREASURE_RULES.pickWeight[TREASURES[n].bonus], 0), name = free[0];
+  for (const n of free) { r -= TREASURE_RULES.pickWeight[TREASURES[n].bonus]; if (r < 0) { name = n; break; } }
+  return name;
+}
+// 함락 보물 (2026-11-14, 시즌 7): 적 성을 함락한 장수가 captureRate(1%)로 그 성 보물고에서 주인 없는 보물을 찾는다.
+// 탐색 보물과 같은 규칙: 보물이 없으면 바로 갖고 전체 알림, 이미 있으면 바꿀지 팔지 고른다, 고르는 중이거나 남은 보물이 없으면 아무 일 없음
+function captureTreasure(g, city, lines) {
+  if (!TREASURE_RULES.captureRate || Math.random() >= TREASURE_RULES.captureRate || g.treasureFound) return;
+  const free = freeTreasureNames();
+  if (!free.length) return;
+  const name = pickTreasure(free), st = STATS.find(x => x.key === TREASURES[name].stat);
+  if (treasuresOf(g).length) {
+    g.treasureFound = { name, until: S.turn + TREASURE_RULES.foundTurns };
+    lines.push({ a: `★★★ ${city.name}의 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${st.name} +${TREASURES[name].bonus})
+지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요.` });
+    return;
+  }
+  g.treasures = [...treasuresOf(g), name];
+  lines.push({ a: `★★★ ${city.name}의 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${TREASURES[name].bonus} (지금 ${effStats(g)[st.key]})` });
+  logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} ${josa(city.name, '을를')} 함락하고 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${TREASURES[name].bonus})`);
+}
+
 // ----- 탐색 -----
 function runExplore(g) {
   const city = cityById(g.city), cs = S.cities[g.city];
   const why = pay(g, 'explore');
   if (why) return why;
   let e = rollExplore();
-  const freeTreasures = Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n) || (x.treasureFound && x.treasureFound.name === n))); // 고르는 중인 보물도 주인이 있는 셈
+  const freeTreasures = freeTreasureNames();
   // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지). 시즌 7부터는 이미 있어도 바꿀지 팔지 고른다 (2026-11-10, 고르는 중이면 장비 발견)
   if (e.key === 'treasure' && (!freeTreasures.length || (treasuresOf(g).length && (seasonNow() < 7 || g.treasureFound)))) e = EXPLORE.find(x => x.key === 'item');
   if (e.key === 'engineer' && !RULES.features.siege) e = EXPLORE.find(x => x.key === 'none'); // 병기 기능이 꺼져 있으면 허탕
@@ -1175,8 +1201,7 @@ function runExplore(g) {
       break;
     }
     case 'treasure': { // 보물 발견 (2026-11-07): 주인 없는 보물 중 하나. 가점이 높을수록 드물다. 전체 알림
-      let r = Math.random() * freeTreasures.reduce((a, n) => a + TREASURE_RULES.pickWeight[TREASURES[n].bonus], 0), name = freeTreasures[0];
-      for (const n of freeTreasures) { r -= TREASURE_RULES.pickWeight[TREASURES[n].bonus]; if (r < 0) { name = n; break; } }
+      const name = pickTreasure(freeTreasures);
       if (treasuresOf(g).length) { // 시즌 7 (2026-11-10): 이미 보물이 있다 → 바꿀지 팔지 고른다. 전체 알림은 바꿨을 때만
         g.treasureFound = { name, until: S.turn + TREASURE_RULES.foundTurns };
         const st = STATS.find(x => x.key === TREASURES[name].stat);
