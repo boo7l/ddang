@@ -54,6 +54,7 @@ const PROVINCE_PARTS = {
 };
 // 효과를 계산할 때 쓰는 구역 이름: 나눈 주면 그 조각(형북·형남), 아니면 주 이름 그대로
 function regionOf(c) {
+  if (c.region) return c.region; // 지도 파일에 지역을 적어 둔 지도 (2026-11-14 대한민국 지도: 성마다 region). 성 이름이 삼국지 지도와 겹쳐도(강릉) 이게 먼저
   const p = provinceOf(c), parts = PROVINCE_PARTS[p];
   return (parts && Object.keys(parts).find(k => parts[k].includes(c.name))) || p;
 }
