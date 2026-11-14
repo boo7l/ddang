@@ -537,6 +537,7 @@ function tourneyAdminDialog() {
     </table>
     ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">무력</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
     ${matches ? `<table class="stats tourList"><tr><th>단계</th><th>대진</th><th>시각</th><th>결과</th></tr>${matches}</table>` : ''}
+    ${T && T.phase === 'entry' ? '<p><button id="atCloseNow">지금 마감</button> <span class="dim small">신청 기간을 기다리지 않고 바로 마감하고 대진을 짜요 (${R.minN - 1}명 이하면 취소·환불)</span></p>' : ''}
     ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">신청 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
       : '<p class="dim">아직 연 대회가 없어요.</p>'}
     </div>
@@ -545,7 +546,7 @@ function tourneyAdminDialog() {
     <p>신청 기간 <input id="atHours" type="number" min="0.02" max="48" step="0.5" value="${R.entryHours}" style="width:5em"> 시간
        · 마감 뒤 첫 경기까지 <input id="atGap" type="number" min="1" max="180" value="${R.gapMin}" style="width:5em"> 분</p>
     <p class="dim small">참가비 금 ${fmt(R.fee)} · 무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
-    <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음</span></p>
+    <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음. 경기는 정해지면 1분 뒤 한꺼번에 (5분 간격 없음)</span></p>
     <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(무력 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
     <p><button id="atOpen">대회 열기</button></p>
     </div>`}
@@ -555,6 +556,10 @@ function tourneyAdminDialog() {
       const hours = +$('#atHours').value, gap = +$('#atGap').value, test = $('#atTest').checked, bots = +$('#atBots').value;
       if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기` : `무술대회를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기`)) return;
       if (await call('tourneyOpen', { hours, gap, test, bots })) afterAdmin();
+    };
+    if ($('#atCloseNow')) $('#atCloseNow').onclick = async () => {
+      if (!confirm(`신청을 지금 마감할까요? (${T.entries.length}명)${T.entries.length < R.minN ? `\n${R.minN}명이 안 돼서 대회가 취소되고 참가비를 돌려줘요.` : ''}`)) return;
+      if (await call('tourneyCloseNow')) afterAdmin();
     };
     if ($('#atCancel')) $('#atCancel').onclick = async () => {
       if (!confirm(T.phase === 'entry' ? '대회를 취소할까요? 신청한 장수에게 참가비를 돌려줘요.' : '진행 중인 대회를 취소할까요? 남은 경기는 결과가 반영되지 않고, 보상도 없어요.')) return;
