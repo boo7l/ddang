@@ -97,13 +97,13 @@ const RULES = {
   // months: 일어날 수 있는 달 (없으면 매달), chance: 턴당 확률
   // food: 그 턴 수확량 변화, troops: 그 구역 장수·수비대장 병력 변화, agri·comm: 지금 값에 곱하는 변화(영구, 상한까지), peace: 치안 더하기, gold: 그 구역 장수 금
   regionEvents: [
-    { key: 'harvest', name: '풍작', icon: '🌾', months: [4, 10], chance: 0.05, food: 0.3 },
-    { key: 'drought', name: '가뭄', icon: '☀️', months: [4, 10], chance: 0.05, food: -0.3 },
+    { key: 'harvest', name: '풍작', icon: '🌾', months: [4, 10], chance: 0.05, food: 0.3, agri: [30, 50] }, // 2026-11-14 농업 +30~50 추가 (패치노트 없음)
+    { key: 'drought', name: '가뭄', icon: '☀️', months: [4, 10], chance: 0.05, food: -0.3, agri: [-50, -30] }, // 2026-11-14 농업 -30~50 추가 (패치노트 없음)
     { key: 'revolt', name: '민란', icon: '🔥', chance: 0.03, troops: -0.1, peace: -20 }, // 2026-11-06 병력 -5% → -10%
     { key: 'plague', name: '역병', icon: '☠️', chance: 0.02, troops: -0.15, peace: -10 }, // 2026-11-06 병력 -10% → -15%, 치안 -10 추가
     { key: 'flood', name: '폭우', icon: '🌧️', months: [6, 7, 8], chance: 0.03, agri: [-60, -40], comm: [-60, -40], peace: -10 }, // 2026-11-06 농업·상업 -10% → -40~60 (따로 굴림)
     { key: 'cold', name: '한파', icon: '❄️', months: [12, 1, 2], chance: 0.03, agri: [-60, -40], comm: [-60, -40], peace: -10 }, // 2026-11-06 농업·상업 -10% → -40~60 (따로 굴림), 치안 -10 추가
-    { key: 'boom', name: '교역 호황', icon: '💰', months: [1, 4, 7, 10], chance: 0.03, comm: [40, 60], gold: 500 }, // 2026-11-06 상업 +15% → +40~60
+    { key: 'boom', name: '교역 호황', icon: '💰', months: [1, 4, 7, 10], chance: 0.03, comm: [30, 50], gold: 500 }, // 2026-11-14 상업 +40~60 → +30~50 (패치노트 없음). 2026-11-06 상업 +15% → +40~60
   ],
   regionEventRest: 6, // 숨은 규칙 (화면·도움말에 적지 않는다): 이벤트가 터진 구역은 이 턴 수(반년) 동안 이벤트가 안 일어난다
   // 수입 (임시값)
