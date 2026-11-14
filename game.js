@@ -1538,6 +1538,7 @@ const TOUR_SHOW_DONE = 2 * 3600e3; // 대회가 끝나고 2시간 동안은 단�
 const tourT = () => (S && S.tourney) || null;
 const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
 const tourMatchName = slot => ({ m0: '8강 1경기', m1: '8강 2경기', m2: '8강 3경기', m3: '8강 4경기', s0: '4강 1경기', s1: '4강 2경기', f: '결승' })[slot];
+let tourAdminKey = null; // 관리 탭을 마지막으로 그린 대회 상태
 let tourAlerted = {}; // 내 경기 알림을 이미 띄운 경기
 function tourSync() {
   const T = tourT(), b = $('#tourBtn');
@@ -1545,6 +1546,9 @@ function tourSync() {
   b.hidden = !tourVisible(T);
   b.classList.toggle('glow', !!T && T.phase === 'entry' && !(T.entries || []).some(e => e.uid === MY_ID));
   if ($('#tourBox')) tourRender(); // 창이 열려 있으면 새로
+  // 관리 → 무술대회 탭이 열려 있으면 대회 상태가 바뀔 때만 다시 그린다 (입력 중인 칸을 지우지 않게, 2026-11-15)
+  const key = T ? T.id + T.phase + (T.hidden ? 'h' : '') + (T.entries || []).length + (T.matches || []).filter(m => m.win != null).length : '';
+  if (key !== tourAdminKey) { tourAdminKey = key; if ($('#adminPage') && !$('#adminPage').hidden && adminTab === 'tourney') tourneyAdminDialog(); }
   // 내 경기가 3분 안에 시작하면 한 번 알려 준다 (게임 화면에 있을 때)
   const my = T && T.phase === 'run' && T.matches.find(m => m.at && m.win == null && m.p.includes(MY_ID));
   if (my && my.at - Date.now() < 3 * 60e3 && my.at - Date.now() > -60e3 && !tourAlerted[T.id + my.slot] && !$('#duelWrap') && !$('#game').hidden) {
