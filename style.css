@@ -1111,6 +1111,9 @@ details.fold > summary:hover h2 { color: var(--title); }
 .trCard .nm { font-size: 18px; color: var(--title); margin: 4px 0; }
 .trArrow { align-self: center; color: var(--gold); font-size: 20px; }
 #modalBox .trGold { text-align: center; margin: 8px 0; }
+.trCard .nw { white-space: nowrap; } /* '통솔 -1' 같은 덩어리는 중간에서 줄을 안 바꾼다 (2026-11-14) */
+.trBtns { flex-wrap: wrap; } /* 보물 고르기 단추: 글자를 쪼개지 않고, 좁으면 단추째 다음 줄로 (2026-11-14) */
+.trBtns button { white-space: nowrap; padding: 6px 12px; }
 /* 성 정보 제목 오른쪽 📍 내 성 단추 (2026-11-10) */
 #info h2.infoHead { display: flex; align-items: center; }
 #info .homeBtn { margin-left: auto; font-size: 13px; padding: 1px 6px; line-height: 1.4; }
