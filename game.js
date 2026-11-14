@@ -285,7 +285,7 @@ function adminDialog(tab = 'users', fid = null) {
     const queueCount = g => (g.queue || []).filter(Boolean).length;
     const traitText = g => { const t = GENERAL_TRAITS[g.trait]; return t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '<span class="dim">-</span>'; };
     const faceLabel = id => { const f = FACES.find(x => x.id === id); return f ? f.style[0] + f.id.slice(1) : '-'; }; // m1 → 무1, c2 → 문2
-    const treasureText = g => { const t = treasuresOf(g); return t.length ? t.map(n => `${esc(n)} <span class="dim">(${STATS.find(st => st.key === TREASURES[n].stat).name[0]}+${TREASURES[n].bonus})</span>`).join(", ") : "<span class=\"dim\">-</span>"; }; // 보유 보물 (2026-11-10)
+    const treasureText = g => { const t = treasuresOf(g); return t.length ? t.map(n => `${esc(n)} <span class="dim">(${trLabel(n, true)})</span>`).join(", ") : "<span class=\"dim\">-</span>"; }; // 보유 보물 (2026-11-10)
     const changes = g => Math.max(0, (g.joins || 1) - 1); // 세력 변경 횟수 (장수 기록 창과 같은 셈)
     const rows = gens.filter(g => (pick === '*' || (g.faction || '') === pick) && (!adminLoyalOnly || changes(g) === 0)).map(g => `<tr><td>${esc(ACCOUNTS[g.id] || '?')}${medalOf(g.id)}</td><td><button class="link" data-pid="${esc(g.id)}" title="정보 · 제재">${esc(g.name)}</button>${(S.mutes || {})[g.id] > Date.now() ? ' 🔇' : ''}${(S.bans || {})[g.id] > Date.now() ? ' ⛔' : ''}</td><td>${faceLabel(g.face)}</td><td>${swatch(g.faction)}${fname(g.faction)}</td>
       <td>${g.city ? esc(cityById(g.city).name) : '-'}</td><td class="num">${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td>
@@ -1723,21 +1723,20 @@ function treasureFoundDialog() {
   const g = me(), f = g && g.treasureFound;
   if (!f || !TREASURES[f.name]) return;
   treasureShown = f.name + f.until;
-  const nu = TREASURES[f.name], nst = STATS.find(x => x.key === nu.stat), old = treasuresOf(g)[0];
-  const ot = old && TREASURES[old], ost = ot && STATS.find(x => x.key === ot.stat);
-  // 바꾸면 능력치가 어떻게 되는지: 새 보물 능력치는 + 새 가점 − (같은 능력치면) 원래 가점
-  const after = effStats(g)[nst.key] + nu.bonus - (ot && ot.stat === nu.stat ? ot.bonus : 0);
-  const gold = nu.bonus * TREASURE_RULES.sellPer, got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold));
+  const nu = TREASURES[f.name], old = treasuresOf(g)[0], ot = old && TREASURES[old], es = effStats(g);
+  // 바꾸면 능력치가 어떻게 되는지: 새 보물 능력치는 + 새 가점 − (같은 능력치면) 원래 가점 (옥새는 셋 다, 2026-11-14)
+  const after = trKeys(f.name).map(k => `${STATS.find(x => x.key === k).name} ${es[k] + nu.bonus - (ot && trKeys(old).includes(k) ? ot.bonus : 0)}`).join(' · ');
+  const gold = trSell(f.name), got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold));
   openModal(`
     <h2>💎 또 다른 보물을 발견했다!</h2>
     <p>보물은 장수 한 명당 1개까지예요. 새 보물로 바꾸거나, 상인에게 팔 수 있어요.</p>
     <div class="trCards">
-      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm">💎 ${esc(old)}</div><div>${ost.name} +${ot.bonus}</div><div class="dim small">지금 ${ost.name} ${effStats(g)[ost.key]}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
+      <div class="trCard"><span class="tTag">지금 가진 보물</span>${ot ? `<div class="nm">💎 ${esc(old)}</div><div>${trLabel(old)}</div><div class="dim small">지금 ${trKeys(old).map(k => `${STATS.find(x => x.key === k).name} ${es[k]}`).join(' · ')}</div>` : '<div class="nm dim">없음</div><div class="dim small">(그새 잃었어요)</div>'}</div>
       <div class="trArrow">⇄</div>
-      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${nst.name} +${nu.bonus}</div><div class="dim small">바꾸면 ${nst.name} ${after}</div></div>
+      <div class="trCard new"><span class="tTag">새로 찾은 보물</span><div class="nm">💎 ${esc(f.name)}</div><div>${trLabel(f.name)}</div><div class="dim small">바꾸면 ${after}</div></div>
     </div>
     <p class="trGold">💰 지금 금 <b>${fmt(g.gold)}</b> → 팔면 <b>${fmt(g.gold + got)}</b>${got < gold ? ` <span class="bad">(최대치 ${fmt(RULES.playerGoldMax)}이라 ${fmt(gold - got)}은 못 받아요)</span>` : ''}</p>
-    <p class="dim small">· 바꾸면 ${ot ? `${esc(old)}${josa(old, '은는').slice(-1)} 세상으로 돌아가요 (금 없음)` : '그대로 손에 넣어요'}<br>· 팔면 ${esc(f.name)}${josa(f.name, '을를').slice(-1)} 금 ${fmt(gold)}에 팔아요 (가점 1당 ${fmt(TREASURE_RULES.sellPer)})</p>
+    <p class="dim small">· 바꾸면 ${ot ? `${esc(old)}${josa(old, '은는').slice(-1)} 세상으로 돌아가요 (금 없음)` : '그대로 손에 넣어요'}<br>· 팔면 ${esc(f.name)}${josa(f.name, '을를').slice(-1)} 금 ${fmt(gold)}에 팔아요${nu.sell ? '' : ` (가점 1당 ${fmt(TREASURE_RULES.sellPer)})`}</p>
     <div class="modalBtns"><button data-close>나중에</button><button id="tfSell">팔기 (금 +${fmt(got)})</button><button id="tfSwap" class="main">${ot ? `${esc(josa(f.name, '으로'))} 바꾸기` : `${esc(f.name)} 갖기`}</button></div>`, box => {
     box.querySelector('#tfSell').onclick = async () => {
       if (!confirm(`「${f.name}」${josa(f.name, '을를').slice(-1)} 금 ${fmt(got)}에 팔까요? 되돌릴 수 없어요.`)) return;
@@ -2206,7 +2205,7 @@ function memberDialog(id) {
       <tr><th>특성</th><td>${t ? `<span class="oddsTier t${tierNo}">${esc(t.name)}</span> <span class="dim">(${t.tier})</span><span class="mDesc">${esc(t.desc)}</span>` : none}</td></tr>
       <tr><th>능력치</th><td>${STATS.map(s => `${s.name} ${eff[s.key]}`).join(' · ')}</td></tr>
       <tr><th>장비</th><td>${gear ? esc(gear) : none}</td></tr>
-      ${treasuresOf(g).length ? `<tr><th>보물</th><td>${treasuresOf(g).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
+      ${treasuresOf(g).length ? `<tr><th>보물</th><td>${treasuresOf(g).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${trLabel(n)}</span></span>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
       <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td></tr>
       <tr><th>병기</th><td>${siege ? esc(siege) : none}</td></tr>
       <tr><th>수비</th><td class="${guarding ? 'mOn' : 'dim'}">${guarding ? '켜짐' : '꺼짐'}</td></tr>
@@ -2247,7 +2246,7 @@ function renderGeneral() {
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
         ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).join(' · ') || '<span class="dim">없음</span>'}${p.siegeFix ? ' <span class="dim">(보수됨)</span>' : ''}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
-        ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span> <button class="mini gSell" data-sell="${esc(n)}">팔기</button>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
+        ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${trLabel(n)}</span></span> <button class="mini gSell" data-sell="${esc(n)}">팔기</button>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
         <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
       </table>
@@ -2269,11 +2268,11 @@ function renderGeneral() {
   $('#gDefense').onclick = onDefense;
   if ($('#gShop')) $('#gShop').onclick = () => shopDialog();
   $('#general').querySelectorAll('[data-sell]').forEach(b => { b.onclick = async () => { // 보물 팔기 (2026-11-08)
-    const n = b.dataset.sell, bonus = TREASURES[n].bonus, gold = bonus * TREASURE_RULES.sellPer;
+    const n = b.dataset.sell, bonus = TREASURES[n].bonus, gold = trSell(n);
     const got = Math.max(0, Math.min(gold, RULES.playerGoldMax - me().gold)); // 장수 금 최대치를 넘는 만큼은 못 받는다
     const warn = got < gold ? `\n\n⚠ 지금 금이 ${fmt(me().gold)}이라 최대치 ${fmt(RULES.playerGoldMax)}을 넘는 ${fmt(gold - got)}은 받지 못해요. (실제로 +${fmt(got)})` : '';
     if (!confirm(`보물 「${n}」${josa(n, '을를').slice(-1)} 상인에게 팔까요?
-보물은 가점 1당 금 ${fmt(TREASURE_RULES.sellPer)}에 팔려요. (가점 +${bonus} → 금 ${fmt(gold)})
+${TREASURES[n].sell ? `금 ${fmt(gold)}에 팔려요.` : `보물은 가점 1당 금 ${fmt(TREASURE_RULES.sellPer)}에 팔려요. (가점 +${bonus} → 금 ${fmt(gold)})`}
 판 보물은 세상으로 돌아가 다시 탐색에서 나올 수 있어요. 되돌릴 수 없어요.${warn}`)) return;
     await call('sellTreasure', { name: n });
   }; });
@@ -2691,7 +2690,7 @@ function playerDialog(id, backTab = 'users', backF = null) { // 2026-11-08: 옆 
   const mute = until(S.mutes), ban = until(S.bans), t = GENERAL_TRAITS[g.trait], f = g.faction && factionById(g.faction);
   const queue = (g.queue || []).map((o, i) => o ? `<li><span class="dim">${i + 1}.</span> ${esc(orderLabel(o))}</li>` : '').join('') || '<li class="dim">없음</li>';
   const gear = Object.keys(SHOP).filter(k => gearCount(g, k)).map(k => `<span class="gear">${k} ${gearCount(g, k)}</span>`).join('') || '<span class="dim">없음</span>';
-  const tre = treasuresOf(g).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${STATS.find(x => x.key === TREASURES[n].stat).name}+${TREASURES[n].bonus}</span></span>`).join(' ');
+  const tre = treasuresOf(g).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${trLabel(n)}</span></span>`).join(' ');
   const statRows = STATS.map(st => `<tr><th>${st.name}</th><td class="num">${effStats(g)[st.key]}</td><td>${statBar(g.stats[st.key], effStats(g)[st.key], RULES.statMax)}</td><td class="dim small">${g.statExp && g.statExp[st.key] ? `경험 ${g.statExp[st.key]}/${expNeed(g.stats[st.key])}` : ''}</td></tr>`).join('');
   const sumStat = STATS.reduce((n, st) => n + effStats(g)[st.key], 0);
   // 제재한 뒤: 뒤의 목록(🔇·⛔ 표시)도 새로 그리고, 이 창도 새 상태로

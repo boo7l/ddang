@@ -600,12 +600,22 @@ const EXPLORE = [ // 2026-11-14 기획자 시즌 7 표: 군량 15 · 금 15 · �
 const TREASURES = {
   손자병법서: { stat: 'lea', bonus: 7 }, 병법이십사편: { stat: 'lea', bonus: 6 }, 맹덕신서: { stat: 'lea', bonus: 5 }, 육도: { stat: 'lea', bonus: 4 }, 삼략: { stat: 'lea', bonus: 3 },
   청룡언월도: { stat: 'war', bonus: 7 }, 방천화극: { stat: 'war', bonus: 6 }, 장팔사모: { stat: 'war', bonus: 5 }, 청공검: { stat: 'war', bonus: 4 }, 의천검: { stat: 'war', bonus: 3 },
+  옥새: { stat: 'all', bonus: 3, exp: 0.30, weight: 5, sell: 5400, from: 7 }, // 2026-11-14 기획자 (시즌 7부터): 통솔·무력·지력 모두 +3 + 모든 능력 경험치 +30%. 무게 5 (가장 드묾), 팔면 5,400 (가점 9 × 600)
   둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 도덕경: { stat: 'int', bonus: 4 }, 남화경: { stat: 'int', bonus: 3 }, // 2026-11-13 시즌 7: 노자 → 도덕경, 장자 → 남화경 (TREASURE_RENAME)
 };
 const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.02, takeRate: 0.03, sellPer: 600, foundTurns: 5,
   get captureRate() { return seasonNow() >= 7 ? 0.01 : 0; } }; // 적 성을 함락한 장수가 그 성 보물고에서 주인 없는 보물을 찾을 확률 (2026-11-14 기획자, 시즌 7부터 1%, 공백지는 없음) // foundTurns: 보물이 있는데 또 찾으면 고를 시간 (턴, 시즌 7부터, 2026-11-10) · // 2026-11-07 기획자: 5%·5% → 3%·3%, 2026-11-08 실종만 3% → 2%. sellPer: 팔기 = 가점 × 600금 (2026-11-08)
 const TREASURE_RENAME = { 노자: '도덕경', 장자: '남화경' }; // 옛 이름으로 가진 보물은 새 이름으로 읽는다
 const treasuresOf = g => (g.treasures || []).map(n => TREASURE_RENAME[n] || n).filter(n => TREASURES[n]);
+// 보물 하나가 올려 주는 능력치들 (옥새는 셋 다, 2026-11-14)
+const trKeys = n => TREASURES[n].stat === 'all' ? STATS.map(x => x.key) : [TREASURES[n].stat];
+// 효과 글: '통솔 +7' · '모든 능력 +3 · 경험치 +30%'. short면 '통+7' · '모두+3'
+const trLabel = (n, short) => { const t = TREASURES[n]; if (t.stat === 'all') return short ? `모두+${t.bonus}` : `모든 능력 +${t.bonus}${t.exp ? ` · 경험치 +${Math.round(t.exp * 100)}%` : ''}`; const nm = STATS.find(x => x.key === t.stat).name; return short ? `${nm[0]}+${t.bonus}` : `${nm} +${t.bonus}`; };
+// 지금 능력치 글: '지금 95' · '지금 통솔 80 · 무력 90 · 지력 70'
+const trNow = (g, n) => { const s = effStats(g), k = trKeys(n); return k.length > 1 ? `지금 ${k.map(x => `${STATS.find(y => y.key === x).name} ${s[x]}`).join(' · ')}` : `지금 ${s[k[0]]}`; };
+const trWeight = n => TREASURES[n].weight || TREASURE_RULES.pickWeight[TREASURES[n].bonus]; // 뽑힐 무게
+const trSell = n => TREASURES[n].sell || TREASURES[n].bonus * TREASURE_RULES.sellPer; // 팔 때 금
+const trOpen = n => !TREASURES[n].from || seasonNow() >= TREASURES[n].from; // 이번 시즌에 나오는 보물인가
 
 const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
@@ -683,6 +693,6 @@ function gearStats(g) {
 function effStats(g) {
   const s = { ...g.stats };
   for (const [name, it] of Object.entries(SHOP)) s[it.stat] = Math.min(RULES.statMax, s[it.stat] + it.bonus * gearCount(g, name));
-  for (const n of treasuresOf(g)) s[TREASURES[n].stat] += TREASURES[n].bonus; // 보물은 최대치를 넘길 수 있다 (2026-11-07)
+  for (const n of treasuresOf(g)) for (const k of trKeys(n)) s[k] += TREASURES[n].bonus; // 보물은 최대치를 넘길 수 있다 (2026-11-07)
   return s;
 }

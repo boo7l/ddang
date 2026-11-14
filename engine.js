@@ -31,7 +31,7 @@ const traitOf = fid => {
   return FACTION_TRAITS[f.name] || {};
 };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
-const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}; return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0))); }; // 개인 특성 차돌애호가
+const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}, tr = treasuresOf(g).reduce((a, n) => a + (TREASURES[n].exp || 0), 0); return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0) + tr)); }; // 개인 특성 차돌애호가 · 보물 옥새 경험치 (2026-11-14)
 // 이동 거리: 보통 2칸, 개인 특성 뼈에게 닿기를은 4칸 (군량 수송은 그대로 2칸)
 const moveRangeOf = g => Math.max(1, (gTrait(g).moveRange || RULES.moveRange) + (traitOf(g.faction).move || 0)); // 세력 특성 이동 거리 (2026-11-06)
 // 시각은 언제나 한국 시간으로 적는다 (서버는 다른 나라 시간일 수 있다)
@@ -1103,11 +1103,11 @@ function runMove(g, o) {
 }
 
 // 주인 없는 보물 이름들 (고르는 중인 보물도 주인이 있는 셈)
-const freeTreasureNames = () => Object.keys(TREASURES).filter(n => !allGenerals().some(x => treasuresOf(x).includes(n) || (x.treasureFound && x.treasureFound.name === n)));
+const freeTreasureNames = () => Object.keys(TREASURES).filter(n => trOpen(n) && !allGenerals().some(x => treasuresOf(x).includes(n) || (x.treasureFound && x.treasureFound.name === n)));
 // 그중 하나를 고른다. 가점이 높을수록 드물다 (pickWeight)
 function pickTreasure(free) {
-  let r = Math.random() * free.reduce((a, n) => a + TREASURE_RULES.pickWeight[TREASURES[n].bonus], 0), name = free[0];
-  for (const n of free) { r -= TREASURE_RULES.pickWeight[TREASURES[n].bonus]; if (r < 0) { name = n; break; } }
+  let r = Math.random() * free.reduce((a, n) => a + trWeight(n), 0), name = free[0];
+  for (const n of free) { r -= trWeight(n); if (r < 0) { name = n; break; } }
   return name;
 }
 // 함락 보물 (2026-11-14, 시즌 7): 적 성을 함락한 장수가 captureRate(1%)로 그 성 보물고에서 주인 없는 보물을 찾는다.
@@ -1116,16 +1116,16 @@ function captureTreasure(g, city, lines) {
   if (!TREASURE_RULES.captureRate || Math.random() >= TREASURE_RULES.captureRate || g.treasureFound) return;
   const free = freeTreasureNames();
   if (!free.length) return;
-  const name = pickTreasure(free), st = STATS.find(x => x.key === TREASURES[name].stat);
+  const name = pickTreasure(free);
   if (treasuresOf(g).length) {
     g.treasureFound = { name, until: S.turn + TREASURE_RULES.foundTurns };
-    lines.push({ a: `★★★ ${city.name}의 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${st.name} +${TREASURES[name].bonus})
+    lines.push({ a: `★★★ ${city.name}의 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${trLabel(name)})
 지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요.` });
     return;
   }
   g.treasures = [...treasuresOf(g), name];
-  lines.push({ a: `★★★ ${city.name}의 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${TREASURES[name].bonus} (지금 ${effStats(g)[st.key]})` });
-  logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} ${josa(city.name, '을를')} 함락하고 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${TREASURES[name].bonus})`);
+  lines.push({ a: `★★★ ${city.name}의 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${trLabel(name)} (${trNow(g, name)})` });
+  logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} ${josa(city.name, '을를')} 함락하고 보물고에서 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${trLabel(name)})`);
 }
 
 // ----- 탐색 -----
@@ -1204,15 +1204,13 @@ function runExplore(g) {
       const name = pickTreasure(freeTreasures);
       if (treasuresOf(g).length) { // 시즌 7 (2026-11-10): 이미 보물이 있다 → 바꿀지 팔지 고른다. 전체 알림은 바꿨을 때만
         g.treasureFound = { name, until: S.turn + TREASURE_RULES.foundTurns };
-        const st = STATS.find(x => x.key === TREASURES[name].stat);
-        text = `★★★ 또 다른 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${st.name} +${TREASURES[name].bonus})
+        text = `★★★ 또 다른 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 발견했다! (${trLabel(name)})
 지금 보물과 바꿀지, 상인에게 팔지 장수 창에서 고르세요.`; // 자동 판매 없음 (2026-11-13 기획자: 고를 때까지 기다린다)
         break;
       }
       g.treasures = [...treasuresOf(g), name];
-      const st = STATS.find(x => x.key === TREASURES[name].stat);
-      text = `★★★ 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${TREASURES[name].bonus} (지금 ${effStats(g)[st.key]})`;
-      logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 탐색 중에 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${TREASURES[name].bonus})`);
+      text = `★★★ 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${trLabel(name)} (${trNow(g, name)})`;
+      logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 탐색 중에 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${trLabel(name)})`);
       break;
     }
     case 'master': { // 레어 (2026-10-27): 달인에게 가르침을 받아 무작위 능력치 +2 (이미 최고인 능력치는 빼고 고른다)
@@ -1411,7 +1409,7 @@ function runSiege(g, o) {
 // 통솔 보물을 팔아 병력 최대치가 줄어도 지금 병력은 그대로 둔다 (최대치를 넘는 동안은 징병만 막힘)
 function sellTreasure(g, name) {
   if (!treasuresOf(g).includes(name)) return '가지고 있지 않은 보물이에요.';
-  const gold = TREASURES[name].bonus * TREASURE_RULES.sellPer;
+  const gold = trSell(name);
   g.treasures = treasuresOf(g).filter(n => n !== name);
   const got = earnGold(g, gold); // 장수 금 최대치(playerGoldMax)를 넘는 만큼은 못 받는다 (확인 창에서 미리 알려 줌)
   addLog(g, `💎 보물 「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(got)} (${fmt(g.gold)})${got < gold ? ` · 금 최대치 ${fmt(RULES.playerGoldMax)}라 ${fmt(gold - got)}은 받지 못했다` : ''}`);
@@ -1421,18 +1419,18 @@ function sellTreasure(g, name) {
 function chooseFoundTreasure(g, pick, auto = false) {
   const f = g.treasureFound;
   if (!f || !TREASURES[f.name]) { delete g.treasureFound; return '고를 보물이 없어요.'; }
-  const name = f.name, tr = TREASURES[name], st = STATS.find(x => x.key === tr.stat);
+  const name = f.name;
   if (pick === 'swap') {
     const old = treasuresOf(g);
     delete g.treasureFound;
     g.treasures = [name];
-    addLog(g, `💎 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${tr.bonus} (지금 ${effStats(g)[st.key]})${old.length ? ` · 「${old.join('」「')}」${josa(old[old.length - 1], '은는').slice(-1)} 세상으로 돌아갔다` : ''}`);
-    logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${st.name} +${tr.bonus})`);
+    addLog(g, `💎 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${trLabel(name)} (${trNow(g, name)})${old.length ? ` · 「${old.join('」「')}」${josa(old[old.length - 1], '은는').slice(-1)} 세상으로 돌아갔다` : ''}`);
+    logAll(`💎 ${g.name}${g.faction ? `(${factionById(g.faction).name})` : ''}${josa(g.name, '이가').slice(-1)} 전설의 보물 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! (${trLabel(name)})`);
     return '';
   }
   if (pick !== 'sell') return '바꾸기나 팔기 중에서 골라 주세요.';
   delete g.treasureFound;
-  const gold = tr.bonus * TREASURE_RULES.sellPer, got = earnGold(g, gold);
+  const gold = trSell(name), got = earnGold(g, gold);
   addLog(g, `💎 ${auto ? `${TREASURE_RULES.foundTurns}턴 동안 고르지 않아 ` : ''}「${name}」${josa(name, '을를').slice(-1)} 상인에게 팔았다. 금 +${fmt(got)} (${fmt(g.gold)})${got < gold ? ` · 금 최대치 ${fmt(RULES.playerGoldMax)}라 ${fmt(gold - got)}은 받지 못했다` : ''}`);
   return '';
 }
