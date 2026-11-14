@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115004118">
+<link rel="stylesheet" href="style.css?v=20261115004436">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -46,6 +46,19 @@
   .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   .fxText { position: absolute; transform: translate(-50%, -50%); font-size: 24px; white-space: nowrap; text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000; animation: fxUp 1.4s ease-out forwards; }
   @keyframes fxUp { 0% { opacity: 0; margin-top: 8px; } 12% { opacity: 1; margin-top: 0; } 70% { opacity: 1; } 100% { opacity: 0; margin-top: -26px; } }
+  /* 시작 인트로 (2026-11-15 기획자): 단계 이름 + 두 장수 이름이 양옆에서 들어온다 */
+  .intro { position: absolute; inset: 0; z-index: 3; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(0, 0, 0, .6); pointer-events: none; }
+  .intro.show { display: flex; animation: introFade .3s ease-out; }
+  .intro .stg { color: #ffd860; font-size: 20px; letter-spacing: 6px; text-shadow: 0 2px 0 #000; animation: introPop .4s ease-out both; }
+  .intro .row { display: flex; align-items: center; gap: 22px; font-size: 32px; text-shadow: 0 2px 0 #000, 0 0 8px #000; }
+  .intro .a { color: #8cc4ff; animation: introL .45s .25s ease-out both; }
+  .intro .b { color: #ff7a5a; animation: introR .45s .25s ease-out both; }
+  .intro .v { color: #fff; font-size: 26px; animation: introPop .35s .7s ease-out both; }
+  @keyframes introFade { from { opacity: 0; } }
+  @keyframes introL { from { transform: translateX(-160px); opacity: 0; } }
+  @keyframes introR { from { transform: translateX(160px); opacity: 0; } }
+  @keyframes introPop { from { transform: scale(2.2); opacity: 0; } }
+  @media (max-width: 860px) { .intro .stg { font-size: 15px; } .intro .row { font-size: 20px; gap: 12px; } .intro .v { font-size: 17px; } }
   .banner { position: absolute; left: 0; right: 0; top: 30%; transform: translateY(-50%); text-align: center; pointer-events: none; opacity: 0; }
   .banner.show { animation: bannerIn .35s ease-out forwards; }
   @keyframes bannerIn { from { opacity: 0; transform: translateY(-50%) scale(2.2); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
@@ -182,6 +195,7 @@
       <div class="reveal" id="reveal"></div>
       <div class="resBox" id="resBox"></div>
       <div class="fx" id="fx"></div>
+      <div class="intro" id="intro"></div><!-- 시작 인트로 (2026-11-15) -->
       <div class="banner" id="banner"><div class="t"></div><div class="s"></div></div><!-- 승패 큰 글씨: 그림에 그리면 1.9배로 늘어나 깨져서 글자로 띄운다 (2026-11-14) -->
     </div>
     <div class="timer"><i id="timer"></i></div><!-- 제한 시간 막대: 전투 그림 바로 아래, 같은 폭 (2026-11-14) -->
@@ -242,7 +256,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115004118"></script>
+<script src="duel_rules.js?v=20261115004436"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -309,6 +323,7 @@ const SFX = {
   dodge:  () => noise(0.25, 0.25, 600, 4000, 1.5),                                                       // 휙 (회피)
   idle:   () => tone('triangle', 300, 200, 0.15, 0.12),                                                  // 헛수
   shuffle: () => { for (let k = 0; k < 9; k++) noise(0.03, 0.10, 3500 - k * 120, 1800, 1.2, k * 0.035); noise(0.08, 0.12, 2200, 900, 1, 0.34); }, // 재정비: 카드 섞는 촤르륵 (2026-11-14)
+  intro:  () => { [0, 0.28, 0.56].forEach(w => { tone('triangle', 95, 45, 0.3, 0.45, w); noise(0.08, 0.15, 500, 120, 0.7, w, 'lowpass'); }); tone('sine', 98, 96, 2.6, 0.35, 0.95); tone('sine', 196.5, 195, 2.2, 0.12, 0.95); tone('sine', 293, 291, 1.6, 0.06, 0.95); noise(0.6, 0.12, 900, 200, 0.6, 0.95, 'lowpass'); }, // 시작 인트로: 북 세 번 + 징 (2026-11-15)
   tick:   () => tone('square', 1000, 1000, 0.03, 0.04),                                                  // 남은 3초
   win:    () => { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone('square', f, f, 0.11, 0.06, i * 0.1)); [523, 784, 1047].forEach(f => tone('triangle', f, f, 0.8, 0.12, 0.62)); tone('square', 1047, 1047, 0.5, 0.03, 0.62); [0.62, 0.8].forEach(w => noise(0.12, 0.3, 500, 120, 0.7, w, 'lowpass')); }, // 승리 팡파르. 2026-11-14: 끝의 '뿌웅'(낮게 미끄러지는 북) → 짧은 잡음 북 두 번, 화음은 세모파로 부드럽게
   lose:   () => { [440, 415, 392, 330].forEach((f, i) => tone('triangle', f, f, i === 3 ? 0.9 : 0.22, 0.13, i * 0.24)); tone('triangle', 82, 41, 1.2, 0.35, 0.72); }, // 패배: 처지는 음 + 낮게 가라앉는 소리
@@ -767,6 +782,13 @@ async function webApply(p) {
     const wv = VIEW.indexOf(p.result.win);
     finish(wv, p.result.tie); return;
   }
+  if (p.phase === 'pick' && p.round === 1 && wNow() < p.introUntil) { // 시작 인트로 (2026-11-15): 끝날 때까지 기다렸다가 1합
+    if (!WS.introShown) { WS.introShown = true; showIntro(p); }
+    busy = true; draw(); $('timer').style.width = '100%'; $('round').textContent = '시작';
+    WS.wake = setTimeout(() => liveQueue(() => webApply(WS.pub)), Math.max(0, p.introUntil - wNow()) + 30);
+    return;
+  }
+  $('intro').className = 'intro';
   if (p.phase === 'pick') {
     const newRound = p.round !== WS.lastRound; WS.lastRound = p.round; round = p.round; over = false;
     if (newRound) { pick = null; opReady = false; $('reveal').querySelectorAll('.vs').forEach(x => { if (!x.closest('.rv') && x.textContent !== 'VS') x.remove(); }); }
@@ -790,6 +812,14 @@ function logRound(a, b, j) {
   if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} 회피` : j.dodger === 0 ? '회피' : '상대 회피') : j.how === 'idle' ? '헛수' : '비김';
   else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? '필살 ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? '필살 ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
   log(msg);
+}
+// 시작 인트로: "8강 1경기" + 왼쪽 이름(파랑) VS 오른쪽 이름(빨강). 단계 이름은 경기 id 끝 (m0 … f)
+const STAGE_NAME = { m0: '8강 1경기', m1: '8강 2경기', m2: '8강 3경기', m3: '8강 4경기', s0: '4강 1경기', s1: '4강 2경기', f: '결 승' };
+function showIntro(p) {
+  const el = $('intro'), slot = String(WEB.id).split('-')[1];
+  el.innerHTML = `<div class="stg">${STAGE_NAME[slot] || '무술대회'}</div><div class="row"><span class="a">${esc2(p.names[VIEW[0]])}</span><span class="v">VS</span><span class="b">${esc2(p.names[VIEW[1]])}</span></div>`;
+  el.className = 'intro'; void el.offsetWidth; el.className = 'intro show';
+  sfx('intro');
 }
 const fmtLeft = ms => { const s = Math.ceil(ms / 1000); return s >= 60 ? `${Math.floor(s / 60)}분 ${s % 60}초` : `${s}초`; };
 function webInit() {
