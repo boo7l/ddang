@@ -116,16 +116,18 @@ function ensureCities() {
   for (const c of MAP.cities) for (const k of Object.keys(DOMESTIC)) S.cities[c.id][k] = Math.min(S.cities[c.id][k], devMax(c.grade, k));
 }
 
-// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두 공적 +30, 대도독 +50 (한 턴 최대와 상관없이)
+// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두 공적 +50 · 금 +1,000 · 통솔·무력·지력 경험치 +30 (2026-11-14, 한 턴 최대와 상관없이)
 function destroyReward(fid, gone) {
   if (seasonNow() < 7) return;
   const R = RULES.destroyMerit, cmd = commanderOf(fid), name = factionById(gone).name;
   for (const g of membersOf(fid)) {
     const m = g === cmd ? R.commander : R.member;
     g.merit = (g.merit || 0) + m;
-    addLog(g, `☆ ${name} 세력을 멸망시켰다. 공적 +${m} (${fmt(g.merit)})`);
+    const got = earnGold(g, R.gold); // 금 최대치를 넘는 만큼은 못 받는다
+    addLog(g, `☆ ${name} 세력을 멸망시켰다. 공적 +${m} (${fmt(g.merit)}) · 금 +${fmt(got)} · 통솔·무력·지력 경험치 +${R.exp}`);
+    for (const k of ["lea", "war", "int"]) gainStatExp(g, k, R.exp); // 2026-11-14
   }
-  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다! 우리 세력 장수 모두 공적 +${R.member}${cmd ? ` (대도독 +${R.commander})` : ""}`);
+  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다! 우리 세력 장수 모두 공적 +${R.member} · 금 +${fmt(R.gold)} · 통솔·무력·지력 경험치 +${R.exp}${cmd && R.commander !== R.member ? ` (대도독 공적 +${R.commander})` : ""}`);
 }
 // 성의 주인. 처음엔 지도 파일대로, 점령하면 S.owners에 기록해서 지도에 덮어쓴다
 function applyOwners() {
