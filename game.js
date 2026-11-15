@@ -1582,7 +1582,7 @@ function tourSync() {
     const lost = T && (T.matches || []).some(m => m.win != null && m.p.includes(MY_ID) && m.p[m.win] !== MY_ID);
     tm.hidden = !next && !(T && T.phase === 'run' && !lost && (T.entries || []).some(e => e.uid === MY_ID) && !T.champ);
     tm.classList.toggle('now', !!next && next.at && next.at <= Date.now());
-    tm.textContent = !next || !next.at ? '⏰ 다음 경기 시간 미정' : next.at <= Date.now() ? '⚔ 내 경기 진행 중' : `⏰ 내 경기 ${fmtClock(next.at)}`;
+    tm.innerHTML = !next || !next.at ? '⏰<span class="mHide"> 다음 경기 시간</span> 미정' : next.at <= Date.now() ? '⚔<span class="mHide"> 내 경기</span> 진행 중' : `⏰<span class="mHide"> 내 경기</span> ${fmtClock(next.at)}`; // 휴대폰은 짧게 (2026-11-15: ☰ 메뉴가 밀려 안 보였음)
   }
   if ($('#tourBox')) tourRender(); // 창이 열려 있으면 새로
   // 관리 → 무술대회 탭이 열려 있으면 대회 상태가 바뀔 때만 다시 그린다 (입력 중인 칸을 지우지 않게, 2026-11-15)
@@ -1689,7 +1689,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115155807#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115160854#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1699,7 +1699,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115155807#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115160854#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1709,7 +1709,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115155807#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115160854#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }

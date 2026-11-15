@@ -1162,6 +1162,7 @@ td.nowrap { white-space: nowrap; }
 /* ===== 무술대회 (2026-11-14) ===== */
 #tourMy { color: var(--label); white-space: nowrap; align-self: center; } /* 무술대회 단추 왼쪽: 내 다음 경기 시각 (2026-11-15) */
 #tourMy.now { color: #ffd860; }
+@media (max-width: 700px) { .mHide { display: none; } #tourMy { font-size: 13px; } #tourBtn:not([hidden]) ~ #helpBtn { padding: 2px 6px; } #tourBtn:not([hidden]) ~ #helpBtn .hT { display: none; } .hdrRight #tourBtn { padding: 2px 5px; } } /* 휴대폰 제목줄: 무술대회는 🏟만, 내 경기는 ⏰21:30처럼 짧게 (2026-11-15) */
 #tourBtn.glow { animation: tourGlow 1.2s infinite; }
 @keyframes tourGlow { 50% { box-shadow: 0 0 10px #ffd860; border-color: #ffd860; } }
 #modalBox.wideBox.tourModal { width: min(1000px, calc(100vw - 24px)); }
