@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115195245">
+<link rel="stylesheet" href="style.css?v=20261115200010">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -274,7 +274,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115195245"></script>
+<script src="duel_rules.js?v=20261115200010"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -360,7 +360,9 @@ document.getElementById('simGo').onclick = () => {
 // ===================== 소리 (2026-11-14) =====================
 // 음악: <audio> 반복 재생 (파일로 열면 fetch가 막혀서 WebAudio 대신). 처음엔 꺼짐, 단추로 켠다. 소리 크기 20% (게임 BGM과 같게)
 // 효과음: 파일 없이 WebAudio로 고전 게임식 합성 (네모파·세모파·잡음). 심벌 같은 쨍한 잡음은 짧고 작게
-const BGM_VOL = 0.2; // 음악 크기 20% (게임 BGM과 같게). 2026-11-14 음량 막대는 뺌
+const BGM_VOL = 0.2;
+const musVol = () => (DEBATE && MUS.mode === 'main' ? BGM_VOL * 0.8 : BGM_VOL); // 설전대회 경기 곡은 살짝 작게 (2026-11-15 기획자: 크게 들림, 20% → 16%). 대기 곡은 그대로
+// // 음악 크기 20% (게임 BGM과 같게). 2026-11-14 음량 막대는 뺌
 const SND = { ctx: null, on: true, bgm: true }; // 2026-11-14 기획자: 이 화면은 음악·효과음 모두 켜진 채로 시작
 try { if (parent !== window && parent.duelBridge && !parent.duelBridge.bgmOn()) { SND.on = SND.bgm = false; } } catch (e) { /* 혼자 열었다 */ } // 웹: 게임에서 음악을 꺼 두었으면 꺼진 채로 (단추로 켤 수 있다)
 setTimeout(() => { const b = document.getElementById('sndBtn'); if (b) b.textContent = SND.on ? '🔊 ON' : '🔇 OFF'; }, 0);
@@ -445,7 +447,7 @@ function bgmPlay() {
   if (!MUS.ready) return; // 아직 받는 중 (다 받으면 bgmLoad가 튼다)
   if (MUS.nodes.length) return; // 이미 나오는 중
   const c = ac(), t0 = c.currentTime + 0.05;
-  MUS.gain = c.createGain(); MUS.gain.gain.value = BGM_VOL; MUS.gain.connect(c.destination);
+  MUS.gain = c.createGain(); MUS.gain.gain.value = musVol(); MUS.gain.connect(c.destination);
   if (MUS.mode === 'wait' && MUS.wait) { const s = c.createBufferSource(); s.buffer = MUS.wait; s.loop = true; s.connect(MUS.gain); s.start(t0); MUS.nodes.push(s); return; } // 대기 곡: 30초 반복
   let at = t0;
   if (MUS.intro) { const s1 = c.createBufferSource(); s1.buffer = MUS.intro; s1.connect(MUS.gain); s1.start(at); at += MUS.intro.duration; MUS.nodes.push(s1); }
@@ -486,7 +488,7 @@ function bgmFade() {
 // 결과가 나오는 동안 음악을 낮춘다
 function bgmDuck(on) {
   if (!on && MUS.faded) { MUS.faded = false; bgmStop(); bgmPlay(); return; } // 승패로 꺼졌던 음악: 다음 경기 때 처음부터 다시
-  const v = on ? BGM_VOL * 0.35 : BGM_VOL;
+  const v = on ? musVol() * 0.35 : musVol();
   if (MUS.gain) MUS.gain.gain.setTargetAtTime(v, ac().currentTime, 0.1);
   document.getElementById('bgm').volume = v;
 }
