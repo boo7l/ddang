@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115011428">
+<link rel="stylesheet" href="style.css?v=20261115093344">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -266,7 +266,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115011428"></script>
+<script src="duel_rules.js?v=20261115093344"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -373,13 +373,13 @@ const SFX = {
 const sfx = k => { if (SND.on) try { SFX[k](); } catch (e) { /* 소리 장치 없음 */ } };
 // ===== 배경음악 (2026-11-14): 인트로를 한 번 틀고, 그 끝에 맞춰 루프를 틈 없이 반복 (WebAudio).
 // 곡 데이터는 audio/bgm_tourney_b.js (파일로 열어도 되게 글자로 담음). 데이터가 없으면(?bgm=a) <audio> 반복으로
-const MUS = { intro: null, loop: null, gain: null, nodes: [], ready: false, loading: false };
+const MUS = { intro: null, loop: null, wait: null, gain: null, nodes: [], ready: false, loading: false, mode: 'main' }; // mode: 'wait' 경기 시작 대기 곡 (2026-11-15) · 'main' 대회 곡
 const b64buf = b => { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; };
 async function bgmLoad() { // 웹: 인트로(+루프 한 바퀴) 파일과 루프 파일을 받아 온다 (2026-11-14). 음악을 켤 때만 받는다 (약 5MB)
   if (MUS.loading) return; MUS.loading = true;
   try {
     const c = ac(), get = u => fetch(u).then(x => x.arrayBuffer()).then(b => c.decodeAudioData(b));
-    [MUS.intro, MUS.loop] = await Promise.all([get('audio/bgm_tourney_intro.wav'), get('audio/bgm_tourney.wav')]);
+    [MUS.intro, MUS.loop, MUS.wait] = await Promise.all([get('audio/bgm_tourney_intro.wav'), get('audio/bgm_tourney.wav'), get('audio/bgm_wait.wav').catch(() => null)]); // 대기 곡은 못 받아도 대회 곡은 나온다
     MUS.ready = true; if (SND.bgm && c.state === 'running') bgmPlay();
   } catch (e) { console.warn('BGM', e); }
 }
@@ -389,6 +389,7 @@ function bgmPlay() {
   if (MUS.nodes.length) return; // 이미 나오는 중
   const c = ac(), t0 = c.currentTime + 0.05;
   MUS.gain = c.createGain(); MUS.gain.gain.value = BGM_VOL; MUS.gain.connect(c.destination);
+  if (MUS.mode === 'wait' && MUS.wait) { const s = c.createBufferSource(); s.buffer = MUS.wait; s.loop = true; s.connect(MUS.gain); s.start(t0); MUS.nodes.push(s); return; } // 대기 곡: 30초 반복
   let at = t0;
   if (MUS.intro) { const s1 = c.createBufferSource(); s1.buffer = MUS.intro; s1.connect(MUS.gain); s1.start(at); at += MUS.intro.duration; MUS.nodes.push(s1); }
   const s2 = c.createBufferSource(); s2.buffer = MUS.loop; s2.loop = true; s2.connect(MUS.gain); s2.start(at); MUS.nodes.push(s2); // 인트로 끝 바로 그 순간부터 루프
@@ -396,6 +397,15 @@ function bgmPlay() {
 function bgmStop() {
   MUS.nodes.forEach(n => { try { n.stop(); } catch (e) { /* 이미 멈춤 */ } }); MUS.nodes = [];
   document.getElementById('bgm').pause();
+}
+// 대기 곡 ↔ 대회 곡 바꾸기 (2026-11-15): 나오던 곡은 0.8초 동안 줄이며 끄고, 새 곡을 처음부터 (대회 곡은 인트로부터)
+function bgmMode(m) {
+  if (MUS.mode === m) return;
+  MUS.mode = m;
+  if (!MUS.nodes.length) return; // 아직 안 나오는 중: 켜질 때 이 곡으로
+  const old = MUS.nodes, g0 = MUS.gain, c = ac();
+  g0.gain.setTargetAtTime(0, c.currentTime, 0.25); setTimeout(() => old.forEach(n => { try { n.stop(); } catch (e) { /* 이미 멈춤 */ } }), 900);
+  MUS.nodes = []; bgmPlay();
 }
 // 소리 단추 하나로 음악·효과음을 같이 켜고 끈다 (2026-11-14 기획자). 다시 켜면 인트로부터
 document.getElementById('sndBtn').onclick = () => {
@@ -712,8 +722,8 @@ function liveInit() {
     const d = JSON.parse(e.data);
     if (d.names) LIVE.names = d.names;
     if (d.phase === 'none') { log('새 경기를 만들어 주세요 (위쪽 단추)'); return; }
-    if (d.phase === 'lobby') { over = true; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; $('resBox').innerHTML = ''; $('reveal').innerHTML = `<span class="vs">${Math.ceil(d.startIn / 1000)}초 뒤 시작 · 지금 이 창에 있으면 직접 둬요</span>`; bgmDuck(false); return; }
-    if (d.pub) { liveTurn(d); if (d.phase !== 'pick') busy = true; }
+    if (d.phase === 'lobby') { over = true; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; $('resBox').innerHTML = ''; $('reveal').innerHTML = `<span class="vs">${Math.ceil(d.startIn / 1000)}초 뒤 시작 · 지금 이 창에 있으면 직접 둬요</span>`; bgmDuck(false); bgmMode('wait'); return; }
+    if (d.pub) { bgmMode('main'); liveTurn(d); if (d.phase !== 'pick') busy = true; }
   }));
   es.addEventListener('start', e => liveQueue(async () => {
     const d = JSON.parse(e.data); LIVE.names = d.names;
@@ -796,6 +806,7 @@ async function webApply(p) {
   clearTimeout(WS.wake);
   $('cv').parentNode.classList.toggle('waiting', p.phase === 'lobby'); // 시작 전에만 어둡게
   if (p.phase === 'lobby') {
+    bgmMode('wait'); // 경기 시작 대기 곡
     over = true; $('bShuffle').disabled = $('bSubmit').disabled = true; // 시작 전엔 단추를 끈다 $('resBox').innerHTML = '';
     const left = Math.max(0, p.startAt - wNow());
     $('reveal').innerHTML = `<span class="vs">${left > 0 ? `${fmtLeft(left)} 뒤 시작` : '곧 시작'}${SPECT() ? '' : ' · 이 화면을 열어 두면 직접 둬요'}</span>`;
@@ -803,6 +814,7 @@ async function webApply(p) {
     WS.wake = setTimeout(left > 1500 ? () => webApply(WS.pub) : webFetch, Math.min(1000, left + 300)); // 1초마다 남은 시간, 시작 시각엔 서버에 묻기
     return;
   }
+  bgmMode('main'); // 시작했으면 대회 곡
   if (!WS.started) { // 경기 시작 줄 (처음 한 번)
     WS.started = true; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; bgmDuck(false); $('reveal').innerHTML = '';
     const who = i => `${SPECT() ? p.names[i] : i === LIVE.seat ? '나' : p.names[i]} 무력${p.pub[i].war}${p.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(p.pub[i].war)}장`;

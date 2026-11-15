@@ -1545,6 +1545,15 @@ function tourSync() {
   if (!b) return;
   b.hidden = !tourVisible(T);
   b.classList.toggle('glow', !!T && T.phase === 'entry' && !(T.entries || []).some(e => e.uid === MY_ID));
+  // 내 다음 경기 (2026-11-15 기획자): 아직 탈락하지 않은 참가자면 단추 왼쪽에 시각을 보여 준다. 상대가 아직 안 정해졌으면 '시간 미정'
+  const tm = $('#tourMy');
+  if (tm) {
+    const next = T && T.phase === 'run' && !b.hidden && (T.matches || []).find(m => m.win == null && !m.bye && m.p.includes(MY_ID));
+    const lost = T && (T.matches || []).some(m => m.win != null && m.p.includes(MY_ID) && m.p[m.win] !== MY_ID);
+    tm.hidden = !next && !(T && T.phase === 'run' && !lost && (T.entries || []).some(e => e.uid === MY_ID) && !T.champ);
+    tm.classList.toggle('now', !!next && next.at && next.at <= Date.now());
+    tm.textContent = !next || !next.at ? '⏰ 다음 경기 시간 미정' : next.at <= Date.now() ? '⚔ 내 경기 진행 중' : `⏰ 내 경기 ${fmtClock(next.at)}`;
+  }
   if ($('#tourBox')) tourRender(); // 창이 열려 있으면 새로
   // 관리 → 무술대회 탭이 열려 있으면 대회 상태가 바뀔 때만 다시 그린다 (입력 중인 칸을 지우지 않게, 2026-11-15)
   const key = T ? T.id + T.phase + (T.hidden ? 'h' : '') + (T.entries || []).length + (T.matches || []).filter(m => m.win != null).length : '';
