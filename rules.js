@@ -285,6 +285,8 @@ function dateOf(turn, year = (typeof S !== "undefined" && S && S.startYear) || R
 }
 // 해 표시: 음수는 기원전 (-203 → "기원전 203년")
 const yearText = y => (y < 0 ? `기원전 ${-y}년` : `${y}년`);
+// 무술대회 규칙 + 그 대회에 관리자가 정한 참가비·보상 (2026-11-15). 대회를 열 때 T.fee·T.prize에 저장, 없으면 RULES.tourney 기본값
+const tourCfg = T => (T && (T.fee != null || T.prize) ? { ...RULES.tourney, ...(T.fee != null ? { fee: T.fee } : {}), ...(T.prize ? { prize: T.prize } : {}) } : RULES.tourney);
 const dateText = (turn, year) => { const d = dateOf(turn, year); return `${yearText(d.year)} ${d.month}월`; };
 
 // 매달 장수의 병사가 군량을 먹는다. 모자라면 병력이 흩어진다. 굶었으면 true
