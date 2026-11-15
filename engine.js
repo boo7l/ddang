@@ -408,19 +408,19 @@ function runRegionEvents(month) {
     const roll = {};
     for (const k of ['agri', 'comm']) if (Array.isArray(e[k])) roll[k] = randInt(e[k][0], e[k][1]);
     const wallCut = e.wall && seasonNow() >= (e.wallFrom || 1) ? randInt(e.wall[0], e.wall[1]) : 0; // 방어 -n% (지진, 시즌 8부터, 2026-11-15)
-    const fx = [];
+    const fx = [], wallLost = []; // wallLost: 성마다 실제로 깎인 방어 (기록은 숫자로, 2026-11-15 기획자)
     if (e.food) { foodRate[r] = e.food; fx.push(`이번 수확 ${e.food > 0 ? '+' : ''}${Math.round(e.food * 100)}%`); }
     for (const c of cities) {
       const cs = S.cities[c.id];
       for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), k in roll ? cs[k] + roll[k] : Math.round(cs[k] * (1 + e[k]))));
       if (e.peace) cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + e.peace));
-      if (wallCut) cs.wall = Math.max(0, Math.round((cs.wall || 0) * (1 - wallCut / 100)));
+      if (wallCut) { const w0 = cs.wall || 0; cs.wall = Math.max(0, Math.round(w0 * (1 - wallCut / 100))); wallLost.push([c.name, w0 - cs.wall]); }
       if (e.troops && cs.guard > 0) cs.guard = Math.max(0, cs.guard - Math.ceil(cs.guard * -e.troops));
     }
     const sign = v => (v > 0 ? '+' : '') + v;
     for (const k of ['agri', 'comm']) if (e[k]) fx.push(`${DOMESTIC[k].label} ${k in roll ? sign(roll[k]) : `${sign(Math.round(e[k] * 100))}%`}`);
     if (e.peace) fx.push(`치안 ${e.peace}`);
-    if (wallCut) fx.push(`방어 -${wallCut}%`);
+    if (wallCut) fx.push(wallLost.length === 1 ? `방어 -${fmt(wallLost[0][1])}` : `방어 ${wallLost.map(([n, v]) => `${n} -${fmt(v)}`).join('·')}`); // 계산은 비율, 기록은 성마다 숫자
     if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
     if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
     const head = `${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${cities.map(c => c.name).join('·')}: `;
