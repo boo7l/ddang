@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115102725">
+<link rel="stylesheet" href="style.css?v=20261115102938">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -114,11 +114,11 @@
   .resCard.win .big { color: var(--title); } .resCard.lose .big { color: #9fb8ff; }
   .resCard button { margin-top: 6px; }
   .opHand { display: flex; gap: 4px; justify-content: center; }
-  .opHand .card { width: 30px; height: 40px; cursor: default; }
+  .opHand .card { width: 38px; height: 50px; cursor: default; } /* 2026-11-15 기획자: 조금 더 크게 (30×40에서) */
   .card.sp { background: #fbfbf4; border-color: #b9b39a; } /* 흰 특수 카드 (필살·회피) */
   .opHand .card.white { background: #fbfbf4; border-color: #b9b39a; } /* 상대의 특수 카드: 흰 뒷면만 */
   .opHand .card.white .q { color: #8a7a5a; font-weight: bold; } /* 필살인지 회피인지 모르니 물음표 (2026-11-14) */
-  .opHand .card.oc .ic { font-size: 16px; }
+  .opHand .card.oc .ic { font-size: 20px; }
   /* 관전: 두 장수의 손패를 작게 (2026-11-14 기획자). 상대가 보는 것과 같게 유형(색)만, 특수 카드는 ? */
   .miniHand { display: none; gap: 3px; margin-top: 3px; flex-wrap: wrap; }
   body.watch .miniHand { display: flex; }
@@ -179,8 +179,8 @@
     .card { width: 44px; height: 60px; font-size: 12px; }
     .card .ic { font-size: 17px; }
     .card.sel { transform: translateY(-4px); }
-    .opHand .card { width: 24px; height: 32px; }
-    .opHand .card.oc .ic { font-size: 13px; }
+    .opHand .card { width: 30px; height: 40px; } /* 휴대폰 (24×32에서, 2026-11-15) */
+    .opHand .card.oc .ic { font-size: 16px; }
     .acts { gap: 40px; margin-top: 10px; } /* 휴대폰: 같은 크기 두 단추, 사이를 넓게 */
     .acts button { flex: 1; min-width: 0; padding: 11px 4px; font-size: 15px; white-space: nowrap; }
     .resCard .big { font-size: 20px; }
@@ -266,7 +266,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115102725"></script>
+<script src="duel_rules.js?v=20261115102938"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
