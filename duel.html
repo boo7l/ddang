@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115103231">
+<link rel="stylesheet" href="style.css?v=20261115103524">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -48,7 +48,7 @@
   .round { text-align: center; color: var(--label); font-size: 14px; }
   .stage { position: relative; width: 100%; max-width: 608px; margin: 0 auto; }
   .stage.waiting::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .55); z-index: 1; } /* 경기 시작 전: 그림 위에 반투명 검정 (2026-11-15 기획자) */
-  .stage.waiting .resBox { z-index: 2; } /* 연습 경기 [대결 시작] 상자는 어두운 막 위로 (2026-11-15) */
+  .stage.waiting .resBox { z-index: 2; top: 50%; bottom: auto; transform: translateY(-50%); } /* 연습 경기 [대결 시작] 상자: 어두운 막 위, 경기장 한가운데 (2026-11-15) */
   .stage.waiting .reveal { z-index: 2; top: 50%; transform: translateY(-50%); }
   .reveal { position: absolute; top: 8px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; }
   .reveal > span { color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
@@ -234,7 +234,7 @@
       <button id="bSubmit" class="main">제출</button>
     </div>
     <div class="sideCol"><!-- 오른쪽 칸 (2026-11-14): 소리 조절 한 줄 + 기록창. 소리 단추가 설정 줄에 있으면 폭에 따라 줄이 자꾸 바뀌어서 옮김 -->
-      <div class="sndBar"><button id="sndBtn">🔊 ON</button> <button id="rulesBtn">📖 규칙</button></div><!-- 음악·효과음 한 단추 (2026-11-14) -->
+      <div class="sndBar"><button id="rulesBtn">📖 규칙</button> <button id="sndBtn">🔊 ON</button></div><!-- 음악·효과음 한 단추 (2026-11-14) -->
       <div class="log" id="log"><div class="dim">기록</div></div>
     </div>
   </div>
@@ -267,7 +267,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115103231"></script>
+<script src="duel_rules.js?v=20261115103524"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -918,7 +918,7 @@ if (PRACTICE) { // 바로 시작하지 않고 [대결 시작]을 눌러야 시�
   F = [newFighter(100), newFighter(100)]; F[0].hand = []; F[1].hand = []; // 시작 전엔 손패 없이 체력만
   bgmMode('wait'); $('cv').parentNode.classList.add('waiting'); $('bShuffle').disabled = $('bSubmit').disabled = true;
   $('round').textContent = '대기';
-  $('resBox').innerHTML = '<div class="resCard"><div class="big">🥋 연습 경기</div><div class="dim">컴퓨터와 무력 100 대 100</div><button id="pStart" class="main">대결 시작</button></div>';
+  $('resBox').innerHTML = '<div class="resCard"><div class="big">🥋 연습 경기</div><button id="pStart" class="main">대결 시작</button></div>';
   $('pStart').onclick = () => { $('cv').parentNode.classList.remove('waiting'); bgmMode('main'); $('start').click(); };
   setTimeout(draw, 0);
 }
