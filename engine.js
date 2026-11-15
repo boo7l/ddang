@@ -402,15 +402,16 @@ function runRegionEvents(month) {
     if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
     if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
     const head = `${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${cities.map(c => c.name).join('·')}: `;
-    if (Object.keys(roll).length) {
-      // 굴린 값이 있는 이벤트: 그 지역에 성이 있는 세력 장수에게만 숫자, 나머지는 무엇이 줄었는지/늘었는지만 (2026-11-10 기획자 문구)
-      const down = [], up = [];
-      for (const k of ['agri', 'comm']) if (k in roll) (roll[k] < 0 ? down : up).push(DOMESTIC[k].label);
-      if (e.peace) (e.peace < 0 ? down : up).push('치안');
-      const brief = [down.length ? `${down.join(',')} 감소` : '', up.length ? `${up.join(',')} 증가` : '', e.gold ? `머무는 장수 금 +${fmt(e.gold)}` : ''].filter(Boolean).join(', ');
-      const owners = new Set(cities.map(c => c.faction).filter(Boolean));
-      for (const g of allGenerals()) addLog(g, head + (g.faction && owners.has(g.faction) ? fx.join(', ') : brief) + ')', true);
-    } else logAll(head + fx.join(' · ') + ')');
+    // 그 지역에 성이 있는 세력 장수에게만 숫자, 나머지(다른 세력·재야)는 무엇이 줄었는지/늘었는지만 (2026-11-10 굴린 값, 2026-11-15 기획자: 모든 이벤트로)
+    const down = [], up = [], put = (label, v) => (v < 0 ? down : up).push(label);
+    if (e.food) put('수확', e.food);
+    for (const k of ['agri', 'comm']) if (e[k]) put(DOMESTIC[k].label, k in roll ? roll[k] : e[k]);
+    if (e.peace) put('치안', e.peace);
+    if (e.troops) put('병력', e.troops);
+    if (e.gold) put('머무는 장수 금', e.gold);
+    const brief = [down.length ? `${down.join(',')} 감소` : '', up.length ? `${up.join(',')} 증가` : ''].filter(Boolean).join(', ');
+    const owners = new Set(cities.map(c => c.faction).filter(Boolean)), sep = Object.keys(roll).length ? ', ' : ' · ';
+    for (const g of allGenerals()) addLog(g, head + (g.faction && owners.has(g.faction) ? fx.join(sep) : brief) + ')', true);
     for (const g of allGenerals()) {
       if (!g.faction || !ids.has(g.city)) continue;
       if (e.troops && g.troops > 0) { const lost = Math.ceil(g.troops * -e.troops); g.troops -= lost; addLog(g, `${e.icon} ${e.name}으로 병력 -${fmt(lost)} (${fmt(g.troops)})`); }
