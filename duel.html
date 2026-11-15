@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115193339">
+<link rel="stylesheet" href="style.css?v=20261115193623">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -274,7 +274,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115193339"></script>
+<script src="duel_rules.js?v=20261115193623"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -497,8 +497,8 @@ g.imageSmoothingEnabled = false;
 const img = n => { const i = new Image(); i.src = `img/duel/${n}.png`; return i; };
 // 그림: lab/img (GPT Image 원본 lab/raw → tools/pixelize.html로 도트 변환, 2026-11-14). 말 탄 장수 3동작: 서 있기 · 돌격 · 찌르기. b = 상대(파란 갑옷)
 // 3 = 승리 (말이 앞발 들고 언월도 치켜듦), 4 = 패배 (말에서 내려 무릎 꿇음, 무기 떨굼) — 2026-11-14 lab/raw/horse_end.png
-const imgD = n => { const i = new Image(); i.src = `img/debate/${n}.png`; return i; }; // 설전대회 그림: 0 서기 · 1 말하기 · 2 대갈 · 3 승리 · 4 패배 · 5 움찔 (청은 b)
-const BG = DEBATE ? imgD('bg') : img('arena'), SPR = DEBATE ? [0, 1, 2, 3, 4, 5].map(k => imgD('scholar' + k)) : [0, 1, 2, 3, 4].map(k => img('horse' + k)), SPR_B = DEBATE ? [0, 1, 2, 3, 4, 5].map(k => imgD('scholar' + k + 'b')) : [0, 1, 2, 3, 4].map(k => img('horse' + k + 'b'));
+const imgD = n => { const i = new Image(); i.src = `img/debate/${n}.png`; return i; }; // 설전대회 그림: 0 서기 · 1 말하기 · 2 대갈 · 3 승리 · 4 패배 · 5 움찔 · 6 무시(팔짱·고개 돌림) (청은 b)
+const BG = DEBATE ? imgD('bg') : img('arena'), SPR = DEBATE ? [0, 1, 2, 3, 4, 5, 6].map(k => imgD('scholar' + k)) : [0, 1, 2, 3, 4].map(k => img('horse' + k)), SPR_B = DEBATE ? [0, 1, 2, 3, 4, 5, 6].map(k => imgD('scholar' + k + 'b')) : [0, 1, 2, 3, 4].map(k => img('horse' + k + 'b'));
 const ANCHOR = [37, 40, 37, 42, 33]; // 2026-11-14 장수 약 15% 키움 (원본에서 덜 줄여 다시 만듦, 예전 그림은 img/old). // 동작마다 말 몸통 가운데가 그림 왼쪽에서 몇 칸인지 (위치가 흔들리지 않게)
 const W = 320, H = 180, GROUND = 168, HOME = [70, 250], REACH = 84; // GROUND: 말발굽 위치 (대회장 흙바닥). REACH: 찌를 때 상대와의 거리
 const st = { x: [...HOME], fr: [0, 0], flash: [0, 0], ghost: [0, 0], shake: 0, bigFlash: 0, texts: [], spark: 0, t: 0, result: null, confetti: [] }; // result: 끝났을 때 큰 글씨 (2026-11-14)
@@ -580,8 +580,8 @@ const say = (s, x, c = '#ffd860', y = 60) => {
 async function animateDebate(j, a, b) {
   const nudge = (i, d) => tween(i, HOME[i] + (i === 0 ? d : -d), 140);
   if (j.how === 'tie') { st.fr = [1, 1]; sfx('clash'); st.shake = 1; await Promise.all([nudge(0, 8), nudge(1, 8)]); await sleep(420); await Promise.all([tween(0, HOME[0], 200), tween(1, HOME[1], 200)]); st.fr = [0, 0]; return; }
-  if (j.how === 'idle') { sfx('idle'); await sleep(500); return; }
-  if (j.how === 'dodged') { const d = j.dodger, o = 1 - d; st.fr[o] = 1; await nudge(o, 10); st.ghost[d] = 1; sfx('dodge'); say(`${T.dodge.name}!`, st.x[d], '#9fe8ff'); await sleep(500); await tween(o, HOME[o], 200); st.fr = [0, 0]; return; }
+  if (j.how === 'idle') { [0, 1].forEach(i => { if ((i === 0 ? a : b).k === 'dodge') st.fr[i] = 6; }); sfx('idle'); await sleep(700); st.fr = [0, 0]; return; } // 둘 다 무시: 둘 다 팔짱 (2026-11-15)
+  if (j.how === 'dodged') { const d = j.dodger, o = 1 - d; st.fr[o] = 1; st.fr[d] = 6; await nudge(o, 10); sfx('dodge'); /* 무시한 쪽은 팔짱 끼고 고개 돌림 (2026-11-15 기획자) */ say(`${T.dodge.name}!`, st.x[d], '#9fe8ff'); await sleep(500); await tween(o, HOME[o], 200); st.fr = [0, 0]; return; }
   const atk = j.win, def = 1 - atk;
   if (j.how === 'kill') { const blue = atk === 0; say(`${T.kill.name}!`, HOME[atk], blue ? '#6ab0ff' : '#ff5a3a', 50); st.flashRGB = blue ? '40,120,255' : '255,60,30'; st.bigFlash = 1; sfx('kill'); st.fr[atk] = 2; await sleep(350); }
   else st.fr[atk] = 1;
