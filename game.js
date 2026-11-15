@@ -1609,9 +1609,9 @@ function tourRender() {
     const war = g ? effStats(g).war : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
     const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `무력 ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : g.faction && sameFac >= R.max / 2 ? `우리 세력은 이미 ${R.max / 2}명이 신청했어요.` : '';
     html += `<div class="tourEntry">
-      <p>참가비 <b>금 ${fmt(R.fee)}</b> · 무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · 신청하면 취소할 수 없어요</p>
+      <p>참가비 <b>금 ${fmt(R.fee)}</b> · 무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · 마감 전에는 취소할 수 있어요</p>
       <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · 무력 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · 무력 경험치 ${R.prize[1].warExp}</p>
-      ${mine ? '<p class="hi">✔ 신청했어요. 대진이 정해지면 경기 시각이 나와요.</p>' : `<p><button id="tourEnter" class="main"${why ? ' disabled' : ''}>참가 신청 (금 ${fmt(R.fee)})</button> ${why ? `<span class="dim small">${why}</span>` : ''}</p>`}
+      ${mine ? '<p class="hi">✔ 신청했어요. 대진이 정해지면 경기 시각이 나와요. <button id="tourLeave" class="mini">신청 취소</button></p>' : `<p><button id="tourEnter" class="main"${why ? ' disabled' : ''}>참가 신청 (금 ${fmt(R.fee)})</button> ${why ? `<span class="dim small">${why}</span>` : ''}</p>`}
     </div>
     <p class="sub">신청한 장수 ${T.entries.length} / ${R.max}</p>
     <div class="tourList">${T.entries.map(e => `<span class="tourWho${e.uid === MY_ID ? ' me' : ''}">${tourChip(e.faction)}${esc(e.name)} <span class="dim small">무력 ${e.war}</span></span>`).join('') || '<span class="dim">아직 없어요</span>'}</div>`;
@@ -1624,9 +1624,10 @@ function tourRender() {
   }
   box.innerHTML = html;
   if ($('#tourEnter')) $('#tourEnter').onclick = async () => {
-    if (!confirm(`무술대회에 참가할까요?\n참가비 금 ${fmt(R.fee)}을 내고, 신청하면 취소할 수 없어요.`)) return;
+    if (!confirm(`무술대회에 참가할까요?\n참가비 금 ${fmt(R.fee)}을 내요. 신청 마감 전에는 취소하고 돌려받을 수 있어요.`)) return;
     if (await call('tourneyEnter')) tourRender();
   };
+  if ($('#tourLeave')) $('#tourLeave').onclick = () => gameConfirm('🏟 신청 취소', `<p>무술대회 참가 신청을 취소할까요?</p><p>참가비 금 ${fmt(R.fee)}을 돌려받아요.</p>`, '신청 취소', async () => { closeModal(); if (await call('tourneyLeave')) tourDialog(); }, tourDialog); // 신청 취소 (2026-11-15)
   if ($('#tourRules')) $('#tourRules').onclick = () => tourOpenRules();
   box.querySelectorAll('[data-slot]').forEach(el => { el.onclick = () => { const m = T.matches.find(x => x.slot === el.dataset.slot); if (m && m.at && !m.bye) tourOpenDuel(T, m); }; });
   if (box.querySelector('.tbLines')) requestAnimationFrame(() => tourLines(T));
@@ -1685,7 +1686,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115150948#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115151533#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1695,7 +1696,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115150948#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115151533#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1705,7 +1706,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115150948#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115151533#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
