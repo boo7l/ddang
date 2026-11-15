@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115201617">
+<link rel="stylesheet" href="style.css?v=20261115202548">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -114,6 +114,7 @@
   .rv.lost .card { opacity: .55; filter: grayscale(.7); }
   .reveal > .vs { color: #fff; font-size: 18px; text-shadow: 0 0 3px #000, 0 0 3px #000; }
   .card.spc { background: #ffe9a0; }
+  .fchip { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border: 1px solid #1a0a04; vertical-align: 1px; } /* 이름 옆 세력 색 (2026-11-15) */
   .resCard { text-align: center; padding: 4px 16px; background: rgba(42,6,4,.92) !important; border: 2px solid var(--gold); background: var(--panel-dark); }
   .resCard .big { font-size: 26px; margin-bottom: 2px; }
   .resCard.win .big { color: var(--title); } .resCard.lose .big { color: #9fb8ff; }
@@ -274,7 +275,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115201617"></script>
+<script src="duel_rules.js?v=20261115202548"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -877,8 +878,10 @@ function webSubmit() {
 function webNames(p) {
   LIVE.names = p.names;
   const L = VIEW.map(i => p.names[i]);
-  document.querySelector('.side .nm').innerHTML = SPECT() ? `<b>${esc2(L[0])}</b> <span class="dim" id="myInfo"></span>` : `<b>나</b> <span class="dim" id="myInfo"></span>`;
-  document.querySelector('.side.right .nm').innerHTML = `<b>${esc2(L[1])}</b> <span class="dim" id="opInfo"></span>`;
+  let C = null; try { C = BR && BR.tourColors ? BR.tourColors(WEB.id) : null; } catch (e) { /* 혼자 열었다 */ } // 이름 옆 세력 색 (2026-11-15 기획자)
+  const chip = v => (C && C[VIEW[v]] ? `<span class="fchip" style="background:${C[VIEW[v]]}"></span>` : '');
+  document.querySelector('.side .nm').innerHTML = SPECT() ? `<b>${chip(0)}${esc2(L[0])}</b> <span class="dim" id="myInfo"></span>` : `<b>${chip(0)}나</b> <span class="dim" id="myInfo"></span>`;
+  document.querySelector('.side.right .nm').innerHTML = `<b>${chip(1)}${esc2(L[1])}</b> <span class="dim" id="opInfo"></span>`;
 }
 const esc2 = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // 서버 상태로 F를 만든다 (F[0] = 화면 왼쪽). 내 손패는 mine, 나머지는 유형만
