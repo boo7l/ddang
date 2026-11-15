@@ -1659,7 +1659,17 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115102002#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115102303#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.querySelector('.duelClose').onclick = tourCloseDuel;
+  document.body.appendChild(w);
+  bgmHold(true);
+}
+// 무술대회 연습 경기 (2026-11-15 기획자 시험): 컴퓨터와 무력 100 대 100. 서버와 상관없고 기록·보상 없음
+function tourOpenPractice() {
+  tourCloseDuel();
+  const w = document.createElement('div');
+  w.id = 'duelWrap';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기 · 무력 100 vs 100 (컴퓨터)</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115102303#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
   bgmHold(true);
@@ -1669,7 +1679,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115102002#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115102303#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
 }
@@ -2500,7 +2510,7 @@ function renderGeneral() {
       <tr><th>${st.name}</th><td class="num" title="기본 ${p.stats[st.key]} + 아이템 ${effStats(p)[st.key] - p.stats[st.key]}">${effStats(p)[st.key]}</td><td>${statBar(p.stats[st.key], effStats(p)[st.key], RULES.statMax)}</td>
         <td class="xp dim" title="경험치 / 다음 1까지">${p.stats[st.key] >= RULES.statMax ? '최대' : `${(p.statExp && p.statExp[st.key]) || 0}/${expNeed(p.stats[st.key])}`}</td></tr>`).join('')}
     </table>`;
-  $('#gFace').replaceWith(faceCanvas(p.face || FACES[0].id));
+  { const fc = faceCanvas(p.face || FACES[0].id); fc.style.cursor = 'pointer'; fc.title = '무술대회 연습 경기'; fc.onclick = () => tourOpenPractice(); $('#gFace').replaceWith(fc); } // 시험 (2026-11-15 기획자): 게임 화면 내 초상화를 누르면 연습 경기
   if ($('#gPouch')) $('#gPouch').onclick = () => pouchDialog();
   if ($('#gTreasureFound')) $('#gTreasureFound').onclick = () => treasureFoundDialog();
   $('#gTraits').ontoggle = e => { traitsOpen = e.target.open; try { localStorage.setItem(TRAITS_KEY, traitsOpen ? '1' : '0'); } catch (err) { /* 저장 못 해도 이번엔 그대로 */ } };

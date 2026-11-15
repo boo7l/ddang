@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115102002">
+<link rel="stylesheet" href="style.css?v=20261115102303">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -266,7 +266,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115102002"></script>
+<script src="duel_rules.js?v=20261115102303"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -650,8 +650,8 @@ function finish(wv = null, tie = '') { // wv: 이긴 쪽 (화면 왼쪽 0 · 오
       st.confetti = []; $('reveal').innerHTML = ''; bgmDuck(true); $('timer').style.width = '0%'; draw(); return;
     }
     st.confetti = [];
-    $('reveal').innerHTML = ''; $('resBox').innerHTML = `<div class="resCard ${kind}"><div class="big">${kind === 'win' ? '🏆 승리' : kind === 'lose' ? '💀 패배' : '🤝 무승부'}</div><div class="dim">${st.result.sub}</div><button id="again" class="main">대진표로</button></div>`;
-    $('again').onclick = () => { try { parent.duelBridge.close(); } catch (e) { /* 혼자 열었다 */ } };
+    $('reveal').innerHTML = ''; $('resBox').innerHTML = `<div class="resCard ${kind}"><div class="big">${kind === 'win' ? '🏆 승리' : kind === 'lose' ? '💀 패배' : '🤝 무승부'}</div><div class="dim">${st.result.sub}</div><button id="again" class="main">${location.hash === '#practice' ? '한 판 더' : '대진표로'}</button></div>`;
+    $('again').onclick = () => { if (location.hash === '#practice') { $('resBox').innerHTML = ''; $('start').click(); return; } try { parent.duelBridge.close(); } catch (e) { /* 혼자 열었다 */ } }; // 연습: 한 판 더
     bgmDuck(true); // 결과 동안 음악을 낮춰 승패 소리가 잘 들리게
     $('timer').style.width = '0%'; draw();
 }
@@ -903,6 +903,8 @@ if (location.hash === '#rules') { document.body.classList.add('rulesOnly'); docu
 // 탭
 const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
 if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용
+const PRACTICE = location.hash === '#practice'; // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
+if (PRACTICE) { $('myWar').value = $('opWar').value = 100; setTimeout(() => $('start').click(), 300); }
 if (location.hash === '#demo2') setTimeout(() => { pick = { k: 'kill' }; submit(); }, 500); // 그림 확인용: 필살 장면
 function josaI(w) { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? '이' : '가'; }
 function josaUl(w) { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? '을' : '를'; }
