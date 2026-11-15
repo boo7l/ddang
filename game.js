@@ -1233,7 +1233,7 @@ function helpDialog(page = -1) {
       <p class="helpSub">⚡ 단기접전</p><ul>
       <li>양쪽 모두 무력 ${RULES.duel.minWar} 이상일 때 낮은 확률로 발생해요.</li>
       <li>무력이 높은 쪽이 이기기 쉽지만, 낮은 쪽이 이길 때도 있어요.</li>
-      <li>진 쪽만 병력을 잃고, 이긴 쪽 무력이 높을수록 많이 잃어요. (예: 무력 100이 이기면 1,500명 안팎)</li>
+      <li>진 쪽만 병력을 잃고, 이긴 쪽 무력이 높을수록 많이 잃어요. (예: 무력 100이 이기면 1,500~2,000명)</li>
       <li><b>빠뜨롱 나와</b>가 있으면 더 자주 벌어지고, 가진 쪽이 더 잘 이겨요.</li></ul>
       <p class="helpSub">🔥 책략 · 🐎 돌격</p><ul>
       <li>책략은 지력, 돌격은 무력으로 해요. ${RULES.scheme.minInt} 이상이고 상대보다 높아야 쓸 수 있어요. 공격·수비 어느 쪽이든 써요.</li>
@@ -1669,7 +1669,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115121256#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115121603#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1679,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115121256#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115121603#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1689,7 +1689,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115121256#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115121603#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
