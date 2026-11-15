@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115102938">
+<link rel="stylesheet" href="style.css?v=20261115103231">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -48,6 +48,7 @@
   .round { text-align: center; color: var(--label); font-size: 14px; }
   .stage { position: relative; width: 100%; max-width: 608px; margin: 0 auto; }
   .stage.waiting::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .55); z-index: 1; } /* 경기 시작 전: 그림 위에 반투명 검정 (2026-11-15 기획자) */
+  .stage.waiting .resBox { z-index: 2; } /* 연습 경기 [대결 시작] 상자는 어두운 막 위로 (2026-11-15) */
   .stage.waiting .reveal { z-index: 2; top: 50%; transform: translateY(-50%); }
   .reveal { position: absolute; top: 8px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; }
   .reveal > span { color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
@@ -266,7 +267,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115102938"></script>
+<script src="duel_rules.js?v=20261115103231"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -275,6 +276,7 @@ const WATCH = location.hash.startsWith('#watch') ? (() => { const q = new URLSea
 // 실시간 모드 (2026-11-14): node lab/duel_server.js 를 켜고 http://localhost:8787/lab/martial.html#live&seat=0 (청군) · seat=1 (홍군) · seat=w (관전)
 // 판정은 서버가 한다. 내 쪽이 늘 왼쪽(빨강)에 오도록 VIEW로 순서를 바꿔 그린다 (관전은 청군이 왼쪽)
 // 웹 (2026-11-14): duel.html#web&id=경기id. 자리(0·1·관전)는 서버가 알려 준다
+const PRACTICE = location.hash === '#practice'; // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
 const WEB = location.hash.startsWith('#web') ? { id: new URLSearchParams(location.hash.slice(5)).get('id') } : null;
 let LIVE = WEB ? { seat: 'w', names: ['', ''] } : location.hash.startsWith('#live') ? (() => { const q = new URLSearchParams(location.hash.slice(6)); const v = q.get('seat'); return { seat: v === '1' ? 1 : v === 'w' ? 'w' : 0, names: ['청군', '홍군'] }; })() : null;
 let VIEW = LIVE && LIVE.seat === 1 ? [1, 0] : [0, 1]; // 화면 왼쪽·오른쪽 = 서버의 몇 번 자리
@@ -585,7 +587,7 @@ function draw() {
   $('myInfo').textContent = `무력 ${m.war} · 체력 ${Math.max(0, m.hp)}`; $('opInfo').textContent = `무력 ${o.war} · 체력 ${Math.max(0, o.hp)}`;
   $('myHp').style.width = Math.max(0, m.hp) + '%'; $('opHp').style.width = Math.max(0, o.hp) + '%';
   $('mySp').innerHTML = spText(m); $('opSp').innerHTML = spText(o);
-  $('round').textContent = over ? '끝' : `${round} / ${MAX_ROUND}합`;
+  $('round').textContent = PRACTICE && !round ? '대기' : over ? '끝' : `${round} / ${MAX_ROUND}합`; // 연습 경기 시작 전은 '대기'
   const dealO = fxDeal[1], dealM = fxDeal[0]; fxDeal = [false, false]; // 재정비 연출은 한 번만
   const dl = (on, i) => on ? ` style="animation-delay:${i * 60}ms"` : '';
   if (SPECT()) [['myMini', m], ['opMini', o]].forEach(([id, f]) => { $(id).innerHTML = f.hand.map(c => c.t === 'sp' || isSp(c) ? '<div class="card oc white"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).join(''); }); // 관전: 두 장수 손패 축약
@@ -911,8 +913,15 @@ if (location.hash === '#rules') { document.body.classList.add('rulesOnly'); docu
 // 탭
 const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
 if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용
-const PRACTICE = location.hash === '#practice'; // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
-if (PRACTICE) { $('myWar').value = $('opWar').value = 100; setTimeout(() => $('start').click(), 300); }
+if (PRACTICE) { // 바로 시작하지 않고 [대결 시작]을 눌러야 시작 (2026-11-15 기획자). 기다리는 동안은 대기 곡 + 어두운 경기장
+  $('myWar').value = $('opWar').value = 100;
+  F = [newFighter(100), newFighter(100)]; F[0].hand = []; F[1].hand = []; // 시작 전엔 손패 없이 체력만
+  bgmMode('wait'); $('cv').parentNode.classList.add('waiting'); $('bShuffle').disabled = $('bSubmit').disabled = true;
+  $('round').textContent = '대기';
+  $('resBox').innerHTML = '<div class="resCard"><div class="big">🥋 연습 경기</div><div class="dim">컴퓨터와 무력 100 대 100</div><button id="pStart" class="main">대결 시작</button></div>';
+  $('pStart').onclick = () => { $('cv').parentNode.classList.remove('waiting'); bgmMode('main'); $('start').click(); };
+  setTimeout(draw, 0);
+}
 if (location.hash === '#demo2') setTimeout(() => { pick = { k: 'kill' }; submit(); }, 500); // 그림 확인용: 필살 장면
 function josaI(w) { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? '이' : '가'; }
 function josaUl(w) { const c = w.charCodeAt(w.length - 1) - 0xac00; return c >= 0 && c % 28 ? '을' : '를'; }
