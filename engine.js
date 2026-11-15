@@ -600,14 +600,19 @@ function runDraft(g, o) {
   let note = '';
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   const t = traitOf(g.faction);
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0))), troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
+  const raw = Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0)));
+  const gain = Math.min(raw, troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
   g.unitType = type;
   g.troops += gain;
-  addRecord(g, 'drafted', gain);
+  // 넘친 병사는 그 성 수비대로 (2026-11-15 기획자, 시즌 8부터 RULES.draftOverflowFrom): 수비대 상한까지. 치안은 모인 전체 인원 기준
+  const cs = S.cities[g.city], gmax = RULES.guardMax[city.grade];
+  const toGuard = seasonNow() >= RULES.draftOverflowFrom && city.faction === g.faction ? Math.max(0, Math.min(raw - gain, gmax - (cs.guard || 0))) : 0;
+  if (toGuard) cs.guard = (cs.guard || 0) + toGuard;
+  addRecord(g, 'drafted', gain + toGuard);
   capDefense(g); // 병사가 처음 생겼는데 이 성 수비가 꽉 찼으면 방어 모드는 꺼진 채로
-  const cs = S.cities[g.city], drop = Math.min(cs.peace, Math.round(gain / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
+  const drop = Math.min(cs.peace, Math.round((gain + toGuard) / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0)))); // 징병하면 민심이 흉흉해진다
   cs.peace -= drop;
-  addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
+  addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${toGuard ? ` · 넘친 ${fmt(toGuard)}명은 수비대로 (${fmt(cs.guard)}/${fmt(gmax)})` : ''}${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
   gainStatExp(g, 'lea', RULES.statExp.draft);
   return '';
