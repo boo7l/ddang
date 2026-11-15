@@ -105,7 +105,6 @@ function simMatch(w0, w1) {
 // 규칙 설명 글 (2026-11-15 기획자: 웹에서도 읽을 수 있게). 경기장 [📖 규칙] · 무술대회 창 [📖 규칙] · 연구 화면 규칙 탭이 같이 쓴다.
 // tour: 대회 규칙 (rules.js RULES.tourney). 없으면 카드 대결 규칙만
 function rulesHtml(tour) {
-  const pct = n => `${n}%`, sz = SIZE_NAME.map((n, i) => `${n} ${pct(SIZE_P[i])}`).join(' · ');
   const won = n => Number(n).toLocaleString('ko-KR');
   // 2026-11-15 기획자: 섹션마다 노란 상자(.rsec), 제목 경기 → 규칙 · 손패 → 카드
   let h = `<section class="rsec"><h3>⚔ 규칙</h3><ul>
@@ -115,7 +114,6 @@ function rulesHtml(tour) {
     <li>체력 ${HP}. ${MAX_ROUND}합이 지나면 체력이 많은 쪽이 이기고, 같으면 무력이 낮은 쪽이 이겨요.</li>
   </ul></section><section class="rsec"><h3>🃏 카드</h3><ul>
     <li>낸 카드만큼 무작위로 다시 받아요. 최대 손패: 무력 85 미만 ${handMax(80)}장 · 85~99 ${handMax(95)}장 · 100~109 ${handMax(105)}장 · 110 이상 ${handMax(115)}장.</li>
-    <li>한 장 뽑을 때 확률: 종류마다 ${sz}, ${T.kill.ic}필살 ${pct(KILL_P)}, ${T.dodge.ic}회피 ${pct(DODGE_P)}.</li>
     <li>${T.kill.ic} <b>필살</b> (흰 카드): 모든 카드를 이기고 피해 ${KILL_DMG}. 회피에만 막혀요.</li>
     <li>${T.dodge.ic} <b>회피</b> (흰 카드): 상대의 모든 카드와 필살을 피해요.</li>
     <li>특수 카드(흰 카드)는 손에 ${SP_MAX}장까지, 같은 종류는 ${SP_SAME_MAX}장까지 들 수 있어요.</li>
