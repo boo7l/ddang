@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115112939">
+<link rel="stylesheet" href="style.css?v=20261115113350">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -52,7 +52,7 @@
   .stage.waiting .reveal { z-index: 2; top: 50%; transform: translateY(-50%); }
   .reveal { position: absolute; top: 8px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 10px; pointer-events: none; }
   .reveal > span { color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
-  .resBox { position: absolute; bottom: 8px; left: 0; right: 0; display: flex; justify-content: center; }
+  .resBox { position: absolute; bottom: 24%; left: 0; right: 0; display: flex; justify-content: center; } /* 2026-11-15 기획자: [한 판 더]·[대진표로]를 좀 더 위로 (아래 8px에서) */
   .resBox:empty, .reveal:empty { display: none; }
   .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   .fxText { position: absolute; transform: translate(-50%, -50%); font-size: 24px; white-space: nowrap; text-shadow: 2px 2px 0 #000, -2px 2px 0 #000, 2px -2px 0 #000, -2px -2px 0 #000; animation: fxUp 1.4s ease-out forwards; }
@@ -268,7 +268,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115112939"></script>
+<script src="duel_rules.js?v=20261115113350"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
