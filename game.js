@@ -408,7 +408,7 @@ function adminToolsDialog() {
     </div>
     <div class="adminCard wide">
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
-    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc((S.nextMap || MAP_DATA).scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
+    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(seasonMap().map.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
        연 <input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}">
        월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
@@ -429,7 +429,7 @@ function adminToolsDialog() {
     </div>
     <div class="adminCard wide danger">
     <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
-    <p><button id="aSeason">새 시즌 시작</button> <span class="dim small">${S && S.nextMap ? `올려 둔 지도(${esc(S.nextMap.scenario || '이름 없음')})로` : `기본 지도(${esc(MAP_DATA.scenario || '?')})로`} 열려요</span> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    <p><button id="aSeason">새 시즌 시작</button> <label class="lockSw"><input type="checkbox" id="aKeepMap"${S && S.keepMap ? ' checked' : ''}> 이전 시나리오 유지</label> <span class="dim small">${esc(seasonMap().map.scenario || '이름 없음')} ${seasonMap().how}로 열려요${S && S.nextMap && S.keepMap ? ' (올려 둔 지도가 먼저)' : ''}</span> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
     </div></div>`, box => {
     // 다음 시즌 지도 올리기 (2026-11-06): 파일을 고르면 이 화면에서 먼저 검사·미리 보기, 올리기를 누르면 서버가 다시 검사해서 둔다
     let picked = null, pickedName = '';
@@ -478,9 +478,10 @@ function adminToolsDialog() {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
       await call('door'); afterAdmin();
     };
+    $('#aKeepMap').onchange = async e => { if (await call('adminKeepMap', { on: e.target.checked })) afterAdmin(); else e.target.checked = !e.target.checked; };
     $('#aSeason').onclick = async () => {
-      const nm = S.nextMap || MAP_DATA; // 새 시즌 지도: 올려 둔 지도, 없으면 기본 지도 (2026-11-06)
-      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n지도: ${nm.scenario || '이름 없음'}${S.nextMap ? ' (올려 둔 지도)' : ' (기본 지도)'}\n첫 장수가 세력에 들어오면 ${yearText(nm.year || RULES.startYear)} ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
+      const nm = seasonMap().map; // 새 시즌 지도: 올려 둔 지도 → (이전 시나리오 유지면) 지금 지도 → 기본 지도
+      if (!confirm(`새 시즌을 시작할까요?\n모든 장수와 진행 상황이 지워지고, 모두 장수 만들기부터 다시 해요. (계정은 그대로)\n새 시즌은 문이 닫힌 채로 열려요 (관리자만 들어옴). 준비가 끝나면 "문 열기"를 누르세요.\n지도: ${nm.scenario || '이름 없음'} (${seasonMap().how})\n첫 장수가 세력에 들어오면 ${yearText(nm.year || RULES.startYear)} ${RULES.startMonth}월부터 턴이 흘러요.`)) return;
       if (await call('newSeason')) location.reload();
     };
     $('#aReset').onclick = async () => {
@@ -1659,7 +1660,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115115140#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115115523#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1669,7 +1670,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115115140#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115115523#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1680,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115115140#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115115523#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -1704,6 +1705,12 @@ function fitDuel(w) {
       const ro = new d.defaultView.ResizeObserver(fit); ro.observe(d.body); d.querySelectorAll('.lab, .rulesBody').forEach(e => ro.observe(e));
     } catch (e) { /* 못 재면 원래 크기 */ }
   });
+}
+// 새 시즌을 열 지도 (2026-11-15): 올려 둔 지도 → 이전 시나리오 유지 체크면 지금 시즌 지도 → 서버 기본 지도. 서버 newSeason과 같은 순서
+function seasonMap() {
+  if (S && S.nextMap) return { map: S.nextMap, how: '올려 둔 지도' };
+  if (S && S.keepMap) return { map: { scenario: S.scenario || MAP.scenario, year: MAP.year }, how: '지금 시나리오 그대로' };
+  return { map: MAP_DATA, how: '기본 지도' };
 }
 function tourCloseDuel() {
   const w = $('#duelWrap');
