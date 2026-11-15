@@ -1571,6 +1571,20 @@ const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.
 const tourMatchName = slot => ({ m0: '8강 1경기', m1: '8강 2경기', m2: '8강 3경기', m3: '8강 4경기', s0: '4강 1경기', s1: '4강 2경기', f: '결승' })[slot];
 let tourAdminKey = null; // 관리 탭을 마지막으로 그린 대회 상태
 let tourAlerted = {}; // 내 경기 알림을 이미 띄운 경기
+// 대회 진행 상황 한마디 (2026-11-15, 단추 왼쪽): 신청 중 3/8 · 8강 진행 중 · 4강 21:30 · 대회 끝. 휴대폰은 짧게 (.mHide)
+function tourStatusHtml(T) {
+  if (!T) return '';
+  if (T.phase === 'entry') return `📝<span class="mHide"> 신청 중</span> ${(T.entries || []).length}/${tourCfg(T).max}`;
+  if (T.phase === 'run') {
+    const ms = (T.matches || []).filter(m => m.at && m.win == null && !m.bye), t = Date.now();
+    const live = ms.find(m => m.at <= t), next = ms.filter(m => m.at > t).sort((a, b) => a.at - b.at)[0];
+    if (live) return `⚔ ${TOUR_STAGE(live.slot)}<span class="mHide"> 진행 중</span>`;
+    if (next) return `⏳ ${TOUR_STAGE(next.slot)} ${fmtClock(next.at)}`;
+    return '⚔<span class="mHide"> 경기 진행 중</span>';
+  }
+  if (T.phase === 'done') return '🏆<span class="mHide"> 대회 끝</span>';
+  return '';
+}
 function tourSync() {
   const T = tourT(), b = $('#tourBtn');
   if (!b) return;
@@ -1581,9 +1595,12 @@ function tourSync() {
   if (tm) {
     const next = T && T.phase === 'run' && !b.hidden && (T.matches || []).find(m => m.win == null && !m.bye && m.p.includes(MY_ID));
     const lost = T && (T.matches || []).some(m => m.win != null && m.p.includes(MY_ID) && m.p[m.win] !== MY_ID);
-    tm.hidden = !next && !(T && T.phase === 'run' && !lost && (T.entries || []).some(e => e.uid === MY_ID) && !T.champ);
+    const mineAlive = !!next || !!(T && T.phase === 'run' && !lost && (T.entries || []).some(e => e.uid === MY_ID) && !T.champ);
+    tm.hidden = b.hidden; // 2026-11-15 기획자: 참가자가 아니어도 대회 진행 상황을 짧게 (예: 8강 진행 중)
     tm.classList.toggle('now', !!next && next.at && next.at <= Date.now());
-    tm.innerHTML = !next || !next.at ? '⏰<span class="mHide"> 다음 경기 시간</span> 미정' : next.at <= Date.now() ? '⚔<span class="mHide"> 내 경기</span> 진행 중' : `⏰<span class="mHide"> 내 경기</span> ${fmtClock(next.at)}`; // 휴대폰은 짧게 (2026-11-15: ☰ 메뉴가 밀려 안 보였음)
+    tm.innerHTML = mineAlive
+      ? (!next || !next.at ? '⏰<span class="mHide"> 다음 경기 시간</span> 미정' : next.at <= Date.now() ? '⚔<span class="mHide"> 내 경기</span> 진행 중' : `⏰<span class="mHide"> 내 경기</span> ${fmtClock(next.at)}`) // 휴대폰은 짧게 (2026-11-15: ☰ 메뉴가 밀려 안 보였음)
+      : tourStatusHtml(T);
   }
   if ($('#tourBox')) tourRender(); // 창이 열려 있으면 새로
   // 관리 → 무술대회 탭이 열려 있으면 대회 상태가 바뀔 때만 다시 그린다 (입력 중인 칸을 지우지 않게, 2026-11-15)
@@ -1690,7 +1707,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115162750#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115165141#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1700,7 +1717,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115162750#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115165141#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1710,7 +1727,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115162750#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115165141#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
