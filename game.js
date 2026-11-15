@@ -1659,9 +1659,9 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115114847#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115115140#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
-  document.body.appendChild(w);
+  document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
 }
 // 무술대회 연습 경기 (2026-11-15 기획자 시험): 컴퓨터와 무력 100 대 100. 서버와 상관없고 기록·보상 없음
@@ -1669,9 +1669,9 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115114847#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115115140#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
-  document.body.appendChild(w);
+  document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
 }
 // 무술대회 규칙 (2026-11-15): 경기장과 같은 글을 같은 창 모양으로 (duel.html#rules)
@@ -1679,9 +1679,31 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115114847#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115115140#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
-  document.body.appendChild(w);
+  document.body.appendChild(w); fitDuel(w);
+}
+// 경기장 창 높이를 내용에 맞춘다 (2026-11-15 기획자: PC에서 아래 여백이 너무 많음). 휴대폰은 화면 가득 그대로.
+// 손패가 생기면 내용이 길어지니 늘어날 때만 따라 늘린다 (창 위쪽은 고정: #duelWrap.fit)
+function fitDuel(w) {
+  if (matchMedia('(max-width: 700px)').matches) return;
+  const box = w.querySelector('.duelBox'), bar = w.querySelector('.duelBar'), fr = w.querySelector('iframe');
+  let best = 0;
+  fr.addEventListener('load', () => {
+    try {
+      const d = fr.contentDocument; if (!d || !d.body) return;
+      const fit = () => {
+        const els = [...d.querySelectorAll('.lab, .rulesBody')], bottom = Math.max(0, ...els.map(e => e.getBoundingClientRect().bottom + (d.defaultView.scrollY || 0)));
+        if (!bottom) return;
+        const h = Math.ceil(bottom + 10 + bar.offsetHeight + 4);
+        if (h <= best) return; best = h;
+        box.style.height = `min(${h}px, 98vh)`; box.style.height = `min(${h}px, 98dvh)`;
+        w.classList.add('fit');
+      };
+      fit();
+      const ro = new d.defaultView.ResizeObserver(fit); ro.observe(d.body); d.querySelectorAll('.lab, .rulesBody').forEach(e => ro.observe(e));
+    } catch (e) { /* 못 재면 원래 크기 */ }
+  });
 }
 function tourCloseDuel() {
   const w = $('#duelWrap');
