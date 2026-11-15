@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115170157">
+<link rel="stylesheet" href="style.css?v=20261115172355">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -273,7 +273,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115170157"></script>
+<script src="duel_rules.js?v=20261115172355"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -505,7 +505,11 @@ function drawFighter(i) {
   g.save();
   if (i === 1) { g.translate(x, 0); g.scale(-1, 1); g.translate(-x, 0); }
   const dx = x - ANCHOR[st.fr[i]];
-  g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x, GROUND - 1, 32, 4, 0, 0, Math.PI * 2); g.fill(); // 발밑 그림자
+  g.fillStyle = 'rgba(0,0,0,0.35)';
+  if (st.fr[i] === 4) { // 패배 자세 (2026-11-15 기획자: 그림자가 캐릭터 밖에 있어 어색): 뒤에 선 말의 발굽 줄(그림 45줄째)과 무릎 꿇은 장수 아래(56줄째)에 따로
+    g.beginPath(); g.ellipse(dx + 21, y + 45, 20, 3, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(dx + 76, y + 56, 30, 3.5, 0, 0, Math.PI * 2); g.fill();
+  } else { g.beginPath(); g.ellipse(x, GROUND - 1, 32, 4, 0, 0, Math.PI * 2); g.fill(); } // 발밑 그림자
   if (st.ghost[i] > 0) { g.globalAlpha = 0.35 * st.ghost[i]; g.drawImage(s, dx + 18, y); g.globalAlpha = 1; }
   const src = st.flash[i] > 0 && Math.floor(st.t / 60) % 2 ? whiteOf(s) : s;
   if (breathe) { const k = LEGS_AT; g.drawImage(src, 0, k, s.width, s.height - k, dx, y + k, s.width, s.height - k); g.drawImage(src, 0, 0, s.width, k + 1, dx, y + breathe, s.width, k + 1); } // 아래: 다리 그대로 · 위: 1칸 올림 (경계 한 줄을 겹쳐 틈이 안 생기게)
