@@ -1347,7 +1347,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
     master: e => `무작위 능력치 +${e.gain}`,
     pouch: () => `특성 3장 중 하나로 바꾸거나 지금 특성 유지${seasonNow() >= 7 ? '<br>R 최소 1장 보장(다시 뽑기 포함)' : ''}`,
     spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
-    engineer: e => `병기가 있으면 보수: 부서질 때 1번 버팀 (겹치지 않음)<br>없으면 병기 하나 획득 (${Object.entries(e.give).map(([k, w]) => `${k} ${w}%`).join(' · ')})`,
+    engineer: () => '병기가 있으면 강화: 부서질 때 1번 버팀 (중첩 불가)<br>없으면 병기 하나 무작위 획득', // 2026-11-15 기획자 문구
     treasure: () => `전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>${seasonNow() >= 7 ? '이미 보물이 있으면 교환 가능, 남은 보물이 없으면 장비 발견' : '이미 보물이 있으면 장비 발견'}`, // 시즌 7부터 바꾸기·팔기 (2026-11-13 표 문구)
   };
   const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', engineer: '기술자', treasure: '★ 보물' };
@@ -1669,7 +1669,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120131#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120300#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1679,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115120131#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115120300#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1689,7 +1689,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120131#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120300#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
