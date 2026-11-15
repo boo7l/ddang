@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115152008">
+<link rel="stylesheet" href="style.css?v=20261115152333">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -23,6 +23,9 @@
   .rulesPop[hidden] { display: none !important; }
   .rulesPop .box { width: min(760px, 94vw); max-height: 90vh; overflow-y: auto; background: var(--bg); border: 2px solid var(--gold); padding: 10px 16px 14px; color: var(--text); font-size: 16px; line-height: 1.7; }
   .rulesPop h3, .rulesBody h3 { color: var(--title); font-size: 17px; margin: 10px 0 2px; font-weight: normal; }
+  .rsec { background: #f1d98a; color: #1c1206; border: 2px solid #b48a2c; padding: 4px 14px 8px; margin: 10px 0; } /* 규칙 섹션 상자: 노란 바탕 · 검은 글자 (2026-11-15 기획자) */
+  .rsec h3, .rulesPop .rsec h3, .rulesBody .rsec h3 { color: #1c1206; margin-top: 4px; }
+  .rsec b { color: inherit; }
   .rulesPop ul, .rulesBody ul { margin: 0; padding-left: 20px; }
   .rulesPop .rbar { display: flex; justify-content: space-between; align-items: center; color: var(--title); }
   body.rulesOnly .lab { display: none; }
@@ -270,7 +273,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115152008"></script>
+<script src="duel_rules.js?v=20261115152333"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
