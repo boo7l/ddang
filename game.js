@@ -408,6 +408,14 @@ function adminToolsDialog() {
     <p><button id="aPopSend">팝업 올리기</button>${S && S.popup ? ' <button id="aPopClear">내리기</button>' : ''}</p>
     </div>
     <div class="adminCard wide">
+    <p class="sub">지역 이벤트 예약 <span class="dim">(그 달이 되면 확률과 상관없이 터져요)</span></p>
+    ${(S && S.eventPlan || []).length ? S.eventPlan.map((x, i) => { const e = RULES.regionEvents.find(r => r.key === x.key) || {}; return `<p>${e.icon || ''} <b>${dateText(x.turn)}</b> · ${esc(x.region)} ${esc(e.name || x.key)} <button class="mini" data-evdel="${i}">취소</button></p>`; }).join('') : '<p class="dim">예약 없음</p>'}
+    <p><select id="aeKey">${RULES.regionEvents.map(e => `<option value="${e.key}">${e.icon} ${e.name}</option>`).join('')}</select>
+       <select id="aeRegion">${[...new Set(MAP.cities.map(regionOf).filter(Boolean))].map(r => `<option>${esc(r)}</option>`).join('')}</select>
+       <input id="aeY" type="number" value="${dateOf((S && S.turn || 0) + 1).year}" style="width:5em">년 <input id="aeM" type="number" min="1" max="12" value="${dateOf((S && S.turn || 0) + 1).month}" style="width:3.5em">월 <button id="aeAdd">예약</button></p>
+    <p class="dim small">지금 ${dateText(S ? S.turn : 0)} · 구역은 지역 이벤트와 같은 묶음 (형주는 형북·형남)</p>
+    </div>
+    <div class="adminCard wide">
     <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
     <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(seasonMap().map.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
     <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
@@ -474,6 +482,8 @@ function adminToolsDialog() {
       const v = id => +$(id).value;
       if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked, label: $('#aoL').value.trim() })) afterAdmin();
     };
+    $('#aeAdd').onclick = async () => { if (await call('adminEventPlan', { op: 'add', key: $('#aeKey').value, region: $('#aeRegion').value, year: $('#aeY').value, month: $('#aeM').value })) afterAdmin(); }; // 지역 이벤트 예약 (2026-11-15)
+    box.querySelectorAll('[data-evdel]').forEach(b => { b.onclick = async () => { if (await call('adminEventPlan', { op: 'del', i: +b.dataset.evdel })) afterAdmin(); }; });
     if ($('#aoClear')) $('#aoClear').onclick = async () => { if (!confirm('오픈 예약을 취소할까요? 첫 화면 예고도 사라져요.')) return; await call('nextOpen', { clear: true }); afterAdmin(); };
     $('#aDoor').onclick = async () => {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
@@ -1669,7 +1679,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115134458#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115142926#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1689,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115134458#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115142926#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1689,7 +1699,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115134458#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115142926#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }

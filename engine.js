@@ -386,14 +386,22 @@ function runRegionEvents(month) {
   const regions = [...new Set(MAP.cities.map(regionOf).filter(Boolean))];
   if (!regions.length) return foodRate; // 주 묶음이 없는 지도(대한민국 등)에서는 이벤트가 없다
   S.regionRest = S.regionRest || {};
-  const hit = new Set();
+  const hit = new Set(), picks = [];
+  // 관리자 예약 이벤트 (2026-11-15 기획자): S.eventPlan = [{ turn, key, region }]. 그 턴이 되면 확률·쉬는 턴과 상관없이 먼저 터진다
+  for (const p of (S.eventPlan || []).filter(x => x.turn === S.turn)) {
+    const e = RULES.regionEvents.find(x => x.key === p.key);
+    if (e && regions.includes(p.region) && !hit.has(p.region)) { hit.add(p.region); picks.push([e, p.region]); }
+  }
+  if (S.eventPlan) { S.eventPlan = S.eventPlan.filter(x => x.turn > S.turn); if (!S.eventPlan.length) delete S.eventPlan; }
   for (const e of RULES.regionEvents) {
     if (e.months && !e.months.includes(month)) continue;
     if (Math.random() >= e.chance) continue;
     const free = regions.filter(r => !hit.has(r) && !((S.regionRest[r] || 0) > S.turn));
     if (!free.length) continue;
     const r = free[Math.floor(Math.random() * free.length)];
-    hit.add(r);
+    hit.add(r); picks.push([e, r]);
+  }
+  for (const [e, r] of picks) {
     S.regionRest[r] = S.turn + RULES.regionEventRest + 1;
     const cities = MAP.cities.filter(c => regionOf(c) === r), ids = new Set(cities.map(c => c.id));
     // 농업·상업이 [최소, 최대]면 지역 전체에 한 번만 굴려 모든 성에 똑같이 (2026-11-10, 그 전엔 성마다). 숫자면 비율(예전 방식)
