@@ -301,7 +301,7 @@ function adminDialog(tab = 'users', fid = null) {
     fid = fid || (fs[0] && fs[0].id);
     const list = fid ? chatOf(fid) : [];
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
-      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter && !m.letter.sys ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>`;
+      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter && m.letter.admin ? '<b class="adminName">부기</b> <span class="dim small">(관리자)</span>' : ''}${m.letter && !m.letter.sys && !m.letter.admin ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${m.letter && m.letter.admin ? '' : chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>${fid ? `<p class="adminChatSend"><input type="text" id="acText" maxlength="${CHAT_LEN}" placeholder="${esc(factionById(fid).name)} 세력 채팅에 '부기'로 보내기"> <button id="acSend" class="main">보내기</button></p>` : ''}`;
   }
   adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
@@ -310,6 +310,7 @@ function adminDialog(tab = 'users', fid = null) {
     if (box.querySelector('#aLoyal')) box.querySelector('#aLoyal').onchange = e => { adminLoyalOnly = e.target.checked; adminDialog('users', e.target.dataset.keep); };
     box.querySelectorAll('[data-pid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.pid, tab, fid); }); // 장수 이름 → 정보·제재
     box.querySelectorAll('.adminChat [data-gid]').forEach(b => { b.onclick = () => playerDialog(b.dataset.gid, 'chat', fid); }); // 채팅의 장수 이름 → 정보·제재 (2026-11-05)
+    const acSend = box.querySelector('#acSend'); if (acSend) { const go = async () => { const t = box.querySelector('#acText').value.trim(); if (!t) return; if (await call('adminChat', { faction: fid, text: t })) adminDialog('chat', fid); }; acSend.onclick = go; box.querySelector('#acText').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) go(); }; } // 관리자 채팅 개입 (2026-11-15)
     const chatUl = box.querySelector('.adminChat'); if (chatUl) chatUl.scrollTop = chatUl.scrollHeight; // 최신 글(맨 아래)부터 보이게 (2026-11-09)
     box.querySelectorAll('[data-delchat]').forEach(b => { b.onclick = async () => { // 채팅 글 지우기 (2026-10-31)
       if (!confirm('이 글을 지울까요? 되돌릴 수 없어요.')) return;
@@ -1689,7 +1690,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115160854#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115162750#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1699,7 +1700,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115160854#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115162750#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1709,7 +1710,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115160854#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115162750#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2833,6 +2834,7 @@ const fName = fid => { const f = factionById(fid); return f ? esc(f.name) : '?';
 // 서신의 이름: 얼굴 색만 (어느 성에 있는지는 적지 않는다)
 const letterWho = m => { const g = allGenerals().find(x => x.name === m.name), f = g && FACES.find(x => x.id === g.face); return f ? `<span style="color:${f.chat}">${esc(m.name)}</span>` : esc(m.name); };
 function letterLine(m, p) {
+  if (m.letter.admin) return `<li class="adminNote"><span class="t">${fmtClock(m.t)}</span><span class="who"><b class="adminName">부기</b></span>${esc(m.text)}</li>`; // 관리자 글 (2026-11-15)
   if (m.letter.sys) return `<li class="sysNote"><span class="t">${fmtClock(m.t)}</span>${esc(m.text)}</li>`; // 세력 알림 한 줄 (2026-11-13 대도독)
   const other = m.letter.other, sw = factionById(other) ? `<span class="swatch" style="background:${factionById(other).color}"></span>` : '';
   return m.letter.dir === 'in'
