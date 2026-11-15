@@ -231,12 +231,23 @@ function drawTraits(prev = [], sure = null) {
   }
   return out;
 }
+// 임관 상한 (2026-11-15, RULES.joinCap): 지금 그 세력이 막혔는지. S.staff = 관리자 계정 id (서버가 관리자 요청 때 적어 둔다)
+function joinCapInfo(fid) {
+  const R = RULES.joinCap;
+  if (!R || S.turn > R.turns) return null;
+  const staff = new Set(S.staff || []), list = allGenerals().filter(x => x.faction && !x.test && !staff.has(x.id));
+  if (list.length < R.minTotal) return null;
+  const n = list.filter(x => x.faction === fid).length;
+  return n >= list.length * R.rate ? { n, total: list.length } : null;
+}
 function joinFaction(g, fid, cityId) {
   if (g.faction) return '이미 세력에 소속되어 있어요.';
   const f = factionById(fid);
   if (!f || !playable().includes(f)) return '고를 수 없는 세력이에요.';
   const wait = rejoinLeft(g, f.id);
   if (wait) return `${f.name} 세력은 떠난 지 얼마 안 돼서 ${wait}턴 뒤(${dateText(g.leftFaction.until)})부터 다시 들어갈 수 있어요.`;
+  const cap = !(S.staff || []).includes(g.id) && joinCapInfo(f.id);
+  if (cap) return `${f.name} 세력은 장수가 많아서(${cap.n}/${cap.total}명) ${dateText(RULES.joinCap.turns)}까지는 임관할 수 없어요.`;
   const picked = cityById(cityId);
   const home = picked && picked.faction === f.id ? picked : startCity(f.id);
   g.faction = f.id;
