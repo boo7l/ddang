@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115192226">
+<link rel="stylesheet" href="style.css?v=20261115192516">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -99,7 +99,8 @@
   .card { width: 56px; height: 74px; border: 2px solid var(--gold-dark); border-radius: 4px; background: #f3e2b8; color: #2a0604;
     display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 15px; }
   .card .ic { font-size: 22px; line-height: 1.1; }
-  .card.atk { background: #a3c8f0; } .card.tec { background: #f4a39b; } .card.def { background: #a9dd9b; } /* 2026-11-15 기획자: 속공 파랑 · 강타 빨강 · 역습 초록 (그 전 분홍·보라·하늘) */
+  .card.atk { background: #a3c8f0; } .card.tec { background: #f4a39b; } .card.def { background: #a9dd9b; }
+  html.debate .card.atk { background: #a9dd9b; } html.debate .card.tec { background: #a3c8f0; } html.debate .card.def { background: #f2d77a; } /* 설전대회 (2026-11-15 기획자): 논파 초록 · 회유 파랑 · 도발 노랑 */ /* 2026-11-15 기획자: 속공 파랑 · 강타 빨강 · 역습 초록 (그 전 분홍·보라·하늘) */
   .card.deal { animation: dealIn .32s ease-out backwards; } /* 재정비: 새 카드가 한 장씩 뒤집히며 들어옴 (2026-11-14) */
   @keyframes dealIn { from { opacity: 0; transform: translateY(14px) rotateY(90deg) scale(.85); } to { opacity: 1; transform: none; } }
   .card.sel { border-color: var(--title); box-shadow: 0 0 10px var(--title); transform: translateY(-6px); }
@@ -273,7 +274,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115192226"></script>
+<script src="duel_rules.js?v=20261115192516"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -328,7 +329,9 @@ const DEBATE = new URLSearchParams(location.search).get('kind') === 'debate';
 const STN = DEBATE ? '지력' : '무력', HPN = DEBATE ? '기세' : '체력';
 if (DEBATE) { Object.assign(T.atk, { name: '논파', ic: '📜' }); Object.assign(T.tec, { name: '회유', ic: '🤝' }); Object.assign(T.def, { name: '도발', ic: '🔥' }); Object.assign(T.kill, { name: '대갈', ic: '📢' }); Object.assign(T.dodge, { name: '무시', ic: '😑' }); document.title = '설전대회'; }
 const PRACTICE = location.hash === '#practice';
-if (DEBATE) document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.nd[data-t]').forEach(n => { const t = T[n.dataset.t]; if (!t) return; n.querySelector('.ic').textContent = t.ic; n.querySelector('.nm').textContent = t.name; })); // 상성 삼각형도 논파·회유·도발 // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
+if (DEBATE) document.documentElement.classList.add('debate');
+const DEBATE_FILL = { atk: '#a9dd9b', tec: '#a3c8f0', def: '#f2d77a' }; // 설전대회 카드 색 (위 CSS와 같게)
+if (DEBATE) document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.nd[data-t]').forEach(n => { const t = T[n.dataset.t]; if (!t) return; n.querySelector('.ic').textContent = t.ic; n.querySelector('.nm').textContent = t.name; const c = n.querySelector('circle'); if (c && DEBATE_FILL[n.dataset.t]) c.setAttribute('fill', DEBATE_FILL[n.dataset.t]); })); // 상성 삼각형도 논파·회유·도발 // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
 const WEB = location.hash.startsWith('#web') ? { id: new URLSearchParams(location.hash.slice(5)).get('id') } : null;
 let LIVE = WEB ? { seat: 'w', names: ['', ''] } : location.hash.startsWith('#live') ? (() => { const q = new URLSearchParams(location.hash.slice(6)); const v = q.get('seat'); return { seat: v === '1' ? 1 : v === 'w' ? 'w' : 0, names: ['청군', '홍군'] }; })() : null;
 let VIEW = LIVE && LIVE.seat === 1 ? [1, 0] : [0, 1]; // 화면 왼쪽·오른쪽 = 서버의 몇 번 자리
