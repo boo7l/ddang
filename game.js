@@ -1719,7 +1719,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115225047&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115233232&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1729,7 +1729,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115225047&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115233232&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1739,7 +1739,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115225047&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115233232&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2665,8 +2665,9 @@ function expandConfirm() {
     </table></div>
     <p class="exHead">보상</p><div class="exBody">
     <p>공적 <b class="hi">+${fmt(E.merit[g0])}</b><br>통솔·무력·지력 경험치 각각 <b class="hi">+${E.exp[g0]}</b></p></div>
+    ${ready ? '' : '<p class="bad">지금은 조건이 모자라요. 예약은 할 수 있고, 실행하는 턴까지 채우면 증축돼요.</p>'}
     <p class="dim small exNote">실행하는 턴에도 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 하고, 금이 있어야 해요. 아니면 실패하고 금은 들지 않아요. 성을 빼앗겨도 등급은 그대로예요.</p>
-    <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main"${ready ? '' : ' disabled title="조건이 모자라요"'}>예약</button></div>`, () => {
+    <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main">예약</button></div>`, () => {
     $('#exOk').onclick = () => { closeModal(); reserve({ cmd: 'expand' }); };
   });
 }
@@ -2693,7 +2694,7 @@ function renderCommands() {
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
     btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
     // 증축 (2026-11-08): 늘 보인다 (눌러서 조건·비용·보상을 언제든 볼 수 있게). 조건이 안 되면 흐리게, 예약은 확인 창에서 막는다
-    (() => { const ok = at.faction === p.faction && expandReady(at); return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 3 ? '대도시' : '조건 부족', !ok); })(),
+    (() => { const ok = at.faction === p.faction && expandReady(at), can = at.faction === p.faction && at.grade < 3; return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 3 ? '대도시' : '조건 부족', !can); })(), // 2026-11-15 기획자: 조건이 모자라도 예약은 된다 (실행하는 턴에 확인)
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로
