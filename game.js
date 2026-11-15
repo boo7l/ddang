@@ -832,12 +832,13 @@ async function onDefense() {
 
 // ===== 명령 창 (작은 대화 상자) =====
 function openModal(html, onMount) {
+  $('#modalBox').classList.remove('tourModal'); // 무술대회 창에서 바로 다른 창으로 넘어가도 넓이가 남지 않게
   $('#modalBox').innerHTML = html;
   $('#modal').hidden = false;
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox'); }
+function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox', 'tourModal'); } // tourModal: 무술대회 창 넓이 (2026-11-15: 안 지워서 게시판이 넓어졌음)
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 // 비용 줄 (2026-11-14 기획자): "금 200 / 1,500" = 드는 값 / 지금 가진 값. 지금 모자라면 가볍게 "부족" 표시만 (예약이라 실행 때 모일 수도 있다)
@@ -1658,7 +1659,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115101854#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115102002#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
   bgmHold(true);
@@ -1668,7 +1669,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115101854#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115102002#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
 }
