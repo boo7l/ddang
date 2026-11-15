@@ -1206,7 +1206,7 @@ function helpDialog(page = -1) {
       ${seasonNow() >= RULES.crowdFromSeason ? `<li><b>🏯성 정원</b>: 한 성에 머무는 우리 세력 장수가 정원(소성 ${RULES.crowdCap[1]} · 중성 ${RULES.crowdCap[2]} · 대도시 ${RULES.crowdCap[3]}명)을 넘으면, 그 성 장수 모두의 금 수입 중 <b>상업 몫</b>이 줄어요. 많이 넘을수록 더 크게 줄어요. 성 정보의 장수 칸에서 볼 수 있어요.</li>` : ''}</ul>`], // 성 정원 (2026-11-13 도움말, 시즌 7부터)
     ['📊 능력치', `<ul>
       <li><b>통솔</b>: 최대 병력(통솔 × ${RULES.troopsPerLea}), 징병, 치안, 보병</li>
-      <li><b>무력</b>: 축성, 기병, <b>일기토</b>(양쪽 무력 ${RULES.duel.minWar} 이상이면 전투 중 가끔), <b>돌격</b>(무력 ${RULES.charge.minWar} 이상이면 전투 중 가끔), 모든 병종 전투력에 보너스 (무력 10마다 +${Math.round(RULES.warPer1 * 10 * 1000) / 10}%)</li>
+      <li><b>무력</b>: 축성, 기병, <b>단기접전</b>(양쪽 무력 ${RULES.duel.minWar} 이상이면 전투 중 가끔), <b>돌격</b>(무력 ${RULES.charge.minWar} 이상이면 전투 중 가끔), 모든 병종 전투력에 보너스 (무력 10마다 +${Math.round(RULES.warPer1 * 10 * 1000) / 10}%)</li>
       <li><b>지력</b>: 농업·상업, 궁병, <b>계략</b>(파괴·유언·첩보 성공률), <b>책략</b>(지력 ${RULES.scheme.minInt} 이상이면 전투 중 가끔)</li>
       <li>행동하면 그 능력치의 <b>경험치</b>가 쌓이고, 다 차면 1 올라요. (내정 → 그 내정의 능력치, 출진 → 병종의 능력치, <b>수련</b> → 고른 능력치)</li>
       <li><b>상점</b>(장수 창의 단추)에서 명마(통솔)·명검(무력)·서적(지력)를 사면 하나에 +${SHOP.명검.bonus}. 예약 없이 바로 사지고, 여러 번 살 수 있지만 살 때마다 비싸져요.</li></ul>`],
@@ -1219,7 +1219,7 @@ function helpDialog(page = -1) {
     // 전투 상세 (2026-11-04): 정확한 공식 대신 조건·느낌·예시만. 길어서 안에서 스크롤한다 (.helpScroll)
     ['🗡 전투 상세', `<div class="helpScroll">
       <p>출진하면 최대 ${RULES.roundsMax}합을 싸워요. 합 중에 아래 일이 가끔 벌어지는데, 셋 다 출진 한 번에 한 번까지만 나와요.</p>
-      <p class="helpSub">⚡ 일기토</p><ul>
+      <p class="helpSub">⚡ 단기접전</p><ul>
       <li>양쪽 모두 무력 ${RULES.duel.minWar} 이상일 때 낮은 확률로 발생해요.</li>
       <li>무력이 높은 쪽이 이기기 쉽지만, 낮은 쪽이 이길 때도 있어요.</li>
       <li>진 쪽만 병력을 잃고, 이긴 쪽 무력이 높을수록 많이 잃어요. (예: 무력 100이 이기면 1,500명 안팎)</li>
@@ -1229,7 +1229,7 @@ function helpDialog(page = -1) {
       <li>능력치가 높을수록 발생 확률이 높아요.</li>
       <li>상대와 능력치 차이가 클수록 아파요. (예: 차이 20이면 1,300명쯤, 60이면 2,300명쯤)</li>
       <li>책략과 돌격은 따로 세서, 한 출진에 둘 다 나올 수도 있어요.</li></ul>
-      <p>🛡 <b>침착</b> 특성이 있으면 일기토·책략·돌격으로 받는 피해가 절반이에요.</p>
+      <p>🛡 <b>침착</b> 특성이 있으면 단기접전·책략·돌격으로 받는 피해가 절반이에요.</p>
       <p class="helpSub">🏯 공성</p><ul>
       <li>수비 부대를 모두 물리치면(또는 막는 부대가 없으면) 성벽을 공격해요.</li>
       <li>남은 병력이 많을수록 방어를 많이 깎지만, 성벽에서 날아오는 화살·돌에 그만큼 병력도 잃어요. (예: 병력 10,000이면 방어 ${fmt(10000 * RULES.siegeRate.min)}~${fmt(10000 * RULES.siegeRate.max)}을 깎고 ${fmt(10000 * RULES.siegeRate.min * RULES.siegeLoss)}~${fmt(10000 * RULES.siegeRate.max * RULES.siegeLoss)}명을 잃어요)</li>
@@ -1658,7 +1658,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115094537#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115101551#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
   bgmHold(true);
@@ -1668,7 +1668,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115094537#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115101551#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
 }

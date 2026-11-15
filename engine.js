@@ -987,7 +987,7 @@ function siegeAttack(g, att, from, to, mark, f) {
     atkLost += r.atkLost;
     if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 공적)
     if (d.ref) lostBy.set(d.ref, (lostBy.get(d.ref) || 0) + r.defLost); // 수비 장수가 잃은 병력 (치료 특성)
-    if (d.ref) eventBy.set(d.ref, (eventBy.get(d.ref) || 0) + (d.duelWins || 0) * RULES.merit.duel + (d.schemes || 0) * RULES.merit.scheme + (d.charges || 0) * RULES.merit.charge); // 일기토 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
+    if (d.ref) eventBy.set(d.ref, (eventBy.get(d.ref) || 0) + (d.duelWins || 0) * RULES.merit.duel + (d.schemes || 0) * RULES.merit.scheme + (d.charges || 0) * RULES.merit.charge); // 단기접전 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
     defLost += r.defLost;
     lines.push(...r.lines);
     if (d.guard) cs.guard = d.troops;
@@ -1053,7 +1053,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   // 공적: 함락 30 (2026-11-02 50에서) / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor((wallDmg + pierced) / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
-  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme + (att.charges || 0) * RULES.merit.charge; // 일기토 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
+  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme + (att.charges || 0) * RULES.merit.charge; // 단기접전 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
   const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
   if (captured) { const got = earnGold(g, RULES.battleReward); lines.push({ a: `${g.name} 보상: 금 +${got} · ${meritText}` }); captureTreasure(g, to, lines); } // 함락 보물 1% (2026-11-14, 시즌 7)
   else lines.push({ a: `${g.name} ${meritText}` });
@@ -1089,7 +1089,7 @@ function siegeAttack(g, att, from, to, mark, f) {
       addLog(x, `⚔ ${josa(to.name, '이가')} 함락됐다! 함께 공격한 부대로서 ${josa(to.name, '으로')} 들어갔다. (병력 ${fmt(x.troops)})`);
     }
   }
-  if (att.duelWins) gainStatExp(g, 'war', RULES.duel.exp * att.duelWins); // 일기토에서 이기면 무력 경험치
+  if (att.duelWins) gainStatExp(g, 'war', RULES.duel.exp * att.duelWins); // 단기접전에서 이기면 무력 경험치
   if (att.schemes) gainStatExp(g, 'int', RULES.scheme.statExp * att.schemes); // 책략을 쓰면 지력 경험치
   if (att.charges) gainStatExp(g, 'war', RULES.charge.statExp * att.charges); // 돌격을 쓰면 무력 경험치 (2026-11-03)
   addTechRecord(g, att);
