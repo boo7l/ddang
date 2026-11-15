@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115193101">
+<link rel="stylesheet" href="style.css?v=20261115193339">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -274,7 +274,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115193101"></script>
+<script src="duel_rules.js?v=20261115193339"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -984,10 +984,10 @@ $('log').onclick = () => $('log').classList.toggle('open');
 // 규칙 (2026-11-15): 대회 규칙은 게임 창(duelBridge.tourRules)에서 받는다. 경기는 그대로 흐르니 창을 닫고 카드를 내야 한다
 const tourRulesOf = () => { try { return parent.duelBridge && parent.duelBridge.tourRules ? parent.duelBridge.tourRules() : null; } catch (e) { return null; } };
 document.body.insertAdjacentHTML('beforeend', '<div class="rulesPop" id="rulesPop" hidden><div class="box"><div class="rbar"><b>📖 ' + (DEBATE ? '설전대회' : '무술대회') + ' 규칙</b><button id="rulesClose">✕ 닫기</button></div><div id="rulesText"></div></div></div>');
-$('rulesBtn').onclick = () => { $('rulesText').innerHTML = rulesHtml(tourRulesOf()); $('rulesPop').hidden = false; };
+$('rulesBtn').onclick = () => { $('rulesText').innerHTML = rulesHtml(tourRulesOf(), DEBATE ? 'debate' : 'martial'); $('rulesPop').hidden = false; };
 $('rulesClose').onclick = () => { $('rulesPop').hidden = true; };
 $('rulesPop').onclick = e => { if (e.target.id === 'rulesPop') $('rulesPop').hidden = true; };
-if (location.hash === '#rules') { document.body.classList.add('rulesOnly'); document.body.insertAdjacentHTML('beforeend', `<div class="rulesBody">${rulesHtml(tourRulesOf())}</div>`); } // 무술대회 창의 [📖 규칙]: 규칙만 // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
+if (location.hash === '#rules') { document.body.classList.add('rulesOnly'); document.body.insertAdjacentHTML('beforeend', `<div class="rulesBody">${rulesHtml(tourRulesOf(), DEBATE ? 'debate' : 'martial')}</div>`); } // 무술대회 창의 [📖 규칙]: 규칙만 // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
 // 탭
 const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
 if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용
