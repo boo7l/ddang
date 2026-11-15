@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115192516">
+<link rel="stylesheet" href="style.css?v=20261115192804">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -133,8 +133,8 @@
   .miniHand .card .ic { font-size: 12px; }
   .miniHand .card.white { background: #fbfbf4; border-color: #b9b39a; }
   .miniHand .card.white .q { color: #8a7a5a; font-weight: bold; }
-  .opHand .card.mWin { border-color: #7dff8a; box-shadow: 0 0 5px #7dff8a; } /* 2026-11-14 얇게: 테두리 2px만 */ /* 내 카드로 이기는 상대 카드 */
-  .opHand .card.mLose { border-color: #ff6a4a; box-shadow: 0 0 5px #ff6a4a; } /* 내 카드가 지는 상대 카드 */
+  .opHand .card.mWin { border-color: #1a6a24; box-shadow: 0 0 0 3px #4dff6a, 0 0 10px 2px #4dff6a; transform: translateY(-3px); } /* 내 카드로 이기는 상대 카드 (2026-11-15 기획자: 잘 안 보여서 진한 안쪽 테두리 + 밝은 바깥 테두리 3px + 빛 + 살짝 위로) */
+  .opHand .card.mLose { border-color: #6a1a10; box-shadow: 0 0 0 3px #ff5a3a, 0 0 10px 2px #ff5a3a; } /* 내 카드가 지는 상대 카드 */
   .acts { display: flex; justify-content: center; gap: 64px; margin-top: 8px; } /* 2026-11-14: 재정비·제출 둘 다 살짝 크게, 사이를 넓게 (잘못 누르지 않게) */
   .acts button { min-width: 130px; padding: 8px 18px; font-size: 16px; }
   .acts button.sel { background: var(--title); color: #2a0604; }
@@ -274,7 +274,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115192516"></script>
+<script src="duel_rules.js?v=20261115192804"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
