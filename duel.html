@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115181037">
+<link rel="stylesheet" href="style.css?v=20261115191034">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -273,7 +273,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115181037"></script>
+<script src="duel_rules.js?v=20261115191034"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -323,7 +323,12 @@ const WATCH = location.hash.startsWith('#watch') ? (() => { const q = new URLSea
 // 실시간 모드 (2026-11-14): node lab/duel_server.js 를 켜고 http://localhost:8787/lab/martial.html#live&seat=0 (청군) · seat=1 (홍군) · seat=w (관전)
 // 판정은 서버가 한다. 내 쪽이 늘 왼쪽(빨강)에 오도록 VIEW로 순서를 바꿔 그린다 (관전은 청군이 왼쪽)
 // 웹 (2026-11-14): duel.html#web&id=경기id. 자리(0·1·관전)는 서버가 알려 준다
-const PRACTICE = location.hash === '#practice'; // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
+// 설전대회 (2026-11-15): duel.html?kind=debate. 규칙은 무술대회와 같고 그림·카드 이름·글자(무력→지력, 체력→기세)·연출·음악만 다르다
+const DEBATE = new URLSearchParams(location.search).get('kind') === 'debate';
+const STN = DEBATE ? '지력' : '무력', HPN = DEBATE ? '기세' : '체력';
+if (DEBATE) { Object.assign(T.atk, { name: '논파', ic: '📜' }); Object.assign(T.tec, { name: '회유', ic: '🕊' }); Object.assign(T.def, { name: '도발', ic: '🔥' }); Object.assign(T.kill, { name: '대갈', ic: '📢' }); Object.assign(T.dodge, { name: '무시', ic: '😑' }); document.title = '설전대회'; }
+const PRACTICE = location.hash === '#practice';
+if (DEBATE) document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.nd[data-t]').forEach(n => { const t = T[n.dataset.t]; if (!t) return; n.querySelector('.ic').textContent = t.ic; n.querySelector('.nm').textContent = t.name; })); // 상성 삼각형도 논파·회유·도발 // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
 const WEB = location.hash.startsWith('#web') ? { id: new URLSearchParams(location.hash.slice(5)).get('id') } : null;
 let LIVE = WEB ? { seat: 'w', names: ['', ''] } : location.hash.startsWith('#live') ? (() => { const q = new URLSearchParams(location.hash.slice(6)); const v = q.get('seat'); return { seat: v === '1' ? 1 : v === 'w' ? 'w' : 0, names: ['청군', '홍군'] }; })() : null;
 let VIEW = LIVE && LIVE.seat === 1 ? [1, 0] : [0, 1]; // 화면 왼쪽·오른쪽 = 서버의 몇 번 자리
@@ -428,7 +433,7 @@ async function bgmLoad() { // 웹: 인트로(+루프 한 바퀴) 파일과 루�
   if (MUS.loading) return; MUS.loading = true;
   try {
     const c = ac(), get = u => fetch(u).then(x => x.arrayBuffer()).then(b => c.decodeAudioData(b));
-    [MUS.intro, MUS.loop, MUS.wait] = await Promise.all([get('audio/bgm_tourney_intro.wav'), get('audio/bgm_tourney.wav'), get('audio/bgm_wait.wav').catch(() => null)]); // 대기 곡은 못 받아도 대회 곡은 나온다
+    [MUS.intro, MUS.loop, MUS.wait] = await Promise.all([DEBATE ? Promise.resolve(null) : get('audio/bgm_tourney_intro.wav'), get(DEBATE ? 'audio/bgm_debate.wav' : 'audio/bgm_tourney.wav'), get('audio/bgm_wait.wav').catch(() => null)]); // 대기 곡은 못 받아도 대회 곡은 나온다
     MUS.ready = true; if (SND.bgm && c.state === 'running') bgmPlay();
   } catch (e) { console.warn('BGM', e); }
 }
@@ -489,7 +494,8 @@ g.imageSmoothingEnabled = false;
 const img = n => { const i = new Image(); i.src = `img/duel/${n}.png`; return i; };
 // 그림: lab/img (GPT Image 원본 lab/raw → tools/pixelize.html로 도트 변환, 2026-11-14). 말 탄 장수 3동작: 서 있기 · 돌격 · 찌르기. b = 상대(파란 갑옷)
 // 3 = 승리 (말이 앞발 들고 언월도 치켜듦), 4 = 패배 (말에서 내려 무릎 꿇음, 무기 떨굼) — 2026-11-14 lab/raw/horse_end.png
-const BG = img('arena'), SPR = [0, 1, 2, 3, 4].map(k => img('horse' + k)), SPR_B = [0, 1, 2, 3, 4].map(k => img('horse' + k + 'b'));
+const imgD = n => { const i = new Image(); i.src = `img/debate/${n}.png`; return i; }; // 설전대회 그림: 0 서기 · 1 말하기 · 2 대갈 · 3 승리 · 4 패배 · 5 움찔 (청은 b)
+const BG = DEBATE ? imgD('bg') : img('arena'), SPR = DEBATE ? [0, 1, 2, 3, 4, 5].map(k => imgD('scholar' + k)) : [0, 1, 2, 3, 4].map(k => img('horse' + k)), SPR_B = DEBATE ? [0, 1, 2, 3, 4, 5].map(k => imgD('scholar' + k + 'b')) : [0, 1, 2, 3, 4].map(k => img('horse' + k + 'b'));
 const ANCHOR = [37, 40, 37, 42, 33]; // 2026-11-14 장수 약 15% 키움 (원본에서 덜 줄여 다시 만듦, 예전 그림은 img/old). // 동작마다 말 몸통 가운데가 그림 왼쪽에서 몇 칸인지 (위치가 흔들리지 않게)
 const W = 320, H = 180, GROUND = 168, HOME = [70, 250], REACH = 84; // GROUND: 말발굽 위치 (대회장 흙바닥). REACH: 찌를 때 상대와의 거리
 const st = { x: [...HOME], fr: [0, 0], flash: [0, 0], ghost: [0, 0], shake: 0, bigFlash: 0, texts: [], spark: 0, t: 0, result: null, confetti: [] }; // result: 끝났을 때 큰 글씨 (2026-11-14)
@@ -504,15 +510,15 @@ function drawFighter(i) {
   const x = Math.round(st.x[i]), y = GROUND - s.height;
   g.save();
   if (i === 1) { g.translate(x, 0); g.scale(-1, 1); g.translate(-x, 0); }
-  const dx = x - ANCHOR[st.fr[i]];
+  const dx = x - (DEBATE ? Math.round(s.width / 2) : ANCHOR[st.fr[i]]); // 문관 그림은 가운데가 몸 중심
   g.fillStyle = 'rgba(0,0,0,0.35)';
-  if (st.fr[i] === 4) { // 패배 자세 (2026-11-15 기획자: 그림자가 캐릭터 밖에 있어 어색): 뒤에 선 말의 발굽 줄(그림 45줄째)과 무릎 꿇은 장수 아래(56줄째)에 따로
+  if (!DEBATE && st.fr[i] === 4) { // 패배 자세 (2026-11-15 기획자: 그림자가 캐릭터 밖에 있어 어색): 뒤에 선 말의 발굽 줄(그림 45줄째)과 무릎 꿇은 장수 아래(56줄째)에 따로
     g.beginPath(); g.ellipse(dx + 21, y + 45, 20, 3, 0, 0, Math.PI * 2); g.fill();
     g.beginPath(); g.ellipse(dx + 76, y + 56, 30, 3.5, 0, 0, Math.PI * 2); g.fill();
-  } else { g.beginPath(); g.ellipse(x, GROUND - 1, 32, 4, 0, 0, Math.PI * 2); g.fill(); } // 발밑 그림자
+  } else { g.beginPath(); g.ellipse(x, GROUND - 1, DEBATE ? Math.round(s.width * 0.4) : 32, DEBATE ? 3.5 : 4, 0, 0, Math.PI * 2); g.fill(); } // 발밑 그림자
   if (st.ghost[i] > 0) { g.globalAlpha = 0.35 * st.ghost[i]; g.drawImage(s, dx + 18, y); g.globalAlpha = 1; }
   const src = st.flash[i] > 0 && Math.floor(st.t / 60) % 2 ? whiteOf(s) : s;
-  if (breathe) { const k = LEGS_AT; g.drawImage(src, 0, k, s.width, s.height - k, dx, y + k, s.width, s.height - k); g.drawImage(src, 0, 0, s.width, k + 1, dx, y + breathe, s.width, k + 1); } // 아래: 다리 그대로 · 위: 1칸 올림 (경계 한 줄을 겹쳐 틈이 안 생기게)
+  if (breathe) { const k = DEBATE ? Math.round(s.height * 0.72) : LEGS_AT; g.drawImage(src, 0, k, s.width, s.height - k, dx, y + k, s.width, s.height - k); g.drawImage(src, 0, 0, s.width, k + 1, dx, y + breathe, s.width, k + 1); } // 아래: 다리 그대로 · 위: 1칸 올림 (경계 한 줄을 겹쳐 틈이 안 생기게)
   else g.drawImage(src, dx, y);
   g.restore();
 }
@@ -565,7 +571,23 @@ const say = (s, x, c = '#ffd860', y = 60) => {
 };
 
 // 한 합 연출
+// 설전 연출 (2026-11-15): 자리에서 말로 겨룬다. 이긴 쪽은 말하기(1) · 대갈(2)로 살짝 나오고, 맞은 쪽은 움찔(5)하며 밀린다
+async function animateDebate(j, a, b) {
+  const nudge = (i, d) => tween(i, HOME[i] + (i === 0 ? d : -d), 140);
+  if (j.how === 'tie') { st.fr = [1, 1]; sfx('clash'); st.shake = 1; await Promise.all([nudge(0, 8), nudge(1, 8)]); await sleep(420); await Promise.all([tween(0, HOME[0], 200), tween(1, HOME[1], 200)]); st.fr = [0, 0]; return; }
+  if (j.how === 'idle') { sfx('idle'); await sleep(500); return; }
+  if (j.how === 'dodged') { const d = j.dodger, o = 1 - d; st.fr[o] = 1; await nudge(o, 10); st.ghost[d] = 1; sfx('dodge'); say(`${T.dodge.name}!`, st.x[d], '#9fe8ff'); await sleep(500); await tween(o, HOME[o], 200); st.fr = [0, 0]; return; }
+  const atk = j.win, def = 1 - atk;
+  if (j.how === 'kill') { const blue = atk === 0; say(`${T.kill.name}!`, HOME[atk], blue ? '#6ab0ff' : '#ff5a3a', 50); st.flashRGB = blue ? '40,120,255' : '255,60,30'; st.bigFlash = 1; sfx('kill'); st.fr[atk] = 2; await sleep(350); }
+  else st.fr[atk] = 1;
+  await nudge(atk, j.how === 'kill' ? 16 : 10);
+  st.fr[def] = 5; st.shake = j.how === 'kill' ? 5 : 2; sfx('hit'); say(`-${j.dmg}`, HOME[def], '#ff6a4a', 78);
+  await tween(def, HOME[def] + (def === 1 ? 10 : -10), 120);
+  await sleep(420);
+  await Promise.all([tween(atk, HOME[atk], 220), tween(def, HOME[def], 220)]); st.fr = [0, 0];
+}
 async function animate(j, a, b) {
+  if (DEBATE) return animateDebate(j, a, b);
   const atk = j.win, mid = (HOME[0] + HOME[1]) / 2;
   if (j.how === 'tie') {
     st.fr = [1, 1]; sfx('gallop'); await Promise.all([tween(0, mid - REACH / 2, 220), tween(1, mid + REACH / 2, 220)]);
@@ -635,14 +657,14 @@ let fxDeal = [false, false];
 function shuffleFx(v) { sfx('shuffle'); say('재정비', HOME[v], '#ffe08a', 66); fxDeal[v] = true; }
 function draw() {
   const [m, o] = F;
-  $('myInfo').textContent = `무력 ${m.war} · 체력 ${Math.max(0, m.hp)}`; $('opInfo').textContent = `무력 ${o.war} · 체력 ${Math.max(0, o.hp)}`;
+  $('myInfo').textContent = `${STN} ${m.war} · ${HPN} ${Math.max(0, m.hp)}`; $('opInfo').textContent = `${STN} ${o.war} · ${HPN} ${Math.max(0, o.hp)}`;
   $('myHp').style.width = Math.max(0, m.hp) + '%'; $('opHp').style.width = Math.max(0, o.hp) + '%';
   $('mySp').innerHTML = spText(m); $('opSp').innerHTML = spText(o);
   $('round').textContent = PRACTICE && !round ? '대기' : over ? '끝' : `${round} / ${MAX_ROUND}합`; // 연습 경기 시작 전은 '대기'
   const dealO = fxDeal[1], dealM = fxDeal[0]; fxDeal = [false, false]; // 재정비 연출은 한 번만
   const dl = (on, i) => on ? ` style="animation-delay:${i * 60}ms"` : '';
   if (SPECT()) [['myMini', m], ['opMini', o]].forEach(([id, f]) => { $(id).innerHTML = f.hand.map(c => c.t === 'sp' || isSp(c) ? '<div class="card oc white"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).join(''); }); // 관전: 두 장수 손패 축약
-  $('opHand').innerHTML = o.hand.map((c, i) => (c.t === 'sp' || isSp(c) ? '<div class="card oc white" title="특수 카드 (필살 또는 회피)"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).replace('class="card oc', `${dl(dealO, i)} class="card oc${dealO ? ' deal' : ''}`)).join(''); // 상대 손패: 유형(색)은 보이고 크기(대·중·소)는 숨김 (2026-11-14 기획자)
+  $('opHand').innerHTML = o.hand.map((c, i) => (c.t === 'sp' || isSp(c) ? '<div class="card oc white" title="특수 카드"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).replace('class="card oc', `${dl(dealO, i)} class="card oc${dealO ? ' deal' : ''}`)).join(''); // 상대 손패: 유형(색)은 보이고 크기(대·중·소)는 숨김 (2026-11-14 기획자)
   $('hand').innerHTML = m.hand.map((c, i) => cardEl(c, (pick && pick.i === i ? 'sel' : '') + (dealM ? ' deal' : '')).replace('<div class="card', `<div data-i="${i}"${dl(dealM, i)} class="card`)).join('');
   $('hand').querySelectorAll('[data-i]').forEach(el => {
     el.onclick = () => { if (busy || over) return; pick = actOf(m, +el.dataset.i); sfx('pick'); draw(); };
@@ -677,8 +699,8 @@ async function showRound(a, b, j) {
   await animate(j, a, b);
   let msg = `${round}합 ${actText(a)} vs ${actText(b)} → `; // 한 합 = 기록 한 줄
   // 결과는 내 쪽에서 본 말: 승 (피해 20) · 패 (피해 20) · 필살 승/패 · 회피 · 상대 회피 · 비김 · 헛수. 관전은 이름으로
-  if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} 회피` : j.dodger === 0 ? '회피' : '상대 회피') : j.how === 'idle' ? '헛수' : '비김';
-  else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? '필살 ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? '필살 ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
+  if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} ${T.dodge.name}` : j.dodger === 0 ? T.dodge.name : `상대 ${T.dodge.name}`) : j.how === 'idle' ? '헛수' : '비김';
+  else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? T.kill.name + ' ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? T.kill.name + ' ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
   if (LIVE && (a.auto || b.auto)) msg += ' ⏱';
   log(msg);
 }
@@ -704,10 +726,10 @@ function finish(wv = null, tie = '') { // wv: 이긴 쪽 (화면 왼쪽 0 · 오
     if (!res.startsWith('무')) { const w = res.startsWith('승') ? 0 : 1; st.fr[w] = 3; st.fr[1 - w] = 4; } // 승자는 말을 세우고 무기를 치켜들고, 패자는 무릎 꿇는다
     const kind = res.startsWith('승') ? 'win' : res.startsWith('패') ? 'lose' : 'draw', byHp = res.includes('체력');
     st.result = { kind, t0: performance.now(), title: kind === 'win' ? '승 리 !' : kind === 'lose' ? '패 배 …' : '무 승 부',
-      sub: kind === 'win' ? (byHp ? `${MAX_ROUND}합 끝 · 체력 ${tie ? '같음 · 무력이 낮아 승리' : '우세'} (${m.hp} : ${o.hp})` : '상대를 쓰러뜨렸다!') : kind === 'lose' ? (byHp ? `${MAX_ROUND}합 끝 · 체력 ${tie ? '같음 · 무력이 높아 패배' : '열세'} (${m.hp} : ${o.hp})` : '쓰러지고 말았다…') : `${MAX_ROUND}합 끝 · 체력 같음` };
+      sub: kind === 'win' ? (byHp ? `${MAX_ROUND}합 끝 · ${HPN} ${tie ? `같음 · ${STN}이 낮아 승리` : '우세'} (${m.hp} : ${o.hp})` : (DEBATE ? '상대의 말문을 막았다!' : '상대를 쓰러뜨렸다!')) : kind === 'lose' ? (byHp ? `${MAX_ROUND}합 끝 · ${HPN} ${tie ? `같음 · ${STN}이 높아 패배` : '열세'} (${m.hp} : ${o.hp})` : (DEBATE ? '말문이 막히고 말았다…' : '쓰러지고 말았다…')) : `${MAX_ROUND}합 끝 · ${HPN} 같음` };
     if (SPECT()) { // 관전: 누가 이겼는지만
       const w = wv !== null ? wv : m.hp > o.hp ? 0 : o.hp > m.hp ? 1 : null, L = NAME();
-      st.result = { kind: w === null ? 'draw' : 'win', t0: performance.now(), title: w === null ? '무 승 부' : `${L[w]} 승리!`, sub: byHp ? `${MAX_ROUND}합 끝 · 체력 ${m.hp} : ${o.hp}` : `${L[w]}${josaI(L[w])} ${L[1 - w]}${josaUl(L[1 - w])} 쓰러뜨렸다!` };
+      st.result = { kind: w === null ? 'draw' : 'win', t0: performance.now(), title: w === null ? '무 승 부' : `${L[w]} 승리!`, sub: byHp ? `${MAX_ROUND}합 끝 · ${HPN} ${m.hp} : ${o.hp}` : `${L[w]}${josaI(L[w])} ${L[1 - w]}${josaUl(L[1 - w])} 쓰러뜨렸다!` };
       st.confetti = []; $('reveal').innerHTML = ''; bgmFade(); $('timer').style.width = '0%'; draw(); return;
     }
     st.confetti = [];
@@ -729,7 +751,7 @@ $('start').onclick = () => {
   const mw = Math.max(30, Math.min(130, +$('myWar').value || 100)), ow = Math.max(30, Math.min(130, +$('opWar').value || 100));
   F = [newFighter(mw), newFighter(ow)]; round = 0; over = false; $('log').innerHTML = ''; $('reveal').innerHTML = ''; $('resBox').innerHTML = '';
   st.x = [...HOME]; st.fr = [0, 0]; st.result = null; st.confetti = []; bgmDuck(false);
-  log(`시작 · ${NAME()[0]} 무력${mw} ${handMax(mw)}장 vs ${NAME()[1]} 무력${ow} ${handMax(ow)}장`);
+  log(`시작 · ${NAME()[0]} ${STN}${mw} ${handMax(mw)}장 vs ${NAME()[1]} ${STN}${ow} ${handMax(ow)}장`);
   startRound();
 };
 // ===================== 실시간 (연습용 서버와 주고받기) =====================
@@ -790,7 +812,7 @@ function liveInit() {
     const d = JSON.parse(e.data); LIVE.names = d.names;
     if (SPECT()) { const L = NAME(); document.querySelector('.side .nm').innerHTML = `<b>${L[0]}</b> <span class="dim" id="myInfo"></span>`; document.querySelector('.side.right .nm').innerHTML = `<b>${L[1]}</b> <span class="dim" id="opInfo"></span>`; } // 실시간 관전: 이름 표시
     $('log').innerHTML = ''; $('reveal').innerHTML = ''; $('resBox').innerHTML = ''; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; bgmDuck(false);
-    const who = i => `${SPECT() ? d.names[i] : i === LIVE.seat ? '나' : '상대'} 무력${d.pub[i].war}${d.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(d.pub[i].war)}장`;
+    const who = i => `${SPECT() ? d.names[i] : i === LIVE.seat ? '나' : '상대'} ${STN}${d.pub[i].war}${d.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(d.pub[i].war)}장`;
     log(`시작 · ${who(VIEW[0])} vs ${who(VIEW[1])}`);
   }));
   es.addEventListener('shuffle', e => { const d = JSON.parse(e.data), v = VIEW.indexOf(d.seat); if (!F || (!SPECT() && d.seat === LIVE.seat)) return; shuffleFx(v); const p = d.pub; F[v].hand = p.handT.map(t => ({ t, s: 0 })); F[v].shuffleLeft = p.shuffleLeft; log(`${round}합 ${SPECT() ? NAME()[v] : '상대'} 재정비`); draw(); });
@@ -878,7 +900,7 @@ async function webApply(p) {
   bgmMode('main'); // 시작했으면 대회 곡
   if (!WS.started) { // 경기 시작 줄 (처음 한 번)
     WS.started = true; st.result = null; st.fr = [0, 0]; st.x = [...HOME]; bgmDuck(false); $('reveal').innerHTML = '';
-    const who = i => `${SPECT() ? p.names[i] : i === LIVE.seat ? '나' : p.names[i]} 무력${p.pub[i].war}${p.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(p.pub[i].war)}장`;
+    const who = i => `${SPECT() ? p.names[i] : i === LIVE.seat ? '나' : p.names[i]} ${STN}${p.pub[i].war}${p.absent[i] ? '(컴퓨터 대리 -15)' : ''} ${handMax(p.pub[i].war)}장`;
     log(`시작 · ${who(VIEW[0])} vs ${who(VIEW[1])}`);
   }
   // 새로 끝난 합: 처음 들어왔을 때 이미 지난 합은 기록만, 그 뒤로는 하나씩 연출
@@ -931,15 +953,15 @@ async function webApply(p) {
 // 늦게 들어와 연출 없이 기록만 남기는 합
 function logRound(a, b, j) {
   let msg = `${round}합 ${actText(a)} vs ${actText(b)} → `;
-  if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} 회피` : j.dodger === 0 ? '회피' : '상대 회피') : j.how === 'idle' ? '헛수' : '비김';
-  else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? '필살 ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? '필살 ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
+  if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} ${T.dodge.name}` : j.dodger === 0 ? T.dodge.name : `상대 ${T.dodge.name}`) : j.how === 'idle' ? '헛수' : '비김';
+  else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? T.kill.name + ' ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? T.kill.name + ' ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
   log(msg);
 }
 // 시작 인트로: "8강 1경기" + 왼쪽 이름(파랑) VS 오른쪽 이름(빨강). 단계 이름은 경기 id 끝 (m0 … f)
 const STAGE_NAME = { m0: '8강 1경기', m1: '8강 2경기', m2: '8강 3경기', m3: '8강 4경기', s0: '4강 1경기', s1: '4강 2경기', f: '결 승' };
 function showIntro(p) {
   const el = $('intro'), slot = String(WEB.id).split('-')[1];
-  el.innerHTML = `<div class="stg">${STAGE_NAME[slot] || '무술대회'}</div><div class="row"><span class="a">${esc2(p.names[VIEW[0]])}</span><span class="v">VS</span><span class="b">${esc2(p.names[VIEW[1]])}</span></div>`;
+  el.innerHTML = `<div class="stg">${STAGE_NAME[slot] || (DEBATE ? '설전대회' : '무술대회')}</div><div class="row"><span class="a">${esc2(p.names[VIEW[0]])}</span><span class="v">VS</span><span class="b">${esc2(p.names[VIEW[1]])}</span></div>`;
   el.className = 'intro'; void el.offsetWidth; el.className = 'intro show';
   sfx('intro');
 }
@@ -956,7 +978,7 @@ function webInit() {
 $('log').onclick = () => $('log').classList.toggle('open');
 // 규칙 (2026-11-15): 대회 규칙은 게임 창(duelBridge.tourRules)에서 받는다. 경기는 그대로 흐르니 창을 닫고 카드를 내야 한다
 const tourRulesOf = () => { try { return parent.duelBridge && parent.duelBridge.tourRules ? parent.duelBridge.tourRules() : null; } catch (e) { return null; } };
-document.body.insertAdjacentHTML('beforeend', '<div class="rulesPop" id="rulesPop" hidden><div class="box"><div class="rbar"><b>📖 무술대회 규칙</b><button id="rulesClose">✕ 닫기</button></div><div id="rulesText"></div></div></div>');
+document.body.insertAdjacentHTML('beforeend', '<div class="rulesPop" id="rulesPop" hidden><div class="box"><div class="rbar"><b>📖 ' + (DEBATE ? '설전대회' : '무술대회') + ' 규칙</b><button id="rulesClose">✕ 닫기</button></div><div id="rulesText"></div></div></div>');
 $('rulesBtn').onclick = () => { $('rulesText').innerHTML = rulesHtml(tourRulesOf()); $('rulesPop').hidden = false; };
 $('rulesClose').onclick = () => { $('rulesPop').hidden = true; };
 $('rulesPop').onclick = e => { if (e.target.id === 'rulesPop') $('rulesPop').hidden = true; };

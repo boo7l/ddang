@@ -536,7 +536,7 @@ function tourneyAdminDialog() {
   const entries = T ? T.entries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${esc(e.name)}</td><td>${fname(e.faction)}</td><td class="num">${e.war}</td><td class="dim">${fmtClock(e.t)}</td></tr>`).join('') : '';
   const matches = T && T.matches ? T.matches.map(m => {
     const nm = k => (m.p[k] ? `${m.win === k ? '<b class="hi">' : ''}${esc(m.names[k])}${m.win === k ? '</b>' : ''}` : (m.bye && k === 1 ? '<span class="dim">부전승</span>' : '<span class="dim">?</span>'));
-    const res = m.bye ? '<span class="dim">부전승</span>' : m.win != null ? `체력 ${m.hp ? m.hp.join(' : ') : '-'}${m.tie ? ' <span class="dim small">(동점 → 무력 낮은 쪽)</span>' : ''}` : m.at ? (m.at <= Date.now() ? '<b>진행 중</b>' : '대기') : '';
+    const res = m.bye ? '<span class="dim">부전승</span>' : m.win != null ? `${tourHpName(T)} ${m.hp ? m.hp.join(' : ') : '-'}${m.tie ? ` <span class="dim small">(동점 → ${tourStatName(T)} 낮은 쪽)</span>` : ''}` : m.at ? (m.at <= Date.now() ? '<b>진행 중</b>' : '대기') : '';
     return `<tr><td>${TOUR_STAGE(m.slot)}</td><td>${nm(0)} vs ${nm(1)}</td><td class="dim">${m.at ? fmtTime(m.at) : ''}</td><td>${res}</td></tr>`;
   }).join('') : '';
   adminShow('tourney', `<div class="adminCards">
@@ -548,9 +548,9 @@ function tourneyAdminDialog() {
       <tr><th>신청</th><td>${T.entries.length}명${T.size ? ` · ${T.size === 8 ? '8강' : '4강'}` : ''}</td></tr>
       ${T.champ ? `<tr><th>우승</th><td><b class="hi">${esc(T.champ.name)}</b> · 준우승 ${esc(T.runner.name)}</td></tr>` : ''}
     </table>
-    ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">무력</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
+    ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">${tourStatName(T)}</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
     ${matches ? `<table class="stats tourList"><tr><th>단계</th><th>대진</th><th>시각</th><th>결과</th></tr>${matches}</table>` : ''}
-    ${T && T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE ? `<p><button id="atHide">무술대회 단추 내리기</button> <span class="dim small">${fmtClock((T.doneAt || 0) + TOUR_SHOW_DONE)}에 저절로 사라져요</span></p>` : ''}
+    ${T && T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE ? `<p><button id="atHide">${tourName(T)} 단추 내리기</button> <span class="dim small">${fmtClock((T.doneAt || 0) + TOUR_SHOW_DONE)}에 저절로 사라져요</span></p>` : ''}
     ${live ? `<p>보상 바꾸기 · 우승 금 <input id="apP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> 공적 <input id="apP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4em"> 경험치 <input id="apP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4em"><br>준우승 금 <input id="apP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> 공적 <input id="apP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4em"> 경험치 <input id="apP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4em"> <button id="apSave">보상 저장</button> <span class="dim small">(참가비는 못 바꿔요)</span></p>` : ''}
     ${T && T.phase === 'entry' ? '<p><button id="atCloseNow">지금 마감</button> <span class="dim small">신청 기간을 기다리지 않고 바로 마감하고 대진을 짜요 (${R.minN - 1}명 이하면 취소·환불)</span></p>' : ''}
     ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">신청 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
@@ -563,24 +563,26 @@ function tourneyAdminDialog() {
     <p>참가비 금 <input id="atFee" type="number" min="0" value="${C.fee}" style="width:6em"> <button id="atDefault" class="mini">기본값</button> <span class="dim small">(금 ${fmt(R.fee)} · 우승 ${fmt(R.prize[0].gold)}·${R.prize[0].merit}·${R.prize[0].warExp} · 준우승 ${fmt(R.prize[1].gold)}·${R.prize[1].merit}·${R.prize[1].warExp})</span></p>
     <p>우승 금 <input id="atP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> · 공적 <input id="atP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4.5em"> · 무력 경험치 <input id="atP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4.5em"></p>
     <p>준우승 금 <input id="atP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> · 공적 <input id="atP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4.5em"> · 무력 경험치 <input id="atP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4.5em"></p>
-    <p class="dim small">무력 ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ' · 세력 제한 없음'} · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
+    <p class="dim small">무력(설전대회는 지력) ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ' · 세력 제한 없음'} · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
+    <p>종류 <select id="atKind"><option value="martial">🏟 무술대회 (무력)</option><option value="debate"${T && T.kind === 'debate' ? ' selected' : ''}>🗣 설전대회 (지력)</option></select> <span class="dim small">규칙은 같고 능력치·그림·음악이 달라요. 한 번에 하나만 열려요</span></p>
     <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음. 경기는 정해지면 1분 뒤 한꺼번에 (5분 간격 없음)</span></p>
-    <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(무력 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
+    <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(능력치 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
     <p><button id="atOpen">대회 열기</button></p>
     </div>`}
     </div>`, () => {
     if ($('#atDefault')) $('#atDefault').onclick = () => { $('#atFee').value = R.fee; [0, 1].forEach(k => { $(`#atP${k}g`).value = R.prize[k].gold; $(`#atP${k}m`).value = R.prize[k].merit; $(`#atP${k}x`).value = R.prize[k].warExp; }); }; // 참가비·보상 기본값으로 (2026-11-15)
     if ($('#atTest')) $('#atTest').onchange = e => { $('#atBotsRow').hidden = !e.target.checked; };
     if ($('#atOpen')) $('#atOpen').onclick = async () => {
+      const kind = $('#atKind').value, KN = kind === 'debate' ? '설전대회' : '무술대회'; // 설전대회 (2026-11-15)
       const hours = +$('#atHours').value, gap = +$('#atGap').value, test = $('#atTest').checked, bots = +$('#atBots').value;
       const fee = +$('#atFee').value, prize = [0, 1].map(k => ({ gold: +$(`#atP${k}g`).value, merit: +$(`#atP${k}m`).value, warExp: +$(`#atP${k}x`).value }));
       const money = `\n참가비 금 ${fmt(fee)} · 우승 금 ${fmt(prize[0].gold)}·공적 ${prize[0].merit}·경험치 ${prize[0].warExp} · 준우승 금 ${fmt(prize[1].gold)}·공적 ${prize[1].merit}·경험치 ${prize[1].warExp}`;
-      if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}` : `무술대회를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}`)) return;
-      if (await call('tourneyOpen', { hours, gap, test, bots, fee, prize })) afterAdmin();
+      if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}` : `${KN}를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}`)) return;
+      if (await call('tourneyOpen', { hours, gap, test, bots, fee, prize, kind })) afterAdmin();
     };
     if ($('#apSave')) $('#apSave').onclick = async () => { const prize = [0, 1].map(k => ({ gold: +$(`#apP${k}g`).value, merit: +$(`#apP${k}m`).value, warExp: +$(`#apP${k}x`).value })); if (!confirm(`이 대회 보상을 바꿀까요?
 우승 금 ${fmt(prize[0].gold)}·공적 ${prize[0].merit}·경험치 ${prize[0].warExp} / 준우승 금 ${fmt(prize[1].gold)}·공적 ${prize[1].merit}·경험치 ${prize[1].warExp}`)) return; if (await call('tourneyPrize', { prize })) afterAdmin(); }; // 진행 중 대회 보상 (2026-11-15)
-    if ($('#atHide')) $('#atHide').onclick = async () => { if (!confirm('모두의 화면에서 무술대회 단추를 내릴까요? (결과는 이 관리 탭에서 계속 볼 수 있어요)')) return; if (await call('tourneyHide')) afterAdmin(); };
+    if ($('#atHide')) $('#atHide').onclick = async () => { if (!confirm(`모두의 화면에서 ${tourName(T)} 단추를 내릴까요? (결과는 이 관리 탭에서 계속 볼 수 있어요)`)) return; if (await call('tourneyHide')) afterAdmin(); };
     if ($('#atCloseNow')) $('#atCloseNow').onclick = async () => {
       if (!confirm(`신청을 지금 마감할까요? (${T.entries.length}명)${T.entries.length < R.minN ? `\n${R.minN}명이 안 돼서 대회가 취소되고 참가비를 돌려줘요.` : ''}`)) return;
       if (await call('tourneyCloseNow')) afterAdmin();
@@ -1589,6 +1591,7 @@ function tourSync() {
   const T = tourT(), b = $('#tourBtn');
   if (!b) return;
   b.hidden = !tourVisible(T);
+  if (T) { const lb = `${tourIcon(T)}<span class="mHide"> ${tourName(T)}</span>`; if (b.innerHTML !== lb) b.innerHTML = lb; b.title = tourName(T); } // 무술대회 · 설전대회 (2026-11-15)
   b.classList.toggle('glow', !!T && T.phase === 'entry' && !(T.entries || []).some(e => e.uid === MY_ID));
   // 내 다음 경기 (2026-11-15 기획자): 아직 탈락하지 않은 참가자면 단추 왼쪽에 시각을 보여 준다. 상대가 아직 안 정해졌으면 '시간 미정'
   const tm = $('#tourMy');
@@ -1610,7 +1613,7 @@ function tourSync() {
   const my = T && T.phase === 'run' && T.matches.find(m => m.at && m.win == null && m.p.includes(MY_ID));
   if (my && my.at - Date.now() < 3 * 60e3 && my.at - Date.now() > -60e3 && !tourAlerted[T.id + my.slot] && !$('#duelWrap') && !$('#game').hidden) {
     tourAlerted[T.id + my.slot] = true;
-    if (confirm(`🏟 무술대회 ${tourMatchName(my.slot)}이(가) 곧 시작해요 (${fmtClock(my.at)}).\n지금 경기장에 들어갈까요?\n(시작할 때 경기 화면에 없으면 컴퓨터가 대신 싸우고 무력 -15)`)) tourOpenDuel(T, my);
+    if (confirm(`${tourIcon(T)} ${tourName(T)} ${tourMatchName(my.slot)}이(가) 곧 시작해요 (${fmtClock(my.at)}).\n지금 경기장에 들어갈까요?\n(시작할 때 경기 화면에 없으면 컴퓨터가 대신 두고 ${tourStatName(T)} -15)`)) tourOpenDuel(T, my);
   }
 }
 if ($('#tourBtn')) $('#tourBtn').onclick = () => tourDialog();
@@ -1622,33 +1625,33 @@ function tourDialog() {
 function tourRender() {
   const box = $('#tourBox'), T = tourT(), R = tourCfg(T); // 그 대회의 참가비·보상 (2026-11-15)
   if (!box) return;
-  if (!T) { box.innerHTML = '<h2>🏟 무술대회</h2><p class="dim">열린 대회가 없어요.</p>'; return; }
+  if (!T) { box.innerHTML = '<h2>🏟 대회</h2><p class="dim">열린 대회가 없어요.</p>'; return; }
   const g = me(), mine = T.entries.some(e => e.uid === MY_ID);
   const PH = { entry: `📝 참가 신청 중 · ${fmtTime(T.entryEnd)}까지 (${R.max}명이 차면 바로 마감)`, run: '⚔ 경기 진행 중', done: '🏆 대회 끝', cancel: '✖ 취소된 대회' };
-  let html = `<h2>🏟 무술대회${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''} <button id="tourRules" class="mini">📖 규칙</button></p>`;
+  let html = `<h2>${tourIcon(T)} ${tourName(T)}${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''} <button id="tourRules" class="mini">📖 규칙</button></p>`;
   if (T.phase === 'entry') {
-    const war = g ? effStats(g).war : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
-    const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `무력 ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : R.factionMax && g.faction && sameFac >= R.factionMax ? `우리 세력은 이미 ${R.factionMax}명이 신청했어요.` : '';
+    const war = g ? effStats(g)[tourStatKey(T)] : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
+    const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `${tourStatName(T)} ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : R.factionMax && g.faction && sameFac >= R.factionMax ? `우리 세력은 이미 ${R.factionMax}명이 신청했어요.` : '';
     html += `<div class="tourEntry">
-      <p>참가비 <b>금 ${fmt(R.fee)}</b> · 무력 ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ''} · 마감 전에는 취소할 수 있어요</p>
-      <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · 무력 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · 무력 경험치 ${R.prize[1].warExp}</p>
+      <p>참가비 <b>금 ${fmt(R.fee)}</b> · ${tourStatName(T)} ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ''} · 마감 전에는 취소할 수 있어요</p>
+      <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · ${tourStatName(T)} 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · ${tourStatName(T)} 경험치 ${R.prize[1].warExp}</p>
       ${mine ? '<p class="hi">✔ 신청했어요. 대진이 정해지면 경기 시각이 나와요. <button id="tourLeave" class="mini">신청 취소</button></p>' : `<p><button id="tourEnter" class="main"${why ? ' disabled' : ''}>참가 신청 (금 ${fmt(R.fee)})</button> ${why ? `<span class="dim small">${why}</span>` : ''}</p>`}
     </div>
     <p class="sub">신청한 장수 ${T.entries.length} / ${R.max}</p>
-    <div class="tourList">${T.entries.map(e => `<span class="tourWho${e.uid === MY_ID ? ' me' : ''}">${tourChip(e.faction)}${esc(e.name)} <span class="dim small">무력 ${e.war}</span></span>`).join('') || '<span class="dim">아직 없어요</span>'}</div>`;
+    <div class="tourList">${T.entries.map(e => `<span class="tourWho${e.uid === MY_ID ? ' me' : ''}">${tourChip(e.faction)}${esc(e.name)} <span class="dim small">${tourStatName(T)} ${e.war}</span></span>`).join('') || '<span class="dim">아직 없어요</span>'}</div>`;
   } else if (T.matches && T.matches.length) {
     const fin = T.matches.find(m => m.slot === 'f');
     html += tourBracketHtml(T);
     if (T.champ) html += `<p class="tourChamp">👑 우승 <b>${esc(T.champ.name)}</b> · 준우승 ${esc(T.runner.name)}</p>`;
-    else if (fin) html += `<p class="dim small center">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · 무력 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · 무력 경험치 ${R.prize[1].warExp}</p>`;
+    else if (fin) html += `<p class="dim small center">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · ${tourStatName(T)} 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · ${tourStatName(T)} 경험치 ${R.prize[1].warExp}</p>`;
     html += '<p class="dim small center">경기를 누르면 경기장이 열려요 (내 경기는 직접 두고, 다른 경기는 관전).</p>';
   }
   box.innerHTML = html;
   if ($('#tourEnter')) $('#tourEnter').onclick = async () => {
-    if (!confirm(`무술대회에 참가할까요?\n참가비 금 ${fmt(R.fee)}을 내요. 신청 마감 전에는 취소하고 돌려받을 수 있어요.`)) return;
+    if (!confirm(`${tourName(T)}에 참가할까요?\n참가비 금 ${fmt(R.fee)}을 내요. 신청 마감 전에는 취소하고 돌려받을 수 있어요.`)) return;
     if (await call('tourneyEnter')) tourRender();
   };
-  if ($('#tourLeave')) $('#tourLeave').onclick = () => gameConfirm('🏟 신청 취소', `<p>무술대회 참가 신청을 취소할까요?</p><p>참가비 금 ${fmt(R.fee)}을 돌려받아요.</p>`, '신청 취소', async () => { closeModal(); if (await call('tourneyLeave')) tourDialog(); }, tourDialog); // 신청 취소 (2026-11-15)
+  if ($('#tourLeave')) $('#tourLeave').onclick = () => gameConfirm(`${tourIcon(T)} 신청 취소`, `<p>${tourName(T)} 참가 신청을 취소할까요?</p><p>참가비 금 ${fmt(R.fee)}을 돌려받아요.</p>`, '신청 취소', async () => { closeModal(); if (await call('tourneyLeave')) tourDialog(); }, tourDialog); // 신청 취소 (2026-11-15)
   if ($('#tourRules')) $('#tourRules').onclick = () => tourOpenRules();
   box.querySelectorAll('[data-slot]').forEach(el => { el.onclick = () => { const m = T.matches.find(x => x.slot === el.dataset.slot); if (m && m.at && !m.bye) tourOpenDuel(T, m); }; });
   if (box.querySelector('.tbLines')) requestAnimationFrame(() => tourLines(T));
@@ -1664,7 +1667,7 @@ function tourBracketHtml(T) {
     if (!m.p[k]) return '<div class="tbSlot empty"><span class="tbChip" style="background:#3a2a1a"></span><span class="tbNm">미정</span></div>';
     const cls = m.win != null && !m.bye ? (m.win === k ? 'won' : 'lost') : '';
     const hp = m.hp && !m.bye ? (m.hp[k] === 0 ? 'KO' : m.hp[k]) : '';
-    return `<div class="tbSlot ${cls}${m.p[k] === MY_ID ? ' me' : ''}">${tourChip(facOf(m.p[k]))}<span class="tbNm">${esc(m.names[k])}</span><span class="tbWar">무${warOf(m, k) || ''}</span><span class="tbHp">${hp}</span></div>`;
+    return `<div class="tbSlot ${cls}${m.p[k] === MY_ID ? ' me' : ''}">${tourChip(facOf(m.p[k]))}<span class="tbNm">${esc(m.names[k])}</span><span class="tbWar">${tourStatName(T)[0]}${warOf(m, k) || ''}</span><span class="tbHp">${hp}</span></div>`;
   };
   const matchHtml = slot => {
     const m = M(slot);
@@ -1707,7 +1710,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115181037#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115191034&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1717,7 +1720,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115181037#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115191034#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1727,7 +1730,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115181037#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115191034&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
