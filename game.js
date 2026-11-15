@@ -928,11 +928,11 @@ function attackDialog() {
     }
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f ? f.color : 'var(--empty)'}"></span>
-      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}${marchMult(from, c) > 1 ? ` <span class="bad small">먼 길 원정: 금·군량 ${marchMult(from, c)}배</span>` : ''}
+      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}${marchMult(from, c) > 1 ? ' <span class="bad small">(먼 길)</span>' : ''}
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
-    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 예상은 지금 병력 기준</p>`,
+    <p class="dim">지금 ${p.unitType || '병사 없음'} ${fmt(p.troops)} · 예상은 지금 병력 기준</p>${attackTargetsFrom(from.id, p.faction).some(c => marchMult(from, c) > 1) ? `<p class="bad">먼 길 원정: 금·군량 ${RULES.farMarch.mult}배</p>` : ''}`,
   rows, '예약', v => reserve({ cmd: 'attack', to: v }), '', 'narrow', attackFoot(1));
   // 고른 성이 먼 길이면 왼쪽 아래 금·군량도 배로 (2026-11-15 기획자: 교지를 고르면 20 → 40)
   $('#modalBox').addEventListener('change', e => {
@@ -1669,7 +1669,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120500#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120713#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1679,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115120500#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115120713#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1689,7 +1689,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120500#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115120713#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
