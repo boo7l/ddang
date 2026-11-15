@@ -1204,7 +1204,8 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 #duelWrap { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .78); }
 #duelWrap .duelBox { width: min(1240px, 98vw); height: min(900px, 98vh); height: min(900px, 98dvh); background: var(--bg); border: 2px solid var(--gold); display: flex; flex-direction: column; }
 #duelWrap .duelBar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 8px; border-bottom: 1px solid var(--gold-dark); color: var(--title); }
-#duelWrap .duelBar span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#duelWrap .duelBar span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#duelWrap .duelBar .duelClose { flex-shrink: 0; white-space: nowrap; } /* 닫기 단추는 줄바꿈·찌그러짐 없이 (2026-11-15) */
 #duelWrap iframe { flex: 1; border: 0; width: 100%; }
 @media (max-width: 700px) {
   .tbWrap { display: flex !important; flex-direction: column; padding: 8px 4px; }
@@ -1213,5 +1214,7 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
   .tbCol > .tbHead { position: static; text-align: left; margin: 8px 4px 0; }
   svg.tbLines { display: none; }
   .tbTrophy { font-size: 30px; }
+  #duelWrap .duelBar { font-size: 14px; padding: 3px 6px; }
+  #duelWrap .duelBar span { white-space: normal; line-height: 1.3; } /* 휴대폰: 제목이 길면 잘라 내지 않고 두 줄로 */
   #duelWrap .duelBox { width: 100vw; height: 100vh; height: 100dvh; border: 0; } /* dvh: 휴대폰 주소창을 뺀 실제 보이는 높이 (100vh면 위쪽 닫기 줄이 잘렸음, 2026-11-15) */
 }
