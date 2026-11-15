@@ -1241,9 +1241,9 @@ function runExplore(g) {
     case 'engineer': { // 기술자 (2026-11-14, 시즌 7): 병기가 있으면 보수 (부서질 때 1번 버팀, 겹치지 않음), 없으면 병기 하나를 받는다 (보수 없이)
       const have = Object.keys(SIEGE).find(t => g.siege && g.siege[t]);
       if (have) {
-        if (g.siegeFix) { text = `떠돌이 기술자를 만났지만, ${josa(have, '은는')} 이미 튼튼하게 보수되어 있었다.`; break; }
+        if (g.siegeFix) { text = `떠돌이 기술자를 만났지만, ${josa(have, '은는')} 이미 튼튼하게 강화되어 있었다.`; break; }
         g.siegeFix = true;
-        text = `★ 떠돌이 기술자가 ${josa(have, '을를')} 보수해 주었다! 부대가 전멸해 병기가 부서질 때 한 번 버틴다.`;
+        text = `★ 떠돌이 기술자가 ${josa(have, '을를')} 강화해 주었다! 부대가 전멸해 병기가 부서질 때 한 번 버틴다.`;
         break;
       }
       let r = Math.random() * Object.values(e.give).reduce((a, b) => a + b, 0), type = Object.keys(e.give)[0];

@@ -659,7 +659,7 @@ function addStatExp(g, key, gain) {
 // 탐색 기술자에게 보수받은 병기(g.siegeFix)는 부서질 때 한 번 버티고 보수가 사라진다 (2026-11-14, 시즌 7)
 function siegeBreak(x, t, out) {
   if (Math.random() >= SIEGE_EFFECT.breakChance) return;
-  if (x.siegeFix) { delete x.siegeFix; out.push(`${x.name}의 ${josa(t, '이가')} 부서질 뻔했지만, 기술자가 보수해 둔 덕에 버텼다!`); return; }
+  if (x.siegeFix) { delete x.siegeFix; out.push(`${x.name}의 ${josa(t, '이가')} 부서질 뻔했지만, 기술자가 강화해 둔 덕에 버텼다!`); return; }
   x.siege = {}; out.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`);
 }
 const SIEGE = {
