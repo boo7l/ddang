@@ -407,17 +407,20 @@ function runRegionEvents(month) {
     // 농업·상업이 [최소, 최대]면 지역 전체에 한 번만 굴려 모든 성에 똑같이 (2026-11-10, 그 전엔 성마다). 숫자면 비율(예전 방식)
     const roll = {};
     for (const k of ['agri', 'comm']) if (Array.isArray(e[k])) roll[k] = randInt(e[k][0], e[k][1]);
+    const wallCut = e.wall && seasonNow() >= (e.wallFrom || 1) ? randInt(e.wall[0], e.wall[1]) : 0; // 방어 -n% (지진, 시즌 8부터, 2026-11-15)
     const fx = [];
     if (e.food) { foodRate[r] = e.food; fx.push(`이번 수확 ${e.food > 0 ? '+' : ''}${Math.round(e.food * 100)}%`); }
     for (const c of cities) {
       const cs = S.cities[c.id];
       for (const k of ['agri', 'comm']) if (e[k]) cs[k] = Math.max(0, Math.min(devMax(c.grade, k), k in roll ? cs[k] + roll[k] : Math.round(cs[k] * (1 + e[k]))));
       if (e.peace) cs.peace = Math.max(0, Math.min(devMax(c.grade, 'peace'), cs.peace + e.peace));
+      if (wallCut) cs.wall = Math.max(0, Math.round((cs.wall || 0) * (1 - wallCut / 100)));
       if (e.troops && cs.guard > 0) cs.guard = Math.max(0, cs.guard - Math.ceil(cs.guard * -e.troops));
     }
     const sign = v => (v > 0 ? '+' : '') + v;
     for (const k of ['agri', 'comm']) if (e[k]) fx.push(`${DOMESTIC[k].label} ${k in roll ? sign(roll[k]) : `${sign(Math.round(e[k] * 100))}%`}`);
     if (e.peace) fx.push(`치안 ${e.peace}`);
+    if (wallCut) fx.push(`방어 -${wallCut}%`);
     if (e.troops) fx.push(`병력 ${Math.round(e.troops * 100)}%`);
     if (e.gold) fx.push(`머무는 장수 금 +${fmt(e.gold)}`);
     const head = `${e.icon} ${dateText(S.turn)}, ${r}에 ${e.name}! (${cities.map(c => c.name).join('·')}: `;
@@ -426,6 +429,7 @@ function runRegionEvents(month) {
     if (e.food) put('수확', e.food);
     for (const k of ['agri', 'comm']) if (e[k]) put(DOMESTIC[k].label, k in roll ? roll[k] : e[k]);
     if (e.peace) put('치안', e.peace);
+    if (wallCut) put('방어', -1);
     if (e.troops) put('병력', e.troops);
     if (e.gold) put('머무는 장수 금', e.gold);
     const brief = [down.length ? `${down.join(',')} 감소` : '', up.length ? `${up.join(',')} 증가` : ''].filter(Boolean).join(', ');
