@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115191650">
+<link rel="stylesheet" href="style.css?v=20261115192018">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -273,7 +273,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115191650"></script>
+<script src="duel_rules.js?v=20261115192018"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -550,8 +550,10 @@ function render(now) {
   const sh = st.shake > 0 ? (Math.random() * 2 - 1) * st.shake : 0;
   g.save(); g.translate(Math.round(sh), 0);
   if (BG.width) g.drawImage(BG, 7, 4, W, H, 0, 0, W, H); // 배경 334×188에서 가운데 320×180
-  g.fillStyle = 'rgba(0,0,0,0.24)'; g.fillRect(-4, 0, W + 8, H); // 배경만 한 단계 어둡게 (2026-11-15 기획자: 아주 약간 더 0.2 → 0.24. 2026-11-14, 0.26도 해 봤다가 되돌림) (장수가 더 또렷하게, 2026-11-14) else { g.fillStyle = '#300'; g.fillRect(0, 0, W, H); }
+  g.fillStyle = DEBATE ? 'rgba(0,0,0,0.32)' : 'rgba(0,0,0,0.24)'; g.fillRect(-4, 0, W + 8, H); // 설전대회는 배경이 밝은 낮 풍경이라 조금 더 (0.32, 2026-11-15 기획자) // 배경만 한 단계 어둡게 (2026-11-15 기획자: 아주 약간 더 0.2 → 0.24. 2026-11-14, 0.26도 해 봤다가 되돌림) (장수가 더 또렷하게, 2026-11-14) else { g.fillStyle = '#300'; g.fillRect(0, 0, W, H); }
+  if (DEBATE) g.filter = 'brightness(1.12)'; // 설전대회: 인물 살짝 밝게 (2026-11-15 기획자). filter를 못 쓰는 브라우저는 그대로
   drawFighter(0); drawFighter(1);
+  g.filter = 'none';
   if (st.spark > 0) { g.fillStyle = '#fff6a0'; const cx = (st.x[0] + st.x[1]) / 2; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, r = 4 + (1 - st.spark) * 10; g.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(GROUND - 60 + Math.sin(a) * r), 2, 2); } }
   g.restore();
   if (st.bigFlash > 0) { g.fillStyle = `rgba(${st.flashRGB || '255,60,30'},${st.bigFlash * 0.5})`; g.fillRect(0, 0, W, H); }
