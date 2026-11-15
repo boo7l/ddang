@@ -550,6 +550,7 @@ function tourneyAdminDialog() {
     ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">무력</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
     ${matches ? `<table class="stats tourList"><tr><th>단계</th><th>대진</th><th>시각</th><th>결과</th></tr>${matches}</table>` : ''}
     ${T && T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE ? `<p><button id="atHide">무술대회 단추 내리기</button> <span class="dim small">${fmtClock((T.doneAt || 0) + TOUR_SHOW_DONE)}에 저절로 사라져요</span></p>` : ''}
+    ${live ? `<p>보상 바꾸기 · 우승 금 <input id="apP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> 공적 <input id="apP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4em"> 경험치 <input id="apP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4em"><br>준우승 금 <input id="apP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> 공적 <input id="apP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4em"> 경험치 <input id="apP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4em"> <button id="apSave">보상 저장</button> <span class="dim small">(참가비는 못 바꿔요)</span></p>` : ''}
     ${T && T.phase === 'entry' ? '<p><button id="atCloseNow">지금 마감</button> <span class="dim small">신청 기간을 기다리지 않고 바로 마감하고 대진을 짜요 (${R.minN - 1}명 이하면 취소·환불)</span></p>' : ''}
     ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">신청 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
       : '<p class="dim">아직 연 대회가 없어요.</p>'}
@@ -576,6 +577,8 @@ function tourneyAdminDialog() {
       if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}` : `무술대회를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}`)) return;
       if (await call('tourneyOpen', { hours, gap, test, bots, fee, prize })) afterAdmin();
     };
+    if ($('#apSave')) $('#apSave').onclick = async () => { const prize = [0, 1].map(k => ({ gold: +$(`#apP${k}g`).value, merit: +$(`#apP${k}m`).value, warExp: +$(`#apP${k}x`).value })); if (!confirm(`이 대회 보상을 바꿀까요?
+우승 금 ${fmt(prize[0].gold)}·공적 ${prize[0].merit}·경험치 ${prize[0].warExp} / 준우승 금 ${fmt(prize[1].gold)}·공적 ${prize[1].merit}·경험치 ${prize[1].warExp}`)) return; if (await call('tourneyPrize', { prize })) afterAdmin(); }; // 진행 중 대회 보상 (2026-11-15)
     if ($('#atHide')) $('#atHide').onclick = async () => { if (!confirm('모두의 화면에서 무술대회 단추를 내릴까요? (결과는 이 관리 탭에서 계속 볼 수 있어요)')) return; if (await call('tourneyHide')) afterAdmin(); };
     if ($('#atCloseNow')) $('#atCloseNow').onclick = async () => {
       if (!confirm(`신청을 지금 마감할까요? (${T.entries.length}명)${T.entries.length < R.minN ? `\n${R.minN}명이 안 돼서 대회가 취소되고 참가비를 돌려줘요.` : ''}`)) return;
@@ -1686,7 +1689,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115153519#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115155807#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1696,7 +1699,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115153519#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115155807#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1706,7 +1709,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115153519#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115155807#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
