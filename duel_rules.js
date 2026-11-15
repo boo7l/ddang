@@ -123,7 +123,7 @@ function rulesHtml(tour) {
   </ul>`;
   if (tour) {
     const P = tour.prize;
-    h += `<h3>🏟 대회</h3><ul>
+    h += `<h3>🏟 대회 (진행 예정)</h3><ul>
     <li>참가비 금 ${won(tour.fee)} · 무력 ${tour.minWar} 이상 (장비·보물 포함) · 한 세력 ${tour.max / 2}명까지. 신청하면 취소할 수 없어요.</li>
     <li>${tour.max}명이 차면 바로 마감해요. 신청이 끝났을 때 5~7명이면 부전승을 넣은 8강, 4명이면 4강, ${tour.minN - 1}명 이하면 취소하고 참가비를 돌려줘요.</li>
     <li>대진은 무작위이고, 같은 세력은 웬만하면 첫 경기에서 만나지 않아요. 경기는 한 번에 하나씩 ${tour.slotMin}분마다 열려요.</li>
