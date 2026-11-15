@@ -1669,7 +1669,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122444#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122705#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1679,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115122444#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115122705#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1689,7 +1689,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122444#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122705#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2423,7 +2423,14 @@ function allyDialog() {
     const send = box.querySelector('#aSend');
     if (send) send.onclick = () => { const to = box.querySelector('#aTo').value; if (!to) return; done('allyPropose', { to, turns: +box.querySelector('#aTurns').value }); };
     box.querySelectorAll('[data-cancel]').forEach(b => { b.onclick = () => done('allyCancel', { to: b.dataset.cancel }); });
-    box.querySelectorAll('[data-break]').forEach(b => { b.onclick = () => { if (confirm(`${fName(b.dataset.break)} 세력과의 동맹을 파기할까요?\n\n· ${R.allyBreakTurns}턴 뒤에 풀려요 (그때까지는 동맹)\n· 우리 세력 장수 모두 공적 -${R.allyBreakMerit}, 대도독은 -${R.allyBreakMeritCmd}`)) done('allyBreak', { with: b.dataset.break }); }; });
+    box.querySelectorAll('[data-break]').forEach(b => { b.onclick = () => { const w = b.dataset.break; gameConfirm('💔 동맹 파기', `<p><b>${fName(w)}</b> 세력과의 동맹을 파기할까요?</p><ul><li>${R.allyBreakTurns}턴 뒤에 풀려요 (그때까지는 동맹)</li><li>우리 세력 장수 모두 공적 <b class="bad">-${R.allyBreakMerit}</b>, 대도독은 <b class="bad">-${R.allyBreakMeritCmd}</b></li></ul>`, '파기', async () => { closeModal(); await call('allyBreak', { with: w }); renderAll(); }, allyDialog, true); }; }); // 브라우저 확인 창 대신 게임 창 (2026-11-15 기획자)
+  });
+}
+// 게임 안 확인 창 (2026-11-15): 브라우저 confirm 대신. onNo가 있으면 [취소]를 눌렀을 때 그 창으로 돌아간다 (없으면 그냥 닫기). danger면 확인 단추를 빨갛게
+function gameConfirm(title, html, okText, onOk, onNo = null, danger = false) {
+  openModal(`<h2>${title}</h2>${html}<div class="modalBtns"><button id="gcNo">취소</button><button id="gcOk" class="${danger ? 'danger' : 'main'}">${okText}</button></div>`, box => {
+    box.querySelector('#gcNo').onclick = () => (onNo ? onNo() : closeModal());
+    box.querySelector('#gcOk').onclick = () => onOk();
   });
 }
 // 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
