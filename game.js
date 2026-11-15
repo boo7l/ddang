@@ -561,7 +561,7 @@ function tourneyAdminDialog() {
     <p>참가비 금 <input id="atFee" type="number" min="0" value="${C.fee}" style="width:6em"> <button id="atDefault" class="mini">기본값</button> <span class="dim small">(금 ${fmt(R.fee)} · 우승 ${fmt(R.prize[0].gold)}·${R.prize[0].merit}·${R.prize[0].warExp} · 준우승 ${fmt(R.prize[1].gold)}·${R.prize[1].merit}·${R.prize[1].warExp})</span></p>
     <p>우승 금 <input id="atP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> · 공적 <input id="atP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4.5em"> · 무력 경험치 <input id="atP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4.5em"></p>
     <p>준우승 금 <input id="atP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> · 공적 <input id="atP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4.5em"> · 무력 경험치 <input id="atP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4.5em"></p>
-    <p class="dim small">무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
+    <p class="dim small">무력 ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ' · 세력 제한 없음'} · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
     <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음. 경기는 정해지면 1분 뒤 한꺼번에 (5분 간격 없음)</span></p>
     <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(무력 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
     <p><button id="atOpen">대회 열기</button></p>
@@ -1607,9 +1607,9 @@ function tourRender() {
   let html = `<h2>🏟 무술대회${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''} <button id="tourRules" class="mini">📖 규칙</button></p>`;
   if (T.phase === 'entry') {
     const war = g ? effStats(g).war : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
-    const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `무력 ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : g.faction && sameFac >= R.max / 2 ? `우리 세력은 이미 ${R.max / 2}명이 신청했어요.` : '';
+    const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `무력 ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : R.factionMax && g.faction && sameFac >= R.factionMax ? `우리 세력은 이미 ${R.factionMax}명이 신청했어요.` : '';
     html += `<div class="tourEntry">
-      <p>참가비 <b>금 ${fmt(R.fee)}</b> · 무력 ${R.minWar} 이상 · 한 세력 ${R.max / 2}명까지 · 마감 전에는 취소할 수 있어요</p>
+      <p>참가비 <b>금 ${fmt(R.fee)}</b> · 무력 ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ''} · 마감 전에는 취소할 수 있어요</p>
       <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · 무력 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · 무력 경험치 ${R.prize[1].warExp}</p>
       ${mine ? '<p class="hi">✔ 신청했어요. 대진이 정해지면 경기 시각이 나와요. <button id="tourLeave" class="mini">신청 취소</button></p>' : `<p><button id="tourEnter" class="main"${why ? ' disabled' : ''}>참가 신청 (금 ${fmt(R.fee)})</button> ${why ? `<span class="dim small">${why}</span>` : ''}</p>`}
     </div>
@@ -1686,7 +1686,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115151709#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115152008#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1696,7 +1696,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115151709#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115152008#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1706,7 +1706,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115151709#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115152008#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
