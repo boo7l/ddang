@@ -1669,7 +1669,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122705#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122949#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1679,7 +1679,7 @@ function tourOpenPractice() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115122705#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115122949#practice" title="무술대회 연습 경기"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1689,7 +1689,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122705#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115122949#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2413,7 +2413,7 @@ function allyDialog() {
   openModal(`<h2>🤝 동맹</h2>
     <p class="dim small">양쪽 대도독이 있어야 맺을 수 있어요. 동맹 중에는 서로 출진·파괴·유언을 못 해요 (첩보는 돼요). 세력당 ${R.allyMax2}개까지.</p>
     <p class="sub">지금 동맹</p>
-    ${al.length ? al.map(x => `<p><b>${fName(x.other)}</b> <span class="dim">${x.breaker ? `💔 파기됨 · ${allyLeft(x)}턴 뒤(${dateText(x.end)}) 풀림` : `${allyLeft(x)}턴 남음 · ${dateText(x.end)}에 풀림`}</span>${x.breaker ? '' : ` <button class="mini danger" data-break="${esc(x.other)}">파기</button>`}</p>`).join('') : '<p class="dim">없음</p>'}
+    ${al.length ? al.map(x => `<p><b>${fName(x.other)}</b> <span class="dim">${x.breaker ? `💔 파기됨 · ${allyLeft(x)}턴 뒤(${dateText(x.end)}) 풀림` : `${allyLeft(x)}턴 남음 · ${dateText(x.end)}에 풀림`}</span>${x.breaker ? '' : allyLeft(x) <= R.allyBreakTurns ? ' <span class="dim small">(곧 끝나서 파기 불가)</span>' : ` <button class="mini danger" data-break="${esc(x.other)}">파기</button>`}</p>`).join('') : '<p class="dim">없음</p>'}
     ${sent.length ? `<p class="sub">보낸 제안</p>${sent.map(o => `<p><b>${fName(o.to)}</b> ${o.turns}턴 <span class="dim">(${Math.max(1, Math.ceil((o.until - now0) / MIN))}분 남음)</span> <button class="mini" data-cancel="${esc(o.to)}">취소</button></p>`).join('')}` : ''}
     <p class="sub">새 제안</p>
     ${al.length >= R.allyMax2 ? `<p class="dim">동맹이 이미 ${R.allyMax2}개예요.</p>` : `<p><select id="aTo">${others.map(f => `<option value="${esc(f.id)}"${commanderOf(f.id) ? '' : ' disabled'}>${esc(f.name)}${commanderOf(f.id) ? '' : ' (대도독 없음)'}</option>`).join('')}</select>
