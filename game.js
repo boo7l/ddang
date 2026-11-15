@@ -1719,7 +1719,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115223718&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115224135&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1729,7 +1729,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115223718&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115224135&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1739,7 +1739,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115223718&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115224135&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2250,7 +2250,7 @@ function renderJoinInfo() {
       ? `<p class="bad">장수가 많은 세력이라 ${dateText(RULES.joinCap.turns)}까지는 임관할 수 없어요. (세력에 든 장수의 ${Math.round(RULES.joinCap.rate * 100)}% 이상)</p>
     <button id="jOk" class="btn big" disabled>${esc(f.name)} 세력에 소속하기</button>`
       : rejoinLeft(me(), f.id)
-      ? `<p class="bad">얼마 전에 하야한 세력이라 ${rejoinLeft(me(), f.id)}턴 뒤(${dateText(me().leftFaction.until)})부터 다시 들어갈 수 있어요.</p>
+      ? `<p class="bad">${me().leftFaction.all ? '얼마 전에 하야해서' : '얼마 전에 하야한 세력이라'} ${rejoinLeft(me(), f.id)}턴 뒤(${dateText(me().leftFaction.until)})부터 ${me().leftFaction.all ? '임관할' : '다시 들어갈'} 수 있어요.</p>
     <button id="jOk" class="btn big" disabled>${esc(f.name)} 세력에 소속하기</button>`
       : `<button id="jOk" class="btn big">${esc(f.name)} 세력에 소속하기</button>`}`;
   $('#jOk').onclick = pickFaction;

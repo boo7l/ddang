@@ -208,7 +208,7 @@ function addGeneral(id, { name, face, stats }) {
 }
 
 // 하야한 세력에 다시 들어가려면 남은 턴 수 (0이면 들어갈 수 있음)
-const rejoinLeft = (g, fid) => (g.leftFaction && g.leftFaction.id === fid ? Math.max(0, g.leftFaction.until - S.turn) : 0);
+const rejoinLeft = (g, fid) => (g && g.leftFaction && (g.leftFaction.all || g.leftFaction.id === fid) ? Math.max(0, g.leftFaction.until - S.turn) : 0); // all: 스스로 하야 (시즌 8부터 모든 세력)
 
 // 금낭: 장수 특성 TRAIT_DRAW개를 겹치지 않게 무작위로 (다시 뽑을 때는 방금 나온 것을 되도록 빼고)
 // 티어마다 뽑힐 비율이 다르다: 상이 가장 드물고 하가 가장 흔하다 (TRAIT_TIER_WEIGHT, 2026-10-28)
@@ -245,7 +245,7 @@ function joinFaction(g, fid, cityId) {
   const f = factionById(fid);
   if (!f || !playable().includes(f)) return '고를 수 없는 세력이에요.';
   const wait = rejoinLeft(g, f.id);
-  if (wait) return `${f.name} 세력은 떠난 지 얼마 안 돼서 ${wait}턴 뒤(${dateText(g.leftFaction.until)})부터 다시 들어갈 수 있어요.`;
+  if (wait) return g.leftFaction.all ? `하야한 지 얼마 안 돼서 ${wait}턴 뒤(${dateText(g.leftFaction.until)})부터 임관할 수 있어요.` : `${f.name} 세력은 떠난 지 얼마 안 돼서 ${wait}턴 뒤(${dateText(g.leftFaction.until)})부터 다시 들어갈 수 있어요.`;
   const cap = joinCapInfo(f.id); // 관리자도 똑같이 막힌다
   if (cap) return `${f.name} 세력은 장수가 많아서(${cap.n}/${cap.total}명) ${dateText(RULES.joinCap.turns)}까지는 임관할 수 없어요.`;
   const picked = cityById(cityId);
@@ -1556,7 +1556,7 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (공적은 �
   const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 공적 -15% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
   if (cut > 0) g.merit -= cut;
   Object.assign(g, { faction: null, city: null, troops: 0, unitType: null });
-  g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait }; // 떠난 세력에는 한동안 다시 못 들어간다
+  g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait, ...(!kicked && seasonNow() >= RULES.rejoinAllFrom ? { all: true } : {}) }; // 떠난 세력에는 한동안 다시 못 들어간다. 시즌 8부터 스스로 하야하면 모든 세력에 (해고·추방은 떠난 세력만)
   clearOrders(g);
   addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 공적 -${fmt(cut)} (${fmt(g.merit)})` : ''}`);
   return '';
