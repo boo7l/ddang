@@ -1533,7 +1533,7 @@ $('#miniLink').onclick = openMinigame;
 // ===== 무술대회 (2026-11-14, 기획서 "무술대회") =====
 // 관리자가 대회를 열면 📜 도움말 옆에 [🏟 무술대회] 단추가 생긴다 (신청 중엔 반짝). 창: 신청 · 신청자 · 대진표 · 경기 보기.
 // 경기 화면은 duel.html을 iframe으로 띄운다 (서버와는 duelBridge로 이 창의 로그인을 그대로 쓴다)
-window.duelBridge = { api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel(), tourRules: () => RULES.tourney };
+window.duelBridge = { api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel(), tourRules: () => RULES.tourney, ended: () => [2500, 6000].forEach(ms => setTimeout(() => { if (!busy) refresh(); }, ms)) }; // ended: 경기가 끝나면 대진표를 곧바로 새로 (2026-11-15)
 const TOUR_SHOW_DONE = 2 * 3600e3; // 대회가 끝나고 2시간 동안은 단추를 남겨 결과를 볼 수 있게 (2026-11-15 기획자: 3 → 2시간, 관리 탭에서 먼저 내릴 수 있음)
 const tourT = () => (S && S.tourney) || null;
 const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
@@ -1658,7 +1658,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115093859#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>🏟 ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115094537#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
   bgmHold(true);
@@ -1668,7 +1668,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115093859#rules" title="무술대회 규칙"></iframe></div>';
+  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>📖 무술대회 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115094537#rules" title="무술대회 규칙"></iframe></div>';
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w);
 }
