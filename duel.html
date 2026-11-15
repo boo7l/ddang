@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115113350">
+<link rel="stylesheet" href="style.css?v=20261115113632">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -186,6 +186,7 @@
     .acts { gap: 40px; margin-top: 10px; } /* 휴대폰: 같은 크기 두 단추, 사이를 넓게 */
     .acts button { flex: 1; min-width: 0; padding: 11px 4px; font-size: 15px; white-space: nowrap; }
     .resCard .big { font-size: 20px; }
+    .resBtn { font-size: 15px; padding: 4px 16px; } /* 휴대폰: 경기 끝 단추 살짝 작게 (2026-11-15 기획자) */
     .banner .t { font-size: 30px; letter-spacing: 3px; }
     .fxText { font-size: 17px; }
     .banner .s { font-size: 13px; }
@@ -268,7 +269,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115113350"></script>
+<script src="duel_rules.js?v=20261115113632"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
