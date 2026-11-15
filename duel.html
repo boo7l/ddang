@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261115102303">
+<link rel="stylesheet" href="style.css?v=20261115102725">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -266,7 +266,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261115102303"></script>
+<script src="duel_rules.js?v=20261115102725"></script>
 <script>
 'use strict';
 // 관전 모드 (2026-11-14): bracket.html에서 martial.html#watch&a=이름&b=이름&aw=무력&bw=무력 으로 연다.
@@ -419,8 +419,16 @@ document.getElementById('sndBtn').onclick = () => {
   const once = () => { ac(); bgmPlay(); window.removeEventListener('pointerdown', once, true); window.removeEventListener('keydown', once, true); };
   window.addEventListener('pointerdown', once, true); window.addEventListener('keydown', once, true);
 })();
+// 승패가 나면 결투 음악을 2.5초 동안 줄여 끈다 (2026-11-15 기획자)
+function bgmFade() {
+  MUS.faded = true;
+  if (MUS.gain) MUS.gain.gain.setTargetAtTime(0, ac().currentTime, 0.7);
+  const nodes = MUS.nodes; setTimeout(() => { if (MUS.faded && MUS.nodes === nodes) bgmStop(); }, 3000);
+  document.getElementById('bgm').pause();
+}
 // 결과가 나오는 동안 음악을 낮춘다
 function bgmDuck(on) {
+  if (!on && MUS.faded) { MUS.faded = false; bgmStop(); bgmPlay(); return; } // 승패로 꺼졌던 음악: 다음 경기 때 처음부터 다시
   const v = on ? BGM_VOL * 0.35 : BGM_VOL;
   if (MUS.gain) MUS.gain.gain.setTargetAtTime(v, ac().currentTime, 0.1);
   document.getElementById('bgm').volume = v;
@@ -483,7 +491,7 @@ function render(now) {
   const sh = st.shake > 0 ? (Math.random() * 2 - 1) * st.shake : 0;
   g.save(); g.translate(Math.round(sh), 0);
   if (BG.width) g.drawImage(BG, 7, 4, W, H, 0, 0, W, H); // 배경 334×188에서 가운데 320×180
-  g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(-4, 0, W + 8, H); // 배경만 한 단계 어둡게 (2026-11-14, 0.26도 해 봤다가 되돌림) (장수가 더 또렷하게, 2026-11-14) else { g.fillStyle = '#300'; g.fillRect(0, 0, W, H); }
+  g.fillStyle = 'rgba(0,0,0,0.24)'; g.fillRect(-4, 0, W + 8, H); // 배경만 한 단계 어둡게 (2026-11-15 기획자: 아주 약간 더 0.2 → 0.24. 2026-11-14, 0.26도 해 봤다가 되돌림) (장수가 더 또렷하게, 2026-11-14) else { g.fillStyle = '#300'; g.fillRect(0, 0, W, H); }
   drawFighter(0); drawFighter(1);
   if (st.spark > 0) { g.fillStyle = '#fff6a0'; const cx = (st.x[0] + st.x[1]) / 2; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, r = 4 + (1 - st.spark) * 10; g.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(GROUND - 60 + Math.sin(a) * r), 2, 2); } }
   g.restore();
@@ -647,12 +655,12 @@ function finish(wv = null, tie = '') { // wv: 이긴 쪽 (화면 왼쪽 0 · 오
     if (SPECT()) { // 관전: 누가 이겼는지만
       const w = wv !== null ? wv : m.hp > o.hp ? 0 : o.hp > m.hp ? 1 : null, L = NAME();
       st.result = { kind: w === null ? 'draw' : 'win', t0: performance.now(), title: w === null ? '무 승 부' : `${L[w]} 승리!`, sub: byHp ? `${MAX_ROUND}합 끝 · 체력 ${m.hp} : ${o.hp}` : `${L[w]}${josaI(L[w])} ${L[1 - w]}${josaUl(L[1 - w])} 쓰러뜨렸다!` };
-      st.confetti = []; $('reveal').innerHTML = ''; bgmDuck(true); $('timer').style.width = '0%'; draw(); return;
+      st.confetti = []; $('reveal').innerHTML = ''; bgmFade(); $('timer').style.width = '0%'; draw(); return;
     }
     st.confetti = [];
     $('reveal').innerHTML = ''; $('resBox').innerHTML = `<div class="resCard ${kind}"><div class="big">${kind === 'win' ? '🏆 승리' : kind === 'lose' ? '💀 패배' : '🤝 무승부'}</div><div class="dim">${st.result.sub}</div><button id="again" class="main">${location.hash === '#practice' ? '한 판 더' : '대진표로'}</button></div>`;
     $('again').onclick = () => { if (location.hash === '#practice') { $('resBox').innerHTML = ''; $('start').click(); return; } try { parent.duelBridge.close(); } catch (e) { /* 혼자 열었다 */ } }; // 연습: 한 판 더
-    bgmDuck(true); // 결과 동안 음악을 낮춰 승패 소리가 잘 들리게
+    bgmFade(); // 승패가 나면 결투 음악을 서서히 끈다 (2026-11-15, 그 전엔 낮추기만)
     $('timer').style.width = '0%'; draw();
 }
 $('bSubmit').onclick = submit;
