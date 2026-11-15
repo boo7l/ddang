@@ -1184,11 +1184,11 @@ td.nowrap { white-space: nowrap; }
 .tbMatch.click:hover { background: #3a0a06; }
 .tbMatch.mine { border-color: #6ab0ff; }
 .tbMatch.live { border-color: #ff5a3a; box-shadow: 0 0 12px rgba(255,90,58,.5); }
-.tbSlot { display: flex; align-items: center; gap: 5px; padding: 3px 6px; height: 28px; }
+.tbSlot { display: flex; align-items: center; gap: 5px; padding: 3px 6px; min-height: 28px; box-sizing: border-box; } /* 2026-11-15: 이름이 두 줄이 되면 칸도 늘어나게 (height → min-height) */
 .tbSlot + .tbSlot { border-top: 1px dashed #6a3a14; }
 .tbSlot.me .tbNm { color: #9fd0ff; }
 .tbChip { display: inline-block; width: 9px; height: 16px; flex-shrink: 0; border: 1px solid #000; vertical-align: middle; margin-right: 3px; }
-.tbNm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbNm { flex: 1; min-width: 0; font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; } /* 2026-11-15 기획자: 다섯 글자 넘는 이름이 잘려서 → 한 단계 작게, 넘치면 두 줄 */
 .tbWar { font-size: 13px; color: var(--label); }
 .tbHp { font-size: 13px; min-width: 24px; text-align: right; }
 .tbSlot.won { background: linear-gradient(90deg, rgba(255,216,96,.25), transparent); }
