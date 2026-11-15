@@ -132,7 +132,7 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 
 // ===== 관리 페이지 (2026-11-06: 🛠 관리 창 + 👁 관리자 보기 팝업을 한 페이지로. 예전 팝업 방식은 git 태그 backup-admin-popup-20261106) =====
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
-const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['factions', '🚩 세력'], ['chat', '💬 채팅'], ['members', '🗂 가입자'], ['tourney', '🏟 무술대회']];
+const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['factions', '🚩 세력'], ['chat', '💬 채팅'], ['members', '🗂 가입자'], ['tourney', '🏟 무술대회'], ['debate', '🗣 설전대회']]; // 설전대회 탭 (2026-11-15)
 let adminTab = 'ops';
 // 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
 const ADMIN_HIDES = ['title', 'hofPage', 'create', 'trait', 'join', 'game', 'mTabs', 'refreshBtn', 'miniLink'];
@@ -153,7 +153,7 @@ function adminShow(tab, html, onMount) {
   $('#adminMain').innerHTML = html;
   if (onMount) onMount($('#adminMain'));
 }
-function openAdmin(tab = 'ops') { closeAdminSide(); if (tab === 'ops') adminToolsDialog(); else if (tab === 'tourney') tourneyAdminDialog(); else adminDialog(tab); }
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab === 'ops') adminToolsDialog(); else if (tab === 'tourney') tourneyAdminDialog('martial'); else if (tab === 'debate') tourneyAdminDialog('debate'); else adminDialog(tab); }
 function adminSide(html, onMount) {
   const s = $('#adminSide');
   s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
@@ -522,15 +522,18 @@ function mapPreview(m) {
 // 운영 탭에서 무언가 바꾼 뒤: 게임 화면이면 다시 그리고, 운영 탭도 새 상태로 다시 그린다
 function afterAdmin() {
   if (!$('#game').hidden && me() && me().faction) { render(); renderLegend(); renderAll(); }
-  if (!$('#adminPage').hidden) { if (adminTab === 'tourney') tourneyAdminDialog(); else adminToolsDialog(); }
+  if (!$('#adminPage').hidden) { if (adminTab === 'tourney' || adminTab === 'debate') tourneyAdminDialog(adminTab === 'debate' ? 'debate' : 'martial'); else adminToolsDialog(); }
 }
 
 // ===== 관리 페이지: 무술대회 (2026-11-14, tourney.js) =====
 // 대회 열기(신청 기간 · 마감 뒤 첫 경기까지) · 취소 · 신청자 · 대진과 결과. 시험 대회는 공지 없이 관리자만 보이고, 시험 참가자로 인원을 채운다
 const TOUR_PHASE = { entry: '📝 신청 받는 중', run: '⚔ 경기 진행 중', done: '🏆 끝', cancel: '✖ 취소됨' };
 const TOUR_STAGE = slot => (slot === 'f' ? '결승' : slot[0] === 's' ? '4강' : '8강');
-function tourneyAdminDialog() {
-  const T = S && S.tourney, R = RULES.tourney, C = tourCfg(T); // C: 지금(지난) 대회 참가비·보상 = 새 대회 기본값
+// kind: 'martial' 무술대회 탭 · 'debate' 설전대회 탭 (2026-11-15). 대회는 한 번에 하나라, 다른 종류가 진행 중이면 열기 칸 대신 안내
+function tourneyAdminDialog(kind = 'martial') {
+  const T0 = S && S.tourney, T = T0 && tourKind(T0) === kind ? T0 : null, R = RULES.tourney, C = tourCfg(T);
+  const KN0 = kind === 'debate' ? '설전대회' : '무술대회', SN0 = kind === 'debate' ? '지력' : '무력';
+  const otherLive = !T && T0 && (T0.phase === 'entry' || T0.phase === 'run'); // C: 지금(지난) 대회 참가비·보상 = 새 대회 기본값
   const live = T && (T.phase === 'entry' || T.phase === 'run');
   const fname = id => (id ? esc(factionById(id).name) : '<span class="dim">재야</span>');
   const entries = T ? T.entries.map((e, i) => `<tr><td class="num">${i + 1}</td><td>${esc(e.name)}</td><td>${fname(e.faction)}</td><td class="num">${e.war}</td><td class="dim">${fmtClock(e.t)}</td></tr>`).join('') : '';
@@ -539,9 +542,12 @@ function tourneyAdminDialog() {
     const res = m.bye ? '<span class="dim">부전승</span>' : m.win != null ? `${tourHpName(T)} ${m.hp ? m.hp.join(' : ') : '-'}${m.tie ? ` <span class="dim small">(동점 → ${tourStatName(T)} 낮은 쪽)</span>` : ''}` : m.at ? (m.at <= Date.now() ? '<b>진행 중</b>' : '대기') : '';
     return `<tr><td>${TOUR_STAGE(m.slot)}</td><td>${nm(0)} vs ${nm(1)}</td><td class="dim">${m.at ? fmtTime(m.at) : ''}</td><td>${res}</td></tr>`;
   }).join('') : '';
-  adminShow('tourney', `<div class="adminCards">
+  adminShow(kind === 'debate' ? 'debate' : 'tourney', `<div class="adminCards">
     <div class="adminCard wide">
-    <p class="sub">지금 대회</p>
+    <p><button id="atPractice">${kind === 'debate' ? '🗣' : '🥋'} 연습 경기 (100 vs 100)</button> <span class="dim small">컴퓨터와 ${SN0} 100 대 100으로 겨뤄요. 서버와 상관없고 기록·보상 없음</span></p>
+    </div>
+    <div class="adminCard wide">
+    <p class="sub">지금 ${KN0}</p>
     ${T ? `<table class="stats tourStat">
       <tr><th>상태</th><td>${TOUR_PHASE[T.phase] || T.phase}${T.test ? ' <span class="hi">· 시험 대회 (공지 없음 · 관리자만 보임)</span>' : ''}</td></tr>
       <tr><th>신청 마감</th><td>${fmtTime(T.entryEnd)}${T.phase === 'entry' ? ` <span class="dim">(${R.max}명이 차면 바로 마감)</span>` : ''}</td></tr>
@@ -554,26 +560,26 @@ function tourneyAdminDialog() {
     ${live ? `<p>보상 바꾸기 · 우승 금 <input id="apP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> 공적 <input id="apP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4em"> 경험치 <input id="apP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4em"><br>준우승 금 <input id="apP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> 공적 <input id="apP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4em"> 경험치 <input id="apP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4em"> <button id="apSave">보상 저장</button> <span class="dim small">(참가비는 못 바꿔요)</span></p>` : ''}
     ${T && T.phase === 'entry' ? '<p><button id="atCloseNow">지금 마감</button> <span class="dim small">신청 기간을 기다리지 않고 바로 마감하고 대진을 짜요 (${R.minN - 1}명 이하면 취소·환불)</span></p>' : ''}
     ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">신청 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
-      : '<p class="dim">아직 연 대회가 없어요.</p>'}
+      : otherLive ? `<p class="dim">지금은 ${tourName(T0)}가 진행 중이에요. 대회는 한 번에 하나만 열 수 있어요.</p>` : `<p class="dim">아직 연 ${KN0}가 없어요.</p>`}
     </div>
-    ${live ? '' : `<div class="adminCard wide">
-    <p class="sub">대회 열기</p>
+    ${live || otherLive ? '' : `<div class="adminCard wide">
+    <p class="sub">${KN0} 열기</p>
     <p>신청 기간 <input id="atHours" type="number" min="0.02" max="48" step="0.5" value="${R.entryHours}" style="width:5em"> 시간
        · 마감 뒤 첫 경기까지 <input id="atGap" type="number" min="1" max="180" value="${R.gapMin}" style="width:5em"> 분</p>
     <p>참가비 금 <input id="atFee" type="number" min="0" value="${C.fee}" style="width:6em"> <button id="atDefault" class="mini">기본값</button> <span class="dim small">(금 ${fmt(R.fee)} · 우승 ${fmt(R.prize[0].gold)}·${R.prize[0].merit}·${R.prize[0].warExp} · 준우승 ${fmt(R.prize[1].gold)}·${R.prize[1].merit}·${R.prize[1].warExp})</span></p>
-    <p>우승 금 <input id="atP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> · 공적 <input id="atP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4.5em"> · 무력 경험치 <input id="atP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4.5em"></p>
-    <p>준우승 금 <input id="atP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> · 공적 <input id="atP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4.5em"> · 무력 경험치 <input id="atP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4.5em"></p>
-    <p class="dim small">무력(설전대회는 지력) ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ' · 세력 제한 없음'} · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
-    <p>종류 <select id="atKind"><option value="martial">🏟 무술대회 (무력)</option><option value="debate"${T && T.kind === 'debate' ? ' selected' : ''}>🗣 설전대회 (지력)</option></select> <span class="dim small">규칙은 같고 능력치·그림·음악이 달라요. 한 번에 하나만 열려요</span></p>
+    <p>우승 금 <input id="atP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> · 공적 <input id="atP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4.5em"> · ${SN0} 경험치 <input id="atP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4.5em"></p>
+    <p>준우승 금 <input id="atP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> · 공적 <input id="atP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4.5em"> · ${SN0} 경험치 <input id="atP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4.5em"></p>
+    <p class="dim small">${SN0} ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ' · 세력 제한 없음'} · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
     <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음. 경기는 정해지면 1분 뒤 한꺼번에 (5분 간격 없음)</span></p>
     <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(능력치 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
     <p><button id="atOpen">대회 열기</button></p>
     </div>`}
     </div>`, () => {
     if ($('#atDefault')) $('#atDefault').onclick = () => { $('#atFee').value = R.fee; [0, 1].forEach(k => { $(`#atP${k}g`).value = R.prize[k].gold; $(`#atP${k}m`).value = R.prize[k].merit; $(`#atP${k}x`).value = R.prize[k].warExp; }); }; // 참가비·보상 기본값으로 (2026-11-15)
+    $('#atPractice').onclick = () => tourOpenPractice(kind); // 연습 경기 (2026-11-15)
     if ($('#atTest')) $('#atTest').onchange = e => { $('#atBotsRow').hidden = !e.target.checked; };
     if ($('#atOpen')) $('#atOpen').onclick = async () => {
-      const kind = $('#atKind').value, KN = kind === 'debate' ? '설전대회' : '무술대회'; // 설전대회 (2026-11-15)
+      const KN = KN0; // 탭 종류로 연다 (2026-11-15)
       const hours = +$('#atHours').value, gap = +$('#atGap').value, test = $('#atTest').checked, bots = +$('#atBots').value;
       const fee = +$('#atFee').value, prize = [0, 1].map(k => ({ gold: +$(`#atP${k}g`).value, merit: +$(`#atP${k}m`).value, warExp: +$(`#atP${k}x`).value }));
       const money = `\n참가비 금 ${fmt(fee)} · 우승 금 ${fmt(prize[0].gold)}·공적 ${prize[0].merit}·경험치 ${prize[0].warExp} · 준우승 금 ${fmt(prize[1].gold)}·공적 ${prize[1].merit}·경험치 ${prize[1].warExp}`;
@@ -1608,7 +1614,7 @@ function tourSync() {
   if ($('#tourBox')) tourRender(); // 창이 열려 있으면 새로
   // 관리 → 무술대회 탭이 열려 있으면 대회 상태가 바뀔 때만 다시 그린다 (입력 중인 칸을 지우지 않게, 2026-11-15)
   const key = T ? T.id + T.phase + (T.hidden ? 'h' : '') + (T.entries || []).length + (T.matches || []).filter(m => m.win != null).length : '';
-  if (key !== tourAdminKey) { tourAdminKey = key; if ($('#adminPage') && !$('#adminPage').hidden && adminTab === 'tourney') tourneyAdminDialog(); }
+  if (key !== tourAdminKey) { tourAdminKey = key; if ($('#adminPage') && !$('#adminPage').hidden && (adminTab === 'tourney' || adminTab === 'debate')) tourneyAdminDialog(adminTab === 'debate' ? 'debate' : 'martial'); }
   // 내 경기가 3분 안에 시작하면 한 번 알려 준다 (게임 화면에 있을 때)
   const my = T && T.phase === 'run' && T.matches.find(m => m.at && m.win == null && m.p.includes(MY_ID));
   if (my && my.at - Date.now() < 3 * 60e3 && my.at - Date.now() > -60e3 && !tourAlerted[T.id + my.slot] && !$('#duelWrap') && !$('#game').hidden) {
@@ -1710,17 +1716,17 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115191034&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115191650&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
 }
 // 무술대회 연습 경기 (2026-11-15 기획자 시험): 컴퓨터와 무력 100 대 100. 서버와 상관없고 기록·보상 없음
-function tourOpenPractice() {
+function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습 (2026-11-15)
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = '<div class="duelBox"><div class="duelBar"><span>🥋 연습 경기</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115191034#practice" title="무술대회 연습 경기"></iframe></div>';
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261115191650&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1730,7 +1736,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115191034&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261115191650&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
