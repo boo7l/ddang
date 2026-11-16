@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116203537&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116203803&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116203537&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116203803&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116203537&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116203803&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2524,10 +2524,10 @@ function gameConfirm(title, html, okText, onOk, onNo = null, danger = false) {
 }
 // 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
 const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction]; return !pol ? '' : c.id === pol.def ? '🛡' : c.id === pol.atk ? '🗡' : ''; };
-// 💤 해고 창 (2026-11-13 기획자: 대도독 칸에서): 세력 장수를 오래 접속 안 한 순으로. 24시간 넘은 장수만 [해고]
+// 💤 해고 창 (2026-11-13 기획자: 대도독 칸에서): 세력 장수를 오래 접속 안 한 순으로. fireOffline(18시간, 2026-11-16 24에서) 넘은 장수만 [해고]
 function fireDialog() {
   const p = me(), R = RULES.commander;
-  const list = membersOf(p.faction).filter(fireable).sort((a, b) => a.seenAt - b.seenAt); // 24시간 넘은 장수만 (2026-11-13 기획자)
+  const list = membersOf(p.faction).filter(fireable).sort((a, b) => a.seenAt - b.seenAt); // fireOffline 넘은 장수만 (2026-11-13 기획자)
   openModal(`<h2>🚪 해고</h2>
     <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (공적은 그대로)</p>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td>${agoText(g.seenAt)} 💤</td><td><button class="mini danger" data-fire="${esc(g.id)}">해고</button></td></tr>`).join('')}</table></div>`
@@ -2568,7 +2568,7 @@ function allyOrders(g) {
   const list = g.nextOrders || (g.queue ? g.queue.slice(0, ALLY_QUEUE_SHOW).map(shortOrder) : null);
   return list ? list.map(t => (t === '대기' ? '<span class="dim">대기</span>' : esc(t))).join(', ') : '';
 }
-// 해고 (2026-11-13): 대도독에게만 세력 장수의 마지막 접속(seenAt)이 오고, fireOffline(24시간) 넘게 접속하지 않은 장수를 해고할 수 있다
+// 해고 (2026-11-13): 대도독에게만 세력 장수의 마지막 접속(seenAt)이 오고, fireOffline(18시간) 넘게 접속하지 않은 장수를 해고할 수 있다
 const amCommander = () => !!(me() && me().faction && commanderOf(me().faction) === me());
 const fireable = g => amCommander() && g !== me() && g.faction === me().faction && g.seenAt > 0 && Date.now() - g.seenAt >= RULES.commander.fireOffline;
 const agoText = t => { const m = Math.floor((Date.now() - t) / MIN); return m < 60 ? `${Math.max(1, m)}분 전` : m < 24 * 60 ? `${Math.floor(m / 60)}시간 전` : `${Math.floor(m / 60 / 24)}일 ${Math.floor(m / 60) % 24}시간 전`; };
