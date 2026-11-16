@@ -408,6 +408,12 @@ function adminToolsDialog() {
     <p><textarea id="aPop" maxlength="300" rows="3" placeholder="300자까지 (줄바꿈 가능)" style="width:100%;box-sizing:border-box"></textarea></p>
     <p><button id="aPopSend">팝업 올리기</button>${S && S.popup ? ' <button id="aPopClear">내리기</button>' : ''}</p>
     </div>
+    <div class="adminCard">
+    <p class="sub">첫 화면 알림 <span class="dim">(로그인 전 첫 화면에 창으로 뜸, 내릴 때까지 유지)</span></p>
+    <p>${S && S.titlePopup ? `<span class="dim">지금 떠 있음 · ${fmtTime(S.titlePopup.id)} 올림</span><br>${esc(S.titlePopup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</p>
+    <p><textarea id="aTPop" maxlength="500" rows="4" placeholder="500자까지 (줄바꿈 가능)" style="width:100%;box-sizing:border-box"></textarea></p>
+    <p><button id="aTPopSend">첫 화면에 올리기</button>${S && S.titlePopup ? ' <button id="aTPopClear">내리기</button>' : ''}</p>
+    </div>
     <div class="adminCard wide">
     <p class="sub">지역 이벤트 예약 <span class="dim">(그 달이 되면 확률과 상관없이 터져요)</span></p>
     ${(S && S.eventPlan || []).length ? S.eventPlan.map((x, i) => { const e = RULES.regionEvents.find(r => r.key === x.key) || {}; return `<p>${e.icon || ''} <b>${dateText(x.turn)}</b> · ${esc(x.region)} ${esc(e.name || x.key)} <button class="mini" data-evdel="${i}">취소</button></p>`; }).join('') : '<p class="dim">예약 없음</p>'}
@@ -478,6 +484,13 @@ function adminToolsDialog() {
       if (!confirm(`알림 팝업을 올릴까요?${S.popup ? '\n지금 떠 있는 알림은 이걸로 바뀌어요.' : ''}\n\n${text}`)) return;
       if (await call('adminPopup', { text })) afterAdmin();
     };
+    $('#aTPopSend').onclick = async () => {
+      const text = $('#aTPop').value.trim();
+      if (!text) { alert('올릴 내용을 적어 주세요.'); return; }
+      if (!confirm(`첫 화면 알림을 올릴까요?${S.titlePopup ? '\n지금 떠 있는 알림은 이걸로 바뀌어요.' : ''}\n\n${text}`)) return;
+      if (await call('adminTitlePopup', { text })) afterAdmin();
+    };
+    if ($('#aTPopClear')) $('#aTPopClear').onclick = async () => { if (!confirm('첫 화면 알림을 내릴까요?')) return; if (await call('adminTitlePopup', { clear: true })) afterAdmin(); };
     if ($('#aPopClear')) $('#aPopClear').onclick = async () => { if (!confirm('알림 팝업을 내릴까요?')) return; if (await call('adminPopup', { clear: true })) afterAdmin(); };
     $('#aoSave').onclick = async () => {
       const v = id => +$(id).value;
@@ -638,6 +651,7 @@ async function renderSeasonBadge() {
   try {
     const s = await api('status');
     if (NOTE_NEW !== !!s.noteNew) { NOTE_NEW = !!s.noteNew; renderNotes(); }
+    showTitlePopup(s.titlePopup);
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
     const f = s.unified && factionById(s.unified);
@@ -1719,7 +1733,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116191658&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116192018&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1729,7 +1743,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116191658&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116192018&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1739,7 +1753,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116191658&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116192018&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2332,6 +2346,22 @@ function showPopup() {
     <p class="popText">${esc(p.text).replace(/\n/g, '<br>')}</p>
     <div class="modalBtns"><button id="popHide" class="btnLeft hideBtn">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
     $('#popHide').onclick = () => { try { localStorage.setItem('popupHide', p.id); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
+  });
+}
+
+// 첫 화면 알림 (2026-11-16 기획자): 첫 화면에 들어오면 창으로. [다시 보지 않기]는 이 브라우저에서 이 알림을 다시 띄우지 않고, [확인]은 이번만 닫는다
+let titlePopupShown = 0;
+function showTitlePopup(p) {
+  if (!p || titlePopupShown === p.id || $('#title').hidden || !$('#modal').hidden) return;
+  let hidden = 0;
+  try { hidden = +localStorage.getItem('titlePopupHide') || 0; } catch (e) { /* 저장 못 하는 브라우저 */ }
+  if (hidden === p.id) return;
+  titlePopupShown = p.id;
+  openModal(`<h2>알림</h2>
+    <p class="dim small">${fmtTime(p.id)}</p>
+    <p class="popText">${esc(p.text).replace(/\n/g, '<br>')}</p>
+    <div class="modalBtns"><button id="tPopHide" class="btnLeft hideBtn">다시 보지 않기</button><button data-close class="main">확인</button></div>`, () => {
+    $('#tPopHide').onclick = () => { try { localStorage.setItem('titlePopupHide', p.id); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
   });
 }
 
