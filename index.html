@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/Sam3KRFont.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261117082750">
+<link rel="stylesheet" href="style.css?v=20261117083012">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -63,6 +63,30 @@
     <div class="pageHead"><button id="hofBack" class="back">‹ 돌아가기</button><div class="pageTitle"><span class="hofPlaque"><span class="plaqueText">명예의 전당</span></span></div><!-- 현판 제목 (2026-11-07 시안 B) --><button id="hofMedalBtn" class="medalBtn">🎖 훈장<span class="wideOnly2"> 순위</span></button><!-- 훈장 순위 (2026-11-11 시안 A): 시즌 기록과 따로 --></div>
     <div class="seasonBar"><button id="chipPrev" class="arrow" aria-label="최근 시즌 쪽으로">‹</button><div class="seasonChips" id="hofChips"></div><button id="chipNext" class="arrow" aria-label="지난 시즌 쪽으로">›</button></div>
     <div id="hofView"></div>
+  </section>
+  <!-- 회원 탈퇴 안내 페이지 (2026-11-17 기획자: 바로 지우지 말고 따로 안내 → 확인 체크 → 취소/탈퇴). 지워지는 것은 서버 leave + DB 연결(삭제 시 함께 지움) 기준 -->
+  <section id="leavePage" class="win" hidden>
+    <div class="pageHead"><button id="leaveBack" class="back">‹ 돌아가기</button><div class="pageTitle">회원 탈퇴</div><span class="spacer"></span></div>
+    <p class="leaveLead">탈퇴하기 전에 아래 내용을 꼭 읽어 주세요.<br><b class="warn">탈퇴하면 되돌릴 수 없어요.</b></p>
+    <p class="leaveWho">지금 계정: <b id="leaveName"></b></p>
+    <div class="leaveBox"><h3>🗑 바로 지워지는 것</h3><ul>
+      <li>게임 아이디와 구글 계정 연결</li>
+      <li>이번 시즌 내 장수와 장수 기록</li>
+      <li>지금까지 받은 <b>훈장</b> (다음 시즌 장수를 만들 때 받는 능력치 보너스도 함께 사라져요)</li>
+      <li>미니게임 기록 (일기당천 순위 · 맹장집결 클리어 순위)</li>
+      <li>아이디 변경 이력</li>
+    </ul></div>
+    <div class="leaveBox"><h3>📌 남는 것</h3><ul>
+      <li>명예의 전당과 지난 시즌 기록의 장수 이름 (계정과의 연결은 지워져요)</li>
+      <li>이미 쓴 세력 채팅·게시판 글은 작성일로부터 3개월 동안 남았다가 지워져요. 게시판 글은 탈퇴 전에 직접 지울 수 있어요.</li>
+    </ul></div>
+    <div class="leaveBox"><h3>💡 알아 두세요</h3><ul>
+      <li>같은 구글 계정으로 다시 가입하면 <b>새 계정</b>으로 처음부터 시작해요. 훈장과 기록은 돌아오지 않아요.</li>
+      <li>쓰던 게임 아이디는 다른 사람이 가져갈 수 있어요.</li>
+      <li>잠시 쉬고 싶은 거라면 탈퇴하지 않고 로그아웃만 해도 돼요.</li>
+    </ul></div>
+    <label class="leaveCheck"><input type="checkbox" id="leaveAgree"> 위 내용을 모두 읽었고, 되돌릴 수 없다는 것을 알아요</label>
+    <p class="leaveBtns"><button id="leaveCancel" class="main">취소</button> <button id="leaveGo" class="danger" disabled>탈퇴하기</button></p>
   </section>
   <!-- 관리 페이지 (2026-11-06, 관리자만): 상단 바·배경은 그대로 두고 화면 가운데에 페이지로. 어느 화면에서든 열고, 돌아가면 보던 화면으로 -->
   <section id="adminPage" class="win" hidden>
@@ -164,21 +188,21 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261117082750"></script>
-  <script src="mapcore.js?v=20261117082750"></script>
-  <script src="data/map.js?v=20261117082750"></script>
-  <script src="rules.js?v=20261117082750"></script>
-  <script src="faces.js?v=20261117082750"></script>
-  <script src="patchnotes.js?v=20261117082750"></script>
+  <script src="server.js?v=20261117083012"></script>
+  <script src="mapcore.js?v=20261117083012"></script>
+  <script src="data/map.js?v=20261117083012"></script>
+  <script src="rules.js?v=20261117083012"></script>
+  <script src="faces.js?v=20261117083012"></script>
+  <script src="patchnotes.js?v=20261117083012"></script>
   <!-- 시즌별 패치노트: 옛 시즌부터 (마지막 줄이 최신) -->
-  <script src="patchnotes/s3.js?v=20261117082750"></script>
-  <script src="patchnotes/s4.js?v=20261117082750"></script>
-  <script src="patchnotes/s5.js?v=20261117082750"></script>
-  <script src="patchnotes/s6.js?v=20261117082750"></script>
-  <script src="patchnotes/s7.js?v=20261117082750"></script>
-  <script src="mapbg.js?v=20261117082750"></script>
-  <script src="map.js?v=20261117082750"></script>
-  <script src="engine.js?v=20261117082750"></script>
-  <script src="game.js?v=20261117082750"></script>
+  <script src="patchnotes/s3.js?v=20261117083012"></script>
+  <script src="patchnotes/s4.js?v=20261117083012"></script>
+  <script src="patchnotes/s5.js?v=20261117083012"></script>
+  <script src="patchnotes/s6.js?v=20261117083012"></script>
+  <script src="patchnotes/s7.js?v=20261117083012"></script>
+  <script src="mapbg.js?v=20261117083012"></script>
+  <script src="map.js?v=20261117083012"></script>
+  <script src="engine.js?v=20261117083012"></script>
+  <script src="game.js?v=20261117083012"></script>
 </body>
 </html>

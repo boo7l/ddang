@@ -1442,12 +1442,12 @@ setTimeout(() => { $('#loader').hidden = true; document.body.classList.remove('l
 
 function showScreen(id) {
   hideLoader();
-  ['title', 'hofPage', 'adminPage', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
+  ['title', 'hofPage', 'leavePage', 'adminPage', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
   adminPrev = null; // 관리 페이지가 열려 있었으면 닫힌 셈 (2026-11-06)
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
   // 메인(첫) 화면도 로그인했으면 ☰ 메뉴를 보인다: 정보·음악·순위·로그아웃만 (2026-11-07). 명예의 전당 화면은 그대로 숨김
-  $('#who').hidden = (id === 'title' && !(ME && ME.nickname)) || id === 'hofPage';
+  $('#who').hidden = (id === 'title' && !(ME && ME.nickname)) || id === 'hofPage' || id === 'leavePage';
   document.body.classList.toggle('onTitle', id === 'title');
   $('#miniLink').hidden = id !== 'title';
   $('#mTabs').hidden = id !== 'game'; // 휴대폰 아래 탭은 게임 화면에서만
@@ -1773,7 +1773,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117082750&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117083012&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1783,7 +1783,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117082750&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117083012&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1793,7 +1793,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117082750&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117083012&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -1943,8 +1943,21 @@ function renameDialog() {
 }
 
 // 회원 탈퇴: 장수와 계정을 지운다 (되돌릴 수 없음). 이미 쓴 채팅은 처리방침대로 3개월 뒤 지워진다
+// 2026-11-17 기획자: 바로 묻지 않고 탈퇴 안내 페이지(#leavePage)로 → 내용 확인 체크 → [탈퇴하기]
+function openLeavePage() {
+  showScreen('leavePage');
+  $('#leaveName').textContent = (ME && ME.nickname) || '';
+  $('#leaveAgree').checked = false; $('#leaveGo').disabled = true; $('#leaveGo').textContent = '탈퇴하기';
+}
+$('#leaveAgree').onchange = e => { $('#leaveGo').disabled = !e.target.checked; };
+$('#leaveBack').onclick = $('#leaveCancel').onclick = () => showTitle();
+$('#leaveGo').onclick = async () => {
+  if (!$('#leaveAgree').checked) return;
+  $('#leaveGo').disabled = true; $('#leaveGo').textContent = '탈퇴하는 중…';
+  await withdraw();
+  if (!$('#leavePage').hidden) { $('#leaveGo').disabled = false; $('#leaveGo').textContent = '탈퇴하기'; } // 실패하면 다시 누를 수 있게
+};
 async function withdraw() {
-  if (!confirm(`정말 탈퇴할까요?\n\n- 계정(구글 연결, 게임 아이디)과 이번 시즌 장수가 모두 지워져요.\n- 되돌릴 수 없어요.\n- 이미 쓴 세력 채팅과 게시판 글은 작성일로부터 3개월 뒤 지워져요.`)) return;
   try {
     const d = await api('leave');
     if (d.error) { alert(d.error); return; }
@@ -3138,7 +3151,7 @@ document.querySelectorAll('.toTitle').forEach(el => { el.onclick = goMain; });
 $('#toMain').onclick = goMain; // 상단 바 [메인] 단추: 로고를 누르는 것과 같다
 $('#tEnter').onclick = () => enterFlow();
 $('#tLogout').onclick = logout;
-$('#tWithdraw').onclick = withdraw;
+$('#tWithdraw').onclick = openLeavePage; // 탈퇴: 안내 페이지부터 (2026-11-17)
 $('#tRename').onclick = renameDialog;
 $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
@@ -3225,7 +3238,7 @@ $('#recordBtn').onclick = recordDialog;
 const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
 const BGM_MERIT = 2000, BGM_MARCH = 1000;
 // 메인 화면~장수 생성·특성·세력 선택(과 명예의 전당)에서는 첫 화면 곡 title (2026-11-07). 게임 화면에서는 공적에 따라
-const BGM_TITLE_SCREENS = ['title', 'hofPage', 'create', 'trait', 'join'];
+const BGM_TITLE_SCREENS = ['title', 'hofPage', 'leavePage', 'create', 'trait', 'join'];
 // 2026-11-08: 첫 화면 곡과 공적 0~1,000 곡을 맞바꿈 (첫 화면 → history, 게임 공적 1,000 미만 → title)
 // 2026-11-08 파일 이름을 쓰임새대로: title(첫 화면들) · game1(공적 1,000 미만) · game2(1,000~2,000) · game3(2,000 이상) · mini(미니게임)
 const bgmWant = () => { if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };
