@@ -82,10 +82,12 @@ function drawCardR(f, block = []) {
   const sz = [...SIZE_P];
   if (m.bigP) { let take = Math.min(m.bigP, sz[0] + sz[1]); sz[2] += take; const half = take / 2, a = Math.min(sz[0], half), b = Math.min(sz[1], take - a); sz[0] -= a; sz[1] -= b; if (a + b < take) sz[0] -= Math.min(sz[0], take - a - b); }
   // 필살 단련·회피 단련 (2026-11-17 기획자): 그 카드는 정확히 +%p, 늘어난 만큼 일반 카드 9종에서 똑같이 나눠 뺀다 (0 밑으로는 안 감)
-  const spAdd = (m.killP || 0) + (m.dodgeP || 0) + (m.magic ? MAGIC_P : 0), cut = spAdd / 9; // 요술 5%도 일반 카드에서 고르게
+  // 요술 (2026-11-17 기획자: 가장 위 판정이라) 5%는 다른 카드 11종(일반 9 + 필살 + 회피)에서 똑같이 뺀다
+  const mCut = m.magic ? MAGIC_P / 11 : 0;
+  const spAdd = (m.killP || 0) + (m.dodgeP || 0), cut = spAdd / 9 + mCut;
   for (const t of TYPES) sz.forEach((p, s) => pool.push([{ t, s }, Math.max(0, p - cut)]));
-  if (!block.includes('kill')) pool.push([{ t: 'kill' }, KILL_P + m.killP]);
-  if (!block.includes('dodge')) pool.push([{ t: 'dodge' }, DODGE_P + m.dodgeP]);
+  if (!block.includes('kill')) pool.push([{ t: 'kill' }, Math.max(0, KILL_P + m.killP - mCut)]);
+  if (!block.includes('dodge')) pool.push([{ t: 'dodge' }, Math.max(0, DODGE_P + m.dodgeP - mCut)]);
   if (m.magic && !block.includes('magic')) pool.push([{ t: 'magic' }, MAGIC_P]);
   let r = Math.random() * pool.reduce((a, x) => a + x[1], 0);
   for (const [c, p] of pool) { r -= p; if (r < 0) return { ...c }; }
