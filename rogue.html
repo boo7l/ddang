@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117010546">
+<link rel="stylesheet" href="style.css?v=20261117010814">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -322,8 +322,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117010546"></script>
-<script src="rogue_rules.js?v=20261117010546"></script>
+<script src="duel_rules.js?v=20261117010814"></script>
+<script src="rogue_rules.js?v=20261117010814"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -927,8 +927,7 @@ $('rulesClose').onclick = () => { $('rulesPop').hidden = true; };
 $('rulesPop').onclick = e => { if (e.target.id === 'rulesPop') $('rulesPop').hidden = true; };
 $('pRule').innerHTML = `<h3>상대</h3><table class="rs"><tr><th>단계</th><th>상대</th><th>특징</th><th>무력</th><th>체력</th><th>손패</th></tr>${STAGES.map((x, i) => `<tr><td>${i + 1}</td><td>${x.boss ? '👑 ' : ''}${x.name}</td><td>${x.note || '-'}</td><td>${x.war}</td><td>${x.m.hpMax || 100}</td><td>${handMax(x.war) + (x.m.hand || 0)}</td></tr>`).join('')}</table>
 <h3>강화</h3><p>한 칸마다 등급 확률 ${Object.entries(TIER_P).map(([k, v]) => k + ' ' + v + '%').join(' · ')}. ${SURE_SR.join('·')}단계를 이기면 한 칸은 SR 이상.</p>
-<table class="rs"><tr><th>등급</th><th>이름</th><th>효과</th><th>중복</th></tr>${BOONS.map(b => `<tr><td class="tierTxt ${b.tier}">${b.tier}</td><td>${b.type === 'any' ? '(종류) ' : ''}${b.name}</td><td>${b.type === 'any' ? '속공·강타·역습 중 하나로 이기면 ' : ''}${b.desc}</td><td>${b.once ? 'X' : 'O'}</td></tr>`).join('')}</table>
-<h3>싸움 규칙 (무술대회와 같음)</h3><div class="rulesBody" style="margin:0">${rulesHtml()}</div>`; // 규칙 탭도 같은 글 (예전 글은 숫자가 옛날 것이었다) // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
+<table class="rs"><tr><th>등급</th><th>이름</th><th>효과</th><th>중복</th></tr>${BOONS.map(b => `<tr><td class="tierTxt ${b.tier}">${b.tier}</td><td>${b.type === 'any' ? '(종류) ' : ''}${b.name}</td><td>${b.type === 'any' ? '속공·강타·역습 중 하나로 이기면 ' : ''}${b.desc}</td><td>${b.once ? 'X' : 'O'}</td></tr>`).join('')}</table>`; // 규칙 탭도 같은 글 (예전 글은 숫자가 옛날 것이었다) // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
 // 탭
 const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
 if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용
