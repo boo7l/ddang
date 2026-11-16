@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117080501">
+<link rel="stylesheet" href="style.css?v=20261117081130">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -241,6 +241,7 @@
   .titleCover .btns { display: flex; gap: 18px; } .titleCover .btns button { font-size: 18px; padding: 9px 26px; min-width: 110px; }
   @media (max-width: 700px) { .titleCover { gap: 12px; } .titleCover h1 { font-size: 30px; letter-spacing: 3px; } .titleCover .sub { margin-top: -6px; font-size: 14px; } .titleCover .btns button { font-size: 15px; padding: 7px 14px; min-width: 80px; } }
   #tcClears { margin-top: -6px; background: none; border: 0; color: #ffd860; text-decoration: underline; cursor: pointer; font-size: 15px; text-shadow: 1px 1px 0 #000; }
+  .clrDel { font-size: 12px; padding: 1px 6px; margin-left: 4px; }
   .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 12px; color: #6a5a4a; }
 </style>
 </head>
@@ -324,8 +325,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117080501"></script>
-<script src="rogue_rules.js?v=20261117080501"></script>
+<script src="duel_rules.js?v=20261117081130"></script>
+<script src="rogue_rules.js?v=20261117081130"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -821,7 +822,12 @@ function showClears() {
     const list = (d && d.list) || [];
     if (!list.length) { box.innerHTML = '<section class="rsec clr"><p>아직 아무도 여포를 꺾지 못했어요. 첫 번째 주인공이 되어 보세요!</p></section>'; return; }
     const days = {}; list.forEach(r => { const k = new Date(r.at).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }); (days[k] = days[k] || []).push(r); });
-    box.innerHTML = '<section class="rsec clr">' + Object.entries(days).map(([k, rs]) => `<h4>${k}</h4><ul>${rs.map(r => `<li><b>${e(r.name)}</b> · 무력 ${r.war} · 남은 체력 ${r.hp} <span class="dim">${new Date(r.at).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' })}</span>${r.picks ? `<div class="pk">${e(r.picks)}</div>` : ''}</li>`).join('')}</ul>`).join('') + '</section>';
+    box.innerHTML = '<section class="rsec clr">' + Object.entries(days).map(([k, rs]) => `<h4>${k}</h4><ul>${rs.map(r => `<li><b>${e(r.name)}</b> · 무력 ${r.war} · 남은 체력 ${r.hp} <span class="dim">${new Date(r.at).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' })}</span>${d.admin ? ` <button class="clrDel" data-id="${r.id}" title="이 기록 지우기 (관리자)">✕ 지우기</button>` : ''}${r.picks ? `<div class="pk">${e(r.picks)}</div>` : ''}</li>`).join('')}</ul>`).join('') + '</section>';
+    box.querySelectorAll('.clrDel').forEach(btn => { btn.onclick = () => { // 관리자: 기록 지우기 (2026-11-17 기획자)
+      if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = '정말 지울까요? 한 번 더'; return; } // 확인 창 대신 두 번 누르기
+      btn.disabled = true;
+      BRIDGE.api('miniRogueDel', { id: +btn.dataset.id }).then(x => { if (x && x.error) { btn.textContent = '⚠ ' + x.error; return; } showClears(); }).catch(() => { btn.textContent = '⚠ 못 지웠어요'; });
+    }; });
   }).catch(() => { box.innerHTML = '<p>⚠ 목록을 불러오지 못했어요.</p>'; });
 }
 $('tcClears').onclick = showClears;
