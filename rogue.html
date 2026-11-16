@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117082452">
+<link rel="stylesheet" href="style.css?v=20261117082750">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -245,6 +245,7 @@
   @media (max-width: 860px) { .closeMini { position: fixed; right: 8px; bottom: 8px; z-index: 60; margin: 0; font-size: 14px; padding: 6px 12px; box-shadow: 0 0 0 2px #000; } } /* 휴대폰: 화면 구석에 고정 */
   #tcClears { margin-top: -6px; background: none; border: 0; color: #ffd860; text-decoration: underline; cursor: pointer; font-size: 15px; text-shadow: 1px 1px 0 #000; }
   .clrDel { font-size: 12px; padding: 1px 6px; margin-left: 4px; }
+  .clr ol.rank { list-style: none; margin: 4px 0 0; padding: 0; } .clr ol.rank li { padding: 3px 0; border-bottom: 1px dashed rgba(0,0,0,.2); } .clr .rk { display: inline-block; min-width: 38px; }
   .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 12px; color: #6a5a4a; }
 </style>
 </head>
@@ -329,8 +330,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117082452"></script>
-<script src="rogue_rules.js?v=20261117082452"></script>
+<script src="duel_rules.js?v=20261117082750"></script>
+<script src="rogue_rules.js?v=20261117082750"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -817,7 +818,7 @@ function postClear(war, hp) {
   BRIDGE.api('miniRogueClear', { war, hp, picks: RUN.picks.map(boonName).join(', ') }).then(d => { el.textContent = d && d.error ? '⚠ ' + d.error : '🏆 클리어 목록에 이름이 올랐어요!'; }).catch(() => { el.textContent = '⚠ 기록을 남기지 못했어요'; });
 }
 function showClears() {
-  const pop = $('rulesPop'); $('rulesPop').querySelector('.rbar b').textContent = '🏆 맹장집결 클리어 목록'; pop.hidden = false;
+  const pop = $('rulesPop'); $('rulesPop').querySelector('.rbar b').textContent = '🏆 맹장집결 클리어 순위'; pop.hidden = false;
   const box = $('rulesText');
   if (!BRIDGE) { box.innerHTML = '<p>클리어 목록은 웹 게임(미니게임 창)에서 볼 수 있어요.</p>'; return; }
   box.innerHTML = '<p>불러오는 중…</p>';
@@ -825,8 +826,10 @@ function showClears() {
   BRIDGE.api('miniRogueList', {}).then(d => {
     const list = (d && d.list) || [];
     if (!list.length) { box.innerHTML = '<section class="rsec clr"><p>아직 아무도 여포를 꺾지 못했어요. 첫 번째 주인공이 되어 보세요!</p></section>'; return; }
-    const days = {}; list.forEach(r => { const k = new Date(r.at).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }); (days[k] = days[k] || []).push(r); });
-    box.innerHTML = '<section class="rsec clr">' + Object.entries(days).map(([k, rs]) => `<h4>${k}</h4><ul>${rs.map(r => `<li><b>${e(r.name)}</b> · 무력 ${r.war} · 남은 체력 ${r.hp} <span class="dim">${new Date(r.at).toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' })}</span>${d.admin ? ` <button class="clrDel" data-id="${r.id}" title="이 기록 지우기 (관리자)">✕ 지우기</button>` : ''}${r.picks ? `<div class="pk">${e(r.picks)}</div>` : ''}</li>`).join('')}</ul>`).join('') + '</section>';
+    // 순위 (2026-11-17 기획자): 서버가 남은 체력 높은 순 → 같으면 먼저 깬 사람 순으로 준다. 사람마다 가장 좋은 기록 하나
+    const when = at => new Date(at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const medal = i => ['🥇', '🥈', '🥉'][i] || `${i + 1}위`;
+    box.innerHTML = '<section class="rsec clr"><p class="dim">남은 체력이 높은 순서 · 같으면 먼저 깬 사람 · 한 사람당 가장 좋은 기록</p><ol class="rank">' + list.map((r, i) => `<li><span class="rk">${medal(i)}</span> <b>${e(r.name)}</b> · 남은 체력 <b>${r.hp}</b> · 무력 ${r.war} <span class="dim">${when(r.at)}</span>${d.admin ? ` <button class="clrDel" data-id="${r.id}" title="이 기록 지우기 (관리자)">✕ 지우기</button>` : ''}${r.picks ? `<div class="pk">${e(r.picks)}</div>` : ''}</li>`).join('') + '</ol></section>';
     box.querySelectorAll('.clrDel').forEach(btn => { btn.onclick = () => { // 관리자: 기록 지우기 (2026-11-17 기획자)
       if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = '정말 지울까요? 한 번 더'; return; } // 확인 창 대신 두 번 누르기
       btn.disabled = true;
@@ -941,7 +944,7 @@ $('rulesClose').onclick = () => { $('rulesPop').hidden = true; };
 $('rulesPop').onclick = e => { if (e.target.id === 'rulesPop') $('rulesPop').hidden = true; };
 $('pRule').innerHTML = `<h3>상대</h3><table class="rs"><tr><th>단계</th><th>상대</th><th>특징</th><th>무력</th><th>체력</th><th>손패</th></tr>${STAGES.map((x, i) => `<tr><td>${i + 1}</td><td>${x.boss ? '👑 ' : ''}${x.name}</td><td>${x.note || '-'}</td><td>${x.war}</td><td>${x.m.hpMax || 100}</td><td>${handMax(x.war) + (x.m.hand || 0)}</td></tr>`).join('')}</table>
 <h3>강화</h3><p>한 칸마다 등급 확률 ${Object.entries(TIER_P).map(([k, v]) => k + ' ' + v + '%').join(' · ')}. ${SURE_SR.join('·')}단계를 이기면 한 칸은 SR 이상.</p>
-<table class="rs"><tr><th>등급</th><th>이름</th><th>효과</th><th>중복</th></tr>${BOONS.map(b => `<tr><td class="tierTxt ${b.tier}">${b.tier}</td><td>${b.type === 'any' ? '(종류) ' : ''}${b.name}</td><td>${b.type === 'any' ? '속공·강타·역습 중 하나로 이기면 ' : ''}${b.desc}</td><td>${b.once ? 'X' : 'O'}</td></tr>`).join('')}</table>`; // 규칙 탭도 같은 글 (예전 글은 숫자가 옛날 것이었다) // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
+<table class="rs"><tr><th>등급</th><th>이름</th><th>효과</th><th>중복</th></tr>${[...BOONS].sort((a, b) => TIER_ORDER.indexOf(a.tier) - TIER_ORDER.indexOf(b.tier)).map(b => `<tr><td class="tierTxt ${b.tier}">${b.tier}</td><td>${b.type === 'any' ? '(종류) ' : ''}${b.name}</td><td>${b.type === 'any' ? '속공·강타·역습 중 하나로 이기면 ' : ''}${b.desc}</td><td>${b.once ? 'X' : 'O'}</td></tr>`).join('')}</table>`; // 규칙 탭도 같은 글 (예전 글은 숫자가 옛날 것이었다) // 휴대폰: 한 줄 ↔ 전체 (넓은 화면에서는 모양 변화 없음)
 // 탭
 const tabs = { tPlay: 'pPlay', tSim: 'pSim', tRule: 'pRule' };
 if (location.hash.startsWith('#demo')) setTimeout(() => $('start').click(), 300); // 그림 확인용
