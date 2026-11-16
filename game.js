@@ -646,11 +646,13 @@ function applyLoginGate() {
   $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요. 그동안 게시판은 이용할 수 있어요.` : '';
   if (closed) $('#tEnter').hidden = true; // 관리자가 아니면 들어갈 수 없다
 }
+$('#tNotice').onclick = () => showTitlePopup(lastTitlePopup, true); // 첫 화면 [📢 공지]: 알림 창 다시 띄우기 (2026-11-16)
 async function renderSeasonBadge() {
   const el = $('#tSeason');
   try {
     const s = await api('status');
     if (NOTE_NEW !== !!s.noteNew) { NOTE_NEW = !!s.noteNew; renderNotes(); }
+    lastTitlePopup = s.titlePopup || null; $('#tNoticeRow').hidden = !lastTitlePopup; // [📢 공지] 단추: 알림이 있을 때만
     showTitlePopup(s.titlePopup);
     preparing = s.preparing ? s.season + (s.unified ? 1 : 0) : 0; // 통일로 끝났으면 다음 시즌, 문을 닫아 둔 새 시즌이면 그 시즌
     applyLoginGate();
@@ -1735,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116194748&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116194922&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1745,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116194748&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116194922&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1755,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116194748&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116194922&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2351,12 +2353,16 @@ function showPopup() {
 }
 
 // 첫 화면 알림 (2026-11-16 기획자): 첫 화면에 들어오면 창으로. [다시 보지 않기]는 이 브라우저에서 이 알림을 다시 띄우지 않고, [확인]은 이번만 닫는다
-let titlePopupShown = 0;
-function showTitlePopup(p) {
-  if (!p || titlePopupShown === p.id || $('#title').hidden || !$('#modal').hidden) return;
-  let hidden = 0;
-  try { hidden = +localStorage.getItem('titlePopupHide') || 0; } catch (e) { /* 저장 못 하는 브라우저 */ }
-  if (hidden === p.id) return;
+let titlePopupShown = 0, lastTitlePopup = null;
+// force: 첫 화면 [📢 공지] 단추로 다시 열 때 ('다시 보지 않기'를 눌렀어도 연다, 2026-11-16)
+function showTitlePopup(p, force = false) {
+  if (!p || !$('#modal').hidden) return;
+  if (!force) {
+    if (titlePopupShown === p.id || $('#title').hidden) return;
+    let hidden = 0;
+    try { hidden = +localStorage.getItem('titlePopupHide') || 0; } catch (e) { /* 저장 못 하는 브라우저 */ }
+    if (hidden === p.id) return;
+  }
   titlePopupShown = p.id;
   openModal(`<h2>알림</h2>
     <div class="notePaper popPaper">${esc(p.text).replace(/\n/g, '<br>')}</div>
