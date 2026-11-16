@@ -1392,13 +1392,16 @@ function runPlot(g, kind, o) {
   }
   // 개인 특성 침착 (2026-10-28): 그 성에 침착 장수가 머물면 계략 피해가 줄어든다 (여럿이어도 한 번만)
   const calm = allGenerals().some(x => x.city === c.id && x.faction === c.faction && gTrait(x).calm && (!gTrait(x).calmNeedsDefense || x.defense)) ? 1 - GENERAL_TRAITS.calm.calm : 1; // 시즌 7부터 방어 모드를 켠 침착 장수만 (2026-11-10)
-  const x = (r === 'crit' ? PLOT.critMul : 1) * calm, head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
+  // 계략 연속 감소 (시즌 8부터, 2026-11-16): 최근 5턴 안에 같은 계략을 맞은 성이면 효과 절반 (유언·파괴 따로, 누가 썼든)
+  const PR = RULES.plotRepeat, hitKey = kind + 'Turn', again = seasonNow() >= PR.fromSeason && cs[hitKey] != null && S.turn - cs[hitKey] <= PR.turns;
+  if (seasonNow() >= PR.fromSeason) cs[hitKey] = S.turn;
+  const x = (r === 'crit' ? PLOT.critMul : 1) * calm * (again ? PR.rate : 1), head = r === 'crit' ? `★ ${name} 대성공!` : `${name} 성공!`;
   // 남은 수치는 적지 않는다 (다른 세력 성의 농업·상업·방어·치안은 비공개, 2026-10-26 방어도)
   const cut = (k, n) => { const v = Math.min(cs[k], Math.floor(n * x)); cs[k] -= v; return `${DOMESTIC[k].label} -${v}`; };
   const what = kind === 'destroy'
     ? [cut('wall', int * plotRoll(PLOT.destroy.wallPerInt))]
     : [cut('peace', int * plotRoll(PLOT.rumor.peacePerInt)), cut('agri', int * plotRoll(PLOT.rumor.devPerInt)), cut('comm', int * plotRoll(PLOT.rumor.devPerInt))];
-  addLog(g, `${head} ${c.name}: ${kind === 'destroy' ? '성벽 곳곳을 무너뜨렸다' : '흉흉한 소문을 퍼뜨렸다'}. ${what.join(' · ')}`);
+  addLog(g, `${head} ${c.name}: ${kind === 'destroy' ? '성벽 곳곳을 무너뜨렸다' : '흉흉한 소문을 퍼뜨렸다'}. ${what.join(' · ')}${again ? ` (최근 ${josa(name, '으로')} 효과 ${Math.round(PR.rate * 100)}%)` : ''}`);
   // 당한 성에 머무는 그 세력 장수에게 알림 (누가 했는지는 숨긴다, 실패는 알리지 않는다, 2026-11-10). 시즌 7부터 (시즌 7 패치노트에 넣음)
   if ((S.season || 1) >= 7) {
     const crit = r === 'crit';
