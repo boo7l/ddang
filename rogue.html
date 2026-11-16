@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117010445">
+<link rel="stylesheet" href="style.css?v=20261117010546">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -226,6 +226,7 @@
   @media (max-width: 860px) { .card .pi { width: 18px; height: 18px; image-rendering: auto; } .opHand .card .pi { width: 16px; height: 16px; } .opHand .card { width: 30px; height: 40px; } .opHand .card.oc .ic { font-size: 16px; } }
   .pauseBtn { position: absolute; top: 6px; right: 6px; z-index: 6; width: 34px; height: 34px; padding: 0; font-size: 16px; line-height: 1; opacity: .85; }
   .pauseBtn:hover { opacity: 1; }
+  body.paused #hand, body.paused #opHand { visibility: hidden; } /* 멈춤 중에는 내 손패·상대 손패 안 보이게 */
   .pauseCover { position: absolute; inset: 0; z-index: 7; background: rgba(0, 0, 0, .6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
   .pauseCover[hidden], .pauseBtn[hidden] { display: none; }
   .pauseCover .pt { font-size: 32px; letter-spacing: 6px; color: #ffd860; text-shadow: 2px 2px 0 #7a1a12; }
@@ -321,8 +322,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117010445"></script>
-<script src="rogue_rules.js?v=20261117010445"></script>
+<script src="duel_rules.js?v=20261117010546"></script>
+<script src="rogue_rules.js?v=20261117010546"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -791,7 +792,7 @@ $('start').onclick = () => {
 };
 runUi();
 function setPause(on) {
-  paused = on; $('pauseCover').hidden = !on; bgmDuck(on);
+  paused = on; $('pauseCover').hidden = !on; bgmDuck(on); document.body.classList.toggle('paused', on); // 멈춘 동안 두 손패를 가린다 (2026-11-17 기획자)
   $('bSubmit').disabled = on || busy || over || !pick; $('bShuffle').disabled = on || busy || over || !F || !canShuffle(F[0], round);
 }
 $('pauseBtn').onclick = () => setPause(true);
