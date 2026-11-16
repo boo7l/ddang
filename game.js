@@ -718,7 +718,7 @@ async function hofMedalMode(on) {
   let rank = 0, prev = null;
   const rows = list.map((x, i) => { const n = x.seasons.length; if (n !== prev) { rank = i + 1; prev = n; } return `<tr${rank === 1 ? ' class="top"' : ''}><td class="num">${rank}</td><td>${esc(x.name)}</td><td>${medalBadge(n)}</td><td class="dim">${x.seasons.map(s => 'S' + s).join(' · ')}</td></tr>`; }).join('');
   $('#hofView').innerHTML = `<p class="medalHead">🎖 역대 훈장 순위</p>${list.length ? `<div class="hofScroll"><table class="hofTable2 medalTable"><tr><th></th><th>게임 아이디</th><th>훈장</th><th>받은 시즌</th></tr>${rows}</table></div>` : '<p class="dim center">아직 훈장을 받은 사람이 없어요.</p>'}
-    <p class="medalNote dim">시즌 3부터 5명씩 주어지는 훈장. 훈장이 있는 아이디로 생성된 장수는 훈장 1개당 통무지 +${RULES.medalBonus}</p>`;
+    <p class="medalNote dim">시즌 3부터 5명씩 주어지는 훈장. 훈장이 있는 아이디로 생성된 장수는 훈장 1개당 통무지 +${RULES.medalBonus}${RULES.medalBonusMax < Infinity ? ` (최대 +${RULES.medalBonusMax})` : ''}</p>`;
 }
 
 // 특별 타이틀 (2026-11-11, 시즌 6부터): 구분선 아래에 '경세지재 · 이름 (내정 170번)'. 서버가 시즌 끝에 저장한다 (hall_of_fame.titles)
@@ -1350,7 +1350,7 @@ function helpDialog(page = -1) {
       <details class="tipBox"><summary>세력</summary><p><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</p></details>
       <details class="tipBox"><summary>방어 모드</summary><p>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</p></details>
       <details class="tipBox"><summary>공적</summary><p><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</p></details>
-      <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요.</p></details>
+      <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요${RULES.medalBonusMax < Infinity ? ` (최대 +${RULES.medalBonusMax})` : ''}.</p></details>
       <details class="tipBox"><summary>수비대장</summary><p><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요. 군량은 먹지 않아요.</p></details></div>`],
   ];
   if (page < 0 || !pages[page]) { // 첫 화면: 섹션 단추 목록
@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116214845&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116220007&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116214845&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116220007&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116214845&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116220007&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -1957,7 +1957,7 @@ function renderCreateStats() {
   const base = draft.base;
   $('#cLeft').textContent = bonusLeft();
   // 개국공신 훈장: 개수만큼 통솔·무력·지력 +medalBonus (서버도 만들 때 똑같이 더한다). 숫자·합계에 미리 더해 보여 준다 (2026-10-27)
-  const medals = (S && S.myMedals) || 0, mb = medals * RULES.medalBonus;
+  const medals = (S && S.myMedals) || 0, mb = medalStatBonus(medals); // 시즌 8부터 +10까지 (2026-11-16)
   const final = st => Math.min(RULES.statMax, base[st.key] + (draft.bonus[st.key] || 0) + mb);
   $('#cStats').innerHTML = (mb ? `<tr><th></th><td></td><td></td><td></td><td class="medalCol"><span class="medal" title="훈장 ${medals}개">${MEDAL}</span></td></tr>` : '') + STATS.map(st => {
     const b = draft.bonus[st.key] || 0;

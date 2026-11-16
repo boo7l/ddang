@@ -189,6 +189,7 @@ const RULES = {
   rejoinAllFrom: 8,         // 2026-11-15 기획자 (시즌 8부터): 스스로 하야하면 떠난 세력뿐 아니라 모든 세력에 rejoinWait턴 동안 임관 못 함. 멸망·해고·관리자 추방은 해당 없음 (떠난 세력만)
   rejoinWait: 10,           // 하야한 세력에 다시 들어가려면 기다려야 하는 턴 수
   medalBonus: 1,            // 개국공신 훈장 하나마다 다음 시즌들에 장수를 만들 때 통솔·무력·지력 +1 (누적, 2026-10-27)
+  get medalBonusMax() { return seasonNow() >= 8 ? 10 : Infinity; }, // 2026-11-16 기획자: 시즌 8부터 훈장은 계속 받지만 능력치 보너스는 +10까지
   heroCount: 5,             // 훈장 받는 인원. 시즌 5부터 전체 공적 상위 몇 명 (2026-11-04). 그 전 개국공신: 통일 세력에 한 번만 들어가 끝까지 남은 장수 중 공적 상위 몇 명에게 훈장 🎖 (2026-10-27, 시즌 3부터)
 };
 
@@ -287,6 +288,8 @@ function turnAfter(t, i) {
 // 정원 초과 (2026-11-12, 시즌 7부터): 상업 몫에 곱하는 비율 = (정원 ÷ 인원)^crowdPow[성 크기] (2026-11-13: 소성 0.75 · 중성 1 · 대도시 1.5), 정원 안이면 1. 인원 = 그 성에 머무는 그 세력 장수 수
 // 이번 시즌 k번째 수련의 효율 (1 = 100%). 시즌 8 전에는 늘 1
 const trainEff = k => { const D = RULES.trainDecay; return seasonNow() < D.fromSeason || k <= D.free ? 1 : Math.max(D.min, 1 - D.cut * Math.ceil((k - D.free) / D.step)); };
+// 훈장 n개의 능력치 보너스 (시즌 8부터 +10까지)
+const medalStatBonus = n => Math.min(Math.max(0, n) * RULES.medalBonus, RULES.medalBonusMax);
 const crowdRate = (grade, count) => (seasonNow() >= RULES.crowdFromSeason && count > RULES.crowdCap[grade] ? (RULES.crowdCap[grade] / count) ** RULES.crowdPow[grade] : 1);
 // fac: { avg: 세력 평균 상업, n: 세력 성 개수 } (시즌 8부터 금 수입 저점, 없으면 예전 식)
 const goldIncome = (cs, merit = 0, crowd = 1, fac = null) => {
