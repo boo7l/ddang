@@ -1228,3 +1228,4 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 
 .tNoticeRow { margin: 10px 0 12px; } /* 첫 화면 [📢 공지] 단추: 시즌 상태 아래 빨간 단추 (2026-11-16, 위 상자와 띄움) */
 #tNotice { font-size: 16px; padding: 6px 14px; }
+.recov { color: #6fd3ff; } /* 복구 버프 중인 성 수치 (시즌 8부터, 처음 값보다 낮음 → 내정 ×1.5, 2026-11-16) */

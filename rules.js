@@ -117,6 +117,8 @@ const RULES = {
   crowdCap: { 1: 12, 2: 15, 3: 20 }, // 2026-11-15 기획자: 소성 10 → 12
   crowdPow: { 1: 0.75, 2: 1, 3: 1.5 }, // crowdPow: (정원 ÷ 인원)의 지수, 성 크기별 (2026-11-13 기획자: 2 → 1.5 → 소성 0.75 · 중성 1 · 대도시 1.5) // 성 정원 (2026-11-12 시즌 7부터, 시범 도입이라 널널하게): 넘으면 그 성 장수 모두 금 수입의 상업 몫 × (정원 ÷ 인원)². 기본 100은 그대로. 농성 짱박기 대책
   crowdFromSeason: 7,
+  goldFloor: { fromSeason: 8, own: 0.7, avg: 0.3, perCity: 0.005, cityMax: 0.1 }, // 금 수입 저점 (2026-11-16 기획자, 시즌 8부터): 상업 몫 = 내 성 상업 × 0.7 (정원 보정은 여기만) + 세력 평균 상업 × 0.3, 전체에 × (1 + 세력 성 개수 × 0.5%, 최대 +10%). 황폐한 격전지 장수 손해 줄이기
+  recoverBuff: { fromSeason: 8, keys: ['agri', 'comm', 'wall'], mult: 1.5 }, // 복구 버프 (2026-11-16 기획자, 시즌 8부터): 농업·상업·방어가 성 처음 값(newCityState)보다 낮으면 그 내정 한 번 전체 × 1.5
   trainDecay: { fromSeason: 8, free: 50, step: 10, cut: 0.1, min: 0.4 }, // 수련 효율 (2026-11-16 기획자, 시즌 8부터): 이번 시즌 1~50번째 100%, 51~60번째 90%, 61~70번째 80% … 101번째부터 40%로 끝. 뒤에 숨어 수련만 몰아 하는 플레이 대책
   // 임관 상한 (2026-11-15 기획자): 시즌 시작부터 turns턴까지, 세력에 든 장수(관리자 장수 포함, 테스트 장수만 제외)의 rate 이상이 된 세력에는 새로 임관 못 함.
   // minTotal: 세력에 든 장수가 이만큼 될 때부터 센다 (시즌 첫 장수들이 막히지 않게, 임시값). 이미 들어간 장수는 그대로
@@ -277,7 +279,12 @@ function turnAfter(t, i) {
 // 이번 시즌 k번째 수련의 효율 (1 = 100%). 시즌 8 전에는 늘 1
 const trainEff = k => { const D = RULES.trainDecay; return seasonNow() < D.fromSeason || k <= D.free ? 1 : Math.max(D.min, 1 - D.cut * Math.ceil((k - D.free) / D.step)); };
 const crowdRate = (grade, count) => (seasonNow() >= RULES.crowdFromSeason && count > RULES.crowdCap[grade] ? (RULES.crowdCap[grade] / count) ** RULES.crowdPow[grade] : 1);
-const goldIncome = (cs, merit = 0, crowd = 1) => Math.floor((RULES.goldBase + cs.comm * RULES.goldPerComm * crowd) * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
+// fac: { avg: 세력 평균 상업, n: 세력 성 개수 } (시즌 8부터 금 수입 저점, 없으면 예전 식)
+const goldIncome = (cs, merit = 0, crowd = 1, fac = null) => {
+  const F = RULES.goldFloor, on = fac && seasonNow() >= F.fromSeason;
+  const comm = on ? cs.comm * F.own * crowd + fac.avg * F.avg : cs.comm * crowd, mult = on ? 1 + Math.min(F.cityMax, fac.n * F.perCity) : 1;
+  return Math.floor((RULES.goldBase + comm * RULES.goldPerComm) * mult * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
+};
 // 수확(4·10월): 그 성의 농업에 따라 군량이 들어온다 (상한까지만)
 function harvestFood(cs, grade, rate = 0) { // rate: 지역 이벤트(풍작 +0.3 · 가뭄 -0.3)로 이번 수확량이 바뀌는 비율
   cs.food = Math.min(foodMax(grade), cs.food + Math.floor((cs.agri * RULES.foodPerAgri + RULES.foodBase) * peaceIncome(cs.peace) * (1 + rate)));

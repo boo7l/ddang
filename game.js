@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116195449&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116200423&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116195449&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116200423&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116195449&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116200423&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2975,7 +2975,9 @@ function cityDetailRows(c) {
   // 다른 세력 성의 지금 수치는 ? (서버가 보내지 않는다). 첩보가 유효하면 농업·상업·방어·치안이 온다
   // 치안이 낮으면 색으로 경고: 50 미만 주황 (수입·징병 감소), 20 미만 빨강 (징병 불가)
   const peaceCls = v => (v < RULES.peaceLow ? 'bad' : v < RULES.peaceOk ? 'warn' : '');
-  const val = k => (cs[k] === undefined ? '?' : k === 'peace' && peaceCls(cs[k]) ? `<b class="${peaceCls(cs[k])}">${cs[k]}</b>` : cs[k]);
+  // 복구 버프 (시즌 8부터, 2026-11-16): 농업·상업·방어가 성 처음 값보다 낮으면 색으로 (내정 효율 × 1.5)
+  const RB = RULES.recoverBuff, recov = k => seasonNow() >= RB.fromSeason && RB.keys.includes(k) && cs[k] !== undefined && cs[k] < newCityState(c.grade)[k];
+  const val = k => (cs[k] === undefined ? '?' : k === 'peace' && peaceCls(cs[k]) ? `<b class="${peaceCls(cs[k])}">${cs[k]}</b>` : recov(k) ? `<b class="recov" title="처음 값(${newCityState(c.grade)[k]})보다 낮아서 복구 중: 이 내정 효율 ×${RB.mult}">${cs[k]}</b>` : cs[k]);
   rows.push(...Object.keys(DOMESTIC).filter(cmdOn).map(k =>
     `<tr><th>${DOMESTIC[k].label}</th><td>${val(k)} <span class="dim">/ ${devMax(c.grade, k)}</span></td></tr>`));
   if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.food === undefined ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);

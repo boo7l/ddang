@@ -352,11 +352,16 @@ function advance() {
     if (RULES.goldMonths.includes(month)) {
       const heads = {}; // 성 정원 (2026-11-12, 시즌 7부터): 성마다 그 세력 장수 수
       for (const g of allGenerals()) if (g.faction) heads[g.faction + '|' + g.city] = (heads[g.faction + '|' + g.city] || 0) + 1;
+      const facOf = {}; // 세력마다 성 개수·평균 상업 (시즌 8부터 금 수입 저점, 2026-11-16)
+      const facStat = fid => facOf[fid] || (facOf[fid] = (() => { const cs = citiesOfFaction(fid); return { n: cs.length, avg: cs.length ? Math.round(cs.reduce((s, c) => s + S.cities[c.id].comm, 0) / cs.length) : 0 }; })());
+      const floorOn = seasonNow() >= RULES.goldFloor.fromSeason;
       for (const g of allGenerals()) {
         if (!g.faction) continue;
         const c = cityById(g.city), n = heads[g.faction + '|' + g.city], crowd = crowdRate(c.grade, n);
-        const cs = S.cities[g.city], got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${crowd < 1 ? ` · 정원초과로 -${Math.round(cs.comm * RULES.goldPerComm * (1 - crowd) / (RULES.goldBase + cs.comm * RULES.goldPerComm) * 100)}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
+        const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
+        const crowdPct = crowd < 1 ? Math.round((1 - goldIncome(cs, 0, crowd, fac) / goldIncome(cs, 0, 1, fac)) * 100) : 0; // 정원 초과로 줄어든 비율 (전체 금 수입 기준)
+        const floorText = fac ? ` · 세력 평균 상업 ${fac.avg}${fac.n * RULES.goldFloor.perCity >= 0.005 ? ` · 성 ${fac.n}개 +${Math.round(Math.min(RULES.goldFloor.cityMax, fac.n * RULES.goldFloor.perCity) * 1000) / 10}%` : ''}` : '';
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
       }
     }
     // 군량 시세: 매달 RULES.foodBuy.steps 확률로 -2~+2 (4~8, 2026-11-10)
@@ -581,10 +586,11 @@ function runDomestic(g, key) {
   const max = devMax(city.grade, key);
   if (c[key] >= max) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
-  const gain = Math.min(Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus)), max - c[key]);
+  const R = RULES.recoverBuff, rec = seasonNow() >= R.fromSeason && R.keys.includes(key) && c[key] < newCityState(city.grade)[key] ? R.mult : 1; // 복구 버프 (시즌 8부터, 2026-11-16): 처음 값보다 낮으면 × 1.5
+  const gain = Math.min(Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus) * rec), max - c[key]);
   addRecord(g, 'domestic');
   c[key] += gain;
-  addLog(g, `${city.name}: ${VERB[key]}. ${d.label} +${gain} (${c[key]}/${max})`);
+  addLog(g, `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''} (${c[key]}/${max})`);
   addMerit(g, RULES.merit.domestic);
   gainStatExp(g, d.stat, RULES.statExp.domestic);
   return '';
