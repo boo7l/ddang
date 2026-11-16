@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117083659">
+<link rel="stylesheet" href="style.css?v=20261117084555">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -248,6 +248,7 @@
   .clrDel { font-size: 12px; padding: 1px 6px; margin-left: 4px; }
   .clr ol.rank { list-style: none; margin: 4px 0 0; padding: 0; } .clr ol.rank li { padding: 3px 0; border-bottom: 1px dashed rgba(0,0,0,.2); } .clr .rk { display: inline-block; min-width: 38px; }
   .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 12px; color: #6a5a4a; }
+  .card.sp.magic { background: linear-gradient(160deg, #fbf4ff, #e6ccff); border-color: #9a6ad0; } /* 요술: 연보라 흰 카드 */
 </style>
 </head>
 <body>
@@ -331,8 +332,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117083659"></script>
-<script src="rogue_rules.js?v=20261117083659"></script>
+<script src="duel_rules.js?v=20261117084555"></script>
+<script src="rogue_rules.js?v=20261117084555"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -585,7 +586,7 @@ async function animate(j, a, b) {
   }
   const def = 1 - atk, hit = atk === 0 ? HOME[1] - REACH : HOME[0] + REACH;
   if (j.how === 'kill') { const blue = atk === 0; say('필살!', HOME[atk], blue ? '#6ab0ff' : '#ff5a3a', 50); st.flashRGB = blue ? '40,120,255' : '255,60,30'; st.bigFlash = 1; // 필살 깜빡임: 나(왼쪽·파랑)는 파랑, 상대는 빨강 (2026-11-14)
-  sfx('kill'); await sleep(350); } else sfx('gallop');
+  sfx('kill'); await sleep(350); } else if (j.how === 'magic') { say('요술!', HOME[atk], '#d48cff', 50); st.flashRGB = '170,80,255'; st.bigFlash = 1; sfx('kill'); await sleep(350); } else sfx('gallop');
   st.fr[atk] = 1; await tween(atk, hit, j.how === 'kill' ? 160 : 240);
   st.fr[atk] = 2; st.flash[def] = 1; st.shake = j.how === 'kill' ? 5 : 2; if (j.how !== 'kill') sfx('hit');
   say(`-${j.dmg}`, HOME[def], '#ff6a4a', 78);
@@ -614,7 +615,7 @@ function markReveal(j) {
     else el.classList.add('lost');
   });
 }
-function actEl(a) { return a.k === 'card' ? cardEl(a.c, 'big') : a.k === 'kill' || a.k === 'dodge' ? cardEl({ t: a.k }, 'big') : `<div class="card big spc"><span class="ic">${a.k === 'kill' ? '💥' : '💨'}</span>${a.k === 'kill' ? '필살' : '회피'}</div>`; }
+function actEl(a) { return a.k === 'card' ? cardEl(a.c, 'big') : a.k === 'kill' || a.k === 'dodge' || a.k === 'magic' ? cardEl({ t: a.k }, 'big') : `<div class="card big spc"><span class="ic">${a.k === 'kill' ? '💥' : '💨'}</span>${a.k === 'kill' ? '필살' : '회피'}</div>`; }
 // 재정비도 공개 (2026-11-14 기획자: 상대 손패 색이 보이면 어차피 드러나서). 양쪽 다 재정비 · 필살 · 회피
 function spText(f) { const n = f.shuffleLeft ?? 0; return n > 0 ? `재정비 ${n}` : '<s>재정비</s>'; } // 2026-11-14: 필살·회피는 카드라 재정비 남은 횟수만
 // 상성 표시 (2026-11-14): 커서를 올린 카드(없으면 고른 카드) 기준으로 상성 삼각형과 상대 손패에 테두리.
@@ -623,7 +624,7 @@ let hoverT = null;
 function markMatchup() {
   const sel = hoverT || (pick ? (pick.k === 'card' ? pick.c.t : pick.k) : null); // kill·dodge도 들어온다
   document.querySelectorAll('.tri .nd').forEach(n => { const t = n.dataset.t; n.classList.toggle('me', t === sel); n.classList.toggle('win', !!sel && BEATS[sel] === t); n.classList.toggle('lose', !!sel && BEATS[t] === sel); });
-  document.querySelectorAll('#opHand .card.oc').forEach(c => { const t = TYPES.find(x => c.classList.contains(x)); c.classList.toggle('mWin', !!sel && !!t && (sel === 'kill' || BEATS[sel] === t)); c.classList.toggle('mLose', !!sel && BEATS[t] === sel); });
+  document.querySelectorAll('#opHand .card.oc').forEach(c => { const t = TYPES.find(x => c.classList.contains(x)); c.classList.toggle('mWin', !!sel && !!t && (sel === 'kill' || sel === 'magic' || BEATS[sel] === t)); c.classList.toggle('mLose', !!sel && BEATS[t] === sel); });
 }
 // 재정비 연출 (2026-11-14): 촤르륵 소리 + 그 장수 머리 위 '재정비' + 손패가 한 장씩 다시 깔림. v = 화면 왼쪽(0)·오른쪽(1)
 let fxDeal = [false, false];
@@ -681,7 +682,7 @@ async function showRound(a, b, j) {
   $('reveal').innerHTML = rvEl(a, NAME()[0]) + '<span class="vs">VS</span>' + rvEl(b, NAME()[1]); setTimeout(() => sfx('flip'), 120); await sleep(350);
   markReveal(j); // 우세한 쪽 강조 (다음 합 공개 때까지 남는다)
   await animate(j, a, b);
-  let msg = `${round}합 ${actText(a)} vs ${actText(b)} → `; // 한 합 = 기록 한 줄
+  let msg = `${round}합 ${actTextR(a)} vs ${actTextR(b)} → `; // 한 합 = 기록 한 줄
   // 결과는 내 쪽에서 본 말: 승 (피해 20) · 패 (피해 20) · 필살 승/패 · 회피 · 상대 회피 · 비김 · 헛수. 관전은 이름으로
   if (j.win === null) msg += j.how === 'dodged' ? (SPECT() ? `${NAME()[j.dodger]} 회피` : j.dodger === 0 ? '회피' : '상대 회피') : j.how === 'idle' ? '헛수' : '비김';
   else msg += SPECT() ? `${NAME()[j.win]} ${j.how === 'kill' ? '필살 ' : ''}승 (피해 ${j.dmg})` : `${j.how === 'kill' ? '필살 ' : ''}${j.win === 0 ? '승' : '패'} (피해 ${j.dmg})`;
@@ -698,6 +699,7 @@ async function submit() {
   const ex = applyHit(F, j, [a, b]); // 숨 고르기 · 흡혈 · 기사회생
   if (ex.drain) { say(`+${ex.drain}`, HOME[j.win], '#7dff8a', 92); log(`  ${j.win === 0 ? '흡혈' : '상대 흡혈'} +${ex.drain}`); }
   if (ex.breath) ex.breath.forEach((g, i) => { if (g) { say(`+${g}`, HOME[i], '#7dff8a', 92); log(`  ${i === 0 ? '숨 고르기' : '상대 숨 고르기'} +${g}`); } });
+  if (ex.magicHeal) { say(`+${ex.magicHeal}`, HOME[j.win], '#d48cff', 92); log(`  요술 회복 +${ex.magicHeal}`); }
   if (ex.revived != null) { say('기사회생!', HOME[ex.revived], '#ffd860', 50); sfx('dodge'); log(`  ${ex.revived === 0 ? '기사회생' : '상대 기사회생'} (체력 ${F[ex.revived].hp})`); }
   draw();
   if (m.hp <= 0 || o.hp <= 0 || round >= MAX_ROUND) return finish();

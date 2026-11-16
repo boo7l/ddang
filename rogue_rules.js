@@ -49,6 +49,7 @@ const BOONS = [
   { id: 'dodgeP', tier: 'R', name: '회피 단련', desc: '💨회피 뽑힐 확률 +2.5%p', fx: m => { m.dodgeP += 2.5; } },
   { id: 'full', tier: 'SR', name: '완전 회복', desc: '즉시 체력 가득', fx: (m, f) => { f.hp = m.hpMax; } },
   { id: 'war7', tier: 'SR', name: '무력 상승(대)', desc: '무력 +6', fx: m => { m.war += 6; } },
+  { id: 'magic', tier: 'SSR', name: '요술', desc: '전용 카드 🔮요술이 손패에 들어와요 (5%). 일반 카드를 모두 이기고 상대 체력 -20 · 내 체력 +20. 필살엔 비기고 회피엔 막혀요', once: true, fx: m => { m.magic = 1; } }, // 2026-11-17 기획자
   { id: 'hand', tier: 'SSR', name: '큰 손', desc: '손패 +1장', fx: m => { m.hand += 1; } },
   { id: 'revive', tier: 'SSR', name: '기사회생', desc: '판마다 한 번, 쓰러질 때 체력 20으로 버팀', once: true, fx: m => { m.revive = 20; } },
   { id: 'killx', tier: 'SSR', name: '일격필살', desc: '💥필살 피해 ×1.3', once: true, fx: m => { m.killMul *= 1.3; } },
@@ -59,11 +60,19 @@ const boonDesc = o => o.t ? `${T[o.t].ic}${T[o.t].name}으로 이기면 ${boonBy
 
 // 강화 묶음 (m). 상대도 같은 모양
 function newMods(base = {}) {
-  const m = { war: base.war ?? START.war, hpMax: base.hpMax ?? START.hp, shuffle: base.shuffle ?? START.shuffle, hand: 0, typeDmg: { atk: 0, tec: 0, def: 0 }, killDmg: 0, killMul: 1, killP: 0, dodgeP: 0, bigP: 0, armor: 0, drain: 0, dodgeHeal: 0, earlyDmg: 0, revive: 0, regen: REGEN };
+  const m = { war: base.war ?? START.war, hpMax: base.hpMax ?? START.hp, shuffle: base.shuffle ?? START.shuffle, hand: 0, typeDmg: { atk: 0, tec: 0, def: 0 }, killDmg: 0, killMul: 1, killP: 0, dodgeP: 0, bigP: 0, armor: 0, drain: 0, dodgeHeal: 0, earlyDmg: 0, magic: 0, revive: 0, regen: REGEN };
   for (const [k, v] of Object.entries(base)) if (k === 'typeDmg') Object.assign(m.typeDmg, v); else if (k !== 'war' && k !== 'hpMax' && k !== 'shuffle') m[k] = v;
   return m;
 }
 function enemyMods(s) { return newMods({ war: s.war, hpMax: s.m.hpMax ?? 100, shuffle: 2, ...s.m }); }
+
+// ===== 전용 카드 요술 (2026-11-17 기획자, SSR 강화 '요술'을 고른 사람만 뽑는다) =====
+// 일반 카드를 모두 이기고 상대 체력 -20 · 내 체력 +20 (항상 고정, 최대 체력은 넘지 않음). 필살과는 비기고, 회피에는 막힌다
+const MAGIC_P = 5, MAGIC_DMG = 20, MAGIC_HEAL = 20;
+T.magic = { name: '요술', ic: '🔮' };
+if (!SPECIAL.includes('magic')) SPECIAL.push('magic'); // 흰(특수) 카드로 다룬다: 손패 칸 차지, 특수 카드 제한(3장·같은 종류 2장)에 들어감
+if (typeof ORDER !== 'undefined' && !ORDER.includes('magic')) ORDER.push('magic');
+const actTextR = a => a.k === 'card' ? actText(a) : `${T[a.k].ic}${T[a.k].name}`; // 기록창 글 (요술 포함) // 손패 정렬: 맨 끝 (브라우저에서만 보임)
 
 // ===== 싸움 (duel_rules.js를 강화 반영으로 다시) =====
 const handMaxR = f => handMax(f.war) + (f.m.hand || 0);
@@ -73,10 +82,11 @@ function drawCardR(f, block = []) {
   const sz = [...SIZE_P];
   if (m.bigP) { let take = Math.min(m.bigP, sz[0] + sz[1]); sz[2] += take; const half = take / 2, a = Math.min(sz[0], half), b = Math.min(sz[1], take - a); sz[0] -= a; sz[1] -= b; if (a + b < take) sz[0] -= Math.min(sz[0], take - a - b); }
   // 필살 단련·회피 단련 (2026-11-17 기획자): 그 카드는 정확히 +%p, 늘어난 만큼 일반 카드 9종에서 똑같이 나눠 뺀다 (0 밑으로는 안 감)
-  const spAdd = (m.killP || 0) + (m.dodgeP || 0), cut = spAdd / 9;
+  const spAdd = (m.killP || 0) + (m.dodgeP || 0) + (m.magic ? MAGIC_P : 0), cut = spAdd / 9; // 요술 5%도 일반 카드에서 고르게
   for (const t of TYPES) sz.forEach((p, s) => pool.push([{ t, s }, Math.max(0, p - cut)]));
   if (!block.includes('kill')) pool.push([{ t: 'kill' }, KILL_P + m.killP]);
   if (!block.includes('dodge')) pool.push([{ t: 'dodge' }, DODGE_P + m.dodgeP]);
+  if (m.magic && !block.includes('magic')) pool.push([{ t: 'magic' }, MAGIC_P]);
   let r = Math.random() * pool.reduce((a, x) => a + x[1], 0);
   for (const [c, p] of pool) { r -= p; if (r < 0) return { ...c }; }
   return { ...pool[0][0] };
@@ -94,6 +104,13 @@ function dmgOf(f, o, how, t, s, round = 99) {
   return Math.max(1, Math.round(base * mult(f.war, o.war)) - o.m.armor);
 }
 function judgeR(a, b, fa, fb, round) {
+  if (a.k === 'magic' || b.k === 'magic') { // 요술
+    if (a.k === 'magic' && b.k === 'magic') return { win: null, dmg: 0, how: 'tie' };
+    const mi = a.k === 'magic' ? 0 : 1, other = mi === 0 ? b : a;
+    if (other.k === 'dodge') return { win: null, dmg: 0, how: 'dodged', dodger: 1 - mi }; // 회피에 막힘
+    if (other.k === 'kill') return { win: null, dmg: 0, how: 'tie' }; // 필살과 비김
+    return { win: mi, dmg: MAGIC_DMG, how: 'magic' }; // 일반 카드는 모두 이김
+  }
   const j = judge(a, b, fa, fb); // 승패·방식은 원래 규칙 그대로, 피해만 다시 계산
   if (j.win === null) return j;
   const f = j.win === 0 ? fa : fb, o = j.win === 0 ? fb : fa, act = j.win === 0 ? a : b;
@@ -107,6 +124,7 @@ function applyHit(F, j, acts = []) {
   if (j.win === null) return out;
   const w = F[j.win], l = F[1 - j.win];
   l.hp -= j.dmg;
+  if (j.how === 'magic') { const g = Math.min(MAGIC_HEAL, w.hpMax - w.hp); if (g > 0) { w.hp += g; out.magicHeal = g; } } // 요술: 내 체력 +20
   if (w.m.drain) { const g = Math.min(w.m.drain, w.hpMax - w.hp); if (g > 0) { w.hp += g; out.drain = g; } }
   if (l.hp <= 0 && l.m.revive && !l.revived) { l.revived = true; l.hp = l.m.revive; out.revived = 1 - j.win; }
   return out;
@@ -140,6 +158,8 @@ function takeBoon(run, o) { boonById(o.id).fx(run.m, run, o.t); run.taken.push(o
 // 사람 흉내 (2026-11-16): 상대 손패 색(종류)을 보고, 상대가 낼 법한 종류를 이기는 카드 중 가장 큰 것을 낸다.
 // 필살·회피는 컴퓨터와 같은 방식. 상대 손패 일반 카드 종류 수로 상대가 낼 종류를 어림한다
 function readAct(me, op) {
+  const im = me.hand.findIndex(c => c.t === 'magic');
+  if (im >= 0 && op.hand.filter(isSp).length <= 1 && Math.random() < 0.7) return { k: 'magic', i: im };
   const ik = me.hand.findIndex(c => c.t === 'kill'), id = me.hand.findIndex(c => c.t === 'dodge');
   if (ik >= 0 && (Math.random() < 0.35 || op.hp <= (KILL_DMG + me.m.killDmg) * me.m.killMul * mult(me.war, op.war))) return { k: 'kill', i: ik };
   if (id >= 0 && (Math.random() < 0.25 || me.hp <= 30)) return { k: 'dodge', i: id };
@@ -195,4 +215,4 @@ function simReport(n = 5000, pick = 'random') {
   return STAGES.map((s, i) => ({ stage: i + 1, name: s.name, reach: reach[i] / n, win: reach[i] ? reach[i + 1] / reach[i] : 0 })).concat([{ clear: reach[STAGES.length] / n }]);
 }
 
-if (typeof module !== 'undefined') module.exports = { setPlayerAI: v => { PLAYER_AI = v; }, drawCardR, START, REGEN, WIN_WAR, STAGES, TIER_P, SURE_SR, BOONS, newMods, enemyMods, newFighterR, simFight, simRun, simReport, offerBoons, takeBoon };
+if (typeof module !== 'undefined') module.exports = { setPlayerAI: v => { PLAYER_AI = v; }, drawCardR, judgeR, applyHit, START, REGEN, WIN_WAR, STAGES, TIER_P, SURE_SR, BOONS, newMods, enemyMods, newFighterR, simFight, simRun, simReport, offerBoons, takeBoon };
