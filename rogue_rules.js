@@ -49,14 +49,15 @@ const BOONS = [
   { id: 'dodgeP', tier: 'R', name: '회피 단련', desc: '💨회피 뽑힐 확률 +2.5%p', fx: m => { m.dodgeP += 2.5; } },
   { id: 'full', tier: 'SR', name: '완전 회복', desc: '즉시 체력 가득', fx: (m, f) => { f.hp = m.hpMax; } },
   { id: 'war7', tier: 'SR', name: '무력 상승(대)', desc: '무력 +6', fx: m => { m.war += 6; } },
-  { id: 'magic', tier: 'SSR', name: '요술', desc: '전용 카드 🔮요술이 손패에 들어와요 (5%). 일반 카드를 모두 이기고 상대 체력 -20 · 내 체력 +20. 필살엔 비기고 회피엔 막혀요', once: true, fx: m => { m.magic = 1; } }, // 2026-11-17 기획자
+  { id: 'magic', tier: 'SSR', name: '요술', short: '전용 카드 🔮요술을 얻어요 (상대 -20 · 내 체력 +20)', desc: '전용 카드 🔮요술이 손패에 들어와요 (5%). 일반 카드를 모두 이기고 상대 체력 -20 · 내 체력 +20. 필살엔 비기고 회피엔 막혀요', once: true, fx: m => { m.magic = 1; } }, // 2026-11-17 기획자
   { id: 'hand', tier: 'SSR', name: '큰 손', desc: '손패 +1장', fx: m => { m.hand += 1; } },
   { id: 'revive', tier: 'SSR', name: '기사회생', desc: '판마다 한 번, 쓰러질 때 체력 20으로 버팀', once: true, fx: m => { m.revive = 20; } },
   { id: 'killx', tier: 'SSR', name: '일격필살', desc: '💥필살 피해 ×1.3', once: true, fx: m => { m.killMul *= 1.3; } },
 ];
 const boonById = id => BOONS.find(b => b.id === id);
 const boonName = o => o.t ? `${T[o.t].name} ${boonById(o.id).name}` : boonById(o.id).name;
-const boonDesc = o => o.t ? `${T[o.t].ic}${T[o.t].name}으로 이기면 ${boonById(o.id).desc}` : boonById(o.id).desc;
+// short: 강화 고르기 종이·내 강화 상자에 쓰는 짧은 설명 (표에는 desc 전체, 2026-11-17 기획자)
+const boonDesc = o => o.t ? `${T[o.t].ic}${T[o.t].name}으로 이기면 ${boonById(o.id).desc}` : (boonById(o.id).short || boonById(o.id).desc);
 
 // 강화 묶음 (m). 상대도 같은 모양
 function newMods(base = {}) {
