@@ -1558,7 +1558,27 @@ function runTransport(g, o) {
   return '';
 }
 
-
+// ----- 보급 (2026-11-16 기획자, 시즌 8부터): 대도독만. 지금 있는 성과 상관없이 우리 성 A에서 B로 군량을 옮긴다 (A·B는 우리 땅으로 moveRange칸 안). 양·공적은 수송과 같다
+function runSupply(g, o) {
+  if (seasonNow() < RULES.commander.supplyFromSeason) return '아직 쓸 수 없는 명령';
+  if (commanderOf(g.faction) !== g) return '대도독만 보급할 수 있음';
+  const from = cityById(o.from), to = cityById(o.to);
+  if (!from || !to) return '없는 성';
+  if (from.id === to.id) return '같은 성끼리는 옮길 수 없음';
+  if (from.faction !== g.faction) return `${josa(from.name, '은는')} 아군 성이 아님`;
+  if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
+  if (!linkedOwnCities(from.id, g.faction, RULES.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
+  const src = S.cities[from.id], dst = S.cities[to.id], room = foodMax(to.grade) - dst.food;
+  if (src.food <= 0) return `${from.name}에 보낼 군량이 없음`;
+  if (room <= 0) return `${to.name}의 군량 창고가 가득 참 (${fmt(foodMax(to.grade))})`;
+  const want = transportAmount(o), n = Math.min(want, src.food, room);
+  src.food -= n;
+  dst.food += n;
+  const short = n < want ? (src.food <= 0 ? ` (${from.name}에 있는 만큼만)` : ` (${to.name} 창고에 들어가는 만큼만)`) : '';
+  addLog(g, `🚚 보급: ${from.name} → ${to.name} ${fmt(n)}${short} · ${from.name} ${fmt(src.food)} · ${to.name} ${fmt(dst.food)}`);
+  addMerit(g, RULES.merit.transport);
+  return '';
+}
 
 // ----- 하야 (예약 없이 바로) -----
 // 세력을 떠나 재야가 된다. 병사는 세력의 것이라 흩어지고, 공적·금·능력치는 그대로 (멸망했을 때와 같다).
@@ -1627,6 +1647,7 @@ const COMMANDS = {
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   levy: { label: () => '갈취', run: runLevy },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
+  supply: { label: o => `보급 ${cityName(o.from)} → ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runSupply }, // 대도독 (2026-11-16, 시즌 8부터)
   expand: { label: () => '증축', run: runExpand }, // 2026-11-08
 };
 const orderLabel = o => (COMMANDS[o.cmd] ? COMMANDS[o.cmd].label(o) : '없어진 명령');

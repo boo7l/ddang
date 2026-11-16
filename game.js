@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116210419&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116210846&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116210419&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116210846&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116210419&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116210846&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2426,6 +2426,7 @@ function renderCommander() {
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
     body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
+    if (seasonNow() >= R.supplyFromSeason) body += '<p class="cmds one"><button data-cmdr="supply" title="어디에 있든 우리 성끼리 군량을 옮겨요. 예약표의 고른 칸에 들어가요">🚚 보급 <span class="dim small">(예약 · 한 턴)</span></button></p>'; // 보급 (2026-11-16, 시즌 8부터)
     body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 위임하는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="fire">🚪 해고</button><button data-cmdr="cmdHandCancel">📜 취소</button><button data-cmdr="cmdResign">🏳 반납</button></p>`
       : `<p class="cmds three"><button data-cmdr="fire">🚪 해고</button><button data-cmdr="cmdHandPick">📜 위임</button><button data-cmdr="cmdResign">🏳 반납</button></p>`;
   } else if (!c) {
@@ -2452,9 +2453,37 @@ function renderCommander() {
     if (a === 'ally') { allyDialog(); return; }
     if (a === 'allyAccept' || a === 'allyReject') { const from = b.dataset.from; if (a === 'allyAccept' && !confirm(`${fName(from)} 세력과 동맹을 맺을까요?`)) return; await call(a, { from }); renderAll(); return; }
     if (a === 'policy') { policyDialog(); return; }
+    if (a === 'supply') { supplyDialog(); return; }
     await call(a);
     renderAll(); // 누르자마자 칸·🚩가 바뀌게 (2026-11-13)
   };
+}
+// 보급 (2026-11-16 기획자, 시즌 8부터): 대도독만. 보내는 성 A와 받는 성 B(A에서 우리 땅 moveRange칸 안)를 골라 예약표의 고른 칸에 넣는다. 양은 수송과 같다
+function supplyDialog() {
+  if (seasonOver()) return;
+  const p = me(), mine = citiesOfFaction(p.faction), max = RULES.transportMax;
+  if (mine.length < 2) { alert('우리 성이 두 개 이상 있어야 보급할 수 있어요.'); return; }
+  const food = c => { const cs = S.cities[c.id] || {}; return `군량 ${fmt(cs.food || 0)} / ${fmt(foodMax(c.grade))}`; };
+  const opt = c => `<option value="${esc(c.id)}">${esc(c.name)} · ${food(c)}</option>`;
+  openModal(`<h2>🚚 보급</h2>
+    <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${RULES.moveRange}칸 안이어야 해요. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
+    <p class="sub">보내는 성</p><p><select id="sFrom" style="width:100%">${mine.map(opt).join('')}</select></p>
+    <p class="sub">받는 성</p><p><select id="sTo" style="width:100%"></select></p>
+    <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
+    <p><input type="number" id="sAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
+      ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-samt="${n}">${fmt(n)}</button>`).join(' ')}</p>
+    <p class="dim small">실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요.</p>
+    <div class="modalBtns"><button id="sOk" class="main">예약</button><button data-close>닫기</button></div>`, box => {
+    const fill = () => { const a = box.querySelector('#sFrom').value, list = linkedOwnCities(a, p.faction, RULES.moveRange).filter(c => c.id !== a); box.querySelector('#sTo').innerHTML = list.length ? list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; };
+    box.querySelector('#sFrom').onchange = fill; fill();
+    box.querySelectorAll('[data-samt]').forEach(b => { b.onclick = () => { box.querySelector('#sAmount').value = b.dataset.samt; }; });
+    box.querySelector('#sOk').onclick = () => {
+      const from = box.querySelector('#sFrom').value, to = box.querySelector('#sTo').value, amount = Math.floor(+box.querySelector('#sAmount').value);
+      if (!to) { alert('받는 성을 골라 주세요.'); return; }
+      if (!(amount >= 1 && amount <= max)) { alert(`양은 1~${fmt(max)} 사이로 적어 주세요.`); return; }
+      closeModal(); reserve({ cmd: 'supply', from, to, amount: String(amount) });
+    };
+  });
 }
 // 공지 (2026-11-13): 50자, 비우고 저장하면 내린다
 function noticeDialog() {
