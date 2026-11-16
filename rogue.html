@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117010218">
+<link rel="stylesheet" href="style.css?v=20261117010445">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -321,8 +321,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117010218"></script>
-<script src="rogue_rules.js?v=20261117010218"></script>
+<script src="duel_rules.js?v=20261117010445"></script>
+<script src="rogue_rules.js?v=20261117010445"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -756,8 +756,8 @@ function fightStart() {
 function runAfter(kind) {
   const box = $('resBox');
   if (kind !== 'win') {
-    box.innerHTML = `<div class="resCard lose"><div class="big">💀 ${RUN.stage + 1}단계에서 패배</div><div class="dim">${RUN.stage}명 격파 · 강화 ${RUN.picks.length}개</div><button id="again" class="main">다시 도전</button></div>`;
-    $('again').onclick = () => $('start').click(); return;
+    box.innerHTML = `<div class="resCard lose"><div class="big">💀 ${RUN.stage + 1}단계에서 패배</div><div class="dim">${RUN.stage}명 격파 · 강화 ${RUN.picks.length}개</div><button id="again" class="main">다시 도전</button> <button id="clearList2">🏆 클리어 목록</button></div>`;
+    $('again').onclick = () => $('start').click(); $('clearList2').onclick = showClears; return; // 졌을 때도 클리어 목록 (2026-11-17 기획자)
   }
   const m = RUN.m, left = Math.max(0, F[0].hp);
   RUN.hp = Math.min(m.hpMax, left + m.regen); m.war += WIN_WAR; // 이길 때마다 무력 +1 (2026-11-17 기획자)
