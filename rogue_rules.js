@@ -18,8 +18,8 @@ const STAGES = [ // 2026-11-17 기획자: 체력 장합부터 110·110·120·125
   { name: '장합', war: 90, m: { hpMax: 110, killDmg: 5 }, note: '체력 110 · 필살 피해 +5' },
   { name: '황충', war: 93, m: { hpMax: 110, dodgeP: 4 }, note: '체력 110 · 회피를 잘 뽑음' },
   { name: '장료', war: 96, m: { hpMax: 120, typeDmg: { atk: 2, tec: 2, def: 2 } }, note: '체력 120 · 일반 피해 +2' },
-  { name: '관우', war: 98, m: { hpMax: 125, killDmg: 10 }, note: '체력 125 · 필살 피해 +10', spr: 'guanyu' },
-  { name: '여포', war: 100, m: { hpMax: 130, killP: 4, hand: 1 } /* 필살 +4%p는 설명에서 숨김 (2026-11-17 기획자) */, note: '체력 130 · 손패 +1', boss: true, spr: 'lubu' },
+  { name: '관우', war: 99, m: { hpMax: 125, killDmg: 10 }, note: '체력 125 · 필살 피해 +10', spr: 'guanyu' },
+  { name: '여포', war: 102, m: { hpMax: 130, killP: 4, hand: 1 } /* 필살 +4%p는 설명에서 숨김 (2026-11-17 기획자) */, note: '체력 130 · 손패 +1', boss: true, spr: 'lubu' },
 ];
 
 // ===== 강화 =====
