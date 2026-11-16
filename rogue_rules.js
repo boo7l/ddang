@@ -42,7 +42,7 @@ const BOONS = [
   { id: 'armor', tier: 'R', name: '철갑', desc: '받는 피해 -2 (최소 1)', fx: m => { m.armor += 2; } },
   { id: 'big', tier: 'R', name: '큰 카드', desc: '대 카드 뽑힐 확률 +3%p', fx: m => { m.bigP += 3; } },
   { id: 'drain', tier: 'R', name: '흡혈', desc: '합에서 이길 때마다 체력 +3', fx: m => { m.drain += 3; } },
-  { id: 'master', tier: 'SR', name: '달인', desc: '일반 카드(속공·강타·역습)로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; m.typeDmg.tec += 3; m.typeDmg.def += 3; } },
+  { id: 'master', tier: 'SR', name: '달인', desc: '일반 카드로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; m.typeDmg.tec += 3; m.typeDmg.def += 3; } },
   { id: 'shuf', tier: 'SR', name: '쉬는 게 아니라', desc: '재정비 +1회 (판마다)', fx: m => { m.shuffle += 1; } },
   { id: 'killP', tier: 'SR', name: '필살 단련', desc: '💥필살 뽑힐 확률 +2.5%p', fx: m => { m.killP += 2.5; } },
   { id: 'dodgeP', tier: 'R', name: '회피 단련', desc: '💨회피 뽑힐 확률 +2.5%p', fx: m => { m.dodgeP += 2.5; } },
