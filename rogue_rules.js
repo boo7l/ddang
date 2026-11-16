@@ -29,25 +29,25 @@ const SURE_SR = [3, 6]; // 이 단계를 이기면 세 칸 중 한 칸은 SR 이
 const TIER_ORDER = ['N', 'R', 'SR', 'SSR'];
 // 2026-11-17 기획자 엑셀 수정본(docs/맹장집결_강화목록.xlsx) 반영. 회복력은 +5 (기획자 확정), 큰 카드는 효과 글 3%p로 읽음 (두 칸이 달라서)
 const BOONS = [
-  { id: 'war3', tier: 'N', name: '무력 상승(하)', desc: '무력 +2', fx: m => { m.war += 2; } }, // 2026-11-17 기획자: 하·중·상 2·4·6
-  { id: 'hp10', tier: 'N', name: '최대 체력 증가', desc: '최대 체력 +10 (지금 체력도 +10)', fx: (m, f) => { m.hpMax += 10; f.hp += 10; } },
+  { id: 'war3', tier: 'N', name: '무력 상승(소)', desc: '무력 +2', fx: m => { m.war += 2; } }, // 2026-11-17 기획자: 하·중·상 2·4·6
+  { id: 'hp10', tier: 'N', name: '최대 체력 증가', desc: '최대 체력 +10', fx: (m, f) => { m.hpMax += 10; f.hp += 10; } },
   { id: 'breath', tier: 'N', name: '숨 고르기', desc: '💨회피를 내면 체력 +5', fx: m => { m.dodgeHeal += 5; } }, // 2026-11-17 기획자 추가: 상대 카드와 관계없이 내가 회피를 내면
-  { id: 'heal30', tier: 'N', name: '응급 처치', desc: '체력 추가 회복 +30 (최대 체력은 넘지 않음)', fx: (m, f) => { f.hp = Math.min(m.hpMax, f.hp + 30); } },
+  { id: 'heal30', tier: 'N', name: '응급 처치', desc: '체력 추가 회복 +25 (최대 체력은 넘지 않음)', fx: (m, f) => { f.hp = Math.min(m.hpMax, f.hp + 25); } }, // 2026-11-17 엑셀: 30 → 25
   { id: 'atk2', tier: 'N', name: '속공 단련', desc: '⚡속공으로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; } },
   { id: 'tec2', tier: 'N', name: '강타 단련', desc: '💪강타로 이기면 피해 +3', fx: m => { m.typeDmg.tec += 3; } },
   { id: 'def2', tier: 'N', name: '역습 단련', desc: '🔄역습으로 이기면 피해 +3', fx: m => { m.typeDmg.def += 3; } },
   { id: 'war6', tier: 'R', name: '무력 상승(중)', desc: '무력 +4', fx: m => { m.war += 4; } },
   { id: 'kill6', tier: 'R', name: '약점 포착', desc: '💥필살 피해 +5', fx: m => { m.killDmg += 5; } },
   { id: 'regen', tier: 'R', name: '회복력', desc: '판 사이 회복 +5', fx: m => { m.regen += 5; } }, // 2026-11-17 기획자: 5로 확정 (10 했다가 되돌림)
-  { id: 'armor', tier: 'R', name: '철갑', desc: '받는 피해 -2 (최소 1)', fx: m => { m.armor += 2; } },
+  { id: 'armor', tier: 'R', name: '철갑', desc: '받는 피해 -2', fx: m => { m.armor += 2; } },
   { id: 'big', tier: 'R', name: '큰 카드', desc: '대 카드 뽑힐 확률 +3%p', fx: m => { m.bigP += 3; } },
   { id: 'drain', tier: 'R', name: '흡혈', desc: '합에서 이길 때마다 체력 +3', fx: m => { m.drain += 3; } },
   { id: 'master', tier: 'SR', name: '달인', desc: '일반 카드로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; m.typeDmg.tec += 3; m.typeDmg.def += 3; } },
   { id: 'shuf', tier: 'SR', name: '쉬는 게 아니라', desc: '재정비 +1회 (판마다)', fx: m => { m.shuffle += 1; } },
   { id: 'killP', tier: 'SR', name: '필살 단련', desc: '💥필살 뽑힐 확률 +2.5%p', fx: m => { m.killP += 2.5; } },
   { id: 'dodgeP', tier: 'R', name: '회피 단련', desc: '💨회피 뽑힐 확률 +2.5%p', fx: m => { m.dodgeP += 2.5; } },
-  { id: 'full', tier: 'SR', name: '완전 회복', desc: '지금 체력 가득', fx: (m, f) => { f.hp = m.hpMax; } },
-  { id: 'war7', tier: 'SR', name: '무력 상승(상)', desc: '무력 +6', fx: m => { m.war += 6; } },
+  { id: 'full', tier: 'SR', name: '완전 회복', desc: '즉시 체력 가득', fx: (m, f) => { f.hp = m.hpMax; } },
+  { id: 'war7', tier: 'SR', name: '무력 상승(대)', desc: '무력 +6', fx: m => { m.war += 6; } },
   { id: 'hand', tier: 'SSR', name: '큰 손', desc: '손패 +1장', fx: m => { m.hand += 1; } },
   { id: 'revive', tier: 'SSR', name: '기사회생', desc: '판마다 한 번, 쓰러질 때 체력 20으로 버팀', once: true, fx: m => { m.revive = 20; } },
   { id: 'killx', tier: 'SSR', name: '일격필살', desc: '💥필살 피해 ×1.3', once: true, fx: m => { m.killMul *= 1.3; } },
