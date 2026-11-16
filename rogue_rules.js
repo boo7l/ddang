@@ -13,8 +13,8 @@ const REGEN = 40; // 이기면 체력 40 회복 (최대 체력은 넘지 않음)
 // spr: 전용 그림 (lab/img/<spr>0~4.png, 없으면 기본 빨간 장수). m: 상대 강화 (아래 강화와 같은 이름). 예: hpMax 체력 최대치, typeDmg 종류별 피해 +, dodgeP 회피 뽑힐 확률 +%p
 const STAGES = [ // 2026-11-17 기획자: 체력 장합부터 110·110·120·125·130, 특징 바꿈
   { name: '무안국', war: 78, m: {}, note: '' },
-  { name: '엄안', war: 83, m: {}, note: '' },
-  { name: '능통', war: 87, m: { typeDmg: { tec: 3 } }, note: '강타 피해 +3' },
+  { name: '엄안', war: 83, m: { typeDmg: { def: 3 } }, note: '역습 피해 +3' }, // 2026-11-17 기획자
+  { name: '능통', war: 87, m: { typeDmg: { tec: 5 } }, note: '강타 피해 +5' }, // 2026-11-17 기획자: +3 → +5
   { name: '장합', war: 90, m: { hpMax: 110, killDmg: 5 }, note: '체력 110 · 필살 피해 +5' },
   { name: '황충', war: 93, m: { hpMax: 110, dodgeP: 4 }, note: '체력 110 · 회피를 잘 뽑음' },
   { name: '장료', war: 96, m: { hpMax: 120, typeDmg: { atk: 2, tec: 2, def: 2 } }, note: '체력 120 · 일반 피해 +2' },
