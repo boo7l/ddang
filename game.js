@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116200423&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116200646&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116200423&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116200646&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116200423&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116200646&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2988,7 +2988,9 @@ function cityDetailRows(c) {
     const open = cityMembersOpen && list.length;
     const cap = seasonNow() >= RULES.crowdFromSeason ? RULES.crowdCap[c.grade] : 0, crowd = cap ? crowdRate(c.grade, list.length) : 1; // 성 정원 (2026-11-12, 시즌 7부터)
     // 표시는 전체 금 수입 기준 (2026-11-13 기획자): 기본 100은 안 줄어서 상업 몫 감소율보다 작다. 상업 수치를 모르면 상업 몫 기준
-    const crowdCutPct = (comm, r) => Math.round((comm === undefined ? 1 - r : comm * RULES.goldPerComm * (1 - r) / (RULES.goldBase + comm * RULES.goldPerComm)) * 100);
+    // 시즌 8부터 금 수입 저점 (2026-11-16): 서버와 같은 식(goldIncome)으로, 그 세력 성의 상업을 모두 알 때만. 모르면 예전 식
+    const facGold = () => { if (seasonNow() < RULES.goldFloor.fromSeason || !c.faction) return null; const v = citiesOfFaction(c.faction).map(x => (S.cities[x.id] || {}).comm); return v.length && v.every(x => x !== undefined) ? { n: v.length, avg: Math.round(v.reduce((s, x) => s + x, 0) / v.length) } : null; };
+    const crowdCutPct = (comm, r) => { const fac = comm === undefined ? null : facGold(); if (fac) return Math.round((1 - goldIncome({ comm, peace: 100 }, 0, r, fac) / goldIncome({ comm, peace: 100 }, 0, 1, fac)) * 100); return Math.round((comm === undefined ? 1 - r : comm * RULES.goldPerComm * (1 - r) / (RULES.goldBase + comm * RULES.goldPerComm)) * 100); };
     const capText = cap ? ` <span class="${crowd < 1 ? 'warn' : 'dim'}" title="정원을 넘으면 이 성 장수 모두 금 수입(상업 몫)이 줄어요">/ 정원 ${cap}${crowd < 1 ? ` · 수입 -${crowdCutPct(cs.comm, crowd)}%` : ''}</span>` : '';
     rows.push(`<tr class="wide"><th>장수</th><td>${list.length ? `<button class="link" data-cm>${list.length}명 ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${capText}${open ? `<div class="cityMembers">${list.map(g =>
       `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}`).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
