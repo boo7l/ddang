@@ -2,8 +2,8 @@
 
 // ===== 지도 공통 규칙 (게임 화면과 지도 편집기가 같이 쓴다) =====
 const GRADE_NAME = { 1: '소성', 2: '중성', 3: '대도시', 4: '수도' }; // 4 수도: 시즌 8부터 (2026-11-16)
-// 성 크기 별: 수도는 별 네 개가 아니라 큰 별 하나 (2026-11-16 기획자)
-const gradeStarText = g => (g >= 4 ? '<b class="bigStar">★</b>' : '★'.repeat(g || 0));
+// 성 크기 별: 수도는 별 대신 도트 깃발 하나 (2026-11-16 기획자)
+const gradeStarText = g => (g >= 4 ? '<i class="capFlag" title="수도"></i>' : '★'.repeat(g || 0));
 
 // 두 성이 맞닿아 있는지: 8방향이면 꼭지점도 인정, 4방향이면 변만 인정
 function adjacent(map, a, b) {
