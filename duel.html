@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>무술대회</title>
-<link rel="stylesheet" href="style.css?v=20261116184823">
+<link rel="stylesheet" href="style.css?v=20261116191658">
 <!-- 무술대회 대결 화면 (웹, 2026-11-14). 게임 화면(game.js tourOpenDuel)이 iframe으로 띄운다: duel.html#web&id=경기id
      lab/martial.html(연구용)에서 만들었다. 규칙은 duel_rules.js, 판정·손패는 서버(duel_core.js)가 한다.
      서버와는 부모 창(게임)의 로그인을 그대로 쓴다: parent.api('duelView'|'duelAct'), parent.sb(실시간 알림 'duel-경기id') -->
@@ -99,6 +99,8 @@
   .card { width: 56px; height: 74px; border: 2px solid var(--gold-dark); border-radius: 4px; background: #f3e2b8; color: #2a0604;
     display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; font-size: 15px; }
   .card .ic { font-size: 22px; line-height: 1.1; }
+  .card .pi { display: block; width: 24px; height: 24px; image-rendering: pixelated; margin: 0 auto 1px; } /* 카드 도트 그림 24칸 (2026-11-16) */
+  .opHand .card .pi { width: 20px; height: 20px; image-rendering: auto; margin: 0 auto; } .miniHand .card .pi { width: 14px; height: 14px; image-rendering: auto; margin: 0 auto; }
   .card.atk { background: #a3c8f0; } .card.tec { background: #f4a39b; } .card.def { background: #a9dd9b; }
   html.debate .card.atk { background: #a9dd9b; } html.debate .card.tec { background: #a3c8f0; } html.debate .card.def { background: #f2d77a; } /* 설전대회 (2026-11-15 기획자): 논파 초록 · 회유 파랑 · 도발 노랑 */ /* 2026-11-15 기획자: 속공 파랑 · 강타 빨강 · 역습 초록 (그 전 분홍·보라·하늘) */
   .card.deal { animation: dealIn .32s ease-out backwards; } /* 재정비: 새 카드가 한 장씩 뒤집히며 들어옴 (2026-11-14) */
@@ -185,6 +187,7 @@
     .hand { gap: 4px; min-height: 0; flex-wrap: nowrap; width: 100%; justify-content: center; }
     .card { width: 44px; height: 60px; font-size: 12px; }
     .card .ic { font-size: 17px; }
+    .card .pi { width: 18px; height: 18px; image-rendering: auto; } .opHand .card .pi { width: 16px; height: 16px; }
     .card.sel { transform: translateY(-4px); }
     .opHand { min-height: 40px; }
     .opHand .card { width: 30px; height: 40px; } /* 휴대폰 (24×32에서, 2026-11-15) */
@@ -275,7 +278,7 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261116184823"></script>
+<script src="duel_rules.js?v=20261116191658"></script>
 <script>
 // ↓ game.js와 같은 글자 손질 (2026-11-15 기획자: 경기장·규칙 창에도 물결 내리기 적용). game.js 쪽을 바꾸면 여기도
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -330,6 +333,7 @@ const DEBATE = new URLSearchParams(location.search).get('kind') === 'debate';
 const STN = DEBATE ? '지력' : '무력', HPN = DEBATE ? '기세' : '체력';
 if (DEBATE) { Object.assign(T.atk, { name: '논파', ic: '📜' }); Object.assign(T.tec, { name: '회유', ic: '🤝' }); Object.assign(T.def, { name: '도발', ic: '🔥' }); Object.assign(T.kill, { name: '대갈', ic: '📢' }); Object.assign(T.dodge, { name: '무시', ic: '😑' }); document.title = '설전대회'; }
 const PRACTICE = location.hash === '#practice';
+const cardIc = t => `<img class="pi" src="img/cards/${DEBATE ? 'd_' : ''}${t}.png" alt="">`; // 카드 그림: 이모지 대신 도트 그림 (2026-11-16 기획자, img/cards. 설전은 d_)
 if (DEBATE) document.documentElement.classList.add('debate');
 const DEBATE_FILL = { atk: '#a9dd9b', tec: '#a3c8f0', def: '#f2d77a' }; // 설전대회 카드 색 (위 CSS와 같게)
 if (DEBATE) document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.nd[data-t]').forEach(n => { const t = T[n.dataset.t]; if (!t) return; n.querySelector('.ic').textContent = t.ic; n.querySelector('.nm').textContent = t.name; const c = n.querySelector('circle'); if (c && DEBATE_FILL[n.dataset.t]) c.setAttribute('fill', DEBATE_FILL[n.dataset.t]); })); // 상성 삼각형도 논파·회유·도발 // 게임 화면 초상화 → 연습 경기 (2026-11-15): 컴퓨터와 무력 100 대 100
@@ -635,7 +639,7 @@ async function animate(j, a, b) {
 const $ = id => document.getElementById(id);
 let F = null, round = 0, pick = null, busy = false, timerId = 0, deadline = 0, over = true, lastTick = 0;
 function log(s) { const d = document.createElement('div'); d.textContent = s; $('log').prepend(d); }
-function cardEl(c, cls = '') { return isSp(c) ? `<div class="card sp ${c.t} ${cls}"><span class="ic">${T[c.t].ic}</span>${T[c.t].name}<b>&nbsp;</b></div>` : `<div class="card ${c.t} ${cls}"><span class="ic">${T[c.t].ic}</span>${T[c.t].name}<b>${SIZE_NAME[c.s]}</b></div>`; } // 필살·회피 = 흰 카드 (2026-11-14)
+function cardEl(c, cls = '') { return isSp(c) ? `<div class="card sp ${c.t} ${cls}"><span class="ic">${cardIc(c.t)}</span>${T[c.t].name}<b>&nbsp;</b></div>` : `<div class="card ${c.t} ${cls}"><span class="ic">${cardIc(c.t)}</span>${T[c.t].name}<b>${SIZE_NAME[c.s]}</b></div>`; } // 필살·회피 = 흰 카드 (2026-11-14)
 // 공개 칸 한쪽: 위에 꼬리표(우세·회피·비김), 카드, 아래에 누구 것인지
 function rvEl(a, who) { return `<div class="rv">${actEl(a)}<span class="who">${who}</span></div>`; }
 // 판정이 나면 우세한 쪽 카드를 빛내고 진 쪽은 흐리게
@@ -671,8 +675,8 @@ function draw() {
   $('round').textContent = PRACTICE && !round ? '대기' : over ? '끝' : `${round} / ${MAX_ROUND}합`; // 연습 경기 시작 전은 '대기'
   const dealO = fxDeal[1], dealM = fxDeal[0]; fxDeal = [false, false]; // 재정비 연출은 한 번만
   const dl = (on, i) => on ? ` style="animation-delay:${i * 60}ms"` : '';
-  if (SPECT()) [['myMini', m], ['opMini', o]].forEach(([id, f]) => { $(id).innerHTML = f.hand.map(c => c.t === 'sp' || isSp(c) ? '<div class="card oc white"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).join(''); }); // 관전: 두 장수 손패 축약
-  $('opHand').innerHTML = o.hand.map((c, i) => (c.t === 'sp' || isSp(c) ? '<div class="card oc white" title="특수 카드"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${T[c.t].ic}</span></div>`).replace('class="card oc', `${dl(dealO, i)} class="card oc${dealO ? ' deal' : ''}`)).join(''); // 상대 손패: 유형(색)은 보이고 크기(대·중·소)는 숨김 (2026-11-14 기획자)
+  if (SPECT()) [['myMini', m], ['opMini', o]].forEach(([id, f]) => { $(id).innerHTML = f.hand.map(c => c.t === 'sp' || isSp(c) ? '<div class="card oc white"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${cardIc(c.t)}</span></div>`).join(''); }); // 관전: 두 장수 손패 축약
+  $('opHand').innerHTML = o.hand.map((c, i) => (c.t === 'sp' || isSp(c) ? '<div class="card oc white" title="특수 카드"><span class="ic q">?</span></div>' : `<div class="card oc ${c.t}" title="${T[c.t].name}"><span class="ic">${cardIc(c.t)}</span></div>`).replace('class="card oc', `${dl(dealO, i)} class="card oc${dealO ? ' deal' : ''}`)).join(''); // 상대 손패: 유형(색)은 보이고 크기(대·중·소)는 숨김 (2026-11-14 기획자)
   $('hand').innerHTML = m.hand.map((c, i) => cardEl(c, (pick && pick.i === i ? 'sel' : '') + (dealM ? ' deal' : '')).replace('<div class="card', `<div data-i="${i}"${dl(dealM, i)} class="card`)).join('');
   $('hand').querySelectorAll('[data-i]').forEach(el => {
     el.onclick = () => { if (busy || over) return; pick = actOf(m, +el.dataset.i); sfx('pick'); draw(); };
