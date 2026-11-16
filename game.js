@@ -1594,12 +1594,28 @@ function noteDialog(i) {
 // 미니게임 일기당천: 첫 화면 상자 아래의 작은 글자로 여는 팝업. 게임 본체와 분리된 minigame.html을 띄우고, 서버와 주고받는 것은 없다 (2026-11-01)
 window.miniBridge = { api: (a, p) => api(a, p), name: () => (ME && ME.nickname) || '' }; // 미니게임 창에서 랭킹을 부를 때 쓴다
 function closeMinigame() { const w = $('#miniWrap'); if (w) { w.remove(); bgmHold(false); } }
+// 맹장집결 (2026-11-17): 무술대회 카드 대결로 맹장들과 연전하는 미니게임 (rogue.html). 처음엔 관리자만 — 공개할 때 true
+const ROGUE_PUBLIC = false;
 function openMinigame() {
+  if (!(ROGUE_PUBLIC || IS_ADMIN)) return openMiniPage('minigame.html', '미니게임');
+  closeMinigame();
+  const w = document.createElement('div');
+  w.id = 'miniWrap';
+  w.innerHTML = `<div class="win miniPick"><button class="miniClose" aria-label="닫기">✕</button><h3>미니게임</h3>
+    <button id="mpIlgi" class="main">⚔ 일기당천</button><button id="mpRogue" class="main">🐎 맹장집결${ROGUE_PUBLIC ? '' : ' <span class="small">(관리자)</span>'}</button></div>`;
+  w.querySelector('.miniClose').onclick = closeMinigame;
+  w.querySelector('#mpIlgi').onclick = () => openMiniPage('minigame.html', '미니게임');
+  w.querySelector('#mpRogue').onclick = () => openMiniPage('rogue.html', '맹장집결', 'rogue');
+  w.onclick = e => { if (e.target === w) closeMinigame(); };
+  document.body.appendChild(w);
+}
+function openMiniPage(src, title, cls) {
   closeMinigame();
   const w = document.createElement('div');
   bgmHold(true); // 미니게임 전투곡과 겹치지 않게 배경음악을 잠시 멈춘다 (2026-11-08)
   w.id = 'miniWrap';
-  w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="minigame.html?t=' + Date.now() + '" title="미니게임"></iframe></div>';
+  if (cls) w.className = cls; // rogue: 맹장집결은 넓은 창
+  w.innerHTML = '<div class="miniBox"><button class="miniClose" aria-label="닫기">✕</button><iframe src="' + src + '?t=' + Date.now() + '" title="' + title + '"></iframe></div>';
   w.querySelector('.miniClose').onclick = closeMinigame;
   const f = w.querySelector('iframe');
   f.onload = () => f.contentWindow.focus(); // 바로 화살표 키가 먹게
@@ -1757,7 +1773,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116224512&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117005858&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1767,7 +1783,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116224512&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117005858&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1777,7 +1793,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116224512&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117005858&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
