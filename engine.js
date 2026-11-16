@@ -1415,9 +1415,10 @@ function runTrain(g, o) {
   const free = traitOf(g.faction).freeTrain; // 왕랑: 수련에 금이 들지 않는다
   const why = free ? '' : pay(g, 'train');
   if (why) return why;
-  const gain = traitExp(g, o.stat, Math.round(randInt(RULES.statExp.train.min, RULES.statExp.train.max) * (1 + (traitOf(g.faction).trainExp || 0) + (gTrait(g).trainExp || 0)))); // 왕랑: 수련 경험치 +20%, 학구열 +10%
+  const nth = ((g.record || {}).n_train || 0) + 1, eff = trainEff(nth); // 이번 시즌 몇 번째 수련인지 (성공 횟수는 명령이 끝난 뒤 센다) → 효율 (시즌 8부터, 2026-11-16)
+  const gain = traitExp(g, o.stat, Math.round(randInt(RULES.statExp.train.min, RULES.statExp.train.max) * (1 + (traitOf(g.faction).trainExp || 0) + (gTrait(g).trainExp || 0)) * eff)); // 왕랑: 수련 경험치 +20%, 학구열 +10%
   const up = addStatExp(g, o.stat, gain);
-  addLog(g, `${st.name} 수련: 경험 +${gain}` + (free ? '' : ` · 내 금 -${RULES.myGoldCost.train}`) +
+  addLog(g, `${st.name} 수련: 경험 +${gain}` + (seasonNow() >= RULES.trainDecay.fromSeason ? ` (이번 시즌 ${nth}번째 · 효율 ${Math.round(eff * 100)}%)` : '') + (free ? '' : ` · 내 금 -${RULES.myGoldCost.train}`) +
     (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[o.stat]})` : ` (${g.statExp[o.stat]}/${expNeed(g.stats[o.stat])})`));
   return '';
 }

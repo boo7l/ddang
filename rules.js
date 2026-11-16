@@ -117,6 +117,7 @@ const RULES = {
   crowdCap: { 1: 12, 2: 15, 3: 20 }, // 2026-11-15 기획자: 소성 10 → 12
   crowdPow: { 1: 0.75, 2: 1, 3: 1.5 }, // crowdPow: (정원 ÷ 인원)의 지수, 성 크기별 (2026-11-13 기획자: 2 → 1.5 → 소성 0.75 · 중성 1 · 대도시 1.5) // 성 정원 (2026-11-12 시즌 7부터, 시범 도입이라 널널하게): 넘으면 그 성 장수 모두 금 수입의 상업 몫 × (정원 ÷ 인원)². 기본 100은 그대로. 농성 짱박기 대책
   crowdFromSeason: 7,
+  trainDecay: { fromSeason: 8, free: 50, step: 10, cut: 0.1, min: 0.4 }, // 수련 효율 (2026-11-16 기획자, 시즌 8부터): 이번 시즌 1~50번째 100%, 51~60번째 90%, 61~70번째 80% … 101번째부터 40%로 끝. 뒤에 숨어 수련만 몰아 하는 플레이 대책
   // 임관 상한 (2026-11-15 기획자): 시즌 시작부터 turns턴까지, 세력에 든 장수(관리자 장수 포함, 테스트 장수만 제외)의 rate 이상이 된 세력에는 새로 임관 못 함.
   // minTotal: 세력에 든 장수가 이만큼 될 때부터 센다 (시즌 첫 장수들이 막히지 않게, 임시값). 이미 들어간 장수는 그대로
   joinCap: { rate: 0.5, turns: 60, minTotal: 10 },
@@ -273,6 +274,8 @@ function turnAfter(t, i) {
 // 금 수입(1·4·7·10월): 장수가 있는 성의 상업에 따라 정해진다
 // 장수의 금 수입: 있는 성의 상업에 공적 보너스와 치안 보정을 곱한다
 // 정원 초과 (2026-11-12, 시즌 7부터): 상업 몫에 곱하는 비율 = (정원 ÷ 인원)^crowdPow[성 크기] (2026-11-13: 소성 0.75 · 중성 1 · 대도시 1.5), 정원 안이면 1. 인원 = 그 성에 머무는 그 세력 장수 수
+// 이번 시즌 k번째 수련의 효율 (1 = 100%). 시즌 8 전에는 늘 1
+const trainEff = k => { const D = RULES.trainDecay; return seasonNow() < D.fromSeason || k <= D.free ? 1 : Math.max(D.min, 1 - D.cut * Math.ceil((k - D.free) / D.step)); };
 const crowdRate = (grade, count) => (seasonNow() >= RULES.crowdFromSeason && count > RULES.crowdCap[grade] ? (RULES.crowdCap[grade] / count) ** RULES.crowdPow[grade] : 1);
 const goldIncome = (cs, merit = 0, crowd = 1) => Math.floor((RULES.goldBase + cs.comm * RULES.goldPerComm * crowd) * (1 + merit * RULES.meritIncome) * peaceIncome(cs.peace));
 // 수확(4·10월): 그 성의 농업에 따라 군량이 들어온다 (상한까지만)
