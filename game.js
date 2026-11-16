@@ -706,7 +706,7 @@ async function hofMedalMode(on) {
 }
 
 // 특별 타이틀 (2026-11-11, 시즌 6부터): 구분선 아래에 '경세지재 · 이름 (내정 170번)'. 서버가 시즌 끝에 저장한다 (hall_of_fame.titles)
-const hofTitles = list => (list && list.length ? `<hr class="hofDiv"><ul class="hofTitles">${list.map(x => `<li><span class="tName">${esc(x.t)}</span><span class="tWho">${x.names.map(esc).join(', ')}</span><span class="tVal dim">${esc(x.label)} ${fmt(x.n)}${esc(x.unit)}</span></li>`).join('')}</ul>` : '');
+const hofTitles = list => (list && list.length ? `<hr class="hofDiv"><ul class="hofTitles">${list.map(x => `<li><span class="tName">${esc(x.t)}</span><span class="tWho">${x.names.map(esc).join(', ')}</span><span class="tVal dim">${esc(x.label)}${x.n != null ? ` ${fmt(x.n)}${esc(x.unit)}` : ''}</span></li>`).join('')}</ul>` : '');
 
 // ===== 세력 변화 보기 (2026-11-06): 시즌 5부터 서버가 남긴 성 주인 변화 기록(hall_of_fame.replay)을 지도로 다시 본다 =====
 // replay = { cols, rows, endTurn, factions:[{id,name,color}], cities:[{id,name,x,y,grade,faction(처음 주인)}], links, log:[[턴, 성 id, 새 주인 id 또는 '']] }
@@ -1719,7 +1719,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116182808&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116184823&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1729,7 +1729,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116182808&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116184823&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1739,7 +1739,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116182808&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116184823&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
