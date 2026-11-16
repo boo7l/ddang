@@ -240,6 +240,25 @@ function joinCapInfo(fid) {
   const n = list.filter(x => x.faction === fid).length;
   return n >= list.length * R.rate ? { n, total: list.length } : null;
 }
+// 재야 (2026-11-16, 시즌 8부터): 세력은 없지만 성에 머무는 장수
+const roninOn = () => seasonNow() >= RULES.ronin.fromSeason;
+const isRonin = g => !!g && roninOn() && !g.faction && !!g.city;
+// 재야 이동: 누구 땅이든 n칸 (먼 길 규칙은 이동과 같다)
+function roninReach(fromId, steps) {
+  const seen = new Set([fromId]);
+  let ring = [cityById(fromId)];
+  for (let step = 0; step < steps && ring.length; step++) {
+    const next = [];
+    for (const c of ring) for (const n of neighborsOf(MAP, c)) {
+      const far = isFarRoad(c, n);
+      if (far && step > 0) continue;
+      if (!seen.has(n.id)) { seen.add(n.id); if (!far) next.push(n); }
+    }
+    ring = next;
+  }
+  seen.delete(fromId);
+  return MAP.cities.filter(c => seen.has(c.id));
+}
 function joinFaction(g, fid, cityId) {
   if (g.faction) return '이미 세력에 소속되어 있어요.';
   const f = factionById(fid);
@@ -464,7 +483,7 @@ function runOrders(mark) {
   for (const g of allGenerals()) {
     const order = g.queue.shift();
     g.queue.push(null);
-    if (order && g.faction) todo.push({ g, order });
+    if (order && (g.faction || isRonin(g))) todo.push({ g, order }); // 재야도 재야 명령은 실행 (시즌 8부터)
     else if (!order && gTrait(g).idleExp) idle.push(g); // 개인 특성 장군뒹굴: 예약 칸이 빈 턴
     if (!order && g.faction) addRecord(g, 'idle'); // 대기한 턴 수 (2026-11-08, 시즌 기록용)
   }
@@ -472,7 +491,9 @@ function runOrders(mark) {
   turnTodo = todo;
   for (turnIdx = 0; turnIdx < todo.length; turnIdx++) {
     const { g, order } = todo[turnIdx];
-    if (S.unified || !g.faction) continue; // 통일됐거나, 이번 턴에 앞서 세력을 잃었다
+    if (S.unified || !(g.faction || isRonin(g))) continue; // 통일됐거나, 이번 턴에 앞서 세력을 잃었다 (재야는 재야 명령만, 아래)
+    if (isRonin(g) && !RULES.ronin.cmds.includes(order.cmd)) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야는 쓸 수 없는 명령 → 대기`); continue; }
+    if (g.faction && (order.cmd === 'quest' || order.cmd === 'enlist')) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야만 쓰는 명령 → 대기`); continue; }
     if (fieldDone.has(g.id)) continue; // 야전에서 이미 싸워 이번 턴 출진이 끝났다
     const fail = COMMANDS[order.cmd] && cmdOn(order.cmd) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
@@ -558,6 +579,7 @@ function earnGold(g, n) {
 // 공적: 수련을 뺀 명령마다 쌓이는 점수. 순위를 매기는 데 쓴다
 // 한 턴에 얻는 공적은 장수마다 최대 RULES.meritTurnMax (2026-10-28: 이벤트가 겹쳐도 100까지). 실제로 더한 양을 돌려준다
 function addMerit(g, n) {
+  if (isRonin(g)) return 0; // 재야는 공적을 얻지 않는다 (2026-11-16)
   if (g.meritTurn !== S.turn) { g.meritTurn = S.turn; g.meritThisTurn = 0; }
   const got = Math.max(0, Math.min(n, RULES.meritTurnMax - g.meritThisTurn));
   g.meritThisTurn += got;
@@ -754,7 +776,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
       g.merit -= meritLost;
       g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost };
-      g.faction = null; g.city = null; continue;
+      g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); continue; // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
     }
     g.city = to.id;
     if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
@@ -1150,6 +1172,12 @@ function runMove(g, o) {
   const from = cityById(g.city), to = cityById(o.to);
   if (!to) return '없는 성';
   if (to.id === from.id) return `이미 ${to.name}에 있음`;
+  if (isRonin(g)) { // 재야 이동: 누구 땅이든 2칸 (2026-11-16)
+    if (!roninReach(from.id, RULES.ronin.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 ${RULES.ronin.moveRange}칸이 넘음`;
+    g.city = to.id;
+    addLog(g, `${from.name}에서 ${josa(to.name, '으로')} 떠돌아 왔다.`);
+    return '';
+  }
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
   if (!linkedOwnCities(from.id, g.faction, moveRangeOf(g), !!gTrait(g).freePath).includes(to)) return `${from.name}에서 ${to.name}까지 ${gTrait(g).freePath ? '' : '아군 땅으로 '}${moveRangeOf(g)}칸 안에 이어져 있지 않음`;
   g.city = to.id;
@@ -1217,6 +1245,7 @@ function runExplore(g) {
       break;
     }
     case 'troops': {
+      if (isRonin(g)) { text = '소문을 들은 의병들이 찾아왔지만, 재야라 거느릴 수 없어 돌려보냈다.'; break; }
       const all = randInt(e.min, e.max), n = Math.max(0, Math.min(all, troopsMax(g) - g.troops));
       if (!g.unitType) g.unitType = '보병'; // 병사가 없던 장수에게 온 의병은 보병
       g.troops += n;
@@ -1439,7 +1468,8 @@ function runTrain(g, o) {
   const why = free ? '' : pay(g, 'train');
   if (why) return why;
   const nth = ((g.record || {}).n_train || 0) + 1, eff = trainEff(nth); // 이번 시즌 몇 번째 수련인지 (성공 횟수는 명령이 끝난 뒤 센다) → 효율 (시즌 8부터, 2026-11-16)
-  const gain = traitExp(g, o.stat, Math.round(randInt(RULES.statExp.train.min, RULES.statExp.train.max) * (1 + (traitOf(g.faction).trainExp || 0) + (gTrait(g).trainExp || 0)) * eff)); // 왕랑: 수련 경험치 +20%, 학구열 +10%
+  const TR = isRonin(g) ? RULES.ronin.train : RULES.statExp.train; // 재야는 50~70 (2026-11-16)
+  const gain = traitExp(g, o.stat, Math.round(randInt(TR.min, TR.max) * (1 + (traitOf(g.faction).trainExp || 0) + (gTrait(g).trainExp || 0)) * eff)); // 왕랑: 수련 경험치 +20%, 학구열 +10%
   const up = addStatExp(g, o.stat, gain);
   addLog(g, `${st.name} 수련: 경험 +${gain}` + (seasonNow() >= RULES.trainDecay.fromSeason ? `(${nth}번째 · 효율 ${Math.round(eff * 100)}%)` : '') + (free ? '' : ` · 내 금 -${RULES.myGoldCost.train}`) +
     (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[o.stat]})` : ` (${g.statExp[o.stat]}/${expNeed(g.stats[o.stat])})`));
@@ -1594,6 +1624,25 @@ function runSupply(g, o) {
   return '';
 }
 
+// ----- 재야 전용 (2026-11-16, 시즌 8부터) -----
+// 의뢰: 머무는 성에서 일을 맡아 금 100~300 (공적 없음)
+function runQuest(g) {
+  if (!isRonin(g)) return '재야만 쓰는 명령';
+  const city = cityById(g.city), got = earnGold(g, randInt(RULES.ronin.quest[0], RULES.ronin.quest[1]));
+  addLog(g, got > 0 ? `📜 ${city.name}에서 의뢰를 맡아 해결했다. 금 +${fmt(got)}` : `📜 ${city.name}에서 의뢰를 해결했지만, 금을 더 지닐 수 없었다.`);
+  return '';
+}
+// 임관: 지금 머무는 성의 세력에 들어간다 (하야 대기·임관 상한은 그대로)
+function runEnlist(g) {
+  if (!isRonin(g)) return '재야만 쓰는 명령';
+  const c = cityById(g.city);
+  if (!c.faction) return `${josa(c.name, '은는')} 주인 없는 땅이라 임관할 세력이 없음`;
+  const why = joinFaction(g, c.faction, c.id);
+  if (why) return why;
+  clearOrders(g); // 세력 명령으로 새로 예약하게
+  return '';
+}
+
 // ----- 하야 (예약 없이 바로) -----
 // 세력을 떠나 재야가 된다. 병사는 세력의 것이라 흩어지고, 공적·금·능력치는 그대로 (멸망했을 때와 같다).
 // 남은 예약은 모두 지워지고, 다음에 들어오면 세력 선택부터 다시 한다. 떠난 세력에는 RULES.rejoinWait턴 동안 못 들어간다
@@ -1603,7 +1652,7 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (공적은 �
   const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
   const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 공적 -15% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
   if (cut > 0) g.merit -= cut;
-  Object.assign(g, { faction: null, city: null, troops: 0, unitType: null });
+  Object.assign(g, { faction: null, city: roninOn() ? g.city : null, troops: 0, unitType: null }); // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
   g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait, ...(!kicked && seasonNow() >= RULES.rejoinAllFrom ? { all: true } : {}) }; // 떠난 세력에는 한동안 다시 못 들어간다. 시즌 8부터 스스로 하야하면 모든 세력에 (해고·추방은 떠난 세력만)
   clearOrders(g);
   addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 공적 -${fmt(cut)} (${fmt(g.merit)})` : ''}`);
@@ -1670,6 +1719,8 @@ const COMMANDS = {
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   levy: { label: () => '갈취', run: runLevy },
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
+  quest: { label: () => '의뢰', run: runQuest }, // 재야 (2026-11-16)
+  enlist: { label: () => '임관', run: runEnlist }, // 재야: 머무는 성의 세력에 (2026-11-16)
   supply: { label: o => `보급 ${cityName(o.from)} → ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runSupply }, // 대도독 (2026-11-16, 시즌 8부터)
   expand: { label: () => '증축', run: runExpand }, // 2026-11-08
 };
