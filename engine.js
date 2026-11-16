@@ -358,10 +358,11 @@ function advance() {
       for (const g of allGenerals()) {
         if (!g.faction) continue;
         const c = cityById(g.city), n = heads[g.faction + '|' + g.city], crowd = crowdRate(c.grade, n);
-        const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0)))); // 세력 특성, 개인 특성 부호
+        const capG = capitalOf(g.faction) ? RULES.capital.gold : 0; // 수도가 있는 세력 금 수입 +5% (2026-11-16, 시즌 8부터)
+        const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0) + capG))); // 세력 특성, 개인 특성 부호
         const crowdPct = crowd < 1 ? Math.round((1 - goldIncome(cs, 0, crowd, fac) / goldIncome(cs, 0, 1, fac)) * 100) : 0; // 정원 초과로 줄어든 비율 (전체 금 수입 기준)
         const floorText = fac ? ` · 세력 평균 상업 ${fac.avg}${fac.n * RULES.goldFloor.perCity >= 0.005 ? ` · 성 ${fac.n}개 +${Math.round(Math.min(RULES.goldFloor.cityMax, fac.n * RULES.goldFloor.perCity) * 1000) / 10}%` : ''}` : '';
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${capG ? ` · 수도 +${Math.round(capG * 100)}%` : ''}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
       }
     }
     // 군량 시세: 매달 RULES.foodBuy.steps 확률로 -2~+2 (4~8, 2026-11-10)
@@ -610,7 +611,7 @@ function runDraft(g, o) {
   let note = '';
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   const t = traitOf(g.faction);
-  const raw = Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0)));
+  const raw = Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))); // 수도에서 징병 +5% (2026-11-16, 시즌 8부터)
   const gain = Math.min(raw, troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
   g.unitType = type;
   g.troops += gain;
@@ -642,7 +643,7 @@ function runGuardDraft(g) {
   let note = '';
   delete cs.guardType; // 2026-11-14: 수비대는 병종 없음 (다른 병종이라 흩어지는 일도 없다)
   const t = traitOf(g.faction);
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (gTrait(g).draft || 0))), max - (cs.guard || 0));
+  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))), max - (cs.guard || 0)); // 수도에서 징병 +5% (2026-11-16)
   cs.guard = (cs.guard || 0) + gain;
   addRecord(g, 'drafted', gain);
   const drop = Math.min(cs.peace, Math.round(gain / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0))));
@@ -782,6 +783,18 @@ function capture(g, to, oldFaction, lines) {
     lines.push(`성의 군량 ${fmt(cs.food)}${numJosa(cs.food)} 차지했다.`);
     g.city = to.id;
     return;
+  }
+  if (to.grade >= 4) { // 수도 함락 (2026-11-16, 시즌 8부터): 대도시로 격하, 대도시 최대치를 넘는 값은 깎고, 잃은 세력 모든 성 치안 -lossPeace
+    if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG));
+    const mc = S.map && S.map.cities.find(x => x.id === to.id);
+    if (mc) mc.grade = 3;
+    to.grade = 3; S.mapAt = Date.now();
+    for (const k of ['agri', 'comm', 'wall', 'peace']) cs[k] = Math.min(cs[k], devMax(3, k));
+    cs.food = Math.min(cs.food, foodMax(3));
+    const lp = RULES.capital.lossPeace;
+    for (const oc of citiesOfFaction(oldFaction)) S.cities[oc.id].peace = Math.max(0, S.cities[oc.id].peace - lp);
+    lines.push({ a: `👑 수도 ${josa(to.name, '을를')} 무너뜨렸다! 대도시로 격하되었다.`, d: `👑 우리 수도 ${josa(to.name, '이가')} 함락되어 대도시로 격하되었다! 우리 모든 성 치안 -${lp}` });
+    logAll(`👑 ${factionById(oldFaction).name} 세력의 수도 ${josa(to.name, '이가')} ${factionById(g.faction).name} 세력에게 함락되었다!`);
   }
   lines.push({ a: seize(cs) });
   const rep = RULES.captureRepeatTurns, repeat = rep > 0 && cs.capturedTurn != null && S.turn - cs.capturedTurn <= rep; // 연속 함락 완화 (시즌 7부터): 농업·상업 절반만
@@ -1351,7 +1364,8 @@ function runSpy(g, o) {
   if (why) return why;
   addMerit(g, RULES.merit.plot);
   addRecord(g, 'plotTry');
-  if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0)) { // 책사 +8%p
+  const capR = capitalOn() && c.grade >= 4 ? RULES.capital.plotResist : 0; // 수도는 계략 성공률 -10%p (2026-11-16, 시즌 8부터)
+  if (Math.random() >= spySuccessRate(effStats(g).int) + (gTrait(g).plot || 0) - capR) { // 책사 +8%p
     addLog(g, `첩보 → ${c.name}: 실패… 첩자가 아무것도 알아내지 못했다.`);
     if (PLOT.failExp) gainStatExp(g, 'int', PLOT.failExp); // 실패해도 지력 경험치 (시즌 7부터)
     return '';
@@ -1381,7 +1395,7 @@ function runPlot(g, kind, o) {
   if (allied(g.faction, c.faction)) return `${factionById(c.faction).name} 세력과 동맹 중이라 ${PLOT_NAME[kind]}하지 않음`; // 동맹 중 파괴·유언 금지 (첩보는 된다, 2026-11-13)
   const why = pay(g, 'plot'); // 계략은 금 50 (실패해도 든다, 2026-10-26)
   if (why) return why;
-  const int = effStats(g).int, r = rollPlot(int, gTrait(g).plot || 0); // 책사 +8%p
+  const int = effStats(g).int, r = rollPlot(int, (gTrait(g).plot || 0) - (capitalOn() && c.grade >= 4 ? RULES.capital.plotResist : 0)); // 책사 +8%p, 수도는 -10%p (2026-11-16, 시즌 8부터)
   addRecord(g, 'plotTry');
   if (r !== 'fail') addRecord(g, 'plotOk');
   addMerit(g, RULES.merit.plot); // 계략은 시도만 해도 공적 10, 성공하면 20 더 (2026-10-28)
@@ -1544,7 +1558,7 @@ function runTransport(g, o) {
   if (!other) return '없는 성';
   if (other.id === here.id) return '같은 성끼리는 옮길 수 없음';
   if (other.faction !== g.faction) return `${josa(other.name, '은는')} 아군 성이 아님`;
-  if (!linkedOwnCities(here.id, g.faction, RULES.moveRange).includes(other)) return `${here.name}에서 ${other.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
+  if (!transportLinked(here, other, g.faction)) return `${here.name}에서 ${other.name}까지 아군 땅으로 ${transportRangeOf(here, other)}칸 안에 이어져 있지 않음`; // 수도가 끼면 3칸 (시즌 8부터)
   const pull = o.dir === 'fetch', from = pull ? other : here, to = pull ? here : other;
   const src = S.cities[from.id], dst = S.cities[to.id], room = foodMax(to.grade) - dst.food;
   if (src.food <= 0) return `${from.name}에 보낼 군량이 없음`;
@@ -1567,7 +1581,7 @@ function runSupply(g, o) {
   if (from.id === to.id) return '같은 성끼리는 옮길 수 없음';
   if (from.faction !== g.faction) return `${josa(from.name, '은는')} 아군 성이 아님`;
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
-  if (!linkedOwnCities(from.id, g.faction, RULES.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${RULES.moveRange}칸 안에 이어져 있지 않음`;
+  if (!transportLinked(from, to, g.faction)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${transportRangeOf(from, to)}칸 안에 이어져 있지 않음`; // 수도가 끼면 3칸 (시즌 8부터)
   const src = S.cities[from.id], dst = S.cities[to.id], room = foodMax(to.grade) - dst.food;
   if (src.food <= 0) return `${from.name}에 보낼 군량이 없음`;
   if (room <= 0) return `${to.name}의 군량 창고가 가득 참 (${fmt(foodMax(to.grade))})`;
@@ -1602,11 +1616,20 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (공적은 �
 // 등급은 지도에 있으므로 세계의 지도(S.map)를 고치고 S.mapAt을 바꿔 화면이 새 지도를 받아 가게 한다
 const expandKeys = () => Object.keys(DOMESTIC).filter(cmdOn);
 const expandShort = (c, cs) => expandKeys().filter(k => cs[k] < Math.ceil(devMax(c.grade, k) * RULES.expand.ready)); // 아직 90%가 안 된 내정
-const expandReady = c => !!c && c.grade < 3 && !expandShort(c, S.cities[c.id]).length;
+// 수도 (2026-11-16 기획자, 시즌 8부터): 세력당 하나. 대도시를 증축해서 세우고, 함락되면 대도시로 격하
+const capitalOn = () => seasonNow() >= RULES.capital.fromSeason;
+const capitalOf = fid => (fid && capitalOn() ? MAP.cities.find(c => c.faction === fid && c.grade >= 4) : null) || null;
+const expandTop = c => (capitalOn() && c && c.grade === 3 && !capitalOf(c.faction) ? 4 : 3); // 이 성이 오를 수 있는 가장 높은 크기
+const expandReady = c => !!c && c.grade < expandTop(c) && !expandShort(c, S.cities[c.id]).length;
+// 수도가 출발이나 도착인 수송·보급은 RULES.capital.transportRange칸 (2026-11-16, 시즌 8부터)
+const transportRangeOf = (a, b) => (capitalOn() && (a.grade >= 4 || b.grade >= 4) ? RULES.capital.transportRange : RULES.moveRange);
+const transportLinked = (a, b, fid) => linkedOwnCities(a.id, fid, transportRangeOf(a, b)).includes(b);
 function runExpand(g) {
   const c = cityById(g.city), cs = S.cities[g.city];
   if (!g.faction || c.faction !== g.faction) return `${josa(c.name, '은는')} 우리 세력 성이 아님`;
-  if (c.grade >= 3) return `${josa(c.name, '은는')} 이미 대도시`;
+  if (c.grade >= 4) return `${josa(c.name, '은는')} 이미 수도`;
+  if (c.grade >= 3 && !capitalOn()) return `${josa(c.name, '은는')} 이미 대도시`;
+  if (c.grade >= 3 && capitalOf(g.faction)) return `우리 세력에 이미 수도(${capitalOf(g.faction).name})가 있음`;
   const short = expandShort(c, cs);
   if (short.length) return `${c.name}의 ${josa(short.map(k => DOMESTIC[k].label).join('·'), '이가')} 아직 최대치의 ${Math.round(RULES.expand.ready * 100)}%가 안 됨`;
   const from = c.grade, cost = RULES.expand.cost[from], merit = RULES.expand.merit[from];
@@ -1621,7 +1644,7 @@ function runExpand(g) {
   const exp = RULES.expand.exp[from];
   for (const st of STATS) gainStatExp(g, st.key, exp); // 통솔·무력·지력 경험치 각각 (세력·개인 경험치 보너스가 붙는다)
   addRecord(g, 'expand');
-  const name = ['', '소성', '중성', '대도시'];
+  const name = ['', '소성', '중성', '대도시', '수도'];
   addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(merit)} · 모든 능력 경험치 +${exp}`);
   logAll(`🏗 ${g.name}${josa(g.name, '이가').slice(-1)} ${josa(c.name, '을를')} ${josa(name[from + 1], '으로')} 증축했다!`);
   return '';

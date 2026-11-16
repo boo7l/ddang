@@ -1182,12 +1182,12 @@ function buyFoodDialog() {
 const isFront = c => neighborsOf(MAP, c).some(n => n.faction && n.faction !== c.faction);
 // 이동·수송 목록 (2026-11-03): 칼(전선)은 성 이름 옆, 규모 별은 오른쪽 정렬된 군량 글자 바로 왼쪽
 const frontTag = c => (isFront(c) ? ' <span class="frontTag" title="전선: 이웃에 다른 세력 성이 있어요">⚔</span>' : '');
-const gradeStars = c => `<span class="pstars" title="${GRADE_NAME[c.grade]}">${'<i></i>'.repeat(c.grade)}</span> `;
+const gradeStars = c => `<span class="pstars" title="${GRADE_NAME[c.grade]}">${c.grade >= 4 ? '<i class="big"></i>' : '<i></i>'.repeat(c.grade)}</span> `; // 수도는 큰 별 하나 (2026-11-16)
 
 // 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~transportMax(10,000) 직접 입력 (빠른 단추도)
 function transportDialog() {
   const p = me(), at = cityAtSlot(p, slot), here = S.cities[at.id];
-  const opts = linkedOwnCities(at.id, p.faction, RULES.moveRange).map(c => {
+  const opts = linkedOwnCities(at.id, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => transportLinked(at, c, p.faction)).map(c => { // 수도가 끼면 3칸 (2026-11-16, 시즌 8부터)
     const cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${isFarRoad(at, c) ? ' <span class="dim">(먼 길)</span>' : ''}${frontTag(c)}
       <span class="r foodR">${gradeStars(c)}군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
@@ -1200,7 +1200,7 @@ function transportDialog() {
     <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
     <p><input type="number" id="tAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
       ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-amt="${n}">${fmt(n)}</button>`).join(' ')}</p>`;
-  pickDialog('군량 수송', `<p>${esc(josa(at.name, '과와'))} 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성 사이에서 군량을 옮겨요. 가는 동안 줄지 않아요.</p>
+  pickDialog('군량 수송', `<p>${esc(josa(at.name, '과와'))} 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성 사이에서 군량을 옮겨요${capitalOn() ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 가는 동안 줄지 않아요.</p>
     <p class="dim">${esc(at.name)} 군량 ${fmt(here.food)} / ${fmt(foodMax(at.grade))} · 실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요</p>`,
   opts, '예약', (v, box) => {
     const amount = Math.floor(+box.querySelector('#tAmount').value);
@@ -1320,7 +1320,7 @@ function helpDialog(page = -1) {
       <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
-      <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키워요. 많은 금을 쓰는 대신 공적과 능력 경험치를 얻을 수 있어요.</li></ul>`],
+      <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? "·대도시" : ""}을 한 단계 키워요${capitalOn() ? " (대도시 → 수도는 세력당 하나)" : ""}. 많은 금을 쓰는 대신 공적과 능력 경험치를 얻을 수 있어요.</li></ul>`],
     // 대도독 · 동맹 (2026-11-13 도움말, 시즌 7부터): 숫자는 RULES.commander에서
     ...(seasonNow() >= RULES.commander.fromSeason ? [['🚩 대도독', (R => `<div class="helpScroll">
       <p>세력마다 한 명 둘 수 있는 길잡이예요. 다른 장수에게 명령을 내리지는 못하고, 공지 · 방침 · 동맹을 맡아요. 대도독 칸은 명령 창 아래에 있어요.</p>
@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116210846&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116214041&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116210846&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116214041&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116210846&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116214041&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2263,7 +2263,7 @@ function renderJoinInfo() {
     </table>
     <p class="sub">시작할 성 <span class="dim">(지도에서 눌러도 돼요)</span></p>
     <div class="picks" id="jCities">${cities.map(c =>
-      `<button class="pick${c.id === joinCity ? ' on' : ''}" data-c="${esc(c.id)}">${esc(c.name)} <span class="grade">${'★'.repeat(c.grade)}</span></button>`).join('')}</div>
+      `<button class="pick${c.id === joinCity ? ' on' : ''}" data-c="${esc(c.id)}">${esc(c.name)} <span class="grade">${gradeStarText(c.grade)}</span></button>`).join('')}</div>
     ${(S.joinFull || []).includes(f.id)
       ? `<p class="bad">장수가 많은 세력이라 ${dateText(RULES.joinCap.turns)}까지는 임관할 수 없어요. (세력에 든 장수의 ${Math.round(RULES.joinCap.rate * 100)}% 이상)</p>
     <button id="jOk" class="btn big" disabled>${esc(f.name)} 세력에 소속하기</button>`
@@ -2466,7 +2466,7 @@ function supplyDialog() {
   const food = c => { const cs = S.cities[c.id] || {}; return `군량 ${fmt(cs.food || 0)} / ${fmt(foodMax(c.grade))}`; };
   const opt = c => `<option value="${esc(c.id)}">${esc(c.name)} · ${food(c)}</option>`;
   openModal(`<h2>🚚 보급</h2>
-    <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${RULES.moveRange}칸 안이어야 해요. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
+    <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${RULES.moveRange}칸 안이어야 해요${capitalOn() ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
     <p class="sub">보내는 성</p><p><select id="sFrom" style="width:100%">${mine.map(opt).join('')}</select></p>
     <p class="sub">받는 성</p><p><select id="sTo" style="width:100%"></select></p>
     <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
@@ -2474,7 +2474,7 @@ function supplyDialog() {
       ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-samt="${n}">${fmt(n)}</button>`).join(' ')}</p>
     <p class="dim small">실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요.</p>
     <div class="modalBtns"><button id="sOk" class="main">예약</button><button data-close>닫기</button></div>`, box => {
-    const fill = () => { const a = box.querySelector('#sFrom').value, list = linkedOwnCities(a, p.faction, RULES.moveRange).filter(c => c.id !== a); box.querySelector('#sTo').innerHTML = list.length ? list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; };
+    const fill = () => { const a = box.querySelector('#sFrom').value, ac = cityById(a), list = linkedOwnCities(a, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => c.id !== a && transportLinked(ac, c, p.faction)); /* 수도가 끼면 3칸 */ box.querySelector('#sTo').innerHTML = list.length ? list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; };
     box.querySelector('#sFrom').onchange = fill; fill();
     box.querySelectorAll('[data-samt]').forEach(b => { b.onclick = () => { box.querySelector('#sAmount').value = b.dataset.samt; }; });
     box.querySelector('#sOk').onclick = () => {
@@ -2701,13 +2701,14 @@ function updateTurn() {
 // 명령 창 = 예약표. 칸을 고르고 아래 명령 버튼을 누르면 그 칸에 예약된다
 // 증축 확인 창 (2026-11-08): 금이 많이 드는 명령이라 바로 예약하지 않고, 비용·바뀌는 것·얻는 것을 보여 준 뒤 예약한다
 function expandConfirm() {
-  const p = me(), at = cityAtSlot(p, slot), g0 = at.grade, g1 = g0 + 1, name = ['', '소성', '중성', '대도시'], E = RULES.expand;
+  const p = me(), at = cityAtSlot(p, slot), g0 = at.grade, g1 = g0 + 1, name = ['', '소성', '중성', '대도시', '수도'], E = RULES.expand;
   const head = `<h2>🏗 증축 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>`;
   // 증축할 수 없는 성 (2026-11-08: 버튼이 늘 보이므로 이유를 알려 준다)
-  if (at.faction !== p.faction || g0 >= 3) {
+  if (at.faction !== p.faction || g0 >= expandTop(at)) {
+    const cap = capitalOf(p.faction); // 수도 (2026-11-16, 시즌 8부터): 대도시 → 수도는 세력당 하나
     openModal(`${head}<p><b class="hi">${esc(at.name)}</b>: ${name[g0] || '?'}</p>
-      <p>${at.faction !== p.faction ? '우리 세력 성이 아니라서 증축할 수 없어요.' : '이미 <b class="hi">대도시</b>라서 더 증축할 수 없어요.'}</p>
-      <p class="dim small exNote">농업·상업·방어·치안이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상인 우리 소성·중성을 한 단계 키울 수 있어요.</p>
+      <p>${at.faction !== p.faction ? '우리 세력 성이 아니라서 증축할 수 없어요.' : g0 >= 4 ? '이미 <b class="hi">수도</b>라서 더 증축할 수 없어요.' : capitalOn() && cap ? `우리 세력에 이미 수도(<b class="hi">${esc(cap.name)}</b>)가 있어서 수도로 증축할 수 없어요. 수도는 세력당 하나예요.` : '이미 <b class="hi">대도시</b>라서 더 증축할 수 없어요.'}</p>
+      <p class="dim small exNote">농업·상업·방어·치안이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? '·대도시' : ''}을 한 단계 키울 수 있어요.${capitalOn() ? ' 대도시 → 수도는 세력당 하나예요.' : ''}</p>
       <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
     return;
   }
@@ -2759,7 +2760,7 @@ function renderCommands() {
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
     btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
     // 증축 (2026-11-08): 늘 보인다 (눌러서 조건·비용·보상을 언제든 볼 수 있게). 조건이 안 되면 흐리게, 예약은 확인 창에서 막는다
-    (() => { const ok = at.faction === p.faction && expandReady(at), can = at.faction === p.faction && at.grade < 3; return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 3 ? '대도시' : '조건 부족', !can); })(), // 2026-11-15 기획자: 조건이 모자라도 예약은 된다 (실행하는 턴에 확인)
+    (() => { const ok = at.faction === p.faction && expandReady(at), can = at.faction === p.faction && at.grade < expandTop(at); return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 4 ? '수도' : at.grade >= expandTop(at) ? '대도시' : '조건 부족', !can); })(), // 2026-11-16: 시즌 8부터 대도시 → 수도 (세력당 하나) // 2026-11-15 기획자: 조건이 모자라도 예약은 된다 (실행하는 턴에 확인)
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
     IS_ADMIN ? btn('adminPouch', '특성 뽑기', '관리자 · 바로') : ''].join('');
   const oldQ = $('#queueBox .queue'), qTop = oldQ ? oldQ.scrollTop : 0; // 다시 그려도 예약표 스크롤 위치는 그대로

@@ -44,7 +44,7 @@ function drawMap(el, opts = {}) {
         if (opts.focusFaction && c.faction !== opts.focusFaction) div.classList.add('faded');
         const mk = opts.mark ? opts.mark(c) : '';
         if (mk) div.classList.add(mk === '🛡' ? 'polDef' : 'polAtk'); // 방침 칸 테두리 (2026-11-13)
-        div.innerHTML = `<span class="name">${c.name}</span><span class="grade">${'★'.repeat(c.grade)}</span>${mk ? `<span class="pmark">${mk}</span>` : ''}`;
+        div.innerHTML = `<span class="name">${c.name}</span><span class="grade">${gradeStarText(c.grade)}</span>${mk ? `<span class="pmark">${mk}</span>` : ''}`;
         div.title = `${c.name} (${f ? f.name : '공백지'} · ${GRADE_NAME[c.grade]})`;
         if (opts.onClick) div.onclick = () => opts.onClick(c);
       }
@@ -78,7 +78,7 @@ function renderInfo() {
     <table class="stats">
       <tr><th>이름</th><td>${c.name}${typeof recentCaptureIcon === 'function' ? recentCaptureIcon(c) : ''}</td></tr>
       <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${f.name}` : '<span class="dim">공백지</span>'}</td></tr>
-      <tr><th>규모</th><td>${GRADE_NAME[c.grade]} <span class="grade">${'★'.repeat(c.grade)}</span></td></tr>
+      <tr><th>규모</th><td>${GRADE_NAME[c.grade]} <span class="grade">${gradeStarText(c.grade)}</span></td></tr>
       <tr class="wide"><th>이웃</th><td>${neighbors(c).map(n => n.name).join(' · ')}</td></tr>
       ${typeof recentCaptureRow === 'function' ? recentCaptureRow(c) : ''}
       ${cityDetailRows(c)}
