@@ -1156,6 +1156,8 @@ td.nowrap { white-space: nowrap; }
 .notePaper .devNote { margin: 6px 0; padding: 6px 10px; color: #4a3a2a; background: rgba(255, 250, 235, .55); border: 1px dashed #7a5426; border-left: 3px solid #8c2a10; }
 .notePaper li.devLi { list-style: none; margin-left: 0; } /* 2026-11-14 기획자: 위 항목 글과 같은 줄에서 시작 (한 단계 들여쓰기, 예전 -20px) */
 .notePaper.devPaper { padding: 8px 12px; }
+.notePaper.popPaper { padding: 10px 14px; line-height: 1.6; } /* 알림 창 글: 게시판·패치노트처럼 종이 위에 (2026-11-16 기획자, 올린 시각은 안 보임) */
+#modalBox .modalBtns.popBtns { justify-content: center; gap: 28px; } /* 알림 창 단추 두 개를 가운데로 모은다 (2026-11-16) */
 .notePaper.devPaper .devNote { margin: 0; }
 
 /* 관리 페이지 무술대회 (2026-11-14) */
