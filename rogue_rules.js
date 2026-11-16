@@ -71,7 +71,9 @@ function drawCardR(f, block = []) {
   // 큰 카드 (2026-11-17 기획자): 대는 종류마다 정확히 +bigP%p, 늘어난 만큼 소·중에서 반씩 뺀다 (필살·회피는 그대로). 한쪽이 0이 되면 나머지에서
   const sz = [...SIZE_P];
   if (m.bigP) { let take = Math.min(m.bigP, sz[0] + sz[1]); sz[2] += take; const half = take / 2, a = Math.min(sz[0], half), b = Math.min(sz[1], take - a); sz[0] -= a; sz[1] -= b; if (a + b < take) sz[0] -= Math.min(sz[0], take - a - b); }
-  for (const t of TYPES) sz.forEach((p, s) => pool.push([{ t, s }, p]));
+  // 필살 단련·회피 단련 (2026-11-17 기획자): 그 카드는 정확히 +%p, 늘어난 만큼 일반 카드 9종에서 똑같이 나눠 뺀다 (0 밑으로는 안 감)
+  const spAdd = (m.killP || 0) + (m.dodgeP || 0), cut = spAdd / 9;
+  for (const t of TYPES) sz.forEach((p, s) => pool.push([{ t, s }, Math.max(0, p - cut)]));
   if (!block.includes('kill')) pool.push([{ t: 'kill' }, KILL_P + m.killP]);
   if (!block.includes('dodge')) pool.push([{ t: 'dodge' }, DODGE_P + m.dodgeP]);
   let r = Math.random() * pool.reduce((a, x) => a + x[1], 0);
