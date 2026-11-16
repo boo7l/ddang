@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117081130">
+<link rel="stylesheet" href="style.css?v=20261117081402">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -240,6 +240,9 @@
   .titleCover .sub { margin-top: -14px; color: #f0d8a8; font-size: 16px; letter-spacing: 1px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
   .titleCover .btns { display: flex; gap: 18px; } .titleCover .btns button { font-size: 18px; padding: 9px 26px; min-width: 110px; }
   @media (max-width: 700px) { .titleCover { gap: 12px; } .titleCover h1 { font-size: 30px; letter-spacing: 3px; } .titleCover .sub { margin-top: -6px; font-size: 14px; } .titleCover .btns button { font-size: 15px; padding: 7px 14px; min-width: 80px; } }
+  .closeMini { align-self: flex-end; margin-top: 8px; font-size: 17px; padding: 8px 22px; }
+  .closeMini[hidden] { display: none; }
+  @media (max-width: 860px) { .closeMini { position: fixed; right: 8px; bottom: 8px; z-index: 60; margin: 0; font-size: 14px; padding: 6px 12px; box-shadow: 0 0 0 2px #000; } } /* 휴대폰: 화면 구석에 고정 */
   #tcClears { margin-top: -6px; background: none; border: 0; color: #ffd860; text-decoration: underline; cursor: pointer; font-size: 15px; text-shadow: 1px 1px 0 #000; }
   .clrDel { font-size: 12px; padding: 1px 6px; margin-left: 4px; }
   .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 12px; color: #6a5a4a; }
@@ -294,6 +297,7 @@
       <div class="sndBar"><button id="sndBtn">🔊 ON</button> <button id="rulesBtn">📖 규칙</button></div>
       <div class="myBoons" id="myBoons"></div><!-- 음악·효과음 한 단추 (2026-11-14) -->
       <div class="log" id="log"><div class="dim">기록</div></div>
+      <button id="closeMini" class="closeMini" hidden>✕ 닫기</button>
     </div>
   </div>
 
@@ -325,8 +329,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117081130"></script>
-<script src="rogue_rules.js?v=20261117081130"></script>
+<script src="duel_rules.js?v=20261117081402"></script>
+<script src="rogue_rules.js?v=20261117081402"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -831,6 +835,8 @@ function showClears() {
   }).catch(() => { box.innerHTML = '<p>⚠ 목록을 불러오지 못했어요.</p>'; });
 }
 $('tcClears').onclick = showClears;
+// 닫기 (2026-11-17 기획자: 바깥 ✕가 잘 안 보여서 오른쪽 아래에 따로). 게임 창 안에서 열렸을 때만
+if (BRIDGE && BRIDGE.close) { $('closeMini').hidden = false; $('closeMini').onclick = () => BRIDGE.close(); }
 function rogueRulesHtml() {
   const last = STAGES[STAGES.length - 1];
   return `<section class="rsec"><h3>⚔ 맹장집결</h3><ul>
