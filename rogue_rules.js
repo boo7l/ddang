@@ -68,7 +68,10 @@ function enemyMods(s) { return newMods({ war: s.war, hpMax: s.m.hpMax ?? 100, sh
 const handMaxR = f => handMax(f.war) + (f.m.hand || 0);
 function drawCardR(f, block = []) {
   const m = f.m, pool = [];
-  for (const t of TYPES) SIZE_P.forEach((p, s) => pool.push([{ t, s }, p + (s === 2 ? m.bigP : 0)]));
+  // 큰 카드 (2026-11-17 기획자): 대는 종류마다 정확히 +bigP%p, 늘어난 만큼 소·중에서 반씩 뺀다 (필살·회피는 그대로). 한쪽이 0이 되면 나머지에서
+  const sz = [...SIZE_P];
+  if (m.bigP) { let take = Math.min(m.bigP, sz[0] + sz[1]); sz[2] += take; const half = take / 2, a = Math.min(sz[0], half), b = Math.min(sz[1], take - a); sz[0] -= a; sz[1] -= b; if (a + b < take) sz[0] -= Math.min(sz[0], take - a - b); }
+  for (const t of TYPES) sz.forEach((p, s) => pool.push([{ t, s }, p]));
   if (!block.includes('kill')) pool.push([{ t: 'kill' }, KILL_P + m.killP]);
   if (!block.includes('dodge')) pool.push([{ t: 'dodge' }, DODGE_P + m.dodgeP]);
   let r = Math.random() * pool.reduce((a, x) => a + x[1], 0);
@@ -187,4 +190,4 @@ function simReport(n = 5000, pick = 'random') {
   return STAGES.map((s, i) => ({ stage: i + 1, name: s.name, reach: reach[i] / n, win: reach[i] ? reach[i + 1] / reach[i] : 0 })).concat([{ clear: reach[STAGES.length] / n }]);
 }
 
-if (typeof module !== 'undefined') module.exports = { setPlayerAI: v => { PLAYER_AI = v; }, START, REGEN, WIN_WAR, STAGES, TIER_P, SURE_SR, BOONS, newMods, enemyMods, newFighterR, simFight, simRun, simReport, offerBoons, takeBoon };
+if (typeof module !== 'undefined') module.exports = { setPlayerAI: v => { PLAYER_AI = v; }, drawCardR, START, REGEN, WIN_WAR, STAGES, TIER_P, SURE_SR, BOONS, newMods, enemyMods, newFighterR, simFight, simRun, simReport, offerBoons, takeBoon };
