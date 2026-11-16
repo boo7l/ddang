@@ -33,6 +33,7 @@ const BOONS = [
   { id: 'hp10', tier: 'N', name: '최대 체력 증가', desc: '최대 체력 +10', fx: (m, f) => { m.hpMax += 10; f.hp += 10; } },
   { id: 'breath', tier: 'N', name: '숨 고르기', desc: '💨회피를 내면 체력 +5', fx: m => { m.dodgeHeal += 5; } }, // 2026-11-17 기획자 추가: 상대 카드와 관계없이 내가 회피를 내면
   { id: 'heal30', tier: 'N', name: '응급 처치', desc: '체력 추가 회복 +25 (최대 체력은 넘지 않음)', fx: (m, f) => { f.hp = Math.min(m.hpMax, f.hp + 25); } }, // 2026-11-17 엑셀: 30 → 25
+  { id: 'early', tier: 'N', name: '기선 제압', desc: '1~3합에 이기면 피해 +5', once: true, fx: m => { m.earlyDmg += 5; } }, // 2026-11-17 기획자 추가, 중복 불가
   { id: 'atk2', tier: 'N', name: '속공 단련', desc: '⚡속공으로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; } },
   { id: 'tec2', tier: 'N', name: '강타 단련', desc: '💪강타로 이기면 피해 +3', fx: m => { m.typeDmg.tec += 3; } },
   { id: 'def2', tier: 'N', name: '역습 단련', desc: '🔄역습으로 이기면 피해 +3', fx: m => { m.typeDmg.def += 3; } },
@@ -58,7 +59,7 @@ const boonDesc = o => o.t ? `${T[o.t].ic}${T[o.t].name}으로 이기면 ${boonBy
 
 // 강화 묶음 (m). 상대도 같은 모양
 function newMods(base = {}) {
-  const m = { war: base.war ?? START.war, hpMax: base.hpMax ?? START.hp, shuffle: base.shuffle ?? START.shuffle, hand: 0, typeDmg: { atk: 0, tec: 0, def: 0 }, killDmg: 0, killMul: 1, killP: 0, dodgeP: 0, bigP: 0, armor: 0, drain: 0, dodgeHeal: 0, revive: 0, regen: REGEN };
+  const m = { war: base.war ?? START.war, hpMax: base.hpMax ?? START.hp, shuffle: base.shuffle ?? START.shuffle, hand: 0, typeDmg: { atk: 0, tec: 0, def: 0 }, killDmg: 0, killMul: 1, killP: 0, dodgeP: 0, bigP: 0, armor: 0, drain: 0, dodgeHeal: 0, earlyDmg: 0, revive: 0, regen: REGEN };
   for (const [k, v] of Object.entries(base)) if (k === 'typeDmg') Object.assign(m.typeDmg, v); else if (k !== 'war' && k !== 'hpMax' && k !== 'shuffle') m[k] = v;
   return m;
 }
@@ -86,15 +87,17 @@ function newFighterR(m, hp) { const f = { m, war: m.war, hp: hp ?? m.hpMax, hpMa
 function doShuffleR(f, round) { f.shuffleLeft--; f.shuffledRound = round; f.used.shuffle = f.shuffleLeft <= 0; f.hand = []; refillR(f); }
 function useActR(f, a) { if (a.i != null && f.hand[a.i]) { f.hand.splice(a.i, 1); refillR(f); } }
 // 피해: (기본 + 종류 보너스) × 무력 배율, 필살은 (25 + 필살 보너스) × 필살 배율 × 무력 배율. 그 뒤 받는 쪽 철갑만큼 빼고 최소 1
-function dmgOf(f, o, how, t, s) {
-  const base = how === 'kill' ? (KILL_DMG + f.m.killDmg) * f.m.killMul : DMG[s] + f.m.typeDmg[t];
+// round: 몇 번째 합인지 (기선 제압: 1~3합에 이기면 +earlyDmg, 필살도 포함 — 2026-11-17 기획자)
+function dmgOf(f, o, how, t, s, round = 99) {
+  const early = round <= 3 ? (f.m.earlyDmg || 0) : 0;
+  const base = (how === 'kill' ? (KILL_DMG + f.m.killDmg) * f.m.killMul : DMG[s] + f.m.typeDmg[t]) + early;
   return Math.max(1, Math.round(base * mult(f.war, o.war)) - o.m.armor);
 }
-function judgeR(a, b, fa, fb) {
+function judgeR(a, b, fa, fb, round) {
   const j = judge(a, b, fa, fb); // 승패·방식은 원래 규칙 그대로, 피해만 다시 계산
   if (j.win === null) return j;
   const f = j.win === 0 ? fa : fb, o = j.win === 0 ? fb : fa, act = j.win === 0 ? a : b;
-  j.dmg = j.how === 'kill' ? dmgOf(f, o, 'kill') : dmgOf(f, o, 'card', act.c.t, act.c.s);
+  j.dmg = j.how === 'kill' ? dmgOf(f, o, 'kill', null, null, round) : dmgOf(f, o, 'card', act.c.t, act.c.s, round);
   return j;
 }
 // 판정 뒤 체력 반영 (숨 고르기·흡혈·기사회생). acts: 두 쪽이 낸 수. 돌려줌: { breath: [나, 상대], drain, revived }
@@ -159,7 +162,7 @@ function simFight(pm, php, em) {
   for (let r = 1; r <= MAX_ROUND; r++) {
     F.forEach(x => { if (aiShuffle(x, r)) doShuffleR(x, r); });
     const a = PLAYER_AI === 'read' ? readAct(F[0], F[1]) : aiAct(F[0], F[1]), b = aiAct(F[1], F[0]);
-    const j = judgeR(a, b, F[0], F[1]);
+    const j = judgeR(a, b, F[0], F[1], r);
     useActR(F[0], a); useActR(F[1], b);
     applyHit(F, j, [a, b]);
     if (F[0].hp <= 0) return { win: false, hp: 0, rounds: r };
