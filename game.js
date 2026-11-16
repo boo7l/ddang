@@ -1737,7 +1737,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116221947&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116222220&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1747,7 +1747,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116221947&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261116222220&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1757,7 +1757,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116221947&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261116222220&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -1956,6 +1956,9 @@ function renderFacePick() {
 function renderCreateStats() {
   const base = draft.base;
   $('#cLeft').textContent = bonusLeft();
+  const noBonus = RULES.startBonus <= 0; // 시즌 8 시험: 보너스 포인트 없음 (2026-11-16) → 줄과 +− 단추를 숨긴다
+  $('#cLeftRow').hidden = noBonus;
+  $('#cBonusNote').textContent = noBonus ? '' : `보너스 ${RULES.startBonus}포인트는 원하는 곳에 직접 나눠 줘요. `;
   // 개국공신 훈장: 개수만큼 통솔·무력·지력 +medalBonus (서버도 만들 때 똑같이 더한다). 숫자·합계에 미리 더해 보여 준다 (2026-10-27)
   const medals = (S && S.myMedals) || 0, mb = medalStatBonus(medals); // 시즌 8부터 +10까지 (2026-11-16)
   const final = st => Math.min(RULES.statMax, base[st.key] + (draft.bonus[st.key] || 0) + mb);
@@ -1964,8 +1967,8 @@ function renderCreateStats() {
     return `<tr><th>${st.name}</th>
       <td class="num">${final(st)}</td>
       <td class="plus">${b ? `+${b}` : ''}</td>
-      <td><button class="mini" data-k="${st.key}" data-d="-1"${b ? '' : ' disabled'}>−</button>
-          <button class="mini" data-k="${st.key}" data-d="1"${bonusLeft() ? '' : ' disabled'}>+</button></td>${mb ? `<td class="medalCol">+${mb}</td>` : ''}</tr>`;
+      <td>${noBonus ? '' : `<button class="mini" data-k="${st.key}" data-d="-1"${b ? '' : ' disabled'}>−</button>
+          <button class="mini" data-k="${st.key}" data-d="1"${bonusLeft() ? '' : ' disabled'}>+</button>`}</td>${mb ? `<td class="medalCol">+${mb}</td>` : ''}</tr>`;
   }).join('') + `<tr class="sum"><th>합계</th><td class="num">${STATS.reduce((s, st) => s + final(st), 0)}</td><td></td><td></td>${mb ? '<td></td>' : ''}</tr>`;
   $('#cStats').querySelectorAll('button').forEach(b => {
     b.onclick = () => {
