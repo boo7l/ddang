@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261117083012">
+<link rel="stylesheet" href="style.css?v=20261117083434">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -226,6 +226,7 @@
   @media (max-width: 860px) { .card .pi { width: 18px; height: 18px; image-rendering: auto; } .opHand .card .pi { width: 16px; height: 16px; } .opHand .card { width: 30px; height: 40px; } .opHand .card.oc .ic { font-size: 16px; } }
   .pauseBtn { position: absolute; top: 6px; right: 6px; z-index: 6; width: 34px; height: 34px; padding: 0; font-size: 16px; line-height: 1; opacity: .85; }
   .pauseBtn:hover { opacity: 1; }
+  @media (max-width: 860px) { .myBoons .hd { cursor: pointer; margin-bottom: 0; } .myBoons .tg::after { content: " ▼ 펼치기"; color: #b89a6a; font-size: 13px; } .myBoons.open .tg::after { content: " ▲ 접기"; } .myBoons:not(.open) .mbBody { display: none; } .myBoons.open .hd { margin-bottom: 4px; } } /* 휴대폰: 내 강화 접기·펼치기 (2026-11-17 기획자) */
   @media (max-width: 860px) { .side .nm .sep { display: none; } .side .nm .st { display: block; } } /* 휴대폰: 무력 줄 · 체력 줄 (2026-11-17 기획자) */
   .side .nm #myInfo, .side .nm #opInfo { display: block; } /* 체력바 위: 이름 아래 줄에 무력·체력 (2026-11-17 기획자) */
   body.paused #hand, body.paused #opHand { visibility: hidden; } /* 멈춤 중에는 내 손패·상대 손패 안 보이게 */
@@ -330,8 +331,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261117083012"></script>
-<script src="rogue_rules.js?v=20261117083012"></script>
+<script src="duel_rules.js?v=20261117083434"></script>
+<script src="rogue_rules.js?v=20261117083434"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -741,7 +742,8 @@ function runUi() {
   $('foeNote').textContent = S && !RUN.clear ? S.note : '';
   const m = RUN ? RUN.m : null;
   $('myBoons').hidden = !RUN;
-  $('myBoons').innerHTML = !RUN ? '' : `<div class="hd">📜 내 강화 (${RUN.picks.length})</div><div class="stat">무력 <b>${m.war}</b> · 체력 ${RUN.hp}/${m.hpMax} · 손패 ${handMax(m.war) + m.hand} · 재정비 ${m.shuffle} · 판 사이 회복 ${m.regen}</div>` + boonListHtml();
+  $('myBoons').innerHTML = !RUN ? '' : `<div class="hd">📜 내 강화 (${RUN.picks.length})<span class="tg"></span></div><div class="mbBody"><div class="stat">무력 <b>${m.war}</b> · 체력 ${RUN.hp}/${m.hpMax} · 손패 ${handMax(m.war) + m.hand} · 재정비 ${m.shuffle} · 판 사이 회복 ${m.regen}</div>` + boonListHtml() + '</div>';
+  const hd = $('myBoons').querySelector('.hd'); if (hd) hd.onclick = () => $('myBoons').classList.toggle('open'); // 휴대폰: 제목을 눌러 펼치기·접기 (2026-11-17 기획자)
 }
 // 고른 강화 목록: 같은 강화는 한 줄로 묶어 ×2, 높은 등급 먼저 (2026-11-17)
 function boonListHtml() {
