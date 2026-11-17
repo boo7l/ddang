@@ -1478,6 +1478,20 @@ function renderNotes() {
 // 2026-11-17 기획자: 일반 게시판처럼 전체 화면 · 목록(말머리 · 제목 [댓글 수])만 보이고, 글을 누르면 본문과 댓글이 열린다.
 // 제목 칸은 따로 없고 본문 첫 줄을 제목으로 쓴다 (BOARD_TITLE_MAX자 넘으면 …). 목록이 댓글까지 같이 받아 와서 글 보기는 따로 부르지 않는다
 // 공지 (2026-11-17): 관리자만 말머리 '공지'. 고정(📌, 맨 위)은 관리자가 글 보기에서 직접 켜고 끈다 (공지도 처음엔 고정 아님)
+// 게시판 전용 이름 옆 도트 아이콘 (2026-11-17 기획자): 게임 아이디 → 도트 그림. 게시판에서만 보인다
+const BOARD_ICON_ART = {
+  // zilioner: 빨간 야구 모자 (흰 글씨 패치)
+  cap: { rows: ['....KKKKKKKK....', '...KMMMMMMMMK...', '..KMWWWWWWWMMK..', '..KMWBWBWWBWMK..', '.KMMWBBBWBBBWMK.', '.KMMWWWWWWWWMMK.', '.KMMMMMMMMMMMMK.', 'KDDDDDDDDDDDDDDK', 'KWWWWWWDDDDKKKK.', '.KKKKKKK........'],
+    col: { K: '#1a0e08', M: '#7a2a1c', D: '#561a10', W: '#f4efe6', B: '#1a0e08' } },
+};
+const BOARD_ICONS = { zilioner: 'cap' };
+const boardIcon = name => {
+  const art = BOARD_ICON_ART[BOARD_ICONS[name]];
+  if (!art) return '';
+  const w = art.rows[0].length, h = art.rows.length;
+  const px = art.rows.flatMap((r, y) => [...r].map((c, x) => (art.col[c] ? `<rect x="${x}" y="${y}" width="1" height="1" fill="${art.col[c]}"/>` : ''))).join('');
+  return `<svg class="boardIcon" viewBox="0 0 ${w} ${h}" width="${w * 1.6}" height="${h * 1.6}" shape-rendering="crispEdges" aria-hidden="true">${px}</svg>`;
+};
 const BOARD_TITLE_MAX = 30;
 const boardTitle = text => { const line = String(text || '').trim().split('\n')[0].trim(); return line.length > BOARD_TITLE_MAX ? line.slice(0, BOARD_TITLE_MAX) + '…' : line || '(제목 없음)'; };
 // 게시판이 이미 열려 있으면 (글쓰기·댓글·지우기·탭·쪽 넘기기) 창을 그대로 두고 반투명 검정으로 덮는다 (2026-11-03: 창 크기가 들썩이지 않게)
@@ -1505,7 +1519,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
   if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
   if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
   const canWrite = d.me && !d.me.banned, isAdmin = !!(d.me && d.me.admin);
-  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${medalBadge(x.medals)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
+  const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}${BOARD_ICONS[x.name] ? ' boardVip' : ''}">${esc(x.name)}${boardIcon(x.name)}${medalBadge(x.medals)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
   const delBtn = (x, what) => (x.del ? ` <button class="mini x" data-bdel="${esc(x.id)}" data-what="${what}" title="지우기">✕</button>` : '');
   const tag = p => `<span class="tTag${p.kind === '공지' ? ' boardNoticeTag' : ''}">${p.pinned ? '📌' : ''}[${esc(p.kind)}]</span>`;
   const post = open ? d.posts.find(p => p.id === String(open)) : null;
@@ -1829,7 +1843,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230640&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230944&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1839,7 +1853,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117230640&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117230944&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1849,7 +1863,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230640&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230944&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }

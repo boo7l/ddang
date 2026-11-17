@@ -1302,3 +1302,6 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 .boardTopBtns { display: flex; gap: 6px; }
 .trashRow { flex-wrap: wrap; cursor: default; }
 .trashRow .trashText { flex-basis: 100%; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; color: #3a2a18; border-left: 2px solid #8a6430; padding-left: 8px; } /* 지운 글 원래 내용 (2026-11-17) */ /* 훈장 개수도 종이 위에서 보이게 */
+.boardIcon { vertical-align: -2px; margin-left: 3px; } /* 게시판 이름 옆 도트 아이콘 (2026-11-17) */
+.boardWrap .who.boardVip { color: #f0903c; } /* 아이콘 단 아이디: 어두운 주황 (갈색 바탕) */
+.boardList .who.boardVip { color: #a4400a; } /* 누런 목록 위 */
