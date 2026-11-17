@@ -1481,8 +1481,8 @@ function renderNotes() {
 // 게시판 전용 이름 옆 도트 아이콘 (2026-11-17 기획자): 게임 아이디 → 도트 그림. 게시판에서만 보인다
 const BOARD_ICON_ART = {
   // zilioner: 빨간 야구 모자 (흰 글씨 패치)
-  cap: { rows: ['....KKKKKKKK....', '...KMMMMMMMMK...', '..KMWWWWWWWMMK..', '..KMWBWBWWBWMK..', '.KMMWBBBWBBBWMK.', '.KMMWWWWWWWWMMK.', '.KMMMMMMMMMMMMK.', 'KDDDDDDDDDDDDDDK', 'KWWWWWWDDDDKKKK.', '.KKKKKKK........'],
-    col: { K: '#1a0e08', M: '#7a2a1c', D: '#561a10', W: '#f4efe6', B: '#1a0e08' } },
+  cap: { rows: ['....KKKKK...', '..KKMMMLLK..', '.KMMMMMMMLK.', '.KMMMMMMMMLK', '.KWWWWWMMMMK', '.KWWWWWMMMMK', 'KKMMMMMMMMMK', 'KDDDDDKKKKKK', '.KKKKK......'], // 2026-11-17 다시: 옆모습 (둥근 머리 + 왼쪽 챙)
+    col: { K: '#1a0e08', M: '#7a2a1c', L: '#9a3a26', D: '#561a10', W: '#f4efe6' } },
 };
 const BOARD_ICONS = { zilioner: 'cap' };
 const boardIcon = name => {
@@ -1843,7 +1843,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230944&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117231257&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1853,7 +1853,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117230944&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117231257&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1863,7 +1863,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230944&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117231257&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
