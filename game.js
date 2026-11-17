@@ -1548,7 +1548,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
       </div>
     </div>`;
   }
-  openModal(`<h2>💬 게시판</h2>${body}<div class="modalBtns"><span class="boardKeep dim small">작성일로부터 3개월이 지나면 삭제됩니다</span><button data-close class="main">닫기</button></div>`, box => {
+  openModal(`<h2>💬 게시판</h2>${body}<div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     // 쓰기: 실패하면 쓰던 글을 그대로 두고 이유만 알려 준다
     const send = async (action, payload, btn, after) => {
       btn.disabled = true;
@@ -1804,7 +1804,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117225117&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117225539&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1814,7 +1814,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117225117&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117225539&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1824,7 +1824,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117225117&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117225539&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -1973,7 +1973,7 @@ function renameDialog() {
   });
 }
 
-// 회원 탈퇴: 장수와 계정을 지운다 (되돌릴 수 없음). 이미 쓴 채팅은 처리방침대로 3개월 뒤 지워진다
+// 회원 탈퇴: 장수와 계정을 지운다 (되돌릴 수 없음). 이미 쓴 채팅은 처리방침대로 3개월 뒤 지워지고, 게시판 글은 남고 글쓴이만 탈퇴한 사용자로 (2026-11-17)
 // 2026-11-17 기획자: 바로 묻지 않고 탈퇴 안내 페이지(#leavePage)로 → 내용 확인 체크 → [탈퇴하기]
 function openLeavePage() {
   showScreen('leavePage');
