@@ -13,7 +13,7 @@ const pad = n => String(n).padStart(2, '0');
 const fmt = n => Math.floor(n).toLocaleString('ko-KR');
 const now = () => Date.now() + S.timeOffset; // 빨리 감기한 만큼 앞당긴 게임 시각
 const cityById = id => MAP.cities.find(c => c.id === id);
-const factionById = id => MAP.factions.find(f => f.id === id);
+const factionById = id => (id === BANDIT.id ? BANDIT : MAP.factions.find(f => f.id === id)); // 도적군은 지도 세력 목록 밖 (2026-11-18)
 const citiesOfFaction = fid => MAP.cities.filter(c => c.faction === fid);
 const allGenerals = () => Object.values(S.generals);
 // 군량 구매에 쓸 금: 1~goldMax (예약에 적힌 값, 없으면 첫 빠른 단추 값)
@@ -142,8 +142,8 @@ function setOwner(c, fid) {
   if (pol && pol.atk === c.id) { pol.atk = null; if (!pol.def) delete S.policy[fid]; }
   const lost = before && before !== fid && S.policy && S.policy[before]; // 방어 목표 성을 빼앗기면 방어 목표만 저절로 풀린다 (2026-11-14 기획자)
   if (lost && lost.def === c.id) { lost.def = null; if (!lost.atk) delete S.policy[before]; }
-  if (before && citiesOfFaction(before).length === 0) logAll(`☆ ${factionById(before).name} 세력이 멸망했다.`);
-  if (before && fid && citiesOfFaction(before).length === 0) destroyReward(fid, before);
+  if (before && before !== BANDIT.id && citiesOfFaction(before).length === 0) logAll(`☆ ${factionById(before).name} 세력이 멸망했다.`);
+  if (before && before !== BANDIT.id && fid && citiesOfFaction(before).length === 0) destroyReward(fid, before); // 도적군 성을 다 되찾아도 멸망 보상은 없다
   checkUnify(fid);
 }
 
@@ -283,7 +283,8 @@ function joinFaction(g, fid, cityId) {
 // 다른 세력이 모두 멸망하면 통일. 공백지는 따지지 않는다. 통일하면 시즌이 끝나 턴이 멈추고,
 // 다음 시즌은 개발자가 직접 시작한다 (개발자 도구의 "새 시즌 시작")
 function checkUnify(fid) {
-  if (S.unified || !fid) return;
+  if (S.unified || !fid || fid === BANDIT.id) return;
+  if (citiesOfFaction(BANDIT.id).length) return; // 도적군 성도 다 되찾아야 통일 (2026-11-18)
   if (MAP.factions.some(f => f.id !== fid && citiesOfFaction(f.id).length > 0)) return;
   S.unified = { faction: fid, turn: S.turn }; // 기록은 그 턴의 전투 보고서 뒤에 남긴다 (advance)
 }
@@ -829,7 +830,7 @@ function runBandits() {
   S.banditRest = S.banditRest || {};
   for (const c of MAP.cities) {
     const fid = c.faction, cs = S.cities[c.id];
-    if (!fid || !cs || (S.banditRest[c.id] || 0) > S.turn) continue;
+    if (!fid || fid === BANDIT.id || !cs || (S.banditRest[c.id] || 0) > S.turn) continue;
     const step = B.chance.find(([below]) => cs.peace < below);
     if (!step || Math.random() >= step[1]) continue;
     S.banditRest[c.id] = S.turn + B.rest + 1;
@@ -853,19 +854,27 @@ function runBandits() {
     const f = factionById(fid), head = `${B.icon} ${dateText(S.turn)}, ${c.name}에 도적이 나타났다!`;
     for (const g of allGenerals()) addLog(g, g.faction === fid ? `${head} (${fx.join(' · ')})` : head, true);
     if (!fell) continue;
-    // 방어가 0: 공백지가 된다
+    // 방어가 0: 도적군이 차지한다 (2026-11-18 기획자: 공백지 대신 NPC 도적군. 성 크기만큼 수비대가 들어앉고 수비대장처럼 매달 회복, 공격은 안 한다)
+    const occ = B.occupy ? BANDIT.id : null, what = occ ? '도적군에게 점령되었다' : '도적에게 무너져 공백지가 되었다';
     const cmd = commanderOf(fid);
     for (const g of membersOf(fid)) {
       const m = Math.min(g.merit || 0, g === cmd ? B.meritCmd : B.merit);
       g.merit = (g.merit || 0) - m;
-      addLog(g, `${B.icon} ${josa(c.name, '이가')} 도적에게 무너져 공백지가 되었다. 공적 -${m} (${fmt(g.merit)})`);
+      addLog(g, `${B.icon} ${josa(c.name, '이가')} ${what}. 공적 -${m} (${fmt(g.merit)})`);
     }
     const wasCapital = c.grade >= 4;
-    setOwner(c, null);
-    cs.guard = 0; delete cs.guardType;
+    setOwner(c, occ);
+    delete cs.guardType;
     if (wasCapital) { const lp = capitalLost(c, fid); for (const g of membersOf(fid)) addLog(g, `👑 우리 수도 ${josa(c.name, '이가')} 무너져 대도시로 격하되었다! 우리 모든 성 치안 -${lp}`); }
+    if (occ) { // 약탈: 함락 때처럼 농업·상업·치안이 깎이고, 방어는 성 크기만큼 다시 세운다
+      const rep = RULES.captureRepeatTurns, repeat = rep > 0 && cs.capturedTurn != null && S.turn - cs.capturedTurn <= rep;
+      captureDamage(cs, c.grade, repeat);
+      cs.capturedTurn = S.turn;
+      cs.wall = RULES.captureWall[c.grade];
+      cs.guard = RULES.guardTroops[c.grade];
+    } else cs.guard = 0;
     for (const line of retreatFrom(c, fid, null, null)) for (const g of membersOf(fid)) addLog(g, line);
-    logAll(`${B.icon} ${f ? f.name + ' 세력의 ' : ''}${josa(c.name, '이가')} 도적에게 무너져 공백지가 되었다!${wasCapital ? ' (수도)' : ''}`);
+    logAll(`${B.icon} ${f ? f.name + ' 세력의 ' : ''}${josa(c.name, '이가')} ${what}!${wasCapital ? ' (수도)' : ''}${occ ? ` 도적군 ${fmt(cs.guard)}명이 들어앉았다.` : ''}`);
   }
 }
 

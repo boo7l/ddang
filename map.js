@@ -16,7 +16,7 @@ function swapMap(data, at) {
 let selected = null;
 
 const neighbors = c => neighborsOf(MAP, c);
-const factionOf = c => MAP.factions.find(f => f.id === c.faction);
+const factionOf = c => (typeof BANDIT !== 'undefined' && c.faction === BANDIT.id ? BANDIT : MAP.factions.find(f => f.id === c.faction)); // 도적군 (2026-11-18)
 
 // ===== 화면 그리기 =====
 // 지도 한 장을 el 안에 그린다. 메인 화면과 세력 선택 화면이 같이 쓴다.
@@ -91,6 +91,7 @@ function renderLegend() {
   // 멸망한 세력(성이 하나도 없는 세력)은 목록에서 뺀다. 세력을 누르면 아래에 그 세력 특성이 보인다 (다시 누르면 접힘)
   const rows = MAP.factions.filter(f => count(f.id) > 0).map(f =>
     `<li data-f="${f.id}" class="pickable${f.id === legendPick ? ' on' : ''}" title="눌러서 세력 특성 보기"><span class="swatch" style="background:${f.color}"></span>${f.name} <span class="cnt">${count(f.id)}</span></li>`);
+  if (typeof BANDIT !== 'undefined' && count(BANDIT.id)) rows.push(`<li><span class="swatch" style="background:${BANDIT.color}"></span>${BANDIT.name} <span class="cnt">${count(BANDIT.id)}</span></li>`); // 도적군 (2026-11-18)
   rows.push(`<li><span class="swatch" style="background:var(--empty)"></span>공백지 <span class="cnt">${count('')}</span></li>`);
   $('#legend').innerHTML = rows.join('');
   $('#legend').querySelectorAll('[data-f]').forEach(li => { li.onclick = () => { legendPick = legendPick === li.dataset.f ? null : li.dataset.f; renderLegend(); }; });
