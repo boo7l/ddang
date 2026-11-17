@@ -367,6 +367,7 @@ function advance() {
     }
     const month = dateOf(S.turn).month;
     const foodRate = runRegionEvents(month); // 지역 이벤트 (2026-11-04): 금 수입·수확보다 먼저
+    runBandits(); // 도적 (2026-11-18, 시즌 8부터)
     // 금: 장수마다 자기가 있는 성의 상업에 따라 자기 금으로
     if (RULES.goldMonths.includes(month)) {
       const heads = {}; // 성 정원 (2026-11-12, 시즌 7부터): 성마다 그 세력 장수 수
@@ -804,6 +805,70 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
   return out;
 }
 
+// 수도를 잃었다 (함락·도적): 대도시로 격하, 대도시 최대치를 넘는 값은 깎고, 잃은 세력의 남은 성 모두 치안 -lossPeace. 깎은 치안을 돌려준다
+function capitalLost(to, oldFaction) {
+  const cs = S.cities[to.id];
+  if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG));
+  const mc = S.map && S.map.cities.find(x => x.id === to.id);
+  if (mc) mc.grade = 3;
+  to.grade = 3; S.mapAt = Date.now();
+  for (const k of ['agri', 'comm', 'wall', 'peace']) cs[k] = Math.min(cs[k], devMax(3, k));
+  cs.food = Math.min(cs.food, foodMax(3));
+  const lp = RULES.capital.lossPeace;
+  for (const oc of citiesOfFaction(oldFaction)) S.cities[oc.id].peace = Math.max(0, S.cities[oc.id].peace - lp);
+  return lp;
+}
+
+// ===== 도적 (2026-11-18 기획자, 시즌 8부터, rules.js bandit) =====
+// 세력 성마다 치안에 따라 확률로 도적이 나온다 (20 미만 3% · 50 미만 1%). 나온 성은 3턴 동안 안 나온다.
+// 치안 -5~10, 그 성의 우리 세력 장수 병력·수비대 -5~10%. 병사가 하나도 없으면 대신 방어 -50~100, 방어가 0이 되면 공백지가 된다
+// 그렇게 성을 잃은 세력: 장수 모두 공적 -30 (대도독 -50), 장수들은 함락 때처럼 물러난다, 수도면 수도 함락 벌칙도
+function runBandits() {
+  const B = RULES.bandit;
+  if (seasonNow() < B.fromSeason) return;
+  S.banditRest = S.banditRest || {};
+  for (const c of MAP.cities) {
+    const fid = c.faction, cs = S.cities[c.id];
+    if (!fid || !cs || (S.banditRest[c.id] || 0) > S.turn) continue;
+    const step = B.chance.find(([below]) => cs.peace < below);
+    if (!step || Math.random() >= step[1]) continue;
+    S.banditRest[c.id] = S.turn + B.rest + 1;
+    const fx = [];
+    const dp = Math.min(cs.peace, randInt(B.peace[0], B.peace[1]));
+    cs.peace -= dp; fx.push(`치안 -${dp}`);
+    const here = allGenerals().filter(g => g.city === c.id && g.faction === fid);
+    const total = (cs.guard || 0) + here.reduce((s, g) => s + (g.troops || 0), 0);
+    let fell = false;
+    if (total > 0) {
+      const rate = randInt(B.troops[0], B.troops[1]) / 100;
+      let lost = 0;
+      if (cs.guard > 0) { const l = Math.ceil(cs.guard * rate); cs.guard -= l; lost += l; }
+      for (const g of here) if (g.troops > 0) { const l = Math.ceil(g.troops * rate); g.troops -= l; lost += l; addLog(g, `${B.icon} 도적과 싸우느라 병력 -${fmt(l)} (${fmt(g.troops)})`); }
+      fx.push(`병력 -${Math.round(rate * 100)}% (${fmt(lost)}명)`);
+    } else {
+      const dw = Math.min(cs.wall || 0, randInt(B.wall[0], B.wall[1]));
+      cs.wall = (cs.wall || 0) - dw; fx.push(`지킬 병사가 없어 방어 -${dw}`);
+      fell = cs.wall <= 0;
+    }
+    const f = factionById(fid), head = `${B.icon} ${dateText(S.turn)}, ${c.name}에 도적이 나타났다!`;
+    for (const g of allGenerals()) addLog(g, g.faction === fid ? `${head} (${fx.join(' · ')})` : head, true);
+    if (!fell) continue;
+    // 방어가 0: 공백지가 된다
+    const cmd = commanderOf(fid);
+    for (const g of membersOf(fid)) {
+      const m = Math.min(g.merit || 0, g === cmd ? B.meritCmd : B.merit);
+      g.merit = (g.merit || 0) - m;
+      addLog(g, `${B.icon} ${josa(c.name, '이가')} 도적에게 무너져 공백지가 되었다. 공적 -${m} (${fmt(g.merit)})`);
+    }
+    const wasCapital = c.grade >= 4;
+    setOwner(c, null);
+    cs.guard = 0; delete cs.guardType;
+    if (wasCapital) { const lp = capitalLost(c, fid); for (const g of membersOf(fid)) addLog(g, `👑 우리 수도 ${josa(c.name, '이가')} 무너져 대도시로 격하되었다! 우리 모든 성 치안 -${lp}`); }
+    for (const line of retreatFrom(c, fid, null, null)) for (const g of membersOf(fid)) addLog(g, line);
+    logAll(`${B.icon} ${f ? f.name + ' 세력의 ' : ''}${josa(c.name, '이가')} 도적에게 무너져 공백지가 되었다!${wasCapital ? ' (수도)' : ''}`);
+  }
+}
+
 // 점령: 성 주인을 바꾸고, 군량 일부를 차지하고, 함락된 성의 수치가 깎인다. 방어는 성 크기만큼 다시 세운다.
 // 공백지는 싸움 없이 들어가므로 농업·상업·치안·방어·군량이 모두 그대로다 (2026-10-25)
 // 보고서 줄을 lines에 더한다 (공격 쪽만 보는 줄은 { a: 문구 }, runAttack의 reportFor)
@@ -818,14 +883,7 @@ function capture(g, to, oldFaction, lines) {
     return;
   }
   if (to.grade >= 4) { // 수도 함락 (2026-11-16, 시즌 8부터): 대도시로 격하, 대도시 최대치를 넘는 값은 깎고, 잃은 세력 모든 성 치안 -lossPeace
-    if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG));
-    const mc = S.map && S.map.cities.find(x => x.id === to.id);
-    if (mc) mc.grade = 3;
-    to.grade = 3; S.mapAt = Date.now();
-    for (const k of ['agri', 'comm', 'wall', 'peace']) cs[k] = Math.min(cs[k], devMax(3, k));
-    cs.food = Math.min(cs.food, foodMax(3));
-    const lp = RULES.capital.lossPeace;
-    for (const oc of citiesOfFaction(oldFaction)) S.cities[oc.id].peace = Math.max(0, S.cities[oc.id].peace - lp);
+    const lp = capitalLost(to, oldFaction);
     lines.push({ a: `👑 수도 ${josa(to.name, '을를')} 무너뜨렸다! 대도시로 격하되었다.`, d: `👑 우리 수도 ${josa(to.name, '이가')} 함락되어 대도시로 격하되었다! 우리 모든 성 치안 -${lp}` });
     logAll(`👑 ${factionById(oldFaction).name} 세력의 수도 ${josa(to.name, '이가')} ${factionById(g.faction).name} 세력에게 함락되었다!`);
   }
