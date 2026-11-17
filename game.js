@@ -884,7 +884,7 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox', 'tourModal'); } // tourModal: 무술대회 창 넓이 (2026-11-15: 안 지워서 게시판이 넓어졌음)
+function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox', 'tourModal', 'boardBox'); } // tourModal: 무술대회 창 넓이 (2026-11-15: 안 지워서 게시판이 넓어졌음)
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 // 비용 줄 (2026-11-14 기획자): "금 200 / 1,500" = 드는 값 / 지금 가진 값. 지금 모자라면 가볍게 "부족" 표시만 (예약이라 실행 때 모일 수도 있다)
@@ -1475,9 +1475,11 @@ function renderNotes() {
 }
 // ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
 // kind: '' 전체, '건의', '자유'. 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
-// 댓글 접기 (2026-11-03): 기본은 펼침. 접은 글은 페이지를 새로 열기 전까지 기억해서 다시 불러와도 접힌 채로 둔다
-const BOARD_FOLDED = new Set();
-const foldText = (id, n) => (BOARD_FOLDED.has(id) ? `▼ 댓글 ${n}개 펴기` : '▲ 댓글 접기');
+// 2026-11-17 기획자: 일반 게시판처럼 전체 화면 · 목록(말머리 · 제목 [댓글 수])만 보이고, 글을 누르면 본문과 댓글이 열린다.
+// 제목 칸은 따로 없고 본문 첫 줄을 제목으로 쓴다 (BOARD_TITLE_MAX자 넘으면 …). 목록이 댓글까지 같이 받아 와서 글 보기는 따로 부르지 않는다
+// 공지 (2026-11-17): 관리자만 말머리 '공지'로 쓸 수 있고 쓰면 바로 맨 위에 고정 (📌). 관리자는 글 보기에서 아무 글이나 고정/해제
+const BOARD_TITLE_MAX = 30;
+const boardTitle = text => { const line = String(text || '').trim().split('\n')[0].trim(); return line.length > BOARD_TITLE_MAX ? line.slice(0, BOARD_TITLE_MAX) + '…' : line || '(제목 없음)'; };
 // 게시판이 이미 열려 있으면 (글쓰기·댓글·지우기·탭·쪽 넘기기) 창을 그대로 두고 반투명 검정으로 덮는다 (2026-11-03: 창 크기가 들썩이지 않게)
 function boardCover(on) {
   const old = document.getElementById('boardCover');
@@ -1489,46 +1491,63 @@ function boardCover(on) {
   Object.assign(c.style, { top: r.top + 'px', left: r.left + 'px', width: r.width + 'px', height: r.height + 'px' });
   $('#modal').appendChild(c);
 }
-async function boardDialog(page = 0, kind = '') {
-  const reopen = !$('#modal').hidden && $('#modalBox').querySelector('.boardList');
+// open: 열어 볼 글 id (없으면 목록). 그 글이 이번에 받은 목록에 없으면 (지워졌으면) 목록을 보여 준다
+async function boardDialog(page = 0, kind = '', open = null) {
+  const reopen = !$('#modal').hidden && $('#modalBox').querySelector('.boardWrap');
   if (reopen) boardCover(true);
   else {
     openModal('<h2>💬 게시판</h2><p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>');
-    $('#modalBox').classList.add('wideBox');
+    $('#modalBox').classList.add('wideBox', 'boardBox');
   }
   let d;
   try { d = await api('boardList', { page, kind }); } catch (e) { d = { error: e.message }; }
   boardCover(false);
   if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
   if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
-  const canWrite = d.me && !d.me.banned;
+  const canWrite = d.me && !d.me.banned, isAdmin = !!(d.me && d.me.admin);
   const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}">${esc(x.name)}${medalBadge(x.medals)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
   const delBtn = (x, what) => (x.del ? ` <button class="mini x" data-bdel="${esc(x.id)}" data-what="${what}" title="지우기">✕</button>` : '');
-  const items = d.posts.map(p => `<li class="boardPost">
-      <p class="boardHead"><span class="tTag">[${esc(p.kind)}]</span> ${who(p)} <span class="dim small">${fmtTime(p.t)}</span>${delBtn(p, 'post')}</p>
-      <p class="boardText">${esc(p.text)}</p>
-      ${p.comments.length ? `<ul class="boardComments"${BOARD_FOLDED.has(p.id) ? ' hidden' : ''}>${p.comments.map(c => `<li><p class="boardHead">${who(c)} <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</p><p class="boardText">${esc(c.text)}</p></li>`).join('')}</ul>` : ''}
-      ${canWrite || p.comments.length ? `<p class="replyRow">${canWrite ? '<button type="button" class="mini replyBtn">💬 댓글</button>' : ''}${p.comments.length ? ` <button type="button" class="mini foldBtn" data-post="${esc(p.id)}" data-n="${p.comments.length}">${foldText(p.id, p.comments.length)}</button>` : ''}</p>` : ''}
-      ${canWrite ? `<form class="boardReply" data-post="${esc(p.id)}" autocomplete="off" hidden><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기"><button type="submit">등록</button></form>` : ''}
-    </li>`).join('') || '<li class="dim center">아직 글이 없어요. 첫 글을 남겨 보세요.</li>';
-  const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
-  const kinds = [['', '전체'], ['건의', '건의'], ['자유', '자유']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
-  openModal(`<h2>💬 게시판</h2>
-    <div class="helpTabs">${kinds}</div>
-    ${canWrite ? `<form class="boardWrite" autocomplete="off">
-      <select aria-label="말머리"><option>건의</option><option>자유</option></select>
-      <textarea maxlength="${d.postMax}" rows="2" placeholder="${esc(d.me.name)}(으)로 글 남기기 (${d.postMax}자까지)"></textarea>
-      <button type="submit" class="main">글쓰기</button></form>` : `<p class="dim">${d.me ? '정지된 계정은 글을 쓸 수 없어요.' : '로그인하면 글과 댓글을 쓸 수 있어요.'}</p>`}
-    <ul class="boardList">${items}</ul>
-    <div class="notePager">
-      <button id="boardPrev"${page > 0 ? '' : ' disabled'}>◀ 이전</button>
-      <span class="dim">${page + 1} / ${pages}</span>
-      <button id="boardNext"${page + 1 < pages ? '' : ' disabled'}>다음 ▶</button>
-    </div>
-    <div class="modalBtns"><span class="boardKeep dim small">작성일로부터 3개월이 지나면 삭제됩니다</span><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelector('#boardPrev').onclick = () => boardDialog(page - 1, kind);
-    box.querySelector('#boardNext').onclick = () => boardDialog(page + 1, kind);
-    box.querySelectorAll('[data-kind]').forEach(b => { b.onclick = () => boardDialog(0, b.dataset.kind); });
+  const tag = p => `<span class="tTag${p.kind === '공지' ? ' boardNoticeTag' : ''}">${p.pinned ? '📌' : ''}[${esc(p.kind)}]</span>`;
+  const post = open ? d.posts.find(p => p.id === String(open)) : null;
+  let body;
+  if (post) {
+    // 글 보기: 제목 · 글쓴이 / 본문 / 댓글 / 댓글 쓰기
+    body = `<div class="boardWrap boardView">
+      <div class="boardTop"><button type="button" id="boardBack">◀ 목록</button>${isAdmin ? `<button type="button" id="boardPin" class="mini">${post.pinned ? '📌 고정 해제' : '📌 상단 고정'}</button>` : ''}</div>
+      <p class="boardViewTitle">${tag(post)} ${esc(boardTitle(post.text))}</p>
+      <p class="boardHead">${who(post)} <span class="dim small">${fmtTime(post.t)}</span>${delBtn(post, 'post')}</p>
+      <div class="boardScroll">
+        <p class="boardText boardBody">${esc(post.text)}</p>
+        <p class="boardCmtHead">댓글 ${post.comments.length}</p>
+        ${post.comments.length ? `<ul class="boardComments">${post.comments.map(c => `<li><p class="boardHead">${who(c)} <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</p><p class="boardText">${esc(c.text)}</p></li>`).join('')}</ul>` : '<p class="dim small">아직 댓글이 없어요.</p>'}
+      </div>
+      ${canWrite ? `<form class="boardReply" data-post="${esc(post.id)}" autocomplete="off"><input type="text" maxlength="${d.commentMax}" placeholder="댓글 달기 (${d.commentMax}자까지)"><button type="submit">등록</button></form>` : `<p class="dim small">${d.me ? '정지된 계정은 댓글을 쓸 수 없어요.' : '로그인하면 댓글을 쓸 수 있어요.'}</p>`}
+    </div>`;
+  } else {
+    // 목록: 고정 글(공지)이 맨 위, 그 아래 일반 글. 한 줄 = 말머리 · 제목 [댓글 수] / 글쓴이 · 시간
+    const row = p => `<li class="boardRow${p.pinned ? ' pinned' : ''}" data-open="${esc(p.id)}" tabindex="0">
+        <span class="boardRowTitle">${tag(p)} ${esc(boardTitle(p.text))}${p.comments.length ? ` <span class="boardCnt">[${p.comments.length}]</span>` : ''}</span>
+        <span class="boardRowMeta">${who(p)} <span class="dim small">${fmtTime(p.t)}</span></span>
+      </li>`;
+    const pins = d.posts.filter(p => p.pinned), rest = d.posts.filter(p => !p.pinned);
+    const rows = pins.map(row).join('') + (rest.map(row).join('') || '<li class="dim center boardEmpty">아직 글이 없어요. 첫 글을 남겨 보세요.</li>');
+    const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
+    const kinds = [['', '전체'], ['건의', '건의'], ['자유', '자유']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
+    body = `<div class="boardWrap">
+      <div class="boardTop"><div class="helpTabs">${kinds}</div>${canWrite ? '<button type="button" id="boardWriteBtn" class="main">✏ 글쓰기</button>' : ''}</div>
+      ${canWrite ? `<form class="boardWrite" autocomplete="off" hidden>
+        <select aria-label="말머리">${isAdmin ? '<option>공지</option>' : ''}<option>건의</option><option>자유</option></select>
+        <textarea maxlength="${d.postMax}" rows="4" placeholder="첫 줄이 제목이 돼요 (${d.postMax}자까지)${isAdmin ? ' · 공지는 맨 위에 고정돼요' : ''}"></textarea>
+        <button type="submit" class="main">등록</button></form>` : `<p class="dim">${d.me ? '정지된 계정은 글을 쓸 수 없어요.' : '로그인하면 글과 댓글을 쓸 수 있어요.'}</p>`}
+      <ul class="boardList">${rows}</ul>
+      <div class="notePager">
+        <button id="boardPrev"${page > 0 ? '' : ' disabled'}>◀ 이전</button>
+        <span class="dim">${page + 1} / ${pages}</span>
+        <button id="boardNext"${page + 1 < pages ? '' : ' disabled'}>다음 ▶</button>
+      </div>
+    </div>`;
+  }
+  openModal(`<h2>💬 게시판</h2>${body}<div class="modalBtns"><span class="boardKeep dim small">작성일로부터 3개월이 지나면 삭제됩니다</span><button data-close class="main">닫기</button></div>`, box => {
     // 쓰기: 실패하면 쓰던 글을 그대로 두고 이유만 알려 준다
     const send = async (action, payload, btn, after) => {
       btn.disabled = true;
@@ -1538,34 +1557,37 @@ async function boardDialog(page = 0, kind = '') {
       } catch (e) { alert(e.message); }
       btn.disabled = false;
     };
-    const write = box.querySelector('.boardWrite');
+    box.querySelectorAll('[data-bdel]').forEach(b => { b.onclick = () => {
+      if (!confirm('지울까요? 되돌릴 수 없어요.')) return;
+      const isPost = b.dataset.what === 'post';
+      send('boardDel', { id: b.dataset.bdel, what: b.dataset.what }, b, () => boardDialog(page, kind, isPost ? null : open)); // 글을 지우면 목록으로
+    }; });
+    if (post) {
+      box.querySelector('#boardBack').onclick = () => boardDialog(page, kind);
+      const pin = box.querySelector('#boardPin');
+      if (pin) pin.onclick = () => send('boardPin', { id: post.id, on: !post.pinned }, pin, () => boardDialog(page, kind, post.id));
+      const f = box.querySelector('.boardReply');
+      if (f) f.onsubmit = e => {
+        e.preventDefault();
+        send('boardComment', { post: f.dataset.post, text: f.querySelector('input').value }, f.querySelector('button'), () => boardDialog(page, kind, post.id));
+      };
+      return;
+    }
+    box.querySelector('#boardPrev').onclick = () => boardDialog(page - 1, kind);
+    box.querySelector('#boardNext').onclick = () => boardDialog(page + 1, kind);
+    box.querySelectorAll('[data-kind]').forEach(b => { b.onclick = () => boardDialog(0, b.dataset.kind); });
+    box.querySelectorAll('.boardRow').forEach(li => {
+      li.onclick = () => boardDialog(page, kind, li.dataset.open);
+      li.onkeydown = e => { if (e.key === 'Enter') boardDialog(page, kind, li.dataset.open); };
+    });
+    const write = box.querySelector('.boardWrite'), wb = box.querySelector('#boardWriteBtn');
+    if (wb) wb.onclick = () => { write.hidden = !write.hidden; wb.textContent = write.hidden ? '✏ 글쓰기' : '닫기'; if (!write.hidden) write.querySelector('textarea').focus(); };
     if (write) write.onsubmit = e => {
       e.preventDefault();
       send('boardPost', { kind: write.querySelector('select').value, text: write.querySelector('textarea').value }, write.querySelector('button'), () => boardDialog(0, kind));
     };
-    // [💬 댓글 달기]를 눌러야 그 글의 댓글 입력칸이 열린다 (2026-11-02). 다시 누르면 닫힌다
-    box.querySelectorAll('.replyBtn').forEach(b => { b.onclick = () => {
-      const f = b.closest('.boardPost').querySelector('.boardReply');
-      f.hidden = !f.hidden;
-      b.textContent = f.hidden ? '💬 댓글' : '닫기';
-      if (!f.hidden) f.querySelector('input').focus();
-    }; });
-    box.querySelectorAll('.foldBtn').forEach(b => { b.onclick = () => {
-      const id = b.dataset.post, list = b.closest('.boardPost').querySelector('.boardComments');
-      if (BOARD_FOLDED.has(id)) BOARD_FOLDED.delete(id); else BOARD_FOLDED.add(id);
-      list.hidden = BOARD_FOLDED.has(id);
-      b.textContent = foldText(id, +b.dataset.n);
-    }; });
-    box.querySelectorAll('.boardReply').forEach(f => { f.onsubmit = e => {
-      e.preventDefault();
-      send('boardComment', { post: f.dataset.post, text: f.querySelector('input').value }, f.querySelector('button'), () => { BOARD_FOLDED.delete(f.dataset.post); return boardDialog(page, kind); }); // 댓글을 달면 그 글 댓글은 펼친다
-    }; });
-    box.querySelectorAll('[data-bdel]').forEach(b => { b.onclick = () => {
-      if (!confirm('지울까요? 되돌릴 수 없어요.')) return;
-      send('boardDel', { id: b.dataset.bdel, what: b.dataset.what }, b, () => boardDialog(page, kind));
-    }; });
   });
-  $('#modalBox').classList.add('wideBox');
+  $('#modalBox').classList.add('wideBox', 'boardBox');
 }
 // 개발자 노트 (2026-11-13): patchnotes.js에서 { dev: '글' }을 항목 사이(items 안)나 파트 사이(groups 안) 아무 데나 넣으면 작은 상자로 보인다
 const devNoteHtml = t => `<div class="devNote">${t}</div>`; // 머리글 없이 글만 (2026-11-13 기획자)
@@ -1773,7 +1795,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117223342&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117223441&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1783,7 +1805,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117223342&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117223441&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1793,7 +1815,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117223342&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117223441&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
