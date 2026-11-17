@@ -656,7 +656,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardTop .helpTabs { margin: 0; }
 .boardWrite { display: flex; gap: 6px; align-items: stretch; flex: none; }
 .boardWrite[hidden] { display: none; }
-.boardWrite select { flex: none; }
+.boardWrite select { flex: none; align-self: flex-start; } /* 글칸 높이만큼 늘어지지 않게 (2026-11-17) */
 .boardWrite textarea { flex: 1; min-width: 0; font: inherit; resize: vertical; padding: 4px 6px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold-dark); }
 .boardList { list-style: none; margin: 0; padding: 0; flex: 1; min-height: 0; overflow-y: auto; border-top: 2px solid var(--gold-dark); }
 .boardRow { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 8px; border-bottom: 1px dotted var(--gold-dark); cursor: pointer; }
