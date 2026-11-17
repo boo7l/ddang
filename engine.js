@@ -1668,7 +1668,7 @@ const expandShort = (c, cs) => expandKeys().filter(k => cs[k] < Math.ceil(devMax
 // 수도 (2026-11-16 기획자, 시즌 8부터): 세력당 하나. 대도시를 증축해서 세우고, 함락되면 대도시로 격하
 const capitalOn = () => seasonNow() >= RULES.capital.fromSeason;
 const capitalOf = fid => (fid && capitalOn() ? MAP.cities.find(c => c.faction === fid && c.grade >= 4) : null) || null;
-const expandTop = c => (capitalOn() && c && c.grade === 3 && !capitalOf(c.faction) ? 4 : 3); // 이 성이 오를 수 있는 가장 높은 크기
+const expandTop = c => (capitalOn() && c && c.grade === 3 ? 4 : 3); // 이 성이 오를 수 있는 가장 높은 크기. 2026-11-17: 수도가 있어도 대도시 → 수도 가능 (천도)
 const expandReady = c => !!c && c.grade < expandTop(c) && !expandShort(c, S.cities[c.id]).length;
 // 수도가 출발이나 도착인 수송·보급은 RULES.capital.transportRange칸 (2026-11-16, 시즌 8부터)
 const transportRangeOf = (a, b) => (capitalOn() && (a.grade >= 4 || b.grade >= 4) ? RULES.capital.transportRange : RULES.moveRange);
@@ -1678,23 +1678,37 @@ function runExpand(g) {
   if (!g.faction || c.faction !== g.faction) return `${josa(c.name, '은는')} 우리 세력 성이 아님`;
   if (c.grade >= 4) return `${josa(c.name, '은는')} 이미 수도`;
   if (c.grade >= 3 && !capitalOn()) return `${josa(c.name, '은는')} 이미 대도시`;
-  if (c.grade >= 3 && capitalOf(g.faction)) return `우리 세력에 이미 수도(${capitalOf(g.faction).name})가 있음`;
   const short = expandShort(c, cs);
   if (short.length) return `${c.name}의 ${josa(short.map(k => DOMESTIC[k].label).join('·'), '이가')} 아직 최대치의 ${Math.round(RULES.expand.ready * 100)}%가 안 됨`;
   const from = c.grade, cost = RULES.expand.cost[from], merit = RULES.expand.merit[from];
   if (g.gold < cost) return `내 금 부족 (필요 ${fmt(cost)}, 있음 ${fmt(g.gold)})`;
+  const oldCap = from === 3 ? capitalOf(g.faction) : null; // 천도: 지금 수도 (돈을 확인한 뒤에 정한다)
   g.gold -= cost; addRecord(g, 'goldSpent', cost); // 쓴 금 (2026-11-08)
   if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG)); // 예전 시즌처럼 세계에 지도가 없으면 지금 지도를 넣어 둔다
   const mc = S.map && S.map.cities.find(x => x.id === c.id);
   if (mc) mc.grade = from + 1;
   c.grade = from + 1;
   S.mapAt = Date.now();
-  g.merit += merit; // 한 턴 최대 공적(100)의 예외
-  const exp = RULES.expand.exp[from];
+  // 수도 보상 (2026-11-17 기획자): 세력마다 처음 세우는 수도만 공적·경험치를 다 주고, 그 뒤(천도·함락 뒤 다시 세우기)는 절반. S.capitalBuilt[세력]에 기억
+  const rw = from === 3 && (S.capitalBuilt || {})[g.faction] ? RULES.capital.moveReward : 1;
+  if (from === 3) (S.capitalBuilt = S.capitalBuilt || {})[g.faction] = true;
+  const gotMerit = Math.round(merit * rw);
+  g.merit += gotMerit; // 한 턴 최대 공적(100)의 예외
+  const exp = Math.round(RULES.expand.exp[from] * rw);
   for (const st of STATS) gainStatExp(g, st.key, exp); // 통솔·무력·지력 경험치 각각 (세력·개인 경험치 보너스가 붙는다)
   addRecord(g, 'expand');
   const name = ['', '소성', '중성', '대도시', '수도'];
-  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(merit)} · 모든 능력 경험치 +${exp}`);
+  if (oldCap && oldCap.id !== c.id) { // 천도 (2026-11-17 기획자): 옛 수도는 대도시로. 대도시 최대치를 넘는 값은 수도 함락 때처럼 깎는다 (치안 벌칙은 없음)
+    const om = S.map && S.map.cities.find(x => x.id === oldCap.id), os = S.cities[oldCap.id];
+    if (om) om.grade = 3;
+    oldCap.grade = 3;
+    for (const k of ['agri', 'comm', 'wall', 'peace']) os[k] = Math.min(os[k], devMax(3, k));
+    os.food = Math.min(os.food, foodMax(3));
+    if (os.guard) os.guard = Math.min(os.guard, RULES.guardMax[3]);
+    addLog(g, `👑 천도! 수도를 ${oldCap.name}에서 ${josa(c.name, '으로')} 옮겼다. ${josa(oldCap.name, '은는')} 대도시가 되었다`);
+    logAll(`👑 ${factionById(g.faction).name} 세력이 수도를 ${oldCap.name}에서 ${josa(c.name, '으로')} 옮겼다! (천도)`);
+  }
+  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(gotMerit)} · 모든 능력 경험치 +${exp}`);
   logAll(`🏗 ${g.name}${josa(g.name, '이가').slice(-1)} ${josa(c.name, '을를')} ${josa(name[from + 1], '으로')} 증축했다!`);
   return '';
 }

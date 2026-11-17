@@ -1843,7 +1843,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118000426&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118001235&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1853,7 +1853,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118000426&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118001235&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1863,7 +1863,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118000426&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118001235&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2833,17 +2833,20 @@ function expandConfirm() {
     const cap = capitalOf(p.faction); // 수도 (2026-11-16, 시즌 8부터): 대도시 → 수도는 세력당 하나
     openModal(`${head}<p><b class="hi">${esc(at.name)}</b>: ${name[g0] || '?'}</p>
       <p>${at.faction !== p.faction ? '우리 세력 성이 아니라서 증축할 수 없어요.' : g0 >= 4 ? '이미 <b class="hi">수도</b>라서 더 증축할 수 없어요.' : capitalOn() && cap ? `우리 세력에 이미 수도(<b class="hi">${esc(cap.name)}</b>)가 있어서 수도로 증축할 수 없어요. 수도는 세력당 하나예요.` : '이미 <b class="hi">대도시</b>라서 더 증축할 수 없어요.'}</p>
-      <p class="dim small exNote">농업·상업·방어·치안이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? '·대도시' : ''}을 한 단계 키울 수 있어요.${capitalOn() ? ' 대도시 → 수도는 세력당 하나예요.' : ''}</p>
+      <p class="dim small exNote">농업·상업·방어·치안이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? '·대도시' : ''}을 한 단계 키울 수 있어요.${capitalOn() ? ' 수도는 세력당 하나라서, 수도가 있을 때 다른 대도시를 키우면 수도를 옮겨요(천도).' : ''}</p>
       <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
     return;
   }
   const cs = S.cities[at.id] || {}, need = k => Math.ceil(devMax(g0, k) * E.ready), keys = expandKeys();
   const ready = expandReady(at);
   const cost = E.cost[g0], short = p.gold < cost;
+  const moveCap = g0 === 3 && capitalOf(p.faction) && capitalOf(p.faction).id !== at.id; // 천도
+  const again = g0 === 3 && (S.capitalBuilt || {})[p.faction], rw = again ? RULES.capital.moveReward : 1; // 세력의 두 번째 수도부터 보상 절반 (2026-11-17)
   const row = (label, a, b) => `<tr><th>${label}</th><td>${fmt(a)} → <b class="hi">${fmt(b)}</b></td></tr>`;
   const cond = keys.map(k => { const v = cs[k] || 0, ok = v >= need(k); return `<tr><th>${DOMESTIC[k].label}</th><td>${fmt(v)} / ${fmt(need(k))} ${ok ? '<span class="hi">✓</span>' : '<span class="bad">모자라요</span>'}</td></tr>`; }).join('');
   openModal(`${head}
     <p><b class="hi">${esc(at.name)}</b>: ${name[g0]} → <b class="hi">${name[g1]}</b></p>
+    ${g0 === 3 && capitalOf(p.faction) && capitalOf(p.faction).id !== at.id ? `<p class="bad">👑 <b>천도</b>: 지금 수도 <b>${esc(capitalOf(p.faction).name)}</b>${josa(capitalOf(p.faction).name, '은는').slice(-1)} 대도시가 돼요. 대도시 최대치를 넘는 농업·상업·방어·치안·군량·수비대는 깎여요.</p>` : ''}
     <p class="exHead">조건 <span class="dim small">(최대치의 ${Math.round(E.ready * 100)}% 이상)</span></p><div class="exBody">
     <table class="stats exTable">${cond}</table></div>
     <p class="exHead">비용</p><div class="exBody">
@@ -2855,7 +2858,7 @@ function expandConfirm() {
       ${row('수비대', RULES.guardMax[g0], RULES.guardMax[g1])}
     </table></div>
     <p class="exHead">보상</p><div class="exBody">
-    <p>공적 <b class="hi">+${fmt(E.merit[g0])}</b><br>통솔·무력·지력 경험치 각각 <b class="hi">+${E.exp[g0]}</b></p></div>
+    <p>공적 <b class="hi">+${fmt(Math.round(E.merit[g0] * rw))}</b><br>통솔·무력·지력 경험치 각각 <b class="hi">+${Math.round(E.exp[g0] * rw)}</b>${again ? ' <span class="dim small">(우리 세력은 수도를 세운 적이 있어서 절반)</span>' : ''}</p></div>
     ${ready ? '' : '<p class="bad">지금은 조건이 모자라요. 예약은 할 수 있고, 실행하는 턴까지 채우면 증축돼요.</p>'}
     <p class="dim small exNote">실행하는 턴에도 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 하고, 금이 있어야 해요. 아니면 실패하고 금은 들지 않아요. 성을 빼앗겨도 등급은 그대로예요.</p>
     <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main">예약</button></div>`, () => {
