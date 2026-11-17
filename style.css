@@ -906,6 +906,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #miniWrap .miniPick { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 18px 26px 22px; min-width: 260px; text-align: center; }
 #miniWrap .miniPick h3 { margin: 0 0 4px; }
 #miniWrap .miniPick button.main { font-size: 18px; padding: 10px 16px; }
+#miniWrap .miniPick button.main { background: var(--title); color: var(--panel-dark); border-color: var(--gold-dark); } /* 미니게임 고르기 단추는 노란색 (2026-11-17 기획자) */
+#miniWrap .miniPick button.main:hover { background: #fff2a8; color: var(--panel-dark); }
 #miniWrap .miniPick .miniClose { top: 6px; right: 6px; }
 #miniWrap.rogue .miniBox { width: min(1290px, 100vw); height: min(880px, 100vh); }
 #miniWrap.rogue iframe { background: var(--bg); }
