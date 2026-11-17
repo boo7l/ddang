@@ -685,6 +685,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardComments li { padding: 4px 0; overflow-wrap: anywhere; }
 .boardReply { display: flex; gap: 6px; flex: none; }
 .boardEdit[hidden], .boardBody[hidden], #boardEditBtn[hidden] { display: none; }
+.boardEdit select { margin-bottom: 6px; }
 .boardEdit textarea { width: 100%; box-sizing: border-box; font: inherit; resize: vertical; padding: 8px 10px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold-dark); }
 .boardEditBtns { display: flex; justify-content: flex-end; gap: 6px; margin: 6px 0 0; } /* 글 수정 (2026-11-17) */
 .boardReply input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
