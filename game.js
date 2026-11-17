@@ -1851,7 +1851,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118003230&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118004003&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1861,7 +1861,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118003230&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118004003&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1871,7 +1871,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118003230&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118004003&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3322,7 +3322,9 @@ const BGM_MERIT = 2000, BGM_MARCH = 1000;
 const BGM_TITLE_SCREENS = ['title', 'hofPage', 'leavePage', 'create', 'trait', 'join'];
 // 2026-11-08: 첫 화면 곡과 공적 0~1,000 곡을 맞바꿈 (첫 화면 → history, 게임 공적 1,000 미만 → title)
 // 2026-11-08 파일 이름을 쓰임새대로: title(첫 화면들) · game1(공적 1,000 미만) · game2(1,000~2,000) · game3(2,000 이상) · mini(미니게임)
-const bgmWant = () => { if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };
+// 천하통일 곡 (2026-11-17 기획자): 통일되면 누구에게나 어느 화면에서든 audio/ending.mp3 (기획자 파일). 다른 곡보다 작게 녹음돼서 1.7배
+const BGM_FILE = { ending: 'audio/ending.mp3' }, BGM_SONG_GAIN = { ending: 1.7 };
+const bgmWant = () => { if (S && S.unified) return 'ending'; if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };
 const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
 async function bgmPlay(song) {
   if (!BGM.ctx) {
@@ -3332,7 +3334,7 @@ async function bgmPlay(song) {
   if (BGM.ctx.state === 'suspended' && !BGM.hold) await BGM.ctx.resume(); // 미니게임 중에는 멈춘 채로
   if (BGM.song === song && BGM.src) return;
   BGM.song = song;
-  if (!BGM.bufs[song]) BGM.bufs[song] = fetch(`audio/bgm_${song}.wav`).then(r => r.arrayBuffer()).then(b => BGM.ctx.decodeAudioData(b));
+  if (!BGM.bufs[song]) BGM.bufs[song] = fetch(BGM_FILE[song] || `audio/bgm_${song}.wav`).then(r => r.arrayBuffer()).then(b => BGM.ctx.decodeAudioData(b));
   let buf;
   try { buf = await BGM.bufs[song]; } catch (e) { delete BGM.bufs[song]; BGM.song = null; return; }
   if (!BGM.on || BGM.song !== song) return; // 받는 동안 끄거나 곡이 바뀌었다
@@ -3340,7 +3342,7 @@ async function bgmPlay(song) {
   if (old) { old.fade.gain.setValueAtTime(old.fade.gain.value, now); old.fade.gain.linearRampToValueAtTime(0, now + 1.5); old.stop(now + 1.6); } // 곡 바꿀 때 1.5초 겹쳐 넘긴다
   const s = BGM.ctx.createBufferSource(), fade = BGM.ctx.createGain();
   s.buffer = buf; s.loop = true; s.fade = fade;
-  fade.gain.setValueAtTime(0, now); fade.gain.linearRampToValueAtTime(1, now + (old ? 1.5 : 0.3));
+  fade.gain.setValueAtTime(0, now); fade.gain.linearRampToValueAtTime(BGM_SONG_GAIN[song] || 1, now + (old ? 1.5 : 0.3));
   s.connect(fade).connect(BGM.gain); s.start(now);
   BGM.src = s;
 }
