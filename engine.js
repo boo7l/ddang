@@ -607,15 +607,26 @@ function gainStatExp(g, key, amount) {
 function runDomestic(g, key) {
   const city = cityById(g.city), c = S.cities[g.city], d = DOMESTIC[key];
   const max = devMax(city.grade, key);
-  if (c[key] >= max) return `${josa(d.label, '이가')} 이미 최대치`;
+  const F = RULES.fullDev, full = seasonNow() >= F.fromSeason && F.reward[key]; // 풀내정 (2026-11-18, 시즌 8부터): 최대치여도 보상
+  if (c[key] >= max && !full) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const R = RULES.recoverBuff, rec = seasonNow() >= R.fromSeason && R.keys.includes(key) && c[key] < newCityState(city.grade)[key] ? R.mult : 1; // 복구 버프 (시즌 8부터, 2026-11-16): 처음 값보다 낮으면 × 1.5
-  const gain = Math.min(Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus) * rec), max - c[key]);
+  const raw = Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus) * rec);
+  const gain = Math.max(0, Math.min(raw, max - c[key]));
   addRecord(g, 'domestic');
   c[key] += gain;
-  addLog(g, `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''} (${c[key]}/${max})`);
-  addMerit(g, RULES.merit.domestic);
-  gainStatExp(g, d.stat, RULES.statExp.domestic);
+  // 넘친 몫 (풀내정): 원래 오를 양 중 넘친 비율만큼 보상
+  let extra = '';
+  if (full && raw > 0 && gain < raw) {
+    const [kind, per] = full, share = (raw - gain) / raw, amt = Math.floor(effStats(g)[d.stat] * per * share);
+    if (kind === 'gold') { const got = Math.max(0, Math.min(amt, RULES.playerGoldMax - g.gold)); g.gold += got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}금 +${fmt(got)}`; }
+    else if (kind === 'food') { const got = Math.max(0, Math.min(amt, foodMax(city.grade) - c.food)); c.food += got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}군량 +${fmt(got)}`; }
+    else if (kind === 'guard') { const got = city.faction === g.faction ? Math.max(0, Math.min(amt, RULES.guardMax[city.grade] - (c.guard || 0))) : 0; c.guard = (c.guard || 0) + got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}수비대 +${fmt(got)}`; }
+  }
+  const fullTurn = full && gain === 0; // 이미 최대치였던 턴: 공적·경험치 절반
+  addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''} (${c[key]}/${max})${extra}`);
+  addMerit(g, fullTurn ? F.merit : RULES.merit.domestic);
+  gainStatExp(g, d.stat, fullTurn ? F.exp : RULES.statExp.domestic);
   return '';
 }
 
