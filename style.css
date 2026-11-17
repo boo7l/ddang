@@ -1284,7 +1284,7 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 #leavePage .leaveBtns button:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 700px) { #leavePage { margin: 8px; } #leavePage .pageHead .spacer { display: none; } }
 /* 게시판 목록 (2026-11-17 기획자): 바탕은 갈색 그대로, 글 목록만 누런 종이 상자로 묶고 글자는 검정 */
-.boardList { background: radial-gradient(ellipse at center, #f1e2bc 55%, #e2c992 85%, #cfae6e 100%); border: 2px solid #7a5426; box-shadow: inset 0 0 12px rgba(110, 60, 10, .4), 2px 2px 0 rgba(0, 0, 0, .35); color: #1e1208; padding: 0 6px; }
+.boardList { background: radial-gradient(ellipse at center, #e3cc98 55%, #d3b67a 85%, #bf9c5c 100%); /* 2026-11-17: 한 단계 어둡게 */ border: 2px solid #7a5426; box-shadow: inset 0 0 12px rgba(110, 60, 10, .4), 2px 2px 0 rgba(0, 0, 0, .35); color: #1e1208; padding: 0 6px; }
 .boardList .boardRow { border-bottom: 1px dotted #8a6430; }
 .boardList .boardRow:last-child { border-bottom: none; }
 .boardList .boardRow:hover, .boardList .boardRow:focus { background: rgba(120, 70, 10, .12); }
