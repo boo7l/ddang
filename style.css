@@ -853,7 +853,7 @@ details.fold > summary:hover h2 { color: var(--title); }
   #game[data-tab="cmd"] .resignRow { order: 1; }
   #game[data-tab="cmd"] #chat, #game[data-tab="chat"] #queueBox { display: none; }
   /* 명령 탭 (2026-11-07 시안 3): 예약표를 맨 위에 붙여 두고 명령 단추만 스크롤. 칸 비우기·채우기는 명령 단추 아래로 */
-  #game[data-tab="cmd"] > aside.queueCol { order: -1; position: sticky; top: 0; z-index: 5; background: var(--bg); padding-bottom: 6px; }
+  #game[data-tab="cmd"] > aside.queueCol { order: -1; position: sticky; top: 0; z-index: 6; /* 2026-11-18: 5 → 6, 명령 창 모서리 점(z-index 5)이 예약표 위로 지나가지 않게 */ background: var(--bg); padding-bottom: 6px; }
   #game[data-tab="cmd"] #queueBox { margin-bottom: 0; }
   #game[data-tab="cmd"] .queue { max-height: 170px; margin-bottom: 0; }
   #game[data-tab="cmd"] .tiRule, #game[data-tab="cmd"] .qBtnsWide { display: none; }
