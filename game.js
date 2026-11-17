@@ -1853,7 +1853,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118082953&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118083208&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1863,7 +1863,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118082953&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118083208&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1873,7 +1873,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118082953&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118083208&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2420,6 +2420,7 @@ function setTab(t) {
   $('#game').scrollTop = 0;
   if (t === 'chat') { const ul = $('#chat .chatList'); if (ul) ul.scrollTop = ul.scrollHeight; } // 숨어 있다 나오면 맨 아래(새 글)로
   if (t === 'chat') document.querySelector('#mTabs [data-tab=chat]').classList.remove('dot'); // 받은 서신 빨간 점을 지운다
+  if (t === 'chat' && S && me() && me().faction) markChatSeen(chatOf(me().faction), me()); // 못 본 멘션도 본 것으로 (2026-11-18)
 }
 document.querySelectorAll('#mTabs button').forEach(b => { b.onclick = () => setTab(b.dataset.tab); });
 // 휴대폰: 옆으로 밀어 탭 넘기기 (2026-11-07). 왼쪽 = 다음 탭, 오른쪽 = 이전 탭.
@@ -3089,6 +3090,22 @@ function renderChatList() {
     ? list.map(m => m.letter ? letterLine(m, p) : `<li class="${m.name === p.name ? 'mine' : mentionsMe(m.text, p) ? 'atMe' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m, p.faction)}</span>${mentionHtml(m.text, p)}</li>`).join('')
     : '<li class="empty">아직 아무 말도 없어요. 첫마디를 남겨 보세요.</li>';
   ul.scrollTop = ul.scrollHeight; // 새 글이 보이게 맨 아래로
+  checkMissedMentions(list, p);
+}
+// 못 본 멘션 (2026-11-18): 마지막으로 채팅을 본 뒤에 나를 부른 글이 목록(최근 50개)에 남아 있으면 들어왔을 때도 빨간 점.
+// "본 시각"은 이 브라우저에 장수별로 적는다. 채팅이 보이는 동안(휴대폰 채팅 탭, PC는 늘) 맨 끝 글 시각으로 고친다
+const chatSeenKey = p => 'chatSeen:' + p.id;
+const chatVisible = () => !$('#game').hidden && ($('#mTabs').hidden || getComputedStyle($('#mTabs')).display === 'none' || $('#game').dataset.tab === 'chat');
+function markChatSeen(list, p) {
+  const last = list.length ? list[list.length - 1].t : 0;
+  try { if (last > (+localStorage.getItem(chatSeenKey(p)) || 0)) localStorage.setItem(chatSeenKey(p), String(last)); } catch (e) { /* 저장 못 하는 브라우저 */ }
+}
+function checkMissedMentions(list, p) {
+  if (!p || !p.faction) return;
+  if (chatVisible()) { markChatSeen(list, p); return; }
+  let seen = 0;
+  try { seen = +localStorage.getItem(chatSeenKey(p)) || 0; } catch (e) { return; }
+  if (list.some(m => !m.letter && m.t > seen && m.name !== p.name && mentionsMe(m.text, p))) document.querySelector('#mTabs [data-tab=chat]').classList.add('dot');
 }
 
 // 외교 서신 간격 (2026-11-05): 세력 id → 다시 보낼 수 있는 시각. 서버가 남은 ms를 주고, 같은 세력이 보낸 서신이 오면 새로 잰다
