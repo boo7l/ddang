@@ -1471,7 +1471,7 @@ function renderNotes() {
   // 빨간 NEW: 관리 페이지의 'NEW 표시' 체크가 켜져 있는 동안 보인다 (2026-11-11, 그 전엔 patchnotes.js의 isNew). 서버 status가 알려 준다
   box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${NOTE_NEW ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button></div>`;
   box.querySelector('.noteBtn').onclick = () => noteDialog(0);
-  box.querySelector('.boardBtn').onclick = () => boardDialog();
+  box.querySelector('.boardBtn').onclick = () => { boardCache = {}; boardDialog(); }; // 게시판을 새로 열 때는 늘 새로 받는다
 }
 // ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
 // kind: '' 전체, '자유', '건의' (2026-11-17 기획자: 자유가 먼저, 글쓰기 기본 말머리도 자유). 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
@@ -1506,17 +1506,24 @@ function boardCover(on) {
   $('#modal').appendChild(c);
 }
 // open: 열어 볼 글 id (없으면 목록). 그 글이 이번에 받은 목록에 없으면 (지워졌으면) 목록을 보여 준다
+// 목록 캐시 (2026-11-17): 받은 쪽·탭 목록을 1분 동안 기억해서 글 열기·목록으로 돌아가기·탭 오가기는 바로 그린다. 글·댓글을 쓰거나 지우면 비운다 (boardCache = {})
+let boardCache = {};
+const BOARD_CACHE_MS = 60 * 1000;
 async function boardDialog(page = 0, kind = '', open = null) {
-  const reopen = !$('#modal').hidden && $('#modalBox').querySelector('.boardWrap');
-  if (reopen) boardCover(true);
-  else {
-    openModal('<h2>💬 게시판</h2><p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>');
-    $('#modalBox').classList.add('wideBox', 'boardBox');
+  const key = page + '|' + kind, hit = boardCache[key] && Date.now() - boardCache[key].at < BOARD_CACHE_MS ? boardCache[key].d : null;
+  let d = hit;
+  if (!d) {
+    const reopen = !$('#modal').hidden && $('#modalBox').querySelector('.boardWrap');
+    if (reopen) boardCover(true);
+    else {
+      openModal('<h2>💬 게시판</h2><p class="dim">불러오는 중…</p><div class="modalBtns"><button data-close class="main">닫기</button></div>');
+      $('#modalBox').classList.add('wideBox', 'boardBox');
+    }
+    try { d = await api('boardList', { page, kind }); } catch (e) { d = { error: e.message }; }
+    boardCover(false);
+    if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
+    if (!d.error) boardCache[key] = { d, at: Date.now() };
   }
-  let d;
-  try { d = await api('boardList', { page, kind }); } catch (e) { d = { error: e.message }; }
-  boardCover(false);
-  if ($('#modal').hidden) return; // 불러오는 사이에 닫았다
   if (d.error) { openModal(`<h2>💬 게시판</h2><p>${esc(d.error)}</p><div class="modalBtns"><button data-close class="main">닫기</button></div>`); return; }
   const canWrite = d.me && !d.me.banned, isAdmin = !!(d.me && d.me.admin);
   const who = x => `<span class="who${x.admin ? ' boardAdmin' : ''}${BOARD_ICONS[x.name] ? ' boardVip' : ''}">${esc(x.name)}${boardIcon(x.name)}${medalBadge(x.medals)}${x.admin ? ' <small>관리자</small>' : ''}</span>`;
@@ -1568,7 +1575,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
       btn.disabled = true;
       try {
         const r = await api(action, payload);
-        if (r.error) alert(r.error); else await after();
+        if (r.error) alert(r.error); else { boardCache = {}; await after(); } // 바뀌었으니 새로 받는다
       } catch (e) { alert(e.message); }
       btn.disabled = false;
     };
@@ -1632,6 +1639,7 @@ async function boardTrash(page, kind) {
     box.querySelectorAll('[data-restore]').forEach(b => { b.onclick = async () => {
       b.disabled = true;
       try { const r = await api('boardRestore', { id: b.dataset.restore }); if (r.error) { alert(r.error); b.disabled = false; return; } } catch (e) { alert(e.message); b.disabled = false; return; }
+      boardCache = {}; // 되살렸으니 목록을 새로 받는다
       boardTrash(page, kind);
     }; });
   });
@@ -1843,7 +1851,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118002304&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118002526&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1853,7 +1861,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118002304&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118002526&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1863,7 +1871,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118002304&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118002526&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
