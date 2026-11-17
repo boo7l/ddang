@@ -1535,7 +1535,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
     const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
     const kinds = [['', '전체'], ['자유', '자유'], ['건의', '건의']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
     body = `<div class="boardWrap">
-      <div class="boardTop"><div class="helpTabs">${kinds}</div>${canWrite ? '<button type="button" id="boardWriteBtn" class="main">✏ 글쓰기</button>' : ''}</div>
+      <div class="boardTop"><div class="helpTabs">${kinds}</div><span class="boardTopBtns">${isAdmin ? '<button type="button" id="boardTrashBtn">🗑 지운 글</button>' : ''}${canWrite ? '<button type="button" id="boardWriteBtn" class="main">✏ 글쓰기</button>' : ''}</span></div>
       ${canWrite ? `<form class="boardWrite" autocomplete="off" hidden>
         <select aria-label="말머리"><option>자유</option><option>건의</option>${isAdmin ? '<option>공지</option>' : ''}</select>
         <textarea maxlength="${d.postMax}" rows="4" placeholder="첫 줄이 제목이 돼요 (${d.postMax}자까지)"></textarea>
@@ -1582,6 +1582,8 @@ async function boardDialog(page = 0, kind = '', open = null) {
       };
       return;
     }
+    const tb = box.querySelector('#boardTrashBtn');
+    if (tb) tb.onclick = () => boardTrash(page, kind);
     box.querySelector('#boardPrev').onclick = () => boardDialog(page - 1, kind);
     box.querySelector('#boardNext').onclick = () => boardDialog(page + 1, kind);
     box.querySelectorAll('[data-kind]').forEach(b => { b.onclick = () => boardDialog(0, b.dataset.kind); });
@@ -1595,6 +1597,29 @@ async function boardDialog(page = 0, kind = '', open = null) {
       e.preventDefault();
       send('boardPost', { kind: write.querySelector('select').value, text: write.querySelector('textarea').value }, write.querySelector('button'), () => boardDialog(0, kind));
     };
+  });
+  $('#modalBox').classList.add('wideBox', 'boardBox');
+}
+// 지운 글·댓글 기록 (2026-11-17 기획자): 관리자만. 누가 지웠는지와 원래 내용, ↩ 되살리기. 30일 지나면 기록도 지워진다
+async function boardTrash(page, kind) {
+  boardCover(true);
+  let d;
+  try { d = await api('boardTrash', {}); } catch (e) { d = { error: e.message }; }
+  boardCover(false);
+  if ($('#modal').hidden) return;
+  if (d.error) { alert(d.error); return; }
+  const rows = d.rows.map(r => `<li class="boardRow trashRow">
+      <span class="boardRowTitle"><span class="tTag">[${r.what === 'post' ? esc(r.kind || '글') : '댓글'}]</span> ${esc(boardTitle(r.text))}${r.what === 'comment' ? ` <span class="dim small">← ${r.postTitle ? esc(r.postTitle) : '(지워진 글)'}</span>` : ''}</span>
+      <span class="boardRowMeta"><span class="who">${esc(r.name)}</span> <span class="dim small">${fmtTime(r.t)}</span> · 지운 사람 <b>${esc(r.by)}</b>${r.byAdmin ? ' <small>관리자</small>' : ''} <span class="dim small">${fmtTime(r.dt)}</span> <button type="button" class="mini" data-restore="${esc(r.id)}">↩ 되살리기</button></span>
+      <span class="trashText">${esc(r.text)}</span>
+    </li>`).join('') || '<li class="dim center boardEmpty">지난 30일 동안 지운 글이 없어요.</li>';
+  openModal(`<h2>💬 게시판 · 🗑 지운 글</h2><div class="boardWrap"><div class="boardTop"><button type="button" id="boardBack">◀ 목록</button><span class="dim small">누가 지웠는지와 원래 내용 (관리자만 보여요, 30일 보관)</span></div><ul class="boardList">${rows}</ul></div><div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+    box.querySelector('#boardBack').onclick = () => boardDialog(page, kind);
+    box.querySelectorAll('[data-restore]').forEach(b => { b.onclick = async () => {
+      b.disabled = true;
+      try { const r = await api('boardRestore', { id: b.dataset.restore }); if (r.error) { alert(r.error); b.disabled = false; return; } } catch (e) { alert(e.message); b.disabled = false; return; }
+      boardTrash(page, kind);
+    }; });
   });
   $('#modalBox').classList.add('wideBox', 'boardBox');
 }
@@ -1804,7 +1829,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117225539&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230640&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1814,7 +1839,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117225539&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117230640&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1824,7 +1849,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117225539&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117230640&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
