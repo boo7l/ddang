@@ -1474,7 +1474,7 @@ function renderNotes() {
   box.querySelector('.boardBtn').onclick = () => boardDialog();
 }
 // ===== 게시판 (2026-10-31): 건의·자유 글과 댓글. 서버는 index.ts의 boardAction =====
-// kind: '' 전체, '건의', '자유'. 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
+// kind: '' 전체, '자유', '건의' (2026-11-17 기획자: 자유가 먼저, 글쓰기 기본 말머리도 자유). 다시 그릴 때 쓰던 글이 지워지지 않게 쓰기가 성공한 뒤에만 다시 불러온다
 // 2026-11-17 기획자: 일반 게시판처럼 전체 화면 · 목록(말머리 · 제목 [댓글 수])만 보이고, 글을 누르면 본문과 댓글이 열린다.
 // 제목 칸은 따로 없고 본문 첫 줄을 제목으로 쓴다 (BOARD_TITLE_MAX자 넘으면 …). 목록이 댓글까지 같이 받아 와서 글 보기는 따로 부르지 않는다
 // 공지 (2026-11-17): 관리자만 말머리 '공지'. 고정(📌, 맨 위)은 관리자가 글 보기에서 직접 켜고 끈다 (공지도 처음엔 고정 아님)
@@ -1518,7 +1518,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
       <p class="boardHead">${who(post)} <span class="dim small">${fmtTime(post.t)}</span>${post.mine && canWrite ? ' <button type="button" class="mini" id="boardEditBtn">✏ 수정</button>' : ''}${delBtn(post, 'post')}</p>
       <div class="boardScroll">
         <p class="boardText boardBody">${esc(post.text)}</p>
-        ${post.mine && canWrite ? `<form class="boardEdit" autocomplete="off" hidden><select aria-label="말머리">${(isAdmin ? ['공지', '건의', '자유'] : ['건의', '자유']).map(k => `<option${k === post.kind ? ' selected' : ''}>${k}</option>`).join('')}</select><textarea maxlength="${d.postMax}" rows="6">${esc(post.text)}</textarea><p class="boardEditBtns"><button type="button" class="boardEditCancel">취소</button><button type="submit" class="main">저장</button></p></form>` : ''}
+        ${post.mine && canWrite ? `<form class="boardEdit" autocomplete="off" hidden><select aria-label="말머리">${(isAdmin ? ['자유', '건의', '공지'] : ['자유', '건의']).map(k => `<option${k === post.kind ? ' selected' : ''}>${k}</option>`).join('')}</select><textarea maxlength="${d.postMax}" rows="6">${esc(post.text)}</textarea><p class="boardEditBtns"><button type="button" class="boardEditCancel">취소</button><button type="submit" class="main">저장</button></p></form>` : ''}
         <p class="boardCmtHead">댓글 ${post.comments.length}</p>
         ${post.comments.length ? `<ul class="boardComments">${post.comments.map(c => `<li><p class="boardHead">${who(c)} <span class="dim small">${fmtTime(c.t)}</span>${delBtn(c, 'comment')}</p><p class="boardText">${esc(c.text)}</p></li>`).join('')}</ul>` : '<p class="dim small">아직 댓글이 없어요.</p>'}
       </div>
@@ -1533,11 +1533,11 @@ async function boardDialog(page = 0, kind = '', open = null) {
     const pins = d.posts.filter(p => p.pinned), rest = d.posts.filter(p => !p.pinned);
     const rows = pins.map(row).join('') + (rest.map(row).join('') || '<li class="dim center boardEmpty">아직 글이 없어요. 첫 글을 남겨 보세요.</li>');
     const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
-    const kinds = [['', '전체'], ['건의', '건의'], ['자유', '자유']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
+    const kinds = [['', '전체'], ['자유', '자유'], ['건의', '건의']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
     body = `<div class="boardWrap">
       <div class="boardTop"><div class="helpTabs">${kinds}</div>${canWrite ? '<button type="button" id="boardWriteBtn" class="main">✏ 글쓰기</button>' : ''}</div>
       ${canWrite ? `<form class="boardWrite" autocomplete="off" hidden>
-        <select aria-label="말머리">${isAdmin ? '<option>공지</option>' : ''}<option>건의</option><option>자유</option></select>
+        <select aria-label="말머리"><option>자유</option><option>건의</option>${isAdmin ? '<option>공지</option>' : ''}</select>
         <textarea maxlength="${d.postMax}" rows="4" placeholder="첫 줄이 제목이 돼요 (${d.postMax}자까지)"></textarea>
         <button type="submit" class="main">등록</button></form>` : `<p class="dim">${d.me ? '정지된 계정은 글을 쓸 수 없어요.' : '로그인하면 글과 댓글을 쓸 수 있어요.'}</p>`}
       <ul class="boardList">${rows}</ul>
@@ -1804,7 +1804,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117224712&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117224931&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1814,7 +1814,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117224712&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261117224931&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1824,7 +1824,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117224712&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261117224931&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
