@@ -63,6 +63,7 @@ function applyView(d) {
   if (S && S.letterWait) LETTER_UNTIL = Object.fromEntries(Object.entries(S.letterWait).map(([k, ms]) => [k, Date.now() + ms])); // 외교 서신: 세력마다 다시 보낼 수 있는 시각 (내 컴퓨터 시계 기준)
   IS_ADMIN = !!d.admin;
   $('#adminBtn').hidden = !IS_ADMIN;
+  $('#bgmTestBtn').hidden = !IS_ADMIN; // 임시 (2026-11-17): 천통 음악 미리듣기
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
@@ -1851,7 +1852,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118004003&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118004302&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1861,7 +1862,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118004003&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118004302&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1871,7 +1872,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118004003&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118004302&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3324,7 +3325,7 @@ const BGM_TITLE_SCREENS = ['title', 'hofPage', 'leavePage', 'create', 'trait', '
 // 2026-11-08 파일 이름을 쓰임새대로: title(첫 화면들) · game1(공적 1,000 미만) · game2(1,000~2,000) · game3(2,000 이상) · mini(미니게임)
 // 천하통일 곡 (2026-11-17 기획자): 통일되면 누구에게나 어느 화면에서든 audio/ending.mp3 (기획자 파일). 다른 곡보다 작게 녹음돼서 1.7배
 const BGM_FILE = { ending: 'audio/ending.mp3' }, BGM_SONG_GAIN = { ending: 1.7 };
-const bgmWant = () => { if (S && S.unified) return 'ending'; if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };
+const bgmWant = () => { if (BGM.force) return BGM.force; if (S && S.unified) return 'ending'; if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };
 const bgmLabel = () => { $('#bgmBtn').textContent = BGM.on ? '♪ 음악 끄기' : '♪ 음악 켜기'; };
 async function bgmPlay(song) {
   if (!BGM.ctx) {
@@ -3363,6 +3364,12 @@ function bgmHold(on) {
 }
 function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
 $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
+// 관리자 임시 (2026-11-17 기획자): 천통이 아니어도 천하통일 곡을 게임과 같은 음량으로 듣기. 다시 누르면 원래 곡으로
+$('#bgmTestBtn').onclick = () => {
+  BGM.force = BGM.force ? null : 'ending';
+  $('#bgmTestBtn').textContent = BGM.force ? '♪ 미리듣기 끄기' : '♪ 천통 음악 미리듣기';
+  if (BGM.force && !BGM.on) bgmSet(true); else if (BGM.on) bgmPlay(bgmWant());
+};
 try { localStorage.removeItem('ddang-bgm'); } catch (e) { /* 예전 판이 기억해 둔 값 지우기 */ }
 document.addEventListener('click', () => document.querySelector('header').classList.remove('menuOpen'));
 // 휴대폰에서 PC 버전으로 보기 ↔ 모바일 버전으로 돌아오기 (2026-10-28). 고른 것은 이 브라우저에 기억하고 새로 연다 (index.html 맨 위에서 화면 너비를 정한다)
