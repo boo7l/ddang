@@ -49,7 +49,7 @@ const BOONS = [
   { id: 'dodgeP', tier: 'R', name: '회피 단련', desc: '💨회피 뽑힐 확률 +2.5%p', fx: m => { m.dodgeP += 2.5; } },
   { id: 'full', tier: 'SR', name: '완전 회복', desc: '즉시 체력 가득', fx: (m, f) => { f.hp = m.hpMax; } },
   { id: 'war7', tier: 'SR', name: '무력 상승(대)', desc: '무력 +6', fx: m => { m.war += 6; } },
-  { id: 'magic', tier: 'SSR', name: '요술', short: '전용 카드 🔮요술을 얻어요 (상대 -20 · 내 체력 +20)', desc: '전용 카드 🔮요술이 손패에 들어와요 (5%). 일반 카드를 모두 이기고 상대 체력 -20 · 내 체력 +20. 필살엔 비기고 회피엔 막혀요', once: true, fx: m => { m.magic = 1; } }, // 2026-11-17 기획자
+  { id: 'magic', tier: 'SSR', name: '요술', short: '전용 카드 🔮요술을 얻어요 (상대 -15 · 내 체력 +15)', desc: '전용 카드 🔮요술이 손패에 들어와요 (5%). 일반 카드를 모두 이기고 상대 체력 -15 · 내 체력 +15. 필살엔 비기고 회피엔 막혀요', once: true, fx: m => { m.magic = 1; } }, // 2026-11-17 기획자
   { id: 'hand', tier: 'SSR', name: '큰 손', desc: '손패 +1장', fx: m => { m.hand += 1; } },
   { id: 'revive', tier: 'SSR', name: '기사회생', desc: '판마다 한 번, 쓰러질 때 체력 20으로 버팀', once: true, fx: m => { m.revive = 20; } },
   { id: 'killx', tier: 'SSR', name: '일격필살', desc: '💥필살 피해 ×1.3', once: true, fx: m => { m.killMul *= 1.3; } },
@@ -69,7 +69,7 @@ function enemyMods(s) { return newMods({ war: s.war, hpMax: s.m.hpMax ?? 100, sh
 
 // ===== 전용 카드 요술 (2026-11-17 기획자, SSR 강화 '요술'을 고른 사람만 뽑는다) =====
 // 일반 카드를 모두 이기고 상대 체력 -20 · 내 체력 +20 (항상 고정, 최대 체력은 넘지 않음). 필살과는 비기고, 회피에는 막힌다
-const MAGIC_P = 5, MAGIC_DMG = 20, MAGIC_HEAL = 20;
+const MAGIC_P = 5, MAGIC_DMG = 15, MAGIC_HEAL = 15; // 2026-11-17 기획자: 피해·회복 20 → 15
 T.magic = { name: '요술', ic: '🔮' };
 if (!SPECIAL.includes('magic')) SPECIAL.push('magic'); // 흰(특수) 카드로 다룬다: 손패 칸 차지, 특수 카드 제한(3장·같은 종류 2장)에 들어감
 if (typeof ORDER !== 'undefined' && !ORDER.includes('magic')) ORDER.push('magic');
@@ -127,7 +127,7 @@ function applyHit(F, j, acts = []) {
   if (j.win === null) return out;
   const w = F[j.win], l = F[1 - j.win];
   l.hp -= j.dmg;
-  if (j.how === 'magic') { const g = Math.min(MAGIC_HEAL, w.hpMax - w.hp); if (g > 0) { w.hp += g; out.magicHeal = g; } } // 요술: 내 체력 +20
+  if (j.how === 'magic') { const g = Math.min(MAGIC_HEAL, w.hpMax - w.hp); if (g > 0) { w.hp += g; out.magicHeal = g; } } // 요술: 내 체력 +MAGIC_HEAL (15)
   if (w.m.drain) { const g = Math.min(w.m.drain, w.hpMax - w.hp); if (g > 0) { w.hp += g; out.drain = g; } }
   if (l.hp <= 0 && l.m.revive && !l.revived) { l.revived = true; l.hp = l.m.revive; out.revived = 1 - j.win; }
   return out;
