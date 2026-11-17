@@ -559,6 +559,9 @@ table.rank .num { text-align: right; padding-right: 12px; }
 #chat .chatList .t { color: var(--dim); font-size: 13px; margin-right: 6px; }
 #chat .chatList .who { color: var(--label); margin-right: 6px; }
 #chat .chatList li.mine { background: rgba(255, 216, 96, .07); } /* 내 글: 줄 바탕을 옅은 금빛으로 (2026-10-30. 닉네임은 얼굴 색이라 이름 색으로는 구분하지 않는다) */
+#chat .chatList li.atMe { background: rgba(232, 53, 42, .14); border-left: 3px solid #e8352a; padding-left: 4px; } /* @ 멘션으로 나를 부른 글 (2026-11-18) */
+#chat .chatList .mention { color: #7fd0ff; } /* @이름 (2026-11-18) */
+#chat .chatList .mention.me { color: #ff8a7a; font-weight: bold; }
 #chat .chatList .empty { color: var(--dim); border: 0; }
 #chat .chatList li.adminNote { background: rgba(255, 216, 96, .16); border-left: 3px solid #ffd860; padding: 3px 6px; margin: 2px 0; } /* 관리자(부기) 글 (2026-11-15) */
 .adminName { color: #ffd860; margin-right: 4px; }

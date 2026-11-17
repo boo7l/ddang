@@ -1852,7 +1852,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118081749&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118082201&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1862,7 +1862,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118081749&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118082201&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1872,7 +1872,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118081749&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118082201&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3027,6 +3027,7 @@ function syncChatChannel() {
     if (list.length > cap) list.splice(0, list.length - cap);
     if (!$('#game').hidden) renderChatList();
     if (m.letter && m.letter.dir === 'in') letterAlert();
+    if (!m.letter && m.name !== me().name && mentionsMe(m.text, me())) letterAlert(); // @ 멘션 (2026-11-18): 서신과 같은 빨간 점·제목 (개수)
     if (m.letter && m.letter.dir === 'out') LETTER_UNTIL[m.letter.other] = Date.now() + LETTER_GAP; // 같은 세력 누가 보냈으면 간격 동안 그 세력은 못 보낸다
   }).subscribe();
 }
@@ -3061,10 +3062,30 @@ function renderChat() {
   if (pinEl && !pinEl.onclick) pinEl.onclick = async e => { if (!e.target.closest('.pinDel') || !confirm('공지를 내릴까요?')) return; await call('noticeSet', { text: '' }); renderAll(); }; // 대도독은 고정 줄의 ✕로도 내린다 (2026-11-13)
   renderChatList();
 }
+// @ 멘션 (2026-11-18, 세력 채팅만): "@우리 세력 장수 이름"을 색으로 표시. 나를 부른 글은 줄 전체를 칠하고, 채팅 탭이 아니면 탭에 빨간 점
+const mentionNames = p => (p && p.faction ? allGenerals().filter(x => x.faction === p.faction).map(x => x.name).sort((a, b) => b.length - a.length) : []);
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const mentionRe = names => new RegExp('@(' + names.map(reEsc).join('|') + ')', 'g'); // 긴 이름부터: @두릅맨2가 @두릅맨으로 잘리지 않게
+const mentionsMe = (text, p) => {
+  const names = mentionNames(p);
+  if (!names.length || !text || !text.includes('@')) return false;
+  for (const m of text.matchAll(mentionRe(names))) if (m[1] === p.name) return true;
+  return false;
+};
+function mentionHtml(text, p) {
+  const names = mentionNames(p);
+  if (!names.length || !text.includes('@')) return esc(text);
+  let out = '', last = 0; // 원문에서 찾고, 조각마다 따로 esc (이름에 &·< 같은 글자가 있어도 안전)
+  for (const m of text.matchAll(mentionRe(names))) {
+    out += esc(text.slice(last, m.index)) + `<span class="mention${m[1] === p.name ? ' me' : ''}">${esc(m[0])}</span>`;
+    last = m.index + m[0].length;
+  }
+  return out + esc(text.slice(last));
+}
 function renderChatList() {
   const ul = $('#chat .chatList'), p = me(), list = chatOf(p.faction || (isRonin(p) ? RULES.ronin.chat : null)); // 재야 채팅 (2026-11-16)
   ul.innerHTML = list.length
-    ? list.map(m => m.letter ? letterLine(m, p) : `<li class="${m.name === p.name ? 'mine' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m, p.faction)}</span>${esc(m.text)}</li>`).join('')
+    ? list.map(m => m.letter ? letterLine(m, p) : `<li class="${m.name === p.name ? 'mine' : mentionsMe(m.text, p) ? 'atMe' : ''}"><span class="t">${fmtClock(m.t)}</span><span class="who">${chatWho(m, p.faction)}</span>${mentionHtml(m.text, p)}</li>`).join('')
     : '<li class="empty">아직 아무 말도 없어요. 첫마디를 남겨 보세요.</li>';
   ul.scrollTop = ul.scrollHeight; // 새 글이 보이게 맨 아래로
 }
