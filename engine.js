@@ -841,9 +841,12 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const old = factionById(oldFaction), by = byFid && factionById(byFid);
       const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
       g.merit -= meritLost;
+      const troopsLost = g.troops > 0 ? g.troops : 0; // 2026-11-19 기획자: 멸망해도 하야처럼 병사는 흩어진다 (방어를 끈 장수가 병력을 들고 재야가 되던 것 막음)
+      if (troopsLost) addLog(g, `거느리던 ${g.unitType} ${fmt(troopsLost)}명은 흩어졌다.`);
+      g.troops = 0; g.unitType = null;
       const heir = soleFaction();
       if (heir) { absorbInto(g, heir, c); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
-      g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost };
+      g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost, troopsLost };
       g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); continue; // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
     }
     g.city = to.id;
