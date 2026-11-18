@@ -1353,3 +1353,10 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 .boardIcon { vertical-align: -2px; margin-left: 3px; filter: drop-shadow(0 0 1px rgba(255, 236, 200, .7)); } /* 게시판 이름 옆 도트 아이콘 (2026-11-17). 테두리 빛: 갈색 바탕에서도 보이게 (2026-11-18) */
 .boardWrap .who.boardVip { color: #f0903c; } /* 아이콘 단 아이디: 어두운 주황 (갈색 바탕) */
 .boardList .who.boardVip { color: #a4400a; } /* 누런 목록 위 */
+/* 보급 창 지도 (2026-11-18): 보내는 성을 누르면 보낼 수 있는 성만 밝게. off = 고를 수 없는 성, supTo = 받는 성 */
+.map.supMap { --cell: min(48px, calc((min(100vw - 32px, 560px) - 110px) / var(--cols, 8))); padding: 6px; margin: 6px auto; width: max-content; max-width: 100%; }
+.supMap .city .grade { display: none; }
+.supMap .city .name { font-size: 14px; line-height: 16px; }
+.supMap .city.off { filter: saturate(.2) brightness(.4); cursor: default; }
+.supMap .city.off:hover { outline: none; }
+.supMap .city.supTo { outline: 3px solid #fff; outline-offset: 1px; z-index: 2; box-shadow: 0 0 0 2px #000, 0 0 10px 3px #fff; } /* 세력 색이 무엇이든 보이게 흰 테두리 + 빛 */

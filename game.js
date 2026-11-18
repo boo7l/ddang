@@ -1891,7 +1891,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225012&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225621&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1901,7 +1901,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118225012&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118225621&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1911,7 +1911,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225012&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225621&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2640,18 +2640,36 @@ function supplyDialog() {
   const opt = c => `<option value="${esc(c.id)}">${esc(c.name)} · ${food(c)}</option>`;
   openModal(`<h2>🚚 보급</h2>
     <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${RULES.moveRange}칸 안이어야 해요${capitalOn() ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
-    <p class="sub">보내는 성</p><p><select id="sFrom" style="width:100%">${mine.map(opt).join('')}</select></p>
+    <div id="sMap" class="map supMap"></div>
+    <p class="dim small" id="sHint"></p>
+    <p class="sub">보내는 성</p><p><select id="sFrom" style="width:100%"><option value="">(지도에서 누르거나 고르기)</option>${mine.map(opt).join('')}</select></p>
     <p class="sub">받는 성</p><p><select id="sTo" style="width:100%"></select></p>
     <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
     <p><input type="number" id="sAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
       ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-samt="${n}">${fmt(n)}</button>`).join(' ')}</p>
     <p class="dim small">실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요.</p>
     <div class="modalBtns"><button id="sOk" class="main">예약</button><button data-close>닫기</button></div>`, box => {
-    const fill = () => { const a = box.querySelector('#sFrom').value, ac = cityById(a), list = linkedOwnCities(a, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => c.id !== a && transportLinked(ac, c, p.faction)); /* 수도가 끼면 3칸 */ box.querySelector('#sTo').innerHTML = list.length ? list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; };
-    box.querySelector('#sFrom').onchange = fill; fill();
+    // 지도로 고르기 (2026-11-18 기획자): 보내는 성을 누르면 그 성에서 보낼 수 있는 성만 밝게 남고, 그중 받는 성을 누른다. 보내는 성을 다시 누르면 처음부터
+    const targetsOf = a => { const ac = cityById(a); return a ? linkedOwnCities(a, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => c.id !== a && transportLinked(ac, c, p.faction)) : []; }; /* 수도가 끼면 3칸 */
+    const draw = () => {
+      const a = box.querySelector('#sFrom').value, b = box.querySelector('#sTo').value, tg = targetsOf(a).map(c => c.id);
+      const on = c => (a ? c.id === a || tg.includes(c.id) : c.faction === p.faction);
+      drawMap(box.querySelector('#sMap'), { selectedId: a || null, noNear: true,
+        cls: c => (!on(c) ? 'off' : c.id === b && a ? 'supTo' : ''),
+        onClick: c => {
+          if (!on(c)) return;
+          const fromSel = box.querySelector('#sFrom');
+          if (!a || c.id === a) { fromSel.value = c.id === a ? '' : c.id; fill(); return; }
+          box.querySelector('#sTo').value = c.id; draw();
+        } });
+      box.querySelector('#sHint').textContent = !a ? '보내는 성을 누르세요.' : tg.length ? '받는 성을 누르세요. (보내는 성을 다시 누르면 처음부터)' : '이 성에서 보낼 수 있는 우리 성이 없어요.';
+    };
+    const fill = () => { const a = box.querySelector('#sFrom').value, list = targetsOf(a); box.querySelector('#sTo').innerHTML = !a ? '<option value="">(보내는 성을 먼저 고르세요)</option>' : list.length ? '<option value="">(지도에서 누르거나 고르기)</option>' + list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; draw(); }; // 받는 성은 미리 고르지 않는다 (지도로 고르게, 2026-11-18)
+    box.querySelector('#sFrom').onchange = fill; box.querySelector('#sTo').onchange = draw; fill();
     box.querySelectorAll('[data-samt]').forEach(b => { b.onclick = () => { box.querySelector('#sAmount').value = b.dataset.samt; }; });
     box.querySelector('#sOk').onclick = () => {
       const from = box.querySelector('#sFrom').value, to = box.querySelector('#sTo').value, amount = Math.floor(+box.querySelector('#sAmount').value);
+      if (!from) { alert('보내는 성을 골라 주세요.'); return; }
       if (!to) { alert('받는 성을 골라 주세요.'); return; }
       if (!(amount >= 1 && amount <= max)) { alert(`양은 1~${fmt(max)} 사이로 적어 주세요.`); return; }
       closeModal(); reserve({ cmd: 'supply', from, to, amount: String(amount) });
