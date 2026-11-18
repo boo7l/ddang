@@ -136,7 +136,7 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 // 2026-11-18 재디자인: 묶음별 왼쪽 메뉴. 운영 탭은 현황 · 공지 · 시즌 세 화면으로 나눈다 (카드는 한 번에 그리고 data-sec로 골라 보인다)
 const ADMIN_NAV = [
   ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['tourney', '🏟 대회'], ['ops:season', '🗓 시즌'], ['ops:editor', '🧪 에디터']]], // 에디터 (2026-11-18): 세계에 내 장수 혼자일 때만
-  ['사람', [['users', '👥 장수'], ['factions', '🚩 세력'], ['members', '🗂 가입자'], ['chat', '💬 채팅']]],
+  ['사람', [['users', '👥 장수'], ['factions', '🚩 세력'], ['members', '🗂 가입자'], ['chat', '💬 채팅'], ['trash', '🗑 지운 글']]], // 게시판 지운 글 (2026-11-18: 게시판에서 옮김)
 ]; // 무술대회·설전대회는 '대회' 한 화면 (2026-11-18: 대회는 한 번에 하나라 합침. 위에서 종류를 고른다)
 let tourAdminKind = 'martial'; // 대회 화면에서 보고 있는 종류
 let adminTab = 'ops', opsSec = 'status';
@@ -160,7 +160,7 @@ function adminShow(tab, html, onMount) {
   $('#adminMain').innerHTML = html;
   if (onMount) onMount($('#adminMain'));
 }
-function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') { const T = S && S.tourney; tourneyAdminDialog(T && (T.phase === 'entry' || T.phase === 'run') ? tourKind(T) : tourAdminKind); } else if (tab === 'debate') tourneyAdminDialog('debate'); else adminDialog(tab); }
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') { const T = S && S.tourney; tourneyAdminDialog(T && (T.phase === 'entry' || T.phase === 'run') ? tourKind(T) : tourAdminKind); } else if (tab === 'debate') tourneyAdminDialog('debate'); else if (tab === 'trash') adminTrashDialog(); else adminDialog(tab); }
 function adminSide(html, onMount) {
   const s = $('#adminSide');
   s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
@@ -1600,7 +1600,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
     const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
     const kinds = [['', '전체'], ['자유', '자유'], ['건의', '건의'], ['공지', '공지']].map(([k, t]) => `<button data-kind="${k}" class="${k === kind ? 'on' : ''}">${t}</button>`).join('');
     body = `<div class="boardWrap">
-      <div class="boardTop"><div class="helpTabs">${kinds}</div><span class="boardTopBtns">${isAdmin ? '<button type="button" id="boardTrashBtn">🗑 지운 글</button>' : ''}${canWrite ? '<button type="button" id="boardWriteBtn" class="main">✏ 글쓰기</button>' : ''}</span></div>
+      <div class="boardTop"><div class="helpTabs">${kinds}</div><span class="boardTopBtns">${canWrite ? '<button type="button" id="boardWriteBtn" class="main">✏ 글쓰기</button>' : ''}</span></div>
       ${canWrite ? `<form class="boardWrite" autocomplete="off" hidden>
         <select aria-label="말머리"><option>자유</option><option>건의</option>${isAdmin ? '<option>공지</option>' : ''}</select>
         <textarea maxlength="${d.postMax}" rows="4" placeholder="첫 줄이 제목이 돼요 (${d.postMax}자까지)"></textarea>
@@ -1647,8 +1647,6 @@ async function boardDialog(page = 0, kind = '', open = null) {
       };
       return;
     }
-    const tb = box.querySelector('#boardTrashBtn');
-    if (tb) tb.onclick = () => boardTrash(page, kind);
     box.querySelector('#boardPrev').onclick = () => boardDialog(page - 1, kind);
     box.querySelector('#boardNext').onclick = () => boardDialog(page + 1, kind);
     box.querySelectorAll('[data-kind]').forEach(b => { b.onclick = () => boardDialog(0, b.dataset.kind); });
@@ -1666,28 +1664,26 @@ async function boardDialog(page = 0, kind = '', open = null) {
   $('#modalBox').classList.add('wideBox', 'boardBox');
 }
 // 지운 글·댓글 기록 (2026-11-17 기획자): 관리자만. 누가 지웠는지와 원래 내용, ↩ 되살리기. 30일 지나면 기록도 지워진다
-async function boardTrash(page, kind) {
-  boardCover(true);
+// 2026-11-18 기획자: 게시판 단추에서 관리 페이지 '🗑 지운 글' 메뉴로 옮김
+async function adminTrashDialog() {
+  adminShow('trash', '<p class="dim">불러오는 중…</p>');
   let d;
   try { d = await api('boardTrash', {}); } catch (e) { d = { error: e.message }; }
-  boardCover(false);
-  if ($('#modal').hidden) return;
-  if (d.error) { alert(d.error); return; }
-  const rows = d.rows.map(r => `<li class="boardRow trashRow">
-      <span class="boardRowTitle"><span class="tTag">[${r.what === 'post' ? esc(r.kind || '글') : '댓글'}]</span> ${esc(boardTitle(r.text))}${r.what === 'comment' ? ` <span class="dim small">← ${r.postTitle ? esc(r.postTitle) : '(지워진 글)'}</span>` : ''}</span>
-      <span class="boardRowMeta"><span class="who">${esc(r.name)}</span> <span class="dim small">${fmtTime(r.t)}</span> · 지운 사람 <b>${esc(r.by)}</b>${r.byAdmin ? ' <small>관리자</small>' : ''} <span class="dim small">${fmtTime(r.dt)}</span> <button type="button" class="mini" data-restore="${esc(r.id)}">↩ 되살리기</button></span>
-      <span class="trashText">${esc(r.text)}</span>
-    </li>`).join('') || '<li class="dim center boardEmpty">지난 30일 동안 지운 글이 없어요.</li>';
-  openModal(`<h2>💬 게시판 · 🗑 지운 글</h2><div class="boardWrap"><div class="boardTop"><button type="button" id="boardBack">◀ 목록</button><span class="dim small">누가 지웠는지와 원래 내용 (관리자만 보여요, 30일 보관)</span></div><ul class="boardList">${rows}</ul></div><div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelector('#boardBack').onclick = () => boardDialog(page, kind);
+  if ($('#adminPage').hidden || adminTab !== 'trash') return; // 불러오는 사이에 닫았거나 다른 메뉴로 갔다
+  const rows = (d.rows || []).map(r => `<li>
+      <div class="trHead"><span class="trTag">${r.what === 'post' ? esc(r.kind || '글') : '댓글'}</span><b class="trTitle">${esc(boardTitle(r.text))}</b><button type="button" class="mini" data-restore="${esc(r.id)}">↩ 되살리기</button></div>
+      ${r.what === 'comment' ? `<div class="dim small">← ${r.postTitle ? esc(r.postTitle) : '(지워진 글)'}에 단 댓글</div>` : ''}
+      <div class="trMeta">쓴 사람 <b>${esc(r.name)}</b> <span class="dim">${fmtTime(r.t)}</span> · 지운 사람 <b>${esc(r.by)}</b>${r.byAdmin ? ' <span class="dim">관리자</span>' : ''} <span class="dim">${fmtTime(r.dt)}</span></div>
+      <div class="trashBody">${esc(r.text)}</div></li>`).join('');
+  adminShow('trash', d.error ? `<p>${esc(d.error)}</p>` : `<div class="adminCard wide"><div class="acHead"><h3>🗑 게시판 지운 글</h3><p class="acDesc">누가 지웠는지와 원래 내용 · 30일 보관 · ↩ 되살리면 게시판에 다시 보여요</p></div>
+    ${rows ? `<ul class="trashList">${rows}</ul>` : '<p class="dim">지난 30일 동안 지운 글이 없어요.</p>'}</div>`, box => {
     box.querySelectorAll('[data-restore]').forEach(b => { b.onclick = async () => {
       b.disabled = true;
       try { const r = await api('boardRestore', { id: b.dataset.restore }); if (r.error) { alert(r.error); b.disabled = false; return; } } catch (e) { alert(e.message); b.disabled = false; return; }
-      boardCache = {}; // 되살렸으니 목록을 새로 받는다
-      boardTrash(page, kind);
+      boardCache = {}; // 되살렸으니 게시판 목록을 새로 받는다
+      adminTrashDialog();
     }; });
   });
-  $('#modalBox').classList.add('wideBox', 'boardBox');
 }
 // 개발자 노트 (2026-11-13): patchnotes.js에서 { dev: '글' }을 항목 사이(items 안)나 파트 사이(groups 안) 아무 데나 넣으면 작은 상자로 보인다
 const devNoteHtml = t => `<div class="devNote">${t}</div>`; // 머리글 없이 글만 (2026-11-13 기획자)

@@ -1086,6 +1086,16 @@ details.fold > summary:hover h2 { color: var(--title); }
 .acForm label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; max-width: 100%; min-width: 0; }
 .acForm select { min-width: 0; max-width: 100%; text-overflow: ellipsis; } .acForm label > select { flex: 0 1 auto; } /* 드롭다운 글이 길어도 카드 밖으로 안 나가게 (휴대폰, 2026-11-18) */
 .acFull { width: 100%; box-sizing: border-box; }
+/* 관리 페이지 지운 글 (2026-11-18) */
+.trashList { list-style: none; margin: 0; padding: 0; }
+.trashList li { padding: 8px 0; border-bottom: 1px dotted var(--gold-dark); }
+.trashList li:last-child { border-bottom: 0; }
+.trHead { display: flex; align-items: center; gap: 8px; }
+.trTag { flex: none; color: var(--label); border: 1px solid var(--gold-dark); padding: 0 5px; font-size: 13px; }
+.trTitle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: normal; color: var(--text); }
+.trHead > button { flex: none; }
+.trMeta { margin-top: 3px; font-size: 13px; }
+.trashBody { margin-top: 4px; padding: 6px 8px; background: rgba(0, 0, 0, .25); border-left: 2px solid var(--gold-dark); color: var(--dim); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 9em; overflow-y: auto; font-size: 14px; }
 .tourKinds { margin-bottom: 10px !important; } .liveDot { color: #4dff6a; font-size: 12px; } /* 대회 화면 종류 고르기 · 진행 중 표시 (2026-11-18) */
 #adminPage textarea { font: inherit; font-size: 15px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold); border-radius: 0; padding: 4px 8px; resize: vertical; }
 .acNow { margin: 2px 0 6px; padding: 6px 8px; background: rgba(0, 0, 0, .25); border-left: 2px solid var(--gold-dark); min-height: 20px; }
