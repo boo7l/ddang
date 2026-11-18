@@ -97,6 +97,7 @@ const RULES = {
   draftPeacePer: 350,       // 징병하면 그 성의 치안이 모은 병사 350명당 1 떨어진다 (2026-10-25 200 → 250, 2026-10-26 "치안이 너무 잘 깎인다" 의견으로 300, 2026-11-11 시즌 6 도중 350: 기획자가 공지)
   draftPeacePerS7: 350,     // 시즌 7부터 350명당 1 (2026-11-09 기획자, 징병 치안 감소 완화. 시즌 7 패치노트에 넣음). draftPeaceOf()
   troopsPerLea: 100,        // 장수 한 명의 최대 병력 = 통솔 × 100
+  troopCap: { fromSeason: 8, lea: 70, avg: 30 }, // 2026-11-18 기획자 확정 (시즌 8부터): 최대 병력 = 통솔 × 70 + 세 능력치 평균 × 30 (총점이 같으면 균형형 그대로, 통솔 10당 차이 1,000 → 700). 그 전 시즌은 통솔 × 100
 
   // 군량은 성마다 따로 쌓인다. 상한은 성 규모(1 소성, 2 중성, 3 대도시)마다 다르다 (임시값)
   get foodMax() { return seasonNow() >= 8 ? { 1: 15000, 2: 20000, 3: 25000, 4: 30000 } : { 1: 15000, 2: 20000, 3: 30000 }; }, // 2026-11-16 기획자 시즌 8: 대도시 30,000 → 25,000, 수도 30,000. // 성 크기별 군량 최대치 (2026-10-25 5000/15000/30000 → 10000/15000/25000, 2026-10-26 15000/20000/30000)
@@ -262,7 +263,7 @@ const draftGain = (lea, merit = 0) => lea * randInt(RULES.draftPerLea.min, RULES
 // 출진 군량 (2026-11-06: 세력 특성 군량 소비도 적용. fid = 출진하는 세력)
 const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)));
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
-const troopsMax = g => effStats(g).lea * RULES.troopsPerLea + (gTrait(g).troopsBonus || 0); // 개인 특성 마성의 장수 +1,000 (2026-11-08)
+const troopsMax = g => { const s = effStats(g), C = RULES.troopCap; const base = seasonNow() >= C.fromSeason ? Math.round(s.lea * C.lea + (s.lea + s.war + s.int) / 3 * C.avg) : s.lea * RULES.troopsPerLea; return base + (gTrait(g).troopsBonus || 0); }; // 개인 특성 마성의 장수 +1,000 (2026-11-08)
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
 // 농업·상업은 그 성 최대치 대비 찬 비율로 깎는 비율이 정해진다 (RULES.captureCutDev, 2026-11-07). 치안은 RULES.captureCut
 function captureDamage(cs, grade, repeat = false) {
