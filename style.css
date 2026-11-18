@@ -1083,7 +1083,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 .adminCard > p.sub:first-child .dim { display: block; font-size: 13px; margin-top: 2px; }
 .acBtns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin-top: auto !important; padding-top: 6px; }
 .acForm { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 6px 0; }
-.acForm label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.acForm label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; max-width: 100%; min-width: 0; }
+.acForm select { min-width: 0; max-width: 100%; text-overflow: ellipsis; } .acForm label > select { flex: 0 1 auto; } /* 드롭다운 글이 길어도 카드 밖으로 안 나가게 (휴대폰, 2026-11-18) */
 .acFull { width: 100%; box-sizing: border-box; }
 .tourKinds { margin-bottom: 10px !important; } .liveDot { color: #4dff6a; font-size: 12px; } /* 대회 화면 종류 고르기 · 진행 중 표시 (2026-11-18) */
 #adminPage textarea { font: inherit; font-size: 15px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold); border-radius: 0; padding: 4px 8px; resize: vertical; }
