@@ -671,12 +671,12 @@ const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
 // 탐색 사건 하나를 뽑는다
 // 재야 탐색표 (2026-11-19 기획자, docs/탐색표_재야.xlsx, 같은 날 확률 수정 18·18·18·18·10·8·7·3): 군량·잔치·첩자·의병·기술자 대신 현인·주민 돕기. 합 100
-// sage: 현인의 가르침 = 무작위 능력치 경험치 min~max (수련 횟수에 안 셈). help: 주민 돕기 = 공적 min~max (재야의 유일한 공적)
+// sage: 현인의 가르침 = 무작위 능력치 경험치 min~max (수련 횟수에 안 셈). help: 주민 돕기 = 공적 min~max (5~25) (재야의 유일한 공적)
 const RONIN_EXPLORE = [
   { key: 'none', weight: 18 },
   { key: 'gold', weight: 18, min: 300, max: 600, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
   { key: 'sage', weight: 18, min: 40, max: 60 },
-  { key: 'help', weight: 18, min: 10, max: 30 },
+  { key: 'help', weight: 18, min: 5, max: 25 }, // 공적 5~25 (2026-11-19 기획자, 10~30에서)
   { key: 'item', weight: 10 },
   { key: 'bandit', weight: 8, goldMinRate: 0.10, goldMaxRate: 0.15 },
   { key: 'pouch', weight: 7 },
