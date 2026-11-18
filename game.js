@@ -287,7 +287,7 @@ function adminDialog(tab = 'users', fid = null) {
   } else if (tab === 'users') {
     // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
     const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-    const pick = fid === '*' && gens.length ? '*' : fid !== null && counts[fid === '-' ? '' : fid] ? (fid === '-' ? '' : fid) : (keys[0] || ''); // '*' = 전체 (2026-11-08)
+    const pick = (fid === '*' || fid === null) && gens.length ? '*' : fid !== null && counts[fid === '-' ? '' : fid] ? (fid === '-' ? '' : fid) : (keys[0] || ''); // '*' = 전체 (2026-11-08). 처음 열면 전체부터 (2026-11-18 기획자)
     const summary = (gens.length ? `<button class="pick${pick === '*' ? ' on' : ''}" data-uf="*">전체 <span class="dim">${gens.length}</span></button>` : '') + keys.map(f => `<button class="pick${f === pick ? ' on' : ''}" data-uf="${f || '-'}">${swatch(f)}${fname(f)} <span class="dim">${counts[f]}</span></button>`).join('') || '장수가 없어요.';
     // 예약은 개수만 (내용은 장수 이름을 눌러서 본다)
     const queueCount = g => (g.queue || []).filter(Boolean).length;
