@@ -1905,7 +1905,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119084931&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119085011&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1915,7 +1915,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119084931&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119085011&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1925,7 +1925,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119084931&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119085011&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2698,10 +2698,12 @@ function policyDialog() {
   const own = MAP.cities.filter(c => c.faction === p.faction), other = MAP.cities.filter(c => c.faction !== p.faction).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   openModal(`<h2>🧭 방침</h2>
     <p class="dim small">우리 세력 지도에만 표시돼요. 안내일 뿐 강제는 없어요.</p>
-    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select>${cur.def ? ' <button class="mini" data-pclear="def">해제</button>' : ''}</p>
-    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select>${cur.atk ? ' <button class="mini" data-pclear="atk">해제</button>' : ''}</p>
+    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select> <button type="button" class="mini" data-pmap="def">지도</button>${cur.def ? ' <button class="mini" data-pclear="def">해제</button>' : ''}</p>
+    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select> <button type="button" class="mini" data-pmap="atk">지도</button>${cur.atk ? ' <button class="mini" data-pclear="atk">해제</button>' : ''}</p>
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
     box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
+    // 지도로 고르기 (2026-11-19 기획자): 방어할 성 · 공격 목표 각각 [지도] → 고를 수 있는 성만 밝게, 누르면 목록에 들어간다 (저장은 따로)
+    box.querySelectorAll('[data-pmap]').forEach(b => { b.onclick = () => { const def = b.dataset.pmap === 'def', sel = box.querySelector(def ? '#pDef' : '#pAtk'); pickMap(def ? '방침 · 🛡 방어할 성' : '방침 · 🗡 공격 목표', (def ? own : other).map(c => c.id), null, sel.value, id => { sel.value = id; }); }; });
     // 해제 (2026-11-14 기획자): 그 방침 하나만 바로 지운다. 다른 하나는 지금 저장된 값 그대로
     box.querySelectorAll('[data-pclear]').forEach(b => { b.onclick = async () => { const k = b.dataset.pclear, def = k === 'def' ? '' : cur.def || '', atk = k === 'atk' ? '' : cur.atk || ''; if (await call('policySet', { def, atk })) { render(); renderAll(); policyDialog(); } }; }); // 창은 닫지 않고 새 상태로 다시 그린다
   });
