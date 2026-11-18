@@ -133,8 +133,13 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 
 // ===== 관리 페이지 (2026-11-06: 🛠 관리 창 + 👁 관리자 보기 팝업을 한 페이지로. 예전 팝업 방식은 git 태그 backup-admin-popup-20261106) =====
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
-const ADMIN_NAV = [['ops', '⚙ 운영'], ['users', '👥 장수'], ['factions', '🚩 세력'], ['chat', '💬 채팅'], ['members', '🗂 가입자'], ['tourney', '🏟 무술대회'], ['debate', '🗣 설전대회']]; // 설전대회 탭 (2026-11-15)
-let adminTab = 'ops';
+// 2026-11-18 재디자인: 묶음별 왼쪽 메뉴. 운영 탭은 현황 · 공지 · 시즌 세 화면으로 나눈다 (카드는 한 번에 그리고 data-sec로 골라 보인다)
+const ADMIN_NAV = [
+  ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['ops:season', '🗓 시즌']]],
+  ['사람', [['users', '👥 장수'], ['factions', '🚩 세력'], ['members', '🗂 가입자'], ['chat', '💬 채팅']]],
+  ['행사', [['tourney', '🏟 무술대회'], ['debate', '🗣 설전대회']]], // 설전대회 탭 (2026-11-15)
+];
+let adminTab = 'ops', opsSec = 'status';
 // 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
 const ADMIN_HIDES = ['title', 'hofPage', 'create', 'trait', 'join', 'game', 'mTabs', 'refreshBtn', 'miniLink'];
 let adminPrev = null; // 열기 전에 보이던 것들 + 게임 화면 표시
@@ -149,12 +154,13 @@ function adminShow(tab, html, onMount) {
   adminTab = tab;
   adminEnter();
   $('#adminPage').hidden = false;
-  $('#adminNav').innerHTML = ADMIN_NAV.map(([k, t]) => `<button data-anav="${k}" class="${k === tab ? 'on' : ''}">${t}</button>`).join('');
+  const cur = tab === 'ops' ? `ops:${opsSec}` : tab;
+  $('#adminNav').innerHTML = ADMIN_NAV.map(([g, items]) => `<div class="anGroup"><div class="anHead">${g}</div>${items.map(([k, t]) => `<button data-anav="${k}" class="${k === cur ? 'on' : ''}">${t}</button>`).join('')}</div>`).join('');
   $('#adminNav').querySelectorAll('[data-anav]').forEach(b => { b.onclick = () => openAdmin(b.dataset.anav); });
   $('#adminMain').innerHTML = html;
   if (onMount) onMount($('#adminMain'));
 }
-function openAdmin(tab = 'ops') { closeAdminSide(); if (tab === 'ops') adminToolsDialog(); else if (tab === 'tourney') tourneyAdminDialog('martial'); else if (tab === 'debate') tourneyAdminDialog('debate'); else adminDialog(tab); }
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') tourneyAdminDialog('martial'); else if (tab === 'debate') tourneyAdminDialog('debate'); else adminDialog(tab); }
 function adminSide(html, onMount) {
   const s = $('#adminSide');
   s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
@@ -383,71 +389,75 @@ function adminToolsDialog() {
   const door = S && S.closed ? '🔒 닫힘 (관리자만 들어옴)' : S && S.unified ? '🔓 열림 (시즌 종료: 구경·채팅만)' : '🔓 열림';
   const ahead = S && Math.round(S.timeOffset / MIN); // 빨리 감은 분
   const plan = S && S.nextOpen, pk = plan && new Date(plan.at + 9 * 3600000); // 오픈 예약 (한국 시각으로 칸에 다시 채운다)
+  const head = (t, d) => `<div class="acHead"><h3>${t}</h3>${d ? `<p class="acDesc">${d}</p>` : ''}</div>`; // 카드 제목 + 설명 (2026-11-18 재디자인)
+  const tile = (k, v, sub) => `<div class="acTile"><span class="k">${k}</span><span class="v">${v}</span>${sub ? `<span class="s">${sub}</span>` : ''}</div>`;
   adminShow('ops', `<div class="adminCards">
-    <div class="adminCard">
-    <table class="stats">
-      <tr><th>시즌</th><td>${S ? `시즌 ${S.season || 1}${S.scenario ? ` · ${esc(S.scenario)}` : ''}` : '-'}</td></tr>
-      <tr><th>날짜</th><td>${S ? `${dateText(S.turn)} (${S.turn}턴)` : '-'} · ${state}</td></tr>
-      <tr><th>시각</th><td>${S ? fmtTime(now()) : '-'}${ahead ? ` <span class="dim">(실제보다 ${ahead}분 빠름)</span>` : ''}</td></tr>
-      <tr><th>장수</th><td>${S ? allGenerals().length : 0}명</td></tr>
-      <tr><th>문</th><td>${door}</td></tr>
-    </table>
-    <p><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button> <button data-skip="1">+1턴</button> <button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
+    <div class="adminCard wide" data-sec="status">
+    ${head('지금 시즌')}
+    <div class="acTiles">
+      ${tile('시즌', S ? `시즌 ${S.season || 1}` : '-', S && S.scenario ? esc(S.scenario) : '')}
+      ${tile('날짜', S ? dateText(S.turn) : '-', S ? `${S.turn}턴 · ${state}` : '')}
+      ${tile('시각', S ? fmtTime(now()) : '-', ahead ? `실제보다 ${ahead}분 빠름` : '')}
+      ${tile('장수', `${S ? allGenerals().length : 0}명`)}
+      ${tile('문', door)}
     </div>
-    <div class="adminCard">
-    <p class="sub">전체 메시지 <span class="dim">(지금 있는 모든 장수의 기록에 노란색으로, ${S ? allGenerals().length : 0}명)</span></p>
-    <p><input id="aMsg" maxlength="200" value="[📢] " placeholder="200자까지" style="width:100%;box-sizing:border-box"></p><!-- 입력칸에 [📢]를 미리 넣어 둔다. 필요 없으면 지우면 된다 (2026-11-02) -->
-    <p><button id="aMsgSend">보내기</button></p>
+    <p class="acBtns"><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button><button data-skip="1">+1턴</button><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
     </div>
-    <div class="adminCard">
-    <p class="sub">패치노트 NEW</p>
-    <p><label><input type="checkbox" id="aNoteNew"${S && S.noteNew ? ' checked' : ''}> 첫 화면 📜 패치노트 단추에 빨간 <b>NEW</b> 표시</label></p>
-    </div>
-    <div class="adminCard">
-    <p class="sub">알림 팝업 <span class="dim">(게임 화면에 창으로 뜸, 내릴 때까지 유지)</span></p>
-    <p>${S && S.popup ? `<span class="dim">지금 떠 있음 · ${fmtTime(S.popup.id)} 올림</span><br>${esc(S.popup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</p>
-    <p><textarea id="aPop" maxlength="300" rows="3" placeholder="300자까지 (줄바꿈 가능)" style="width:100%;box-sizing:border-box"></textarea></p>
-    <p><button id="aPopSend">팝업 올리기</button>${S && S.popup ? ' <button id="aPopClear">내리기</button>' : ''}</p>
-    </div>
-    <div class="adminCard">
-    <p class="sub">첫 화면 알림 <span class="dim">(로그인 전 첫 화면에 창으로 뜸, 내릴 때까지 유지)</span></p>
-    <p>${S && S.titlePopup ? `<span class="dim">지금 떠 있음 · ${fmtTime(S.titlePopup.id)} 올림</span><br>${esc(S.titlePopup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</p>
-    <p><textarea id="aTPop" maxlength="500" rows="4" placeholder="500자까지 (줄바꿈 가능)" style="width:100%;box-sizing:border-box"></textarea></p>
-    <p><button id="aTPopSend">첫 화면에 올리기</button>${S && S.titlePopup ? ' <button id="aTPopClear">내리기</button>' : ''}</p>
-    </div>
-    <div class="adminCard wide">
-    <p class="sub">지역 이벤트 예약 <span class="dim">(그 달이 되면 확률과 상관없이 터져요)</span></p>
-    ${(S && S.eventPlan || []).length ? S.eventPlan.map((x, i) => { const e = RULES.regionEvents.find(r => r.key === x.key) || {}; return `<p>${e.icon || ''} <b>${dateText(x.turn)}</b> · ${esc(x.region)} ${esc(e.name || x.key)} <button class="mini" data-evdel="${i}">취소</button></p>`; }).join('') : '<p class="dim">예약 없음</p>'}
-    <p><select id="aeKey">${RULES.regionEvents.map(e => `<option value="${e.key}">${e.icon} ${e.name}</option>`).join('')}</select>
+    <div class="adminCard wide" data-sec="status">
+    ${head('지역 이벤트 예약', '그 달이 되면 확률과 상관없이 터져요')}
+    ${(S && S.eventPlan || []).length ? `<ul class="acList">${S.eventPlan.map((x, i) => { const e = RULES.regionEvents.find(r => r.key === x.key) || {}; return `<li>${e.icon || ''} <b>${dateText(x.turn)}</b> · ${esc(x.region)} ${esc(e.name || x.key)} <button class="mini" data-evdel="${i}">취소</button></li>`; }).join('')}</ul>` : '<p class="dim">예약 없음</p>'}
+    <div class="acForm"><select id="aeKey">${RULES.regionEvents.map(e => `<option value="${e.key}">${e.icon} ${e.name}</option>`).join('')}</select>
        <select id="aeRegion">${[...new Set(MAP.cities.map(regionOf).filter(Boolean))].map(r => `<option>${esc(r)}</option>`).join('')}</select>
-       <input id="aeY" type="number" value="${dateOf((S && S.turn || 0) + 1).year}" style="width:5em">년 <input id="aeM" type="number" min="1" max="12" value="${dateOf((S && S.turn || 0) + 1).month}" style="width:3.5em">월 <button id="aeAdd">예약</button></p>
+       <label><input id="aeY" type="number" value="${dateOf((S && S.turn || 0) + 1).year}" style="width:5em">년</label> <label><input id="aeM" type="number" min="1" max="12" value="${dateOf((S && S.turn || 0) + 1).month}" style="width:3.5em">월</label> <button id="aeAdd">예약</button></div>
     <p class="dim small">지금 ${dateText(S ? S.turn : 0)} · 구역은 지역 이벤트와 같은 묶음 (형주는 형북·형남)</p>
     </div>
-    <div class="adminCard wide">
-    <p class="sub">다음 시즌 오픈 예약 <span class="dim">(한국 시각)</span></p>
-    <p>${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(seasonMap().map.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</p>
-    <p>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}">
-       연 <input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}">
-       월 <input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}">
-       일 <input id="aoD" type="number" min="1" max="31" value="${pk ? pk.getUTCDate() : ''}">
-       시간 <select id="aoH">${[...Array(24).keys()].map(h => `<option value="${h}"${(pk ? pk.getUTCHours() : 20) === h ? ' selected' : ''}>${hourText(h)}</option>`).join('')}</select></p>
-    <p>예고에 붙일 이름 <input id="aoL" type="text" maxlength="12" placeholder="예: 초한쟁패" value="${plan && plan.label ? esc(plan.label) : ''}" style="width:9em"> <span class="dim small">비우면 안 보여요 · 시즌 6(초한쟁패) · …</span></p>
-    <p><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 자동으로 열지 않아요</span></p>
-    <p><button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button>${plan ? ' <button id="aoClear">예약 취소</button>' : ''}</p>
+    <div class="adminCard" data-sec="notice">
+    ${head('전체 메시지', `지금 있는 모든 장수의 기록에 노란색으로 (${S ? allGenerals().length : 0}명)`)}
+    <p><input id="aMsg" maxlength="200" value="[📢] " placeholder="200자까지" class="acFull"></p><!-- 입력칸에 [📢]를 미리 넣어 둔다. 필요 없으면 지우면 된다 (2026-11-02) -->
+    <p class="acBtns"><button id="aMsgSend">보내기</button></p>
     </div>
-    <div class="adminCard wide">
-    <p class="sub">다음 시즌 지도 <span class="dim">(지도 편집기로 만든 .json 파일)</span></p>
+    <div class="adminCard" data-sec="notice">
+    ${head('패치노트 NEW', '첫 화면 📜 패치노트 단추에 빨간 표시')}
+    <p><label class="lockSw"><input type="checkbox" id="aNoteNew"${S && S.noteNew ? ' checked' : ''}> <b>NEW</b> 표시 켜기</label></p>
+    </div>
+    <div class="adminCard" data-sec="notice">
+    ${head('알림 팝업', '게임 화면에 창으로 뜸 · 내릴 때까지 유지')}
+    <div class="acNow">${S && S.popup ? `<span class="dim small">지금 떠 있음 · ${fmtTime(S.popup.id)} 올림</span><br>${esc(S.popup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</div>
+    <p><textarea id="aPop" maxlength="300" rows="3" placeholder="300자까지 (줄바꿈 가능)" class="acFull"></textarea></p>
+    <p class="acBtns">${S && S.popup ? '<button id="aPopClear">내리기</button>' : ''}<button id="aPopSend">팝업 올리기</button></p>
+    </div>
+    <div class="adminCard" data-sec="notice">
+    ${head('첫 화면 알림', '로그인 전 첫 화면에 창으로 뜸 · 내릴 때까지 유지')}
+    <div class="acNow">${S && S.titlePopup ? `<span class="dim small">지금 떠 있음 · ${fmtTime(S.titlePopup.id)} 올림</span><br>${esc(S.titlePopup.text).replace(/\n/g, '<br>')}` : '<span class="dim">떠 있는 알림 없음</span>'}</div>
+    <p><textarea id="aTPop" maxlength="500" rows="3" placeholder="500자까지 (줄바꿈 가능)" class="acFull"></textarea></p>
+    <p class="acBtns">${S && S.titlePopup ? '<button id="aTPopClear">내리기</button>' : ''}<button id="aTPopSend">첫 화면에 올리기</button></p>
+    </div>
+    <div class="adminCard wide" data-sec="season">
+    ${head('다음 시즌 오픈 예약', '한국 시각')}
+    <div class="acNow">${plan ? `<b>${esc(openText(plan))}</b><br><span class="dim small">${plan.auto ? (S.season !== plan.season ? `🔓 그 시각에 시즌 ${S.season}이 끝나 있으면 ${esc(seasonMap().map.scenario || '지금')} 지도로 시즌 ${plan.season}을 만들어 자동으로 열어요. 아직 진행 중이면 예약만 없어져요.` : '🔓 그 시각에 자동으로 열려요.') : '🔒 예고만 보여요. 새 시즌과 문은 직접 처리해요.'}</span>` : '<span class="dim">예약 없음</span>'}</div>
+    <div class="acForm"><label>시즌 <input id="aoS" type="number" value="${plan ? plan.season : S ? S.season + (S.closed && !S.unified ? 0 : 1) : ''}" style="width:4em"></label>
+       <label><input id="aoY" type="number" value="${pk ? pk.getUTCFullYear() : new Date().getFullYear()}" style="width:5.5em">년</label>
+       <label><input id="aoM" type="number" min="1" max="12" value="${pk ? pk.getUTCMonth() + 1 : ''}" style="width:3.5em">월</label>
+       <label><input id="aoD" type="number" min="1" max="31" value="${pk ? pk.getUTCDate() : ''}" style="width:3.5em">일</label>
+       <select id="aoH">${[...Array(24).keys()].map(h => `<option value="${h}"${(pk ? pk.getUTCHours() : 20) === h ? ' selected' : ''}>${hourText(h)}</option>`).join('')}</select></div>
+    <div class="acForm"><label>예고에 붙일 이름 <input id="aoL" type="text" maxlength="12" placeholder="예: 초한쟁패" value="${plan && plan.label ? esc(plan.label) : ''}" style="width:9em"></label> <span class="dim small">비우면 안 보여요</span></div>
+    <div class="acForm"><label class="lockSw"><input type="checkbox" id="aoAuto"${plan && plan.auto ? ' checked' : ''}> 자동 시즌 시작</label> <span class="dim small">체크하지 않으면 예고만 하고 자동으로 열지 않아요</span></div>
+    <p class="acBtns">${plan ? '<button id="aoClear">예약 취소</button>' : ''}<button id="aoSave">${plan ? '예약 변경' : '예약 저장'}</button></p>
+    </div>
+    <div class="adminCard wide" data-sec="season">
+    ${head('다음 시즌 지도', '지도 편집기로 만든 .json 파일 · "새 시즌 시작"(직접 또는 자동 오픈)을 할 때 쓰여요. 지금 시즌에는 영향 없음')}
     ${S && S.nextMap ? `<p>올려 둔 지도: <b class="hi">${esc(S.nextMap.scenario || '이름 없음')}</b> · ${yearText(S.nextMap.year || RULES.startYear)}${S.nextMapName ? ` <span class="dim small">(${esc(S.nextMapName)})</span>` : ''} <button id="amClear" class="mini">올린 지도 지우기</button></p>${mapPreview(S.nextMap)}`
       : `<p class="dim">올려 둔 지도가 없어요. 새 시즌은 서버 기본 지도(${esc(MAP_DATA.scenario || '?')} · ${yearText(MAP_DATA.year || RULES.startYear)})로 열려요.</p>`}
-    <p><input type="file" id="amFile" accept=".json"> <span class="dim small" id="amNote"></span></p>
+    <div class="acForm"><input type="file" id="amFile" accept=".json"> <span class="dim small" id="amNote"></span></div>
     <div id="amPreview"></div>
-    <p><button id="amUpload" disabled>업로드</button></p>
-    <p class="dim small">올린 지도는 "새 시즌 시작"(직접 또는 자동 오픈 예약)을 할 때 쓰여요. 지금 시즌에는 영향이 없어요.</p>
+    <p class="acBtns"><button id="amUpload" disabled>업로드</button></p>
     </div>
-    <div class="adminCard wide danger">
-    <p class="sub">⚠ 위험 <span class="dim">(되돌릴 수 없어요)</span></p>
-    <p><button id="aSeason">새 시즌 시작</button> <label class="lockSw"><input type="checkbox" id="aKeepMap"${S && S.keepMap ? ' checked' : ''}> 이전 시나리오 유지</label> <span class="dim small">${esc(seasonMap().map.scenario || '이름 없음')} ${seasonMap().how}로 열려요${S && S.nextMap && S.keepMap ? ' (올려 둔 지도가 먼저)' : ''}</span> <button id="aReset" class="danger">완전 초기화 (내 계정)</button></p>
+    <div class="adminCard wide danger" data-sec="season">
+    ${head('⚠ 위험', '되돌릴 수 없어요')}
+    <div class="acDanger"><div><b>새 시즌 시작</b><br><label class="lockSw"><input type="checkbox" id="aKeepMap"${S && S.keepMap ? ' checked' : ''}> 이전 시나리오 유지</label> <span class="dim small">${esc(seasonMap().map.scenario || '이름 없음')} ${seasonMap().how}로 열려요${S && S.nextMap && S.keepMap ? ' (올려 둔 지도가 먼저)' : ''}</span></div><button id="aSeason" class="danger">새 시즌 시작</button></div>
+    <div class="acDanger"><div><b>완전 초기화 (내 계정)</b><br><span class="dim small">내 장수와 계정을 지우고 첫 화면으로</span></div><button id="aReset" class="danger">완전 초기화</button></div>
     </div></div>`, box => {
+    box.querySelectorAll('[data-sec]').forEach(c => { c.hidden = c.dataset.sec !== opsSec; }); // 운영 탭 세 화면 (2026-11-18)
     // 다음 시즌 지도 올리기 (2026-11-06): 파일을 고르면 이 화면에서 먼저 검사·미리 보기, 올리기를 누르면 서버가 다시 검사해서 둔다
     let picked = null, pickedName = '';
     $('#amFile').onchange = async e => {

@@ -1048,34 +1048,66 @@ details.fold > summary:hover h2 { color: var(--title); }
 .rpCtl button { min-width: 44px; }
 
 /* 관리 페이지 (2026-11-06): 명예의 전당처럼 상단 바 아래 가운데에 놓인 페이지. 위에 탭, 장수 정보는 오른쪽 칸 */
-#adminPage { max-width: 1120px; margin: 24px auto; }
+#adminPage { max-width: 1240px; margin: 24px auto; }
 #adminPage .pageHead { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 #adminPage .pageTitle { flex: 1; text-align: center; color: var(--title); white-space: nowrap; }
 #adminPage .back, #adminPage .pageHead .spacer { width: 104px; white-space: nowrap; }
-.adminTabs { display: flex; gap: 4px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dotted var(--gold-dark); }
-.adminTabs button { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+/* 2026-11-18 재디자인: 왼쪽 묶음 메뉴 + 오른쪽 내용 */
+.adminBody { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 16px; align-items: start; }
+.adminTabs { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 12px; }
+.anGroup { display: flex; flex-direction: column; gap: 4px; }
+.anHead { color: var(--dim); font-size: 13px; letter-spacing: 2px; padding: 0 2px 3px; border-bottom: 1px dotted var(--gold-dark); }
+.adminTabs button { text-align: left; white-space: nowrap; padding: 6px 10px; }
 .adminTabs button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
 .adminLayout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
-.adminLayout.withSide { grid-template-columns: minmax(0, 1fr) 360px; }
+.adminLayout.withSide { grid-template-columns: minmax(0, 1fr) 340px; }
 #adminMain { min-width: 0; }
 #adminSide { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 10px 12px; position: sticky; top: 12px; max-height: calc(100vh - 40px); overflow-y: auto; }
 #adminSide h3 { margin: 0 0 8px; color: var(--title); }
 #adminSide .sideBtns { text-align: right; margin-top: 10px; }
-#adminPage .adminScroll { max-height: 60vh; }
-#adminPage .adminChat { max-height: 60vh; margin-top: 8px; }
+#adminPage .adminScroll { max-height: 64vh; }
+#adminPage .adminChat { max-height: 64vh; margin-top: 8px; }
 #adminPage .picks { margin-bottom: 6px; }
 #adminPage .picks .dim { float: none; margin-left: 6px; }
-.adminCards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.adminCard { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 8px 12px; }
+.adminCards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.adminCard { background: var(--panel-dark); border: 1px solid var(--gold-dark); padding: 10px 14px 12px; display: flex; flex-direction: column; }
+.adminCard[hidden] { display: none; }
 .adminCard.wide { grid-column: 1 / -1; }
 .adminCard.danger { border-color: #a33; }
 .adminCard p { margin: 6px 0; }
+/* 카드 머리: 제목 + 설명 한 줄, 아래 점선. 예전 모양(p.sub 첫 줄)도 같은 모양으로 */
+.acHead, .adminCard > p.sub:first-child { margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px dotted var(--gold-dark); }
+.acHead h3 { margin: 0; font-size: 16px; font-weight: normal; color: var(--title); }
+.acDesc { margin: 2px 0 0 !important; font-size: 13px; color: var(--dim); }
+.adminCard > p.sub:first-child { color: var(--title); }
+.adminCard > p.sub:first-child .dim { display: block; font-size: 13px; margin-top: 2px; }
+.acBtns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin-top: auto !important; padding-top: 6px; }
+.acForm { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 6px 0; }
+.acForm label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.acFull { width: 100%; box-sizing: border-box; }
+#adminPage textarea { font: inherit; font-size: 15px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold); border-radius: 0; padding: 4px 8px; resize: vertical; }
+.acNow { margin: 2px 0 6px; padding: 6px 8px; background: rgba(0, 0, 0, .25); border-left: 2px solid var(--gold-dark); min-height: 20px; }
+.acList { list-style: none; margin: 0 0 6px; padding: 0; }
+.acList li { padding: 3px 0; border-bottom: 1px dotted rgba(138, 90, 20, .5); }
+.acTiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 2px 0 6px; }
+.acTile { background: rgba(0, 0, 0, .25); border: 1px solid rgba(138, 90, 20, .6); padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.acTile .k { color: var(--label); font-size: 13px; }
+.acTile .v { color: var(--text); overflow-wrap: anywhere; }
+.acTile .s { color: var(--dim); font-size: 12px; }
+.acDanger { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dotted rgba(170, 51, 51, .5); }
+.acDanger:last-child { border-bottom: 0; }
+.acDanger > button { flex: none; }
+@media (max-width: 1000px) { .acTiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) {
   #adminPage { margin: 8px; }
-  .adminTabs { flex-wrap: wrap; }
-  .adminTabs button { flex: 1 1 calc(50% - 4px); }
+  .adminBody { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .adminTabs { position: static; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding-bottom: 8px; border-bottom: 1px dotted var(--gold-dark); }
+  .anGroup { display: contents; }
+  .anHead { display: none; }
+  .adminTabs button { text-align: center; padding: 6px 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .adminLayout.withSide { grid-template-columns: minmax(0, 1fr); }
   .adminCards { grid-template-columns: minmax(0, 1fr); }
+  .acTiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #adminSide { position: static; max-height: none; }
   #adminPage .back, #adminPage .pageHead .spacer { width: auto; }
   #adminPage .pageHead .spacer { display: none; }
