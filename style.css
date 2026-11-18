@@ -939,6 +939,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 #miniWrap .miniPick button.main:hover { background: #fff2a8; color: var(--panel-dark); }
 #miniWrap .miniPick .miniClose { top: 6px; right: 6px; }
 #miniWrap.rogue .miniBox { width: min(1290px, 100vw); height: min(880px, 100vh); }
+@media (min-width: 701px) and (min-height: 591px) { #miniWrap.rogue .miniBox { height: min(880px, calc(100vh - 60px)); height: min(880px, calc(100dvh - 60px)); } } /* 창 높이가 880 근처면 위로 나간 ✕가 화면 밖으로 잘려서, 위아래로 ✕ 자리를 남긴다 (2026-11-18) */
 #miniWrap.rogue iframe { background: var(--bg); }
 #miniLink { display: block; margin: 20px auto 24px; background: #38240e; color: #f0c674; border-color: #a87a34; } /* 고동색 (2026-11-01) */
 #miniLink:hover { background: #a87a34; color: var(--panel-dark); }
