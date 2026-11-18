@@ -781,8 +781,8 @@ function soleFaction() {
   const left = MAP.factions.filter(f => f.id !== BANDIT.id && citiesOfFaction(f.id).length > 0);
   return left.length === 1 ? left[0].id : null;
 }
-// g를 fid 세력에 넣는다. near: 가까운 성을 찾을 기준 성 (없으면 그 세력의 가장 큰 성). why: 장수 기록의 앞말. 이름을 돌려준다
-function absorbInto(g, fid, near, why) {
+// g를 fid 세력에 넣는다. near: 가까운 성을 찾을 기준 성 (없으면 그 세력의 가장 큰 성). 채팅·기록은 남기지 않는다 (2026-11-18 기획자)
+function absorbInto(g, fid, near) {
   const list = near ? (near.faction === fid ? [near] : nearestOwnCities(near, fid)) : [];
   const home = list.length ? list[randInt(0, list.length - 1)] : startCity(fid);
   g.faction = fid;
@@ -791,23 +791,17 @@ function absorbInto(g, fid, near, why) {
   g.city = home.id;
   clearOrders(g); // 예전 세력·재야 때 넣은 예약은 지운다
   capDefense(g);
-  addLog(g, `⚔ ${why} ${factionById(fid).name} 세력에 합류했다. ${home.name}에 머문다.`);
-  return g.name;
 }
 // 세력 없는 장수를 모두 fid 세력에 넣는다 (남은 세력이 하나가 됐을 때 · 통일했을 때)
 function absorbFree(fid) {
   if (!fid) return;
-  const names = allGenerals().filter(g => !g.faction).map(g => absorbInto(g, fid, g.city ? cityById(g.city) : null, '천하의 대세가 기울어'));
-  absorbNotice(fid, names, '재야');
-}
-function absorbNotice(fid, names, who) {
-  if (names.length && typeof factionNotice === 'function') factionNotice(fid, `⚔ ${who} 장수 ${names.length}명이 우리 세력에 합류했다: ${names.slice(0, 10).join(', ')}${names.length > 10 ? ' 외' : ''}`);
+  for (const g of allGenerals()) if (!g.faction) absorbInto(g, fid, g.city ? cityById(g.city) : null);
 }
 
 // byFid: 성을 빼앗은 세력 (세력이 멸망했을 때 알림에 쓴다)
 // byGen: 성을 빼앗은 장수 (2026-11-09: 물러나거나 멸망하는 장수도 보물 실종·빼앗김 판정, 이긴 쪽 = byGen)
 function retreatFrom(c, oldFaction, byFid, byGen) {
-  const out = [], absorbed = [];
+  const out = [];
   for (const g of allGenerals()) {
     if (g.city !== c.id || g.faction !== oldFaction) continue;
     loseTreasures(g, byGen, true); // 병력이 없거나 방어를 꺼서 싸우지 않았어도 함락되면 판정 (싸우다 전멸한 수비 장수는 한 번만)
@@ -820,7 +814,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
       g.merit -= meritLost;
       const heir = soleFaction();
-      if (heir) { absorbed.push(absorbInto(g, heir, c, `${old ? old.name + ' 세력이 멸망하여' : '세력을 잃고'}${meritLost ? ` (공적 -${fmt(meritLost)})` : ''}`)); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
+      if (heir) { absorbInto(g, heir, c); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
       g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost };
       g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); continue; // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
     }
@@ -836,7 +830,6 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
     } else out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다.`);
     capDefense(g);
   }
-  if (absorbed.length) absorbNotice(soleFaction(), absorbed, `${factionById(oldFaction) ? factionById(oldFaction).name + ' 세력' : '멸망한 세력'}`);
   return out;
 }
 
