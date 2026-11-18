@@ -773,6 +773,26 @@ function nearestOwnCities(c, fid) {
   }
   return [];
 }
+// 천통 직전 흡수 (2026-11-18 기획자): 세력이 멸망해서 성을 가진 세력이 하나만 남으면, 멸망한 세력 장수는 재야가 되지 않고 그 세력에 자동으로 들어간다.
+// 바로 같은 세력 채팅을 주고받을 수 있게. 도적군은 세력으로 치지 않는다. 멸망 공적 손실은 그대로, 들어간 횟수가 늘어 개국공신은 아니다
+function lastFaction(gone) {
+  const left = MAP.factions.filter(f => f.id !== gone && f.id !== BANDIT.id && citiesOfFaction(f.id).length > 0);
+  return left.length === 1 ? left[0].id : null;
+}
+function absorbInto(g, fid, c, old, meritLost) {
+  const f = factionById(fid);
+  const near = c.faction === fid ? [c] : nearestOwnCities(c, fid);
+  const home = near.length ? near[randInt(0, near.length - 1)] : startCity(fid);
+  g.faction = fid;
+  g.joins = (g.joins || 0) + 1;
+  delete g.fallen;
+  g.city = home.id;
+  clearOrders(g); // 예전 세력에서 넣은 예약은 지운다
+  capDefense(g);
+  addLog(g, `⚔ ${old ? old.name + ' 세력이 멸망하여' : '세력을 잃고'} ${f.name} 세력에 합류했다.${meritLost ? ` 공적 -${fmt(meritLost)} (${fmt(g.merit)})` : ''} ${home.name}에 머문다.`);
+  if (typeof factionNotice === 'function') factionNotice(fid, `⚔ ${old ? old.name + ' 세력의 ' : ''}${g.name} 장수가 우리 세력에 합류했다.`);
+}
+
 // byFid: 성을 빼앗은 세력 (세력이 멸망했을 때 알림에 쓴다)
 // byGen: 성을 빼앗은 장수 (2026-11-09: 물러나거나 멸망하는 장수도 보물 실종·빼앗김 판정, 이긴 쪽 = byGen)
 function retreatFrom(c, oldFaction, byFid, byGen) {
@@ -788,6 +808,8 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const old = factionById(oldFaction), by = byFid && factionById(byFid);
       const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
       g.merit -= meritLost;
+      const heir = lastFaction(oldFaction);
+      if (heir) { absorbInto(g, heir, c, old, meritLost); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
       g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost };
       g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); continue; // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
     }
