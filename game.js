@@ -530,7 +530,7 @@ function adminToolsDialog() {
     };
   });
 }
-// 🧪 에디터 카드 (2026-11-18 기획자): 내 장수의 능력치·금·공적·병력·병종·특성을 바로 바꾼다. 세계에 내 장수 혼자일 때만 (engine.js editorBlocked, 서버도 같은 검사)
+// 🧪 에디터 카드 (2026-11-18 기획자): 내 장수의 능력치·금·공적·병력·병종·특성·보물을 바로 바꾼다. 세계에 내 장수 혼자일 때만 (engine.js editorBlocked, 서버도 같은 검사)
 function editorCardHtml() {
   const g = S && S.generals[MY_ID], why = S ? editorBlocked(g) : '세계를 아직 못 받았어요.';
   const head = `<div class="acHead"><h3>🧪 에디터</h3><p class="acDesc">테스트용 · 내 장수만 · 세계에 내 장수 혼자일 때만 쓸 수 있어요</p></div>`;
@@ -542,7 +542,8 @@ function editorCardHtml() {
     <div class="acForm">${n('ed_gold', '금', g.gold || 0)} ${n('ed_merit', '공적', g.merit || 0)}</div>
     <div class="acForm"><label>병종 <select id="ed_unit"><option value=""${g.unitType ? '' : ' selected'}>없음</option>${Object.keys(UNIT_TYPES).map(u => `<option${g.unitType === u ? ' selected' : ''}>${u}</option>`).join('')}</select></label>
       ${n('ed_troops', '병력', g.troops || 0, troopsMax(g))} <span class="dim small">최대 ${fmt(troopsMax(g))} (통솔을 바꾸면 새 통솔 기준)</span></div>
-    <div class="acForm"><label>특성 <select id="ed_trait"><option value="">없음</option>${Object.entries(GENERAL_TRAITS).map(([k, t]) => `<option value="${k}"${g.trait === k ? ' selected' : ''}>${esc(t.name)} (${t.tier})</option>`).join('')}</select></label></div>
+    <div class="acForm"><label>특성 <select id="ed_trait"><option value="">없음</option>${Object.entries(GENERAL_TRAITS).map(([k, t]) => `<option value="${k}"${g.trait === k ? ' selected' : ''}>${esc(t.name)} (${t.tier})</option>`).join('')}</select></label>
+      <label>보물 <select id="ed_tr"><option value="">없음</option>${Object.keys(TREASURES).map(n => `<option value="${esc(n)}"${treasuresOf(g)[0] === n ? ' selected' : ''}>${esc(n)} (${esc(trLabel(n))})</option>`).join('')}</select></label> <span class="dim small">한 장수 1개</span></div>
     <p class="acBtns"><button id="edSave" class="main">적용</button></p>
   </div>`;
 }
@@ -550,7 +551,7 @@ function bindEditor(box) {
   const save = box.querySelector('#edSave'); if (!save) return;
   save.onclick = async () => {
     const v = id => box.querySelector('#' + id).value;
-    const body = { gold: v('ed_gold'), merit: v('ed_merit'), troops: v('ed_troops'), unitType: v('ed_unit'), trait: v('ed_trait') };
+    const body = { gold: v('ed_gold'), merit: v('ed_merit'), troops: v('ed_troops'), unitType: v('ed_unit'), trait: v('ed_trait'), treasure: v('ed_tr') };
     STATS.forEach(st => { body[st.key] = v('ed_' + st.key); });
     if (await call('adminEdit', body)) afterAdmin();
   };

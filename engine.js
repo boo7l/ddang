@@ -281,7 +281,7 @@ function joinFaction(g, fid, cityId) {
 }
 
 // ===== 관리자 에디터 (2026-11-18 기획자) =====
-// 테스트용: 관리자 자기 장수의 능력치·금·공적·병력·병종·특성을 바로 바꾼다.
+// 테스트용: 관리자 자기 장수의 능력치·금·공적·병력·병종·특성·보물을 바로 바꾼다.
 // 관리자 스스로의 오용도 막으려고, 세계에 장수가 그 관리자 한 명뿐일 때만 된다. 화면(game.js)과 서버가 같은 함수로 막는다
 // 서버: action 'adminEdit' → 관리자인지 확인한 뒤 adminEdit(S.generals[내 id], payload)를 부르고, 돌려준 글이 있으면 error로
 function editorBlocked(g) {
@@ -304,8 +304,8 @@ function adminEdit(g, p = {}) {
   const troops = num(p.troops, 0, troopsMax(g)); // 능력치를 먼저 바꾸니 새 통솔 기준 최대치
   if (troops != null) { g.troops = troops; if (troops > 0 && !g.unitType) g.unitType = '보병'; }
   if (p.trait !== undefined) { if (GENERAL_TRAITS[p.trait]) g.trait = p.trait; else if (p.trait === '') delete g.trait; }
-  addLog(g, '🧪 에디터로 장수 정보를 고쳤다.');
-  return '';
+  if (p.treasure !== undefined) { if (TREASURES[p.treasure]) g.treasures = [p.treasure]; else if (p.treasure === '') g.treasures = []; delete g.treasureFound; } // 보물 (한 장수 1개 규칙대로 하나만. 혼자일 때라 주인 겹칠 일 없음)
+  return ''; // 기록은 남기지 않는다 (2026-11-18 기획자)
 }
 
 // ===== 천하통일 (기획서 6장) =====
