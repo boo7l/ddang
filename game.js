@@ -135,10 +135,10 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
 // 2026-11-18 재디자인: 묶음별 왼쪽 메뉴. 운영 탭은 현황 · 공지 · 시즌 세 화면으로 나눈다 (카드는 한 번에 그리고 data-sec로 골라 보인다)
 const ADMIN_NAV = [
-  ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['ops:season', '🗓 시즌'], ['ops:editor', '🧪 에디터']]], // 에디터 (2026-11-18): 세계에 내 장수 혼자일 때만
+  ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['tourney', '🏟 대회'], ['ops:season', '🗓 시즌'], ['ops:editor', '🧪 에디터']]], // 에디터 (2026-11-18): 세계에 내 장수 혼자일 때만
   ['사람', [['users', '👥 장수'], ['factions', '🚩 세력'], ['members', '🗂 가입자'], ['chat', '💬 채팅']]],
-  ['행사', [['tourney', '🏟 무술대회'], ['debate', '🗣 설전대회']]], // 설전대회 탭 (2026-11-15)
-];
+]; // 무술대회·설전대회는 '대회' 한 화면 (2026-11-18: 대회는 한 번에 하나라 합침. 위에서 종류를 고른다)
+let tourAdminKind = 'martial'; // 대회 화면에서 보고 있는 종류
 let adminTab = 'ops', opsSec = 'status';
 // 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
 const ADMIN_HIDES = ['title', 'hofPage', 'create', 'trait', 'join', 'game', 'mTabs', 'refreshBtn', 'miniLink'];
@@ -154,13 +154,13 @@ function adminShow(tab, html, onMount) {
   adminTab = tab;
   adminEnter();
   $('#adminPage').hidden = false;
-  const cur = tab === 'ops' ? `ops:${opsSec}` : tab;
+  const cur = tab === 'ops' ? `ops:${opsSec}` : tab === 'debate' ? 'tourney' : tab;
   $('#adminNav').innerHTML = ADMIN_NAV.map(([g, items]) => `<div class="anGroup"><div class="anHead">${g}</div>${items.map(([k, t]) => `<button data-anav="${k}" class="${k === cur ? 'on' : ''}">${t}</button>`).join('')}</div>`).join('');
   $('#adminNav').querySelectorAll('[data-anav]').forEach(b => { b.onclick = () => openAdmin(b.dataset.anav); });
   $('#adminMain').innerHTML = html;
   if (onMount) onMount($('#adminMain'));
 }
-function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') tourneyAdminDialog('martial'); else if (tab === 'debate') tourneyAdminDialog('debate'); else adminDialog(tab); }
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') { const T = S && S.tourney; tourneyAdminDialog(T && (T.phase === 'entry' || T.phase === 'run') ? tourKind(T) : tourAdminKind); } else if (tab === 'debate') tourneyAdminDialog('debate'); else adminDialog(tab); }
 function adminSide(html, onMount) {
   const s = $('#adminSide');
   s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
@@ -583,6 +583,7 @@ const TOUR_PHASE = { entry: '📝 접수 중', run: '⚔ 경기 진행 중', don
 const TOUR_STAGE = slot => (slot === 'f' ? '결승' : slot[0] === 's' ? '4강' : '8강');
 // kind: 'martial' 무술대회 탭 · 'debate' 설전대회 탭 (2026-11-15). 대회는 한 번에 하나라, 다른 종류가 진행 중이면 열기 칸 대신 안내
 function tourneyAdminDialog(kind = 'martial') {
+  tourAdminKind = kind;
   const T0 = S && S.tourney, T = T0 && tourKind(T0) === kind ? T0 : null, R = RULES.tourney, C = tourCfg(T);
   const KN0 = kind === 'debate' ? '설전대회' : '무술대회', SN0 = kind === 'debate' ? '지력' : '무력';
   const otherLive = !T && T0 && (T0.phase === 'entry' || T0.phase === 'run'); // C: 지금(지난) 대회 참가비·보상 = 새 대회 기본값
@@ -594,7 +595,9 @@ function tourneyAdminDialog(kind = 'martial') {
     const res = m.bye ? '<span class="dim">부전승</span>' : m.win != null ? `${tourHpName(T)} ${m.hp ? m.hp.join(' : ') : '-'}${m.tie ? ` <span class="dim small">(동점 → ${tourStatName(T)} 낮은 쪽)</span>` : ''}` : m.at ? (m.at <= Date.now() ? '<b>진행 중</b>' : '대기') : '';
     return `<tr><td>${TOUR_STAGE(m.slot)}</td><td>${nm(0)} vs ${nm(1)}</td><td class="dim">${m.at ? fmtTime(m.at) : ''}</td><td>${res}</td></tr>`;
   }).join('') : '';
-  adminShow(kind === 'debate' ? 'debate' : 'tourney', `<div class="adminCards">
+  const kindLive = k => T0 && tourKind(T0) === k && (T0.phase === 'entry' || T0.phase === 'run') ? ' <span class="liveDot" title="진행 중">●</span>' : '';
+  adminShow(kind === 'debate' ? 'debate' : 'tourney', `<div class="picks tourKinds">${[['martial', '🥋 무술대회'], ['debate', '🗣 설전대회']].map(([k, t]) => `<button class="pick${k === kind ? ' on' : ''}" data-tk="${k}">${t}${kindLive(k)}</button>`).join('')}</div>
+    <div class="adminCards">
     <div class="adminCard wide">
     <p><button id="atPractice">${kind === 'debate' ? '🗣' : '🥋'} 연습 경기 (100 vs 100)</button> <span class="dim small">컴퓨터와 ${SN0} 100 대 100으로 겨뤄요. 서버와 상관없고 기록·보상 없음</span></p>
     </div>
@@ -628,6 +631,7 @@ function tourneyAdminDialog(kind = 'martial') {
     </div>`}
     </div>`, () => {
     if ($('#atDefault')) $('#atDefault').onclick = () => { $('#atFee').value = R.fee; [0, 1].forEach(k => { $(`#atP${k}g`).value = R.prize[k].gold; $(`#atP${k}m`).value = R.prize[k].merit; $(`#atP${k}x`).value = R.prize[k].warExp; }); }; // 참가비·보상 기본값으로 (2026-11-15)
+    document.querySelectorAll('#adminMain [data-tk]').forEach(b => { b.onclick = () => tourneyAdminDialog(b.dataset.tk); }); // 무술대회 · 설전대회 고르기 (2026-11-18)
     $('#atPractice').onclick = () => tourOpenPractice(kind); // 연습 경기 (2026-11-15)
     if ($('#atTest')) $('#atTest').onchange = e => { $('#atBotsRow').hidden = !e.target.checked; };
     if ($('#atOpen')) $('#atOpen').onclick = async () => {
