@@ -1758,10 +1758,10 @@ function runSupply(g, o) {
 }
 
 // ----- 재야 전용 (2026-11-16, 시즌 8부터) -----
-// 의뢰: 머무는 성에서 일을 맡아 금 100~300 (공적 없음)
+// 의뢰: 머무는 성에서 일을 맡아 금 100~300 + 지닌 공적 × 0.02 (최대 +100) (공적은 얻지 않음)
 function runQuest(g) {
   if (!isRonin(g)) return '재야만 쓰는 명령';
-  const city = cityById(g.city), got = earnGold(g, randInt(RULES.ronin.quest[0], RULES.ronin.quest[1]));
+  const city = cityById(g.city), R = RULES.ronin, bonus = Math.min(R.questMeritMax, Math.floor((g.merit || 0) * R.questMerit)), got = earnGold(g, randInt(R.quest[0], R.quest[1]) + bonus); // 공적 × 0.02 (최대 +100, 2026-11-18 기획자)
   addLog(g, got > 0 ? `📜 ${city.name}에서 의뢰를 맡아 해결했다. 금 +${fmt(got)}` : `📜 ${city.name}에서 의뢰를 해결했지만, 금을 더 지닐 수 없었다.`);
   return '';
 }
