@@ -1456,21 +1456,32 @@ function exploreOddsDialog(from, backName = '도움말로') {
     item: () => '장비 하나 (명마·명검·서적) 획득',
     feast: e => `그 성 치안 +${e.peace}, 농업·상업 각각 +${e.min}~${e.max}`,
     none: () => '아무 일 없음',
-    bandit: e => `병사가 있으면 병력 -${Math.round(e.minRate * 100)}~${Math.round(e.maxRate * 100)}%<br>없으면 금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%`,
+    bandit: e => e.minRate == null ? `금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%` : `병사가 있으면 병력 -${Math.round(e.minRate * 100)}~${Math.round(e.maxRate * 100)}%<br>없으면 금 -${Math.round(e.goldMinRate * 100)}~${Math.round(e.goldMaxRate * 100)}%`,
     master: e => `무작위 능력치 +${e.gain}`,
     pouch: () => `특성 3장 중 하나로 바꾸거나 지금 특성 유지${seasonNow() >= 7 ? '<br>R 최소 1장 보장(다시 뽑기 포함)' : ''}`,
     spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
     engineer: () => '병기가 있으면 강화: 부서질 때 1번 버팀 (중첩 불가)<br>없으면 병기 하나 무작위 획득', // 2026-11-15 기획자 문구
+    sage: e => `무작위 능력치 경험치 +${e.min}~${e.max}<br><span class="dim">수련 횟수에는 안 셈</span>`, // 재야 (2026-11-19)
+    help: e => `공적 +${e.min}~${e.max}`,
     treasure: () => `전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>${seasonNow() >= 7 ? '이미 보물이 있으면 교환 가능, 남은 보물이 없으면 장비 발견' : '이미 보물이 있으면 장비 발견'}`, // 시즌 7부터 바꾸기·팔기 (2026-11-13 표 문구)
   };
-  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', engineer: '기술자', treasure: '★ 보물' };
-  const rows = EXPLORE.filter(e => e.weight > 0).sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', engineer: '기술자', treasure: '★ 보물', sage: '★ 현인', help: '주민 돕기' };
+  const rows = list => list.filter(e => e.weight > 0).sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
+  // 일반 / 재야 탭 (2026-11-19 기획자). 재야 표는 시즌 8부터 (재야가 생긴 시즌). 재야인 장수는 재야 탭으로 연다
+  const roninOk = typeof RONIN_EXPLORE !== 'undefined' && (!S || seasonNow() >= RULES.ronin.fromSeason);
+  const tabs = [{ k: 'normal', label: '일반', list: EXPLORE, head: `금 ${RULES.myGoldCost.explore} · 공적 +${RULES.merit.explore}` }];
+  if (roninOk) tabs.push({ k: 'ronin', label: '재야', list: RONIN_EXPLORE, head: `금 ${RULES.myGoldCost.explore} · 공적 없음 (주민 돕기만)` });
+  const start = roninOk && S && S.generals && isRonin(me()) ? 'ronin' : 'normal';
   openModal(`
     <h2>탐색 확률표</h2>
-    <p>금 ${RULES.myGoldCost.explore} · 공적 +${RULES.merit.explore}</p>
-    <table class="oddsTable">${rows}</table>
+    ${tabs.length > 1 ? `<div class="helpTabs">${tabs.map(t => `<button data-otab="${t.k}"${t.k === start ? ' class="on"' : ''}>${t.label}</button>`).join('')}</div>` : ''}
+    ${tabs.map(t => `<div data-opane="${t.k}"${t.k === start ? '' : ' hidden'}><p>${t.head}</p><table class="oddsTable">${rows(t.list)}</table></div>`).join('')}
     <div class="modalBtns"><button id="exploreBack" class="main">◀ ${backName}</button></div>`, box => {
     box.querySelector('#exploreBack').onclick = () => (typeof from === 'function' ? from() : helpDialog(from));
+    box.querySelectorAll('[data-otab]').forEach(b => { b.onclick = () => {
+      box.querySelectorAll('[data-otab]').forEach(x => x.classList.toggle('on', x === b));
+      box.querySelectorAll('[data-opane]').forEach(p => { p.hidden = p.dataset.opane !== b.dataset.otab; });
+    }; });
   });
   $('#modalBox').classList.add('wideBox');
 }
@@ -1894,7 +1905,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119082211&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119082355&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1904,7 +1915,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119082211&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119082355&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1914,7 +1925,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119082211&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119082355&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
