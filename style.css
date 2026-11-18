@@ -668,6 +668,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardRowTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .boardRow.pinned .boardRowTitle { font-weight: bold; color: var(--title); }
 .boardRowMeta { flex: none; white-space: nowrap; }
+.boardIcon { filter: drop-shadow(0 0 1px rgba(255, 236, 200, .7)); vertical-align: middle; } /* 게시판 이름 옆 도트 아이콘: 어두운 바탕에서도 보이게 (2026-11-18) */
 .boardCnt { color: var(--title); }
 .boardNoticeTag { color: #ff9a6a; }
 .boardEmpty { padding: 16px 0; }
