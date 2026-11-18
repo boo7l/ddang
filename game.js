@@ -1891,7 +1891,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225621&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225737&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1901,7 +1901,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118225621&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118225737&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1911,7 +1911,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225621&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225737&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2599,7 +2599,7 @@ function renderCommander() {
     <p class="cmds two"><button data-cmdr="cmdAccept" class="main">수락</button><button data-cmdr="cmdDecline">사양</button></p>`;
   else if (c === p) {
     body += '<p class="cmds three"><button data-cmdr="notice">📌 공지</button><button data-cmdr="policy">🧭 방침</button><button data-cmdr="ally">🤝 동맹</button></p>';
-    if (seasonNow() >= R.supplyFromSeason) body += '<p class="cmds one"><button data-cmdr="supply" title="어디에 있든 우리 성끼리 군량을 옮겨요. 예약표의 고른 칸에 들어가요">🚚 보급 <span class="dim small">(예약 · 한 턴)</span></button></p>'; // 보급 (2026-11-16, 시즌 8부터)
+    if (seasonNow() >= R.supplyFromSeason) body += '<p class="cmds one"><button data-cmdr="supply" title="어디에 있든 우리 성끼리 군량을 옮겨요. 예약표의 고른 칸에 들어가요">🚚 보급</button></p>'; // 보급 (2026-11-16, 시즌 8부터)
     body += hand ? `<p class="dim">${esc(S.generals[hand.to] ? S.generals[hand.to].name : '')}에게 위임하는 중 (${left}분 남음)</p><p class="cmds three"><button data-cmdr="fire">🚪 해고</button><button data-cmdr="cmdHandCancel">📜 취소</button><button data-cmdr="cmdResign">🏳 반납</button></p>`
       : `<p class="cmds three"><button data-cmdr="fire">🚪 해고</button><button data-cmdr="cmdHandPick">📜 위임</button><button data-cmdr="cmdResign">🏳 반납</button></p>`;
   } else if (!c) {
