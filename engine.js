@@ -1354,10 +1354,11 @@ function runExplore(g) {
   const city = cityById(g.city), cs = S.cities[g.city];
   const why = pay(g, 'explore');
   if (why) return why;
-  let e = rollExplore();
+  const table = isRonin(g) ? RONIN_EXPLORE : EXPLORE; // 재야는 따로 (2026-11-19)
+  let e = rollExplore(table);
   const freeTreasures = freeTreasureNames();
   // 보물 15개가 모두 주인이 있거나, 이미 보물이 있으면 장비 발견 (2026-11-07: 한 장수는 보물 1개까지). 시즌 7부터는 이미 있어도 바꿀지 팔지 고른다 (2026-11-10, 고르는 중이면 장비 발견)
-  if (e.key === 'treasure' && (!freeTreasures.length || (treasuresOf(g).length && (seasonNow() < 7 || g.treasureFound)))) e = EXPLORE.find(x => x.key === 'item');
+  if (e.key === 'treasure' && (!freeTreasures.length || (treasuresOf(g).length && (seasonNow() < 7 || g.treasureFound)))) e = table.find(x => x.key === 'item');
   if (e.key === 'engineer' && !RULES.features.siege) e = EXPLORE.find(x => x.key === 'none'); // 병기 기능이 꺼져 있으면 허탕
   let text, warExp = 0;
   addRecord(g, 'ex_' + e.key); // 탐색 결과별 횟수 (2026-11-08, 시즌 기록용: ex_gold · ex_treasure · ex_bandit …)
@@ -1403,6 +1404,21 @@ function runExplore(g) {
       g.gear = g.gear || {};
       g.gear[name] = gearCount(g, name) + 1;
       text = `★ 「${name}」${josa(name, '을를').slice(-1)} 손에 넣었다! ${st.name} +${SHOP[name].bonus} (지금 ${effStats(g)[SHOP[name].stat]}, ${name} ${g.gear[name]}개)`;
+      break;
+    }
+    case 'sage': { // 재야: 현인의 가르침 (2026-11-19 기획자). 무작위 능력치(최대 아닌 것) 경험치 40~60, 수련 횟수에는 안 센다
+      const open = STATS.filter(s => g.stats[s.key] < RULES.statMax);
+      if (!open.length) { text = '현인을 만났지만, 이미 더 배울 것이 없었다.'; break; }
+      const st = open[randInt(0, open.length - 1)], gain = traitExp(g, st.key, randInt(e.min, e.max));
+      const up = addStatExp(g, st.key, gain);
+      text = `★ 현인을 만나 가르침을 받았다! ${st.name} 경험 +${gain}` + (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[st.key]})` : ` (${g.statExp[st.key]}/${expNeed(g.stats[st.key])})`);
+      break;
+    }
+    case 'help': { // 재야: 주민 돕기 (2026-11-19 기획자). 공적 10~30, 재야가 공적을 얻는 유일한 길 (한 턴 공적 상한은 지킨다)
+      if (g.meritTurn !== S.turn) { g.meritTurn = S.turn; g.meritThisTurn = 0; }
+      const got = Math.max(0, Math.min(randInt(e.min, e.max), RULES.meritTurnMax - g.meritThisTurn));
+      g.meritThisTurn += got; g.merit += got;
+      text = got > 0 ? `주민을 만나 일을 도와주었다! 공적 +${got} (${fmt(g.merit)})` : '주민을 만나 일을 도와주었다.';
       break;
     }
     case 'feast': { // 마을 잔치 (2026-10-31): 그 성의 치안·농업·상업이 오른다 (최대치까지)
