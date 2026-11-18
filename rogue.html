@@ -228,6 +228,7 @@
   .pauseBtn:hover { opacity: 1; }
   @media (max-width: 860px) { .myBoons .hd { cursor: pointer; margin-bottom: 0; } .myBoons .tg::after { content: " ▼ 펼치기"; color: #b89a6a; font-size: 13px; } .myBoons.open .tg::after { content: " ▲ 접기"; } .myBoons:not(.open) .mbBody { display: none; } .myBoons.open .hd { margin-bottom: 4px; } } /* 휴대폰: 내 강화 접기·펼치기 (2026-11-17 기획자) */
   @media (max-width: 860px) { .side .nm .sep { display: none; } .side .nm .st { display: block; } } /* 휴대폰: 무력 줄 · 체력 줄 (2026-11-17 기획자) */
+  @media (max-width: 860px) { .stage:has(.resBox:not(:empty)) .banner { top: 20%; } .stage:has(.resBox:not(:empty)) .banner .s { display: none; } .resCard { padding: 2px 12px; } .resCard button { margin-top: 4px; } } /* 휴대폰: 결과창이 뜨면 큰 글씨를 위로 올리고 부제는 숨긴다 (결과창과 겹쳐서, 2026-11-18) */
   .side .nm #myInfo, .side .nm #opInfo { display: block; } /* 체력바 위: 이름 아래 줄에 무력·체력 (2026-11-17 기획자) */
   body.paused #hand, body.paused #opHand { visibility: hidden; } /* 멈춤 중에는 내 손패·상대 손패 안 보이게 */
   .pauseCover { position: absolute; inset: 0; z-index: 7; background: rgba(0, 0, 0, .6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
