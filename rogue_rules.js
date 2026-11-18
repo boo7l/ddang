@@ -31,7 +31,7 @@ const TIER_ORDER = ['N', 'R', 'SR', 'SSR'];
 const BOONS = [
   { id: 'war3', tier: 'N', name: '무력 상승(소)', desc: '무력 +2', fx: m => { m.war += 2; } }, // 2026-11-17 기획자: 하·중·상 2·4·6
   { id: 'hp10', tier: 'N', name: '최대 체력 증가', desc: '최대 체력 +10', fx: (m, f) => { m.hpMax += 10; f.hp += 10; } },
-  { id: 'breath', tier: 'N', name: '숨 고르기', desc: '💨회피를 내면 체력 +5', fx: m => { m.dodgeHeal += 5; } }, // 2026-11-17 기획자 추가: 상대 카드와 관계없이 내가 회피를 내면
+  { id: 'breath', tier: 'R', name: '숨 고르기', desc: '💨회피를 내면 체력 +5', fx: m => { m.dodgeHeal += 5; } }, // 2026-11-17 기획자 추가: 상대 카드와 관계없이 내가 회피를 내면
   { id: 'heal30', tier: 'N', name: '응급 처치', desc: '체력 추가 회복 +25 (최대 체력은 넘지 않음)', fx: (m, f) => { f.hp = Math.min(m.hpMax, f.hp + 25); } }, // 2026-11-17 엑셀: 30 → 25
   { id: 'early', tier: 'N', name: '기선 제압', desc: '1~3합에 이기면 피해 +5', once: true, fx: m => { m.earlyDmg += 5; } }, // 2026-11-17 기획자 추가, 중복 불가
   { id: 'atk2', tier: 'N', name: '속공 단련', desc: '⚡속공으로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; } },
@@ -40,7 +40,7 @@ const BOONS = [
   { id: 'war6', tier: 'R', name: '무력 상승(중)', desc: '무력 +4', fx: m => { m.war += 4; } },
   { id: 'kill6', tier: 'R', name: '약점 포착', desc: '💥필살 피해 +5', fx: m => { m.killDmg += 5; } },
   { id: 'regen', tier: 'R', name: '회복력', desc: '판 사이 회복 +5', fx: m => { m.regen += 5; } }, // 2026-11-17 기획자: 5로 확정 (10 했다가 되돌림)
-  { id: 'armor', tier: 'R', name: '철갑', desc: '받는 피해 -2', fx: m => { m.armor += 2; } },
+  { id: 'armor', tier: 'N', name: '철갑', desc: '받는 피해 -2', fx: m => { m.armor += 2; } },
   { id: 'big', tier: 'R', name: '큰 카드', desc: '대 카드 뽑힐 확률 +3%p', fx: m => { m.bigP += 3; } },
   { id: 'drain', tier: 'R', name: '흡혈', desc: '합에서 이길 때마다 체력 +3', fx: m => { m.drain += 3; } },
   { id: 'master', tier: 'SR', name: '달인', desc: '일반 카드로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; m.typeDmg.tec += 3; m.typeDmg.def += 3; } },
