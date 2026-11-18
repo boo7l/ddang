@@ -1326,7 +1326,7 @@ function helpDialog(page = -1) {
       <li><b>🌾군량</b> (성마다 따로): 4·10월에 그 성의 <b>농업 수치</b>에 따라 수확하고, 병사는 머무는 성의 군량을 매달 먹어요(100명당 ${Math.round(RULES.foodPerTroops * 100)}). 출진하면 병력의 ${Math.round(RULES.marchFoodRate * 100)}%만큼이 소비돼요.</li>
       ${seasonNow() >= RULES.crowdFromSeason ? `<li><b>🏯성 정원</b>: 한 성에 머무는 우리 세력 장수가 정원(소성 ${RULES.crowdCap[1]} · 중성 ${RULES.crowdCap[2]} · 대도시 ${RULES.crowdCap[3]}명)을 넘으면, 그 성 장수 모두의 금 수입 중 <b>상업 몫</b>이 줄어요. 많이 넘을수록 더 크게 줄어요. 성 정보의 장수 칸에서 볼 수 있어요.</li>` : ''}</ul>`], // 성 정원 (2026-11-13 도움말, 시즌 7부터)
     ['📊 능력치', `<ul>
-      <li><b>통솔</b>: 최대 병력(${seasonNow() >= RULES.troopCap.fromSeason ? `통솔 × ${RULES.troopCap.lea} + 세 능력치 평균 × ${RULES.troopCap.avg}` : `통솔 × ${RULES.troopsPerLea}`}), 징병, 치안, 보병</li>
+      <li><b>통솔</b>: 최대 병력(통솔 × ${RULES.troopsPerLea}), 징병, 치안, 보병</li>
       <li><b>무력</b>: 축성, 기병, <b>단기접전</b>(양쪽 무력 ${RULES.duel.minWar} 이상이면 전투 중 가끔), <b>돌격</b>(무력 ${RULES.charge.minWar} 이상이면 전투 중 가끔), 모든 병종 전투력에 보너스 (무력 10마다 +${Math.round(RULES.warPer1 * 10 * 1000) / 10}%)</li>
       <li><b>지력</b>: 농업·상업, 궁병, <b>계략</b>(파괴·유언·첩보 성공률), <b>책략</b>(지력 ${RULES.scheme.minInt} 이상이면 전투 중 가끔)</li>
       <li>행동하면 그 능력치의 <b>경험치</b>가 쌓이고, 다 차면 1 올라요. (내정 → 그 내정의 능력치, 출진 → 병종의 능력치, <b>수련</b> → 고른 능력치)</li>
@@ -1891,7 +1891,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118220226&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118222918&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1901,7 +1901,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118220226&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118222918&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1911,7 +1911,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118220226&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118222918&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
