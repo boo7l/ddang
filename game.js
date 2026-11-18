@@ -135,7 +135,7 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 // 왼쪽(휴대폰은 위) 메뉴: 운영 · 장수 · 채팅 · 가입자. 장수를 누르면 오른쪽(휴대폰은 아래) 칸에 정보·제재가 열린다
 // 2026-11-18 재디자인: 묶음별 왼쪽 메뉴. 운영 탭은 현황 · 공지 · 시즌 세 화면으로 나눈다 (카드는 한 번에 그리고 data-sec로 골라 보인다)
 const ADMIN_NAV = [
-  ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['ops:season', '🗓 시즌']]],
+  ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['ops:season', '🗓 시즌'], ['ops:editor', '🧪 에디터']]], // 에디터 (2026-11-18): 세계에 내 장수 혼자일 때만
   ['사람', [['users', '👥 장수'], ['factions', '🚩 세력'], ['members', '🗂 가입자'], ['chat', '💬 채팅']]],
   ['행사', [['tourney', '🏟 무술대회'], ['debate', '🗣 설전대회']]], // 설전대회 탭 (2026-11-15)
 ];
@@ -456,8 +456,10 @@ function adminToolsDialog() {
     ${head('⚠ 위험', '되돌릴 수 없어요')}
     <div class="acDanger"><div><b>새 시즌 시작</b><br><label class="lockSw"><input type="checkbox" id="aKeepMap"${S && S.keepMap ? ' checked' : ''}> 이전 시나리오 유지</label> <span class="dim small">${esc(seasonMap().map.scenario || '이름 없음')} ${seasonMap().how}로 열려요${S && S.nextMap && S.keepMap ? ' (올려 둔 지도가 먼저)' : ''}</span></div><button id="aSeason" class="danger">새 시즌 시작</button></div>
     <div class="acDanger"><div><b>완전 초기화 (내 계정)</b><br><span class="dim small">내 장수와 계정을 지우고 첫 화면으로</span></div><button id="aReset" class="danger">완전 초기화</button></div>
-    </div></div>`, box => {
+    </div>
+    ${editorCardHtml()}</div>`, box => {
     box.querySelectorAll('[data-sec]').forEach(c => { c.hidden = c.dataset.sec !== opsSec; }); // 운영 탭 세 화면 (2026-11-18)
+    bindEditor(box);
     // 다음 시즌 지도 올리기 (2026-11-06): 파일을 고르면 이 화면에서 먼저 검사·미리 보기, 올리기를 누르면 서버가 다시 검사해서 둔다
     let picked = null, pickedName = '';
     $('#amFile').onchange = async e => {
@@ -527,6 +529,31 @@ function adminToolsDialog() {
       location.reload();
     };
   });
+}
+// 🧪 에디터 카드 (2026-11-18 기획자): 내 장수의 능력치·금·공적·병력·병종·특성을 바로 바꾼다. 세계에 내 장수 혼자일 때만 (engine.js editorBlocked, 서버도 같은 검사)
+function editorCardHtml() {
+  const g = S && S.generals[MY_ID], why = S ? editorBlocked(g) : '세계를 아직 못 받았어요.';
+  const head = `<div class="acHead"><h3>🧪 에디터</h3><p class="acDesc">테스트용 · 내 장수만 · 세계에 내 장수 혼자일 때만 쓸 수 있어요</p></div>`;
+  if (why) return `<div class="adminCard wide" data-sec="editor">${head}<div class="acNow">🔒 ${esc(why)}</div></div>`;
+  const n = (id, label, v, max, w = '6em') => `<label>${label} <input id="${id}" type="number" min="0"${max ? ` max="${max}"` : ''} value="${v}" style="width:${w}"></label>`;
+  return `<div class="adminCard wide" data-sec="editor">${head}
+    <p><b class="hi">${esc(g.name)}</b> <span class="dim small">· 비우거나 그대로 두면 안 바뀌어요</span></p>
+    <div class="acForm">${STATS.map(st => n(`ed_${st.key}`, st.name, g.stats[st.key], RULES.statMax, '4.5em')).join(' ')} <span class="dim small">1~${RULES.statMax} (보물·장비·훈장 보너스 빼고)</span></div>
+    <div class="acForm">${n('ed_gold', '금', g.gold || 0)} ${n('ed_merit', '공적', g.merit || 0)}</div>
+    <div class="acForm"><label>병종 <select id="ed_unit"><option value=""${g.unitType ? '' : ' selected'}>없음</option>${Object.keys(UNIT_TYPES).map(u => `<option${g.unitType === u ? ' selected' : ''}>${u}</option>`).join('')}</select></label>
+      ${n('ed_troops', '병력', g.troops || 0, troopsMax(g))} <span class="dim small">최대 ${fmt(troopsMax(g))} (통솔을 바꾸면 새 통솔 기준)</span></div>
+    <div class="acForm"><label>특성 <select id="ed_trait"><option value="">없음</option>${Object.entries(GENERAL_TRAITS).map(([k, t]) => `<option value="${k}"${g.trait === k ? ' selected' : ''}>${esc(t.name)} (${t.tier})</option>`).join('')}</select></label></div>
+    <p class="acBtns"><button id="edSave" class="main">적용</button></p>
+  </div>`;
+}
+function bindEditor(box) {
+  const save = box.querySelector('#edSave'); if (!save) return;
+  save.onclick = async () => {
+    const v = id => box.querySelector('#' + id).value;
+    const body = { gold: v('ed_gold'), merit: v('ed_merit'), troops: v('ed_troops'), unitType: v('ed_unit'), trait: v('ed_trait') };
+    STATS.forEach(st => { body[st.key] = v('ed_' + st.key); });
+    if (await call('adminEdit', body)) afterAdmin();
+  };
 }
 // 지도 미리 보기 (2026-11-06, 관리 페이지 다음 시즌 지도): 작은 칸 지도 + 세력별 성 수·특성
 function mapPreview(m) {

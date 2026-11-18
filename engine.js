@@ -280,6 +280,34 @@ function joinFaction(g, fid, cityId) {
   return '';
 }
 
+// ===== 관리자 에디터 (2026-11-18 기획자) =====
+// 테스트용: 관리자 자기 장수의 능력치·금·공적·병력·병종·특성을 바로 바꾼다.
+// 관리자 스스로의 오용도 막으려고, 세계에 장수가 그 관리자 한 명뿐일 때만 된다. 화면(game.js)과 서버가 같은 함수로 막는다
+// 서버: action 'adminEdit' → 관리자인지 확인한 뒤 adminEdit(S.generals[내 id], payload)를 부르고, 돌려준 글이 있으면 error로
+function editorBlocked(g) {
+  if (!g) return '장수가 없어요.';
+  const all = allGenerals();
+  if (all.length !== 1 || all[0] !== g) return `세계에 내 장수 혼자일 때만 쓸 수 있어요 (지금 장수 ${all.length}명).`;
+  return '';
+}
+function adminEdit(g, p = {}) {
+  const why = editorBlocked(g);
+  if (why) return why;
+  const num = (v, lo, hi) => { const n = Math.round(Number(v)); return v === '' || v == null || !Number.isFinite(n) ? null : Math.max(lo, Math.min(hi, n)); };
+  for (const st of STATS) {
+    const v = num(p[st.key], 1, RULES.statMax);
+    if (v != null && v !== g.stats[st.key]) { g.stats[st.key] = v; (g.statExp = g.statExp || {})[st.key] = 0; } // 바꾼 능력치는 쌓인 경험치를 비운다
+  }
+  const gold = num(p.gold, 0, 1e8); if (gold != null) g.gold = gold;
+  const merit = num(p.merit, 0, 1e7); if (merit != null) g.merit = merit;
+  if (p.unitType !== undefined) { if (UNIT_TYPES[p.unitType]) g.unitType = p.unitType; else if (p.unitType === '') { g.unitType = null; g.troops = 0; } }
+  const troops = num(p.troops, 0, troopsMax(g)); // 능력치를 먼저 바꾸니 새 통솔 기준 최대치
+  if (troops != null) { g.troops = troops; if (troops > 0 && !g.unitType) g.unitType = '보병'; }
+  if (p.trait !== undefined) { if (GENERAL_TRAITS[p.trait]) g.trait = p.trait; else if (p.trait === '') delete g.trait; }
+  addLog(g, '🧪 에디터로 장수 정보를 고쳤다.');
+  return '';
+}
+
 // ===== 천하통일 (기획서 6장) =====
 // 다른 세력이 모두 멸망하면 통일. 공백지는 따지지 않는다. 통일하면 시즌이 끝나 턴이 멈추고,
 // 다음 시즌은 개발자가 직접 시작한다 (개발자 도구의 "새 시즌 시작")
