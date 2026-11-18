@@ -355,11 +355,11 @@ function testCardHtml() {
       <td><input type="number" min="0" value="${g.merit || 0}" data-tmerit="${esc(g.id)}" style="width:5em"></td><td>${acts(g)}</td></tr>`).join('')}</table></div>` : '<p class="dim">세력에 든 장수가 없어요.</p>'}`;
 }
 // 예약표 오른쪽 칸 (2026-11-13 기획자): 관리자가 문이 닫힌 시즌을 볼 때만. 1초마다 다시 그리지 않고 내용이 바뀔 때만, 입력 중이면 건너뛴다
-const TEST_GENS = true; // 🧪 테스트 장수 칸 켜기·끄기 (2026-11-15 기획자: OFF, 2026-11-18 기획자: ON). 코드는 남겨 두고 true로 바꾸면 다시 보인다
+const TEST_GENS = true; // 🧪 테스트 장수 칸 코드 스위치. 평소 켜고 끄기는 관리 → 지금 시즌의 체크 (S.testGensOff, 2026-11-19)
 let testColHtml = '';
 function renderTestCol(force = false) {
   const col = $('#testCol'); if (!col) return;
-  const on = TEST_GENS && IS_ADMIN && S && S.closed;
+  const on = TEST_GENS && IS_ADMIN && S && S.closed && !S.testGensOff; // 관리 → 지금 시즌의 체크로 켜고 끈다 (2026-11-19)
   col.hidden = !on;
   if (!on) return;
   const box = $('#testBox'), html = testCardHtml();
@@ -402,6 +402,7 @@ function adminToolsDialog() {
       ${tile('문', door)}
     </div>
     <p class="acBtns"><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button><button data-skip="1">+1턴</button><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
+    <div class="acForm"><label class="lockSw"><input type="checkbox" id="aTestGens"${S && !S.testGensOff ? ' checked' : ''}> 🧪 테스트 장수 칸</label> <span class="dim small">켜 두면 문이 닫혔을 때 관리자 화면에만 보여요</span></div>
     </div>
     <div class="adminCard wide" data-sec="status">
     ${head('지역 이벤트 예약', '그 달이 되면 확률과 상관없이 터져요')}
@@ -516,6 +517,7 @@ function adminToolsDialog() {
       if (!confirm(S.closed ? '문을 열까요?\n모든 사람이 로그인해서 장수를 만들고 세력에 들어올 수 있어요.\n(새 시즌이면 첫 장수가 세력에 들어올 때 턴이 흐르기 시작해요)' : '문을 닫을까요?\n관리자 말고는 아무도 들어올 수 없어요.')) return;
       await call('door'); afterAdmin();
     };
+    $('#aTestGens').onchange = async e => { if (await call('adminTestGens', { on: e.target.checked })) { afterAdmin(); renderTestCol(true); } else e.target.checked = !e.target.checked; };
     $('#aKeepMap').onchange = async e => { if (await call('adminKeepMap', { on: e.target.checked })) afterAdmin(); else e.target.checked = !e.target.checked; };
     $('#aSeason').onclick = async () => {
       const nm = seasonMap().map; // 새 시즌 지도: 올려 둔 지도 → (이전 시나리오 유지면) 지금 지도 → 기본 지도
@@ -1892,7 +1894,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119002539&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119075341&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1902,7 +1904,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119002539&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119075341&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1912,7 +1914,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119002539&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119075341&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
