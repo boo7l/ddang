@@ -22,7 +22,6 @@ const factionOf = c => (typeof BANDIT !== 'undefined' && c.faction === BANDIT.id
 // 지도 한 장을 el 안에 그린다. 메인 화면과 세력 선택 화면이 같이 쓴다.
 //   opts.selectedId: 고른 성   opts.homeId: 내 장수가 있는 성
 //   opts.focusFaction: 이 세력 성만 밝게   opts.onClick(c): 성을 눌렀을 때
-//   opts.noNear: 고른 성의 이웃 점선을 그리지 않는다   opts.cls(c): 성 칸에 더 붙일 class (보급 지도, 2026-11-18)
 function drawMap(el, opts = {}) {
   el.style.gridTemplateColumns = `repeat(${MAP.cols}, var(--cell))`;
   el.style.setProperty('--cols', MAP.cols); // 휴대폰에서 칸 크기를 화면 너비 ÷ 칸 수로 (style.css)
@@ -40,9 +39,7 @@ function drawMap(el, opts = {}) {
         if (!f) div.classList.add('empty');
         else div.style.background = f.color;
         if (c === sel) div.classList.add('sel');
-        if (near.includes(c.id) && !opts.noNear) div.classList.add('near');
-        const extra = opts.cls ? opts.cls(c) : '';
-        if (extra) div.classList.add(...extra.split(' '));
+        if (near.includes(c.id)) div.classList.add('near');
         if (c.id === opts.homeId) div.classList.add('home');
         if (opts.focusFaction && c.faction !== opts.focusFaction) div.classList.add('faded');
         const mk = opts.mark ? opts.mark(c) : '';

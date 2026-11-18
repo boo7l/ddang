@@ -963,7 +963,7 @@ function pickDialog(title, intro, opts, okText, onOk, extra = '', optsClass = ''
 // 성을 누르면 팝업이 닫히고 목록에서 그 성이 골라진다
 const pickIds = opts => { const ids = [...opts.matchAll(/name="tgt" value="([^"]+)"/g)].map(m => m[1]); return ids.length && ids.every(id => MAP.cities.some(c => c.id === id)) ? ids : []; };
 function closePickMap() { const c = document.getElementById('pickMap'); if (c) c.remove(); }
-function pickMap(title, ids, homeId, picked, onPick) {
+function pickMap(title, ids, homeId, picked, onPick, o = {}) { // o.homeLabel: 흰 테두리 성 설명, o.onHome: 흰 테두리 성을 누르면 (보급 지도, 2026-11-18)
   closePickMap();
   const byId = Object.fromEntries(MAP.cities.map(c => [c.id, c]));
   const GAP = 4, avail = Math.min(640, innerWidth - 32) - 40, cw = Math.max(26, Math.min(46, Math.floor((avail - GAP * (MAP.cols - 1)) / MAP.cols))), ch = Math.round(cw * 0.65);
@@ -976,12 +976,13 @@ function pickMap(title, ids, homeId, picked, onPick) {
   cover.id = 'pickMap';
   cover.innerHTML = `<div class="win pmBox"><h2>${esc(title)} <span class="dim small">· 성을 누르면 골라져요</span></h2>
     <div class="rpMap pmMap"><svg width="${W}" height="${H}">${lines}</svg><div class="rpGrid" style="grid-template-columns:repeat(${MAP.cols},${cw}px);grid-template-rows:repeat(${MAP.rows},${ch}px)">${cells}</div></div>
-    <div class="pmLegend"><span><i class="pmHome"></i>지금 있는 성</span><span><i class="pmCan"></i>고를 수 있는 성</span></div>
+    <div class="pmLegend">${homeId ? `<span><i class="pmHome"></i>${esc(o.homeLabel || '지금 있는 성')}</span>` : ''}<span><i class="pmCan"></i>고를 수 있는 성</span></div>
     <div class="modalBtns"><button type="button" data-pm-close>닫기</button></div></div>`;
   document.body.appendChild(cover);
   cover.querySelector('[data-pm-close]').onclick = closePickMap;
   cover.onclick = e => { if (e.target === cover) closePickMap(); };
   cover.querySelectorAll('.rpCity.can').forEach(d => { d.onclick = () => { closePickMap(); onPick(d.dataset.c); }; });
+  if (o.onHome && homeId) { const h = cover.querySelector(`.rpCity[data-c="${homeId}"]`); if (h) { h.style.cursor = 'pointer'; h.onclick = () => { closePickMap(); o.onHome(); }; } }
 }
 
 // 성의 수비 부대 글: 우리 세력 성이면 모두 보여 주고, 다른 세력 성이면 수비대·장수 모두 있는지만 (2026-11-04, 그 전엔 수비대장은 자세히)
@@ -1891,7 +1892,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225737&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225947&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1901,7 +1902,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118225737&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261118225947&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1911,7 +1912,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225737&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261118225947&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2640,8 +2641,7 @@ function supplyDialog() {
   const opt = c => `<option value="${esc(c.id)}">${esc(c.name)} · ${food(c)}</option>`;
   openModal(`<h2>🚚 보급</h2>
     <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${RULES.moveRange}칸 안이어야 해요${capitalOn() ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
-    <div id="sMap" class="map supMap"></div>
-    <p class="dim small" id="sHint"></p>
+    <div class="pickHead"><span class="dim small">지도에서 보내는 성 → 받는 성 순서로 골라요</span><button type="button" id="sMapBtn">지도</button></div>
     <p class="sub">보내는 성</p><p><select id="sFrom" style="width:100%"><option value="">(지도에서 누르거나 고르기)</option>${mine.map(opt).join('')}</select></p>
     <p class="sub">받는 성</p><p><select id="sTo" style="width:100%"></select></p>
     <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
@@ -2649,23 +2649,13 @@ function supplyDialog() {
       ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-samt="${n}">${fmt(n)}</button>`).join(' ')}</p>
     <p class="dim small">실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요.</p>
     <div class="modalBtns"><button id="sOk" class="main">예약</button><button data-close>닫기</button></div>`, box => {
-    // 지도로 고르기 (2026-11-18 기획자): 보내는 성을 누르면 그 성에서 보낼 수 있는 성만 밝게 남고, 그중 받는 성을 누른다. 보내는 성을 다시 누르면 처음부터
+    // 지도로 고르기 (2026-11-18 기획자): [지도] → 보내는 성을 누르면 그 성에서 보낼 수 있는 성만 밝게 다시 뜨고, 받는 성을 누른다. 받는 성 지도에서 보내는 성(흰 테두리)을 누르면 처음부터
     const targetsOf = a => { const ac = cityById(a); return a ? linkedOwnCities(a, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => c.id !== a && transportLinked(ac, c, p.faction)) : []; }; /* 수도가 끼면 3칸 */
-    const draw = () => {
-      const a = box.querySelector('#sFrom').value, b = box.querySelector('#sTo').value, tg = targetsOf(a).map(c => c.id);
-      const on = c => (a ? c.id === a || tg.includes(c.id) : c.faction === p.faction);
-      drawMap(box.querySelector('#sMap'), { selectedId: a || null, noNear: true,
-        cls: c => (!on(c) ? 'off' : c.id === b && a ? 'supTo' : ''),
-        onClick: c => {
-          if (!on(c)) return;
-          const fromSel = box.querySelector('#sFrom');
-          if (!a || c.id === a) { fromSel.value = c.id === a ? '' : c.id; fill(); return; }
-          box.querySelector('#sTo').value = c.id; draw();
-        } });
-      box.querySelector('#sHint').textContent = !a ? '보내는 성을 누르세요.' : tg.length ? '받는 성을 누르세요. (보내는 성을 다시 누르면 처음부터)' : '이 성에서 보낼 수 있는 우리 성이 없어요.';
-    };
-    const fill = () => { const a = box.querySelector('#sFrom').value, list = targetsOf(a); box.querySelector('#sTo').innerHTML = !a ? '<option value="">(보내는 성을 먼저 고르세요)</option>' : list.length ? '<option value="">(지도에서 누르거나 고르기)</option>' + list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; draw(); }; // 받는 성은 미리 고르지 않는다 (지도로 고르게, 2026-11-18)
-    box.querySelector('#sFrom').onchange = fill; box.querySelector('#sTo').onchange = draw; fill();
+    const fill = () => { const a = box.querySelector('#sFrom').value, list = targetsOf(a); box.querySelector('#sTo').innerHTML = !a ? '<option value="">(보내는 성을 먼저 고르세요)</option>' : list.length ? '<option value="">(지도에서 누르거나 고르기)</option>' + list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; }; // 받는 성은 미리 고르지 않는다 (지도로 고르게, 2026-11-18)
+    box.querySelector('#sFrom').onchange = fill; fill();
+    const pickFrom = () => pickMap('보급 · 보내는 성', mine.map(c => c.id), null, box.querySelector('#sFrom').value, id => { box.querySelector('#sFrom').value = id; fill(); pickTo(id); });
+    const pickTo = a => pickMap('보급 · 받는 성', targetsOf(a).map(c => c.id), a, box.querySelector('#sTo').value, id => { box.querySelector('#sTo').value = id; }, { homeLabel: '보내는 성 (누르면 다시 고르기)', onHome: pickFrom });
+    box.querySelector('#sMapBtn').onclick = pickFrom;
     box.querySelectorAll('[data-samt]').forEach(b => { b.onclick = () => { box.querySelector('#sAmount').value = b.dataset.samt; }; });
     box.querySelector('#sOk').onclick = () => {
       const from = box.querySelector('#sFrom').value, to = box.querySelector('#sTo').value, amount = Math.floor(+box.querySelector('#sAmount').value);
