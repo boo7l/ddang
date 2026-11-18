@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261119000231">
+<link rel="stylesheet" href="style.css?v=20261119001452">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -248,7 +248,8 @@
   #tcClears { margin-top: -6px; background: none; border: 0; color: #ffd860; text-decoration: underline; cursor: pointer; font-size: 15px; text-shadow: 1px 1px 0 #000; }
   .clrDel { font-size: 12px; padding: 1px 6px; margin-left: 4px; }
   .clr ol.rank { list-style: none; margin: 4px 0 0; padding: 0; } .clr ol.rank li { padding: 3px 0; border-bottom: 1px dashed rgba(0,0,0,.2); } .clr .rk { display: inline-block; min-width: 38px; }
-  .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 12px; color: #6a5a4a; }
+  .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 13px; color: #3a2408; }
+  .clr .dim { color: #4a3008; opacity: 1; } /* 노란 상자 위에서 잘 보이게 (2026-11-19 기획자) */
   .card.sp.magic { background: linear-gradient(160deg, #fbf4ff, #e6ccff); border-color: #9a6ad0; } /* 요술: 연보라 흰 카드 */
 </style>
 </head>
@@ -333,8 +334,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261119000231"></script>
-<script src="rogue_rules.js?v=20261119000231"></script>
+<script src="duel_rules.js?v=20261119001452"></script>
+<script src="rogue_rules.js?v=20261119001452"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
