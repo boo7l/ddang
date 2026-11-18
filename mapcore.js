@@ -3,7 +3,11 @@
 // ===== 지도 공통 규칙 (게임 화면과 지도 편집기가 같이 쓴다) =====
 const GRADE_NAME = { 1: '소성', 2: '중성', 3: '대도시', 4: '수도' }; // 4 수도: 시즌 8부터 (2026-11-16)
 // 성 크기 별: 수도는 별 대신 도트 깃발 하나 (2026-11-16 기획자)
-const gradeStarText = g => (g >= 4 ? '<i class="capFlag" title="수도"></i>' : '★'.repeat(g || 0));
+// 수도 깃발 툴팁 (2026-11-18 기획자): 수도에 붙는 이점. 숫자는 RULES.capital에서 (그릴 때 읽는다)
+const capitalTip = () => { const C = typeof RULES !== 'undefined' && RULES.capital; if (!C) return '수도';
+  const p = x => Math.round(x * 100);
+  return ['수도', `· 세력 금 수입 +${p(C.gold)}%`, `· 수도에서 징병 +${p(C.draft)}%`, `· 적의 계략 성공률 -${p(C.plotResist)}%p`, `· 수도가 끼면 군량 수송·보급 ${C.transportRange}칸`, `· 함락되면 대도시로 격하, 세력 모든 성 치안 -${C.lossPeace}`].join('&#10;'); };
+const gradeStarText = g => (g >= 4 ? `<i class="capFlag" title="${capitalTip()}"></i>` : '★'.repeat(g || 0));
 
 // 두 성이 맞닿아 있는지: 8방향이면 꼭지점도 인정, 4방향이면 변만 인정
 function adjacent(map, a, b) {
