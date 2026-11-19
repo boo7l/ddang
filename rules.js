@@ -359,7 +359,7 @@ const GENERAL_TRAITS = {
   politic: { tier: 'R', name: '전문정치팀', desc: '모든 내정 +20%', dev: { agri: 0.20, comm: 0.20, tech: 0.20, wall: 0.20, peace: 0.20 } }, // 2026-11-08 시즌 6 +20%. // 2026-10-28 +5%에서 +10%, 2026-11-03 시즌 5 +15%
   haggle: { tier: 'N', name: '협상가', desc: '상점 값 -10%', shop: -0.10 }, // 2026-10-28 -5%에서
   rich: { tier: 'N', name: '부호', desc: '금 수입 +10%', gold: 0.10 }, // 2026-10-31 추가, 2026-11-07 시즌 6 +5% → +10%
-  schemer: { tier: 'N', name: '책사', desc: '계략 성공 확률 +8%p', plot: 0.08 }, // 2026-11-08 시즌 6: +5%p → +8%p (파괴·유언·첩보, 최대 90% 위로도 더함)
+  schemer: { tier: 'N', name: '책사', get desc() { return seasonNow() >= 8 ? '계략 성공 확률 +5%p · 책략 발동 확률 +2%p' : '계략 성공 확률 +8%p'; }, get plot() { return seasonNow() >= 8 ? 0.05 : 0.08; }, get scheme() { return seasonNow() >= 8 ? 0.02 : 0; } }, // 2026-11-19 기획자: 시즌 8부터 계략 +8%p → +5%p, 대신 책략 발동 합마다 +2%p. // 2026-11-08 시즌 6: +5%p → +8%p (파괴·유언·첩보, 최대 90% 위로도 더함)
   charisma: { tier: 'N', name: '인망', get draft() { return seasonNow() >= 8 ? 0.12 : 0.15; }, get desc() { return `징병량 +${Math.round(this.draft * 100)}%`; } }, // 2026-11-16 기획자: 시즌 8부터 +15% → +12%. // 2026-11-08 시즌 6: +10% → +15%. // 2026-10-28 +10% → +5% → +10%
   frail: { tier: 'SR', name: '뼈에게 닿기를', get desc() { return `전투력 -${Math.round(-this.power * 100)}%, 대신 이동을 4칸까지 (아군 땅이 끊겨도)`; }, get power() { return seasonNow() >= 7 ? -0.01 : -0.02; }, moveRange: 4, freePath: true }, // 2026-11-13 시즌 7: 전투력 -2% → -1% (기획자). // 2026-11-03 시즌 5: 길이 끊겨도 4칸 안의 아군 성으로. // 2026-10-28 3칸 → 4칸
   chadol: { tier: 'R', name: '차돌애호가', desc: '통솔·무력 경험치 +10%, 지력 경험치 -5%', exp: { lea: 0.10, war: 0.10, int: -0.05 } }, // 2026-11-03 시즌 5: 통솔·무력 +5%·지력 -3% → 통솔·무력 +10%·지력 -5%. 2026-10-28 -10%·+20% → -5%·+10% → -3%·+5%
@@ -593,7 +593,7 @@ function fightRounds(att, def, wall, left, field = false) {
     // 피해 = (60~90) × 10 × ((지력 차이 + 5) ÷ 10)^0.6 (2026-11-04 시즌 5: 차이에 +5, 작은 차이의 저점을 올림). 병종·공수·수비대장 가리지 않음, 병력 상한 없음
     const C = RULES.scheme, ai = att.stats.int || 0, di = def.stats.int || 0;
     const sch = ai >= C.minInt && ai > di ? [att, def, ai - di] : di >= C.minInt && di > ai ? [def, att, di - ai] : null;
-    if (sch && !att.schemed && Math.random() < sch[0].stats.int * C.chancePerInt) {
+    if (sch && !att.schemed && Math.random() < sch[0].stats.int * C.chancePerInt + (gTrait(sch[0]).scheme || 0)) { // 책사: 책략 발동 +2%p (시즌 8부터)
       att.schemed = true; // 책략도 출진 한 번(5합)에 최대 1번 (어느 쪽이 쓰든)
       const [me, foe, gap] = sch;
       const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow((gap + C.gapAdd) / C.ref, C.exp) * troopScale(me, C) * (1 - (gTrait(foe).calm || 0)))); // 침착: 책략 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
