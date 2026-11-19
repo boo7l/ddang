@@ -369,7 +369,8 @@ const GENERAL_TRAITS = {
   engineer: { tier: 'R', name: '병기도 과학', get desc() { return seasonNow() >= 8 ? '병기 효과 +40% (충차·정란·벽력거)' : '병기 제작비 -20%'; }, get siegePrice() { return seasonNow() >= 8 ? 0 : -0.20; }, get siegeBoost() { return seasonNow() >= 8 ? 0.4 : 0; } }, // 2026-11-19 기획자: 시즌 8부터 할인 대신 병기 효과 +40% (충차 40→56%, 정란 15→21%, 벽력거 50→70%). // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
   medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 30%가 돌아옴', heal: { chance: 0.3, rate: 0.3 } }, // 2026-11-08 시즌 6: 20% → 30%. // 2026-10-28 50%·25% → 30%·25%, 2026-10-31 30%·20%
   pierce: { tier: 'SR', name: '관통맨', get desc() { return `공격 시 합마다 ${Math.round(this.pierce.chance * 100)}% 확률로 성벽 피해 (병력 ÷ ${this.pierce.per})`; }, pierce: { chance: 0.40, get per() { return seasonNow() >= 8 ? 180 : 200; } } }, // 2026-11-18 기획자: 시즌 8부터 성벽 피해 병력 ÷ 200 → ÷ 180 (+11%). // 2026-11-08 시즌 6: 25%·÷400 → 40%·÷200 (출진 한 번 성벽 18 → 약 60, 시뮬). // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
-  persuade: { tier: 'SR', name: '설득민수', get desc() { return `수비할 때 불리하면 합마다 ${Math.round(this.persuade * 100)}% 확률로 상대가 퇴각`; }, get persuade() { return seasonNow() >= 7 ? 0.05 : 0.04; } }, // 2026-11-10 기획자: 시즌 7부터 4% → 5% (시즌 7 패치노트). // 2026-11-07 시즌 6: 3% → 4%. 2026-10-28 5% → 4% → 3%
+  bond: { tier: 'SR', name: '유대', desc: '전멸할 피해를 입으면 25% 확률로 병사 1명을 남기고 버텨요 (턴당 최대 2회)', bond: { chance: 0.25, perTurn: 2, dmgPer: 10 } }, // 2026-11-19 기획자: 버티면 상대에게 능력치 평균 × 10 고정 피해 (설명에는 안 씀). 공격·수비·야전·단기접전·책략·돌격·벽력거 모두, 같은 전투에서 연달아도 됨 (턴당 2회). 피해 공적 포함 (손실로 셈)
+  persuade: { get tier() { return seasonNow() >= 8 ? 'R' : 'SR'; }, name: '설득민수', get desc() { return `수비할 때 불리하면 합마다 ${Math.round(this.persuade * 100)}% 확률로 상대가 퇴각`; }, get persuade() { return seasonNow() >= 7 ? 0.05 : 0.04; } }, // 2026-11-10 기획자: 시즌 7부터 4% → 5% (시즌 7 패치노트). // 2026-11-07 시즌 6: 3% → 4%. 2026-10-28 5% → 4% → 3%
   allure: { tier: 'SR', name: '마성의 장수', desc: '병력 최대치 +1,000', troopsBonus: 1000 }, // 2026-11-08 시즌 6 추가 (SR 비율은 다섯 개가 나눠 가짐: 1.6 × 4 → 1.28 × 5 → 같은 날 1.0)
   levy: { tier: 'SR', name: '이게 일상이야', desc: "명령 '갈취' : 무력의 2~5배만큼 금 획득, 치안 -3 (쿨타임 5턴)", levy: { warMin: 2, warMax: 5, peace: 3, cooldown: 5 } }, // 2026-10-31 금 = 무력 × 2~5. 2026-10-30 무력 × 1~5 (그 전 30~300). 2026-10-28 10~500·5턴 → 10~400·6턴 → 10~400·5턴 → 30~300·5턴 (티어 중 → 상)
   duelist: { tier: 'R', name: '빠뜨롱 나와', desc: '단기접전 발생률 +10% 및 승리 확률 +15%', duelChance: 0.10, duelWin: 0.15 }, // 2026-11-07 시즌 6: +5%·+10%에서
@@ -380,7 +381,8 @@ const GENERAL_TRAITS = {
 const seasonNow = () => (typeof S !== 'undefined' && S ? S.season || 1 : 1); // 시즌별로 달라지는 특성 값 (전투 시뮬레이터처럼 S가 없으면 1)
 const gTrait = x => (x && GENERAL_TRAITS[x.trait]) || {};
 // 특성 하나가 뽑힐 비율 (합이 100이라 그대로 %): 2026-10-29 SSR 1 → 0.8, R 5 → 4.5, 줄인 3.2를 N 9개에 나눔 (7 → 약 7.36). SR 2는 그대로
-const TRAIT_TIER_WEIGHT = { get SSR() { return seasonNow() >= 8 ? 0.4 : 0.5; }, SR: 1, R: 4, get N() { return seasonNow() >= 8 ? 6 + 0.2 / 11 : 6; } }; // 2026-11-19 기획자: 시즌 8부터 SSR 0.5 → 0.4 (SSR이 너무 많음), 빠진 0.2는 N 11종에 나눔 (합 100 그대로). // 2026-11-19: N 보급관 추가로 6.6 → 6 (N 11종 66%, 합 100 그대로). // 2026-11-08: SR 1.28 → 1, N 6.3795 → 6.6 (합 딱 100). 시뮬(리롤: SR 있으면 10%, R·N뿐이면 70%) 100명 중 SSR 5 · SR 22 · R 50 · N 23. // 2026-11-08: SR 마성의 장수 추가로 SR 1.6 → 1.28 (SR 합 6.4 그대로, 전체 합 99.2 그대로). // 2026-11-08: R 4.035 → 4, 남은 0.245를 N 10개에 (+0.0245, 합 99.2 그대로). // 2026-11-08 시즌 6: SR 1.8 → 1.6, 남은 0.8은 R·N에 비율대로 (합 99.2 그대로라 SSR 실제 확률 그대로). 시뮬(리롤 SR 30%·R/N 70%): 100명 중 SSR 5.1 · SR 24.5 · R 49.5 · N 21.0. // 2026-11-08 시즌 6: SSR 0.8 → 0.5 (SSR 2개가 되며 100명 중 약 10명 → 약 6명, 다시 뽑기 1번 포함 시뮬). // 2026-11-07 시즌 6: SSR 55도발 추가로 N 6.4 → 6.3 (합 99.8, 실제 확률은 합으로 나누므로 100%: SSR 0.802 · SR 1.804 · R 4.008 · N 6.313). // 2026-11-06 SSR 1 → 0.8, N 6.38 → 6.4로 되돌림 (침착이 너무 자주 나옴, 합 100). // 2026-11-03 시즌 5: SSR 0.8 → 1, N 6.4 → 6.38 (합 100). // 2026-10-31 SSR 1개·SR 4개·R 7개·N 10개 기준으로 합 100. // 등급 이름 2026-10-28 최상·상·중·하 → SSR·SR·R·N. // 특성 하나가 뽑힐 비율 (2026-10-28: 최상 1·상 3·중 6·하 9개라 합이 100, 하나당 최상 1% · 상 2% · 중 5% · 하 7%. 처음 1:2:3)
+const TRAIT_TIER_WEIGHT = { get SSR() { return seasonNow() >= 8 ? 0.4 : 0.5; }, SR: 1, get R() { return seasonNow() >= 8 ? 3.5 : 4; }, // 2026-11-19 기획자: 유대(SR) 추가 + 설득민수 SR → R, R 8종이 28%를 나눔 (3.5)
+  get N() { return seasonNow() >= 8 ? 6 + 0.2 / 11 : 6; } }; // 2026-11-19 기획자: 시즌 8부터 SSR 0.5 → 0.4 (SSR이 너무 많음), 빠진 0.2는 N 11종에 나눔 (합 100 그대로). // 2026-11-19: N 보급관 추가로 6.6 → 6 (N 11종 66%, 합 100 그대로). // 2026-11-08: SR 1.28 → 1, N 6.3795 → 6.6 (합 딱 100). 시뮬(리롤: SR 있으면 10%, R·N뿐이면 70%) 100명 중 SSR 5 · SR 22 · R 50 · N 23. // 2026-11-08: SR 마성의 장수 추가로 SR 1.6 → 1.28 (SR 합 6.4 그대로, 전체 합 99.2 그대로). // 2026-11-08: R 4.035 → 4, 남은 0.245를 N 10개에 (+0.0245, 합 99.2 그대로). // 2026-11-08 시즌 6: SR 1.8 → 1.6, 남은 0.8은 R·N에 비율대로 (합 99.2 그대로라 SSR 실제 확률 그대로). 시뮬(리롤 SR 30%·R/N 70%): 100명 중 SSR 5.1 · SR 24.5 · R 49.5 · N 21.0. // 2026-11-08 시즌 6: SSR 0.8 → 0.5 (SSR 2개가 되며 100명 중 약 10명 → 약 6명, 다시 뽑기 1번 포함 시뮬). // 2026-11-07 시즌 6: SSR 55도발 추가로 N 6.4 → 6.3 (합 99.8, 실제 확률은 합으로 나누므로 100%: SSR 0.802 · SR 1.804 · R 4.008 · N 6.313). // 2026-11-06 SSR 1 → 0.8, N 6.38 → 6.4로 되돌림 (침착이 너무 자주 나옴, 합 100). // 2026-11-03 시즌 5: SSR 0.8 → 1, N 6.4 → 6.38 (합 100). // 2026-10-31 SSR 1개·SR 4개·R 7개·N 10개 기준으로 합 100. // 등급 이름 2026-10-28 최상·상·중·하 → SSR·SR·R·N. // 특성 하나가 뽑힐 비율 (2026-10-28: 최상 1·상 3·중 6·하 9개라 합이 100, 하나당 최상 1% · 상 2% · 중 5% · 하 7%. 처음 1:2:3)
 const TRAIT_DRAW = 3;     // 주머니에서 나오는 종이 수
 const TRAIT_REROLLS = 1;  // 다시 뽑기 횟수
 
@@ -530,6 +532,24 @@ const duelWinRate = (myWar, theirWar) => {
 // 병력을 직접 줄이고 { used(쓴 합 수), lines(합마다 한 줄), atkLost, defLost }를 돌려준다
 // field: 야전 (2026-11-09, 시즌 7부터). 양쪽 다 공격 쪽 전투력, 성벽·철벽·세력 수비 특성 없음, 55도발·벽력거·정란·설득민수·관통맨 없음
 const fieldPower = (u, foe) => attackPower({ ...u, siege: {} }, foe); // 야전에서는 병기(정란)가 힘을 못 쓴다
+// 개인 특성 유대 (2026-11-19 기획자): u가 loss만큼 잃으면 전멸할 때 chance 확률로 병사 1명을 남기고 버틴다 (장수마다 턴당 perTurn번).
+// 버티면 상대(foe)에게 u의 능력치 평균 × dmgPer 고정 피해. 그 피해로 상대가 전멸하면 상대의 유대도 판정한다. 버틴 손실을 돌려준다
+function bondSave(u, loss, foe, out) {
+  const B = gTrait(u).bond;
+  if (!B || u.troops <= 0 || loss < u.troops) return loss;
+  const ref = u.ref || u, turn = typeof S !== 'undefined' && S ? S.turn || 0 : 0;
+  if (ref.bondTurn !== turn) { ref.bondTurn = turn; ref.bondN = 0; }
+  if (ref.bondN >= B.perTurn || Math.random() >= B.chance) return loss;
+  ref.bondN++;
+  const st = u.stats || {}, avg = ((st.lea || 0) + (st.war || 0) + (st.int || 0)) / 3;
+  let dmg = Math.min(foe.troops, Math.round(avg * B.dmgPer));
+  const fac = typeof factionById === 'function' && u.faction && factionById(u.faction) ? factionById(u.faction).name : '';
+  const nm = typeof josa === 'function' ? josa(u.name, '은는') : u.name + '은(는)';
+  out.push(`🤝 ${nm} ${fac ? fac + '군' : '동료들'}을 슬프게 하지 않으려고 버텼다! ${foe.name} 부대 -${dmg.toLocaleString('ko-KR')}`);
+  dmg = bondSave(foe, dmg, u, out);
+  foe.troops -= dmg;
+  return u.troops - 1;
+}
 function fightRounds(att, def, wall, left, field = false) {
   if (field) wall = 0;
   const luck = () => 1 + (Math.random() * 2 - 1) * RULES.battleRandom;
@@ -541,9 +561,9 @@ function fightRounds(att, def, wall, left, field = false) {
   // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
   if (!field && att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
     att.struck = true;
-    const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(att) * luck()));
+    const bx = [], dLoss = bondSave(def, Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(att) * luck())), att, bx);
     def.troops -= dLoss;
-    lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`);
+    lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
   }
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
@@ -562,10 +582,11 @@ function fightRounds(att, def, wall, left, field = false) {
       const aWin = Math.random() < aRate;
       const w = aWin ? att : def, l = aWin ? def : att;
       const loss = Math.min(Math.ceil(l.troops * D.lossCap), Math.ceil(w.stats.war * (D.lossPerWar[0] + Math.random() * (D.lossPerWar[1] - D.lossPerWar[0])) * (1 - (gTrait(l).calm || 0)))); // 침착: 진 쪽 피해 감소 · 진 쪽 병력의 50%까지 (2026-11-07)
-      l.troops -= loss;
+      const bx = [], kept = bondSave(l, loss, w, bx);
+      l.troops -= kept;
       w.duelWins = (w.duelWins || 0) + 1;
       l.duelLosses = (l.duelLosses || 0) + 1; // 분석용 기록 (2026-11-06)
-      lines.push(`${used}합: ⚡ 단기접전! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${loss.toLocaleString('ko-KR')}`);
+      lines.push(`${used}합: ⚡ 단기접전! ${w.name}(무력 ${w.stats.war}) 대 ${l.name}(무력 ${l.stats.war}) → ${w.name} 승리! ${l.name} 부대 -${kept.toLocaleString('ko-KR')}`, ...bx);
       continue;
     }
     // 책략 (2026-10-26): 지력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (지력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 보통 교전 대신 일방적으로 친다.
@@ -576,10 +597,11 @@ function fightRounds(att, def, wall, left, field = false) {
       att.schemed = true; // 책략도 출진 한 번(5합)에 최대 1번 (어느 쪽이 쓰든)
       const [me, foe, gap] = sch;
       const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow((gap + C.gapAdd) / C.ref, C.exp) * troopScale(me, C) * (1 - (gTrait(foe).calm || 0)))); // 침착: 책략 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
-      foe.troops -= loss;
+      const bx = [], kept = bondSave(foe, loss, me, bx);
+      foe.troops -= kept;
       me.schemes = (me.schemes || 0) + 1;
       const kind = C.kinds[Math.floor(Math.random() * C.kinds.length)];
-      lines.push(`${used}합: ${kind}! ${me.name}(지력 ${me.stats.int})의 계책에 ${foe.name} 부대 -${loss.toLocaleString('ko-KR')}`);
+      lines.push(`${used}합: ${kind}! ${me.name}(지력 ${me.stats.int})의 계책에 ${foe.name} 부대 -${kept.toLocaleString('ko-KR')}`, ...bx);
       continue;
     }
     // 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 무력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (무력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 보통 교전 대신 일방적으로 친다.
@@ -590,18 +612,21 @@ function fightRounds(att, def, wall, left, field = false) {
       att.charged = true;
       const [me, foe, gap] = chg;
       const loss = Math.min(foe.troops, Math.round((G.base[0] + Math.random() * (G.base[1] - G.base[0])) * G.ref * Math.pow((gap + G.gapAdd) / G.ref, G.exp) * troopScale(me, G) * (1 - (gTrait(foe).calm || 0)))); // 침착: 돌격 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
-      foe.troops -= loss;
+      const bx = [], kept = bondSave(foe, loss, me, bx);
+      foe.troops -= kept;
       me.charges = (me.charges || 0) + 1;
-      lines.push(`${used}합: 🐎 돌격! ${me.name}(무력 ${me.stats.war})의 돌격에 ${foe.name} 부대 -${loss.toLocaleString('ko-KR')}`);
+      lines.push(`${used}합: 🐎 돌격! ${me.name}(무력 ${me.stats.war})의 돌격에 ${foe.name} 부대 -${kept.toLocaleString('ko-KR')}`, ...bx);
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
     const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck()) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
     const hitAtt = Math.ceil((field ? fieldPower(def, att) : defensePower(def, wall, att)) * RULES.roundRate * luck());
-    const dLoss = Math.min(def.troops, hitDef), aLoss = Math.min(att.troops, hitAtt);
+    const bx = []; // 유대: 양쪽이 동시에 맞으니, 각자 버틸지 본 뒤에 깎는다 (상대 유대 피해는 그 뒤에 남은 병력에서)
+    const dLoss = bondSave(def, Math.min(def.troops, hitDef), att, bx);
     def.troops -= dLoss;
+    const aLoss = bondSave(att, Math.min(att.troops, hitAtt), def, bx);
     att.troops -= aLoss;
-    lines.push(`${used}합: ${att.name} -${aLoss.toLocaleString('ko-KR')} · ${def.name} -${dLoss.toLocaleString('ko-KR')}`);
+    lines.push(`${used}합: ${att.name} -${aLoss.toLocaleString('ko-KR')} · ${def.name} -${dLoss.toLocaleString('ko-KR')}`, ...bx);
     // 개인 특성 관통맨 (2026-10-31): 보통 합에서 확률로 성벽에도 피해. 병력 손실이 없고, 다음 합부터 수비 보정이 줄어든다
     const P = gTrait(att).pierce;
     if (P && att.troops > 0 && wall > 0 && Math.random() < P.chance) {
