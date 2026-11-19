@@ -1910,7 +1910,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221629&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221742&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1920,7 +1920,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119221629&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119221742&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1930,7 +1930,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221629&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221742&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -1983,6 +1983,7 @@ function showTitle(msg) {
   $('#tEnter').hidden = !inGame;
   $('#tLogout').hidden = !inGame;
   $('#tAdmin').hidden = !(inGame && IS_ADMIN); // 관리자만 (2026-10-28)
+  $('#adminBtn').hidden = !(inGame && IS_ADMIN); // 첫 화면 ☰ 메뉴에도 관리 (2026-11-19 기획자, 로그아웃 옆 단추는 그대로)
   $('#tWithdraw').hidden = !inGame;
   $('#tRename').hidden = !inGame;
   if (inGame) $('#tGoogleBox').hidden = true;
@@ -3399,7 +3400,7 @@ $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 // 정보: 이번 시즌 장수가 없으면 흐리게 (2026-11-07, 그 전엔 숨김). 메인 화면에서 아직 세계를 안 받았으면 받아 와서 정한다
-const menuRecordSync = () => { $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
+const menuRecordSync = () => { $('#adminBtn').hidden = !IS_ADMIN; $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
 const rankLocked = () => !!preparing && !IS_ADMIN; // 문이 닫혀 있으면 관리자 말고는 순위를 못 연다 (2026-11-13 기획자: 관리자 테스트가 보이지 않게)
 $('#menuBtn').onclick = async e => {
   e.stopPropagation();
@@ -3578,7 +3579,7 @@ document.addEventListener('click', () => document.querySelector('header').classL
 const setPcMode = on => { try { if (on) localStorage.setItem('ddang-pc', '1'); else localStorage.removeItem('ddang-pc'); } catch (e) { /* 저장 못 하면 이번만 */ } location.reload(); };
 $('#pcBtn').onclick = () => setPcMode(true);
 $('#mobileBtn').onclick = () => setPcMode(false);
-$('#adminBtn').onclick = () => openAdmin('ops');
+$('#adminBtn').onclick = async () => { document.querySelector('header').classList.remove('menuOpen'); if (!S) await call('state'); if (IS_ADMIN) openAdmin('ops'); }; // 첫 화면에서는 세계를 먼저 받는다 (tAdmin과 같게, 2026-11-19)
 $('#tAdmin').onclick = async () => { if (!S) await call('state'); if (IS_ADMIN) openAdmin('ops'); }; // 첫 화면의 관리 단추 (세계를 아직 안 받았으면 먼저 받는다)
 $('#adminClose').onclick = closeAdmin;
 $('#cResign').onclick = resignDialog;
