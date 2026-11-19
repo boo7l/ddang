@@ -75,14 +75,7 @@ PATCH_NOTES.unshift({
       '<b>재야</b>: 하야·해고·세력 멸망 뒤에는 세력 선택 화면 대신 그 성에 <b>재야</b>로 남아요<br><span class="noteGray">· 재야 명령: 이동 · 탐색 · 수련(경험 50~70) · 의뢰(금 100~300) · 임관(지금 있는 성의 세력에)</span>',
       '스스로 <b>하야</b>하면 <b>모든 세력</b>에 10턴 동안 임관할 수 없어요<br><span class="noteGray">· 세력 멸망으로 재야가 된 경우는 해당 없음</span>',
       // 2026-11-19 기획자: 멸망 보상을 망한 세력 장수 수에 따라
-      '<b>멸망 보상</b>: 적 세력을 멸망시키면 받는 보상이 그 세력의 <b>장수 수</b>에 따라 달라져요<br><span class="noteGray">· 최근 10턴 중 장수가 가장 많았을 때 기준</span>' +
-      '<div style="overflow-x:auto;margin:6px 0 2px"><table style="border-collapse:collapse;font-size:14px;text-align:center">' +
-      [['망한 세력 장수', '0명', '5명', '10명 이상'],
-        ['공적', '20', '35', '50'],
-        ['금', '400', '700', '1,000'],
-        ['경험치 (통·무·지 각각)', '10', '25', '40'],
-      ].map((r, i) => `<tr style="${i ? '' : 'background:rgba(140,42,16,.15)'}">${r.map((c, j) => `<${i && j ? 'td' : 'th'} style="border:1px solid #a07a44;padding:3px 10px;${j ? 'white-space:nowrap' : 'text-align:left;min-width:4.5em'}">${c}</${i && j ? 'td' : 'th'}>`).join('')}</tr>`).join('') +
-      '</table></div><span class="noteGray">· 장수 1명마다 공적 +3 · 금 +60 · 경험치 +3</span>',
+      '<b>멸망 보상</b>: 망한 세력의 <b>장수 수</b>에 따라 달라져요 (공적 20~50 · 금 400~1,000 · 경험치 10~40)',
       '<b>중도 참가 지원금</b>: 시즌 중간에 처음 장수를 만들면 10턴마다 금 +200 (최대 5,000)을 받고 시작해요<br><span class="noteGray">· 그 시즌에 처음 만드는 장수만 받아요</span>',
       '<b>훈장</b>은 계속 받을 수 있지만, 훈장으로 오르는 능력치 보너스는 <b>+10까지</b>예요',
       '세력 채팅에서 <b>@장수이름</b>으로 우리 세력 장수를 부를 수 있어요<br><span class="noteGray">· 나를 부른 글은 강조되고, 채팅 탭에 빨간 점이 떠요</span>',
