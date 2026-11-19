@@ -1383,3 +1383,13 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 .aiAskItem summary { cursor: pointer; color: var(--text); margin-top: 2px; }
 .aiAskItem[open] summary { color: var(--title); }
 .aiAskItem .trashBody { white-space: pre-wrap; margin-top: 4px; }
+
+/* 대회 탭 (2026-11-19): index.html?tour. 대회 창을 페이지 가운데에 크게, 위에 내 경기 시계 */
+#tourPage { padding: 16px; }
+.tourTabWin { width: min(1240px, 100%); margin: 0 auto; box-sizing: border-box; }
+.tourClock { text-align: center; font-size: 22px; color: var(--title); padding: 8px 0 4px; }
+.tourClock b { font-size: 28px; }
+.tourClock.soon { color: var(--label); }
+.tourClock.now { color: var(--bad); }
+body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBtn { display: none; }
+@media (max-width: 700px) { #tourPage { padding: 8px; } .tourClock { font-size: 18px; } .tourClock b { font-size: 22px; } }

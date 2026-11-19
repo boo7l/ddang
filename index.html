@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/Sam3KRFont.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261119222002">
+<link rel="stylesheet" href="style.css?v=20261119224520">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -150,6 +150,14 @@
   </main>
 
   <!-- 5. 메인 화면: 왼쪽 전국 지도, 오른쪽 명령과 기록 -->
+  <!-- 대회 탭 (2026-11-19 기획자): index.html?tour 로 열면 대회만 보이는 화면. 게임은 원래 탭에서 하고, 내 경기가 시작되면 여기서 경기장이 저절로 열린다 -->
+  <main id="tourPage" hidden>
+    <div class="win tourTabWin">
+      <div id="tourClock" class="tourClock"></div>
+      <p class="dim small center">이 탭을 열어 두면 내 경기가 시작될 때 경기장이 저절로 열려요. 게임은 원래 탭에서 하세요. <button id="tourBell" class="mini">🔔 알림 소리 켜기</button></p>
+      <div id="tourBox"></div>
+    </div>
+  </main>
   <main id="game" hidden>
     <div class="col">
       <div id="info" class="win"></div>
@@ -189,22 +197,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261119222002"></script>
-  <script src="mapcore.js?v=20261119222002"></script>
-  <script src="data/map.js?v=20261119222002"></script>
-  <script src="rules.js?v=20261119222002"></script>
-  <script src="faces.js?v=20261119222002"></script>
-  <script src="patchnotes.js?v=20261119222002"></script>
+  <script src="server.js?v=20261119224520"></script>
+  <script src="mapcore.js?v=20261119224520"></script>
+  <script src="data/map.js?v=20261119224520"></script>
+  <script src="rules.js?v=20261119224520"></script>
+  <script src="faces.js?v=20261119224520"></script>
+  <script src="patchnotes.js?v=20261119224520"></script>
   <!-- 시즌별 패치노트: 옛 시즌부터 (마지막 줄이 최신) -->
-  <script src="patchnotes/s3.js?v=20261119222002"></script>
-  <script src="patchnotes/s4.js?v=20261119222002"></script>
-  <script src="patchnotes/s5.js?v=20261119222002"></script>
-  <script src="patchnotes/s6.js?v=20261119222002"></script>
-  <script src="patchnotes/s7.js?v=20261119222002"></script>
-  <script src="patchnotes/s8.js?v=20261119222002"></script>
-  <script src="mapbg.js?v=20261119222002"></script>
-  <script src="map.js?v=20261119222002"></script>
-  <script src="engine.js?v=20261119222002"></script>
-  <script src="game.js?v=20261119222002"></script>
+  <script src="patchnotes/s3.js?v=20261119224520"></script>
+  <script src="patchnotes/s4.js?v=20261119224520"></script>
+  <script src="patchnotes/s5.js?v=20261119224520"></script>
+  <script src="patchnotes/s6.js?v=20261119224520"></script>
+  <script src="patchnotes/s7.js?v=20261119224520"></script>
+  <script src="patchnotes/s8.js?v=20261119224520"></script>
+  <script src="mapbg.js?v=20261119224520"></script>
+  <script src="map.js?v=20261119224520"></script>
+  <script src="engine.js?v=20261119224520"></script>
+  <script src="game.js?v=20261119224520"></script>
 </body>
 </html>

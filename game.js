@@ -4,7 +4,8 @@
 // 게임 계산은 engine.js, 규칙과 숫자는 rules.js, 지도 그리기는 map.js에 있다. 여기는 화면이다.
 let MY_ID = null;     // 내 계정 id (서버 계정)
 const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
-let IS_ADMIN = false; // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
+let IS_ADMIN = false;
+const TOUR_TAB = new URLSearchParams(location.search).has('tour'); // 대회 탭 (2026-11-19): index.html?tour 로 열면 대회만 보인다 // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
 const me = () => S.generals[MY_ID];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -1504,7 +1505,8 @@ setTimeout(() => { $('#loader').hidden = true; document.body.classList.remove('l
 
 function showScreen(id) {
   hideLoader();
-  ['title', 'hofPage', 'leavePage', 'adminPage', 'create', 'trait', 'join', 'game'].forEach(s => { $('#' + s).hidden = s !== id; });
+  ['title', 'hofPage', 'leavePage', 'adminPage', 'create', 'trait', 'join', 'game', 'tourPage'].forEach(s => { $('#' + s).hidden = s !== id; });
+  document.body.classList.toggle('tourTabMode', id === 'tourPage');
   adminPrev = null; // 관리 페이지가 열려 있었으면 닫힌 셈 (2026-11-06)
   closeModal();
   // 오른쪽 위 접속 정보: 로그인 화면이 아니면 보인다
@@ -1783,7 +1785,7 @@ $('#miniLink').onclick = openMinigame;
 window.duelBridge = { tourColors: id => { // 경기장 이름 옆 세력 색 (2026-11-15): 경기 id → [자리0 색, 자리1 색]. 재야는 회색
     const T = tourT(), slot = String(id).split('-')[1], m = T && (T.matches || []).find(x => x.slot === slot);
     return m ? m.p.map(uid => { const e = (T.entries || []).find(x => x.uid === uid); return e && e.faction && factionById(e.faction) ? factionById(e.faction).color : '#777'; }) : null;
-  }, api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel(), tourRules: () => tourCfg(tourT()), ended: () => [2500, 6000].forEach(ms => setTimeout(() => { if (!busy) refresh(); }, ms)) }; // ended: 경기가 끝나면 대진표를 곧바로 새로 (2026-11-15)
+  }, api: (a, p) => api(a, p), sb, bgmOn: () => BGM.on, close: () => tourCloseDuel(), tourRules: () => tourCfg(tourT()), ended: () => [2500, 6000].forEach(ms => setTimeout(() => { if (TOUR_TAB) tourPoll(); else if (!busy) refresh(); }, ms)) }; // ended: 경기가 끝나면 대진표를 곧바로 새로 (2026-11-15)
 const TOUR_SHOW_DONE = 2 * 3600e3; // 대회가 끝나고 2시간 동안은 단추를 남겨 결과를 볼 수 있게 (2026-11-15 기획자: 3 → 2시간, 관리 탭에서 먼저 내릴 수 있음)
 const tourT = () => (S && S.tourney) || null;
 const tourVisible = T => !!T && (T.phase === 'entry' || T.phase === 'run' || (T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE));
@@ -1834,6 +1836,52 @@ function tourSync() {
   }
 }
 if ($('#tourBtn')) $('#tourBtn').onclick = () => tourDialog();
+// ===== 대회 탭 (2026-11-19 기획자: 시작 시각을 놓칠까 봐 게임과 대회 창을 오가기 번거롭다는 의견) =====
+// index.html?tour: 대진표 + 내 경기 시계. 서버에서는 대회 정보만(tourView) 10초마다(내 경기 1분 전부터 3초마다) 받는다.
+// 내 경기 20초 전에 경기장을 저절로 연다. 1분 전에 소리(🔔를 켰으면)와 탭 제목으로 알린다. 다른 탭(게임)에는 BroadcastChannel로 결과가 바뀐 걸 알린다
+const TOUR_CH = (() => { try { return new BroadcastChannel('ddang-tour'); } catch (e) { return null; } })();
+const TOUR_TITLE = document.title;
+let tourLastPoll = 0, tourKeyLast = '', tourAuto = {}, tourWarned = {}, tourBellCtx = null;
+function enterTourTab() {
+  showScreen('tourPage');
+  tourSync();
+  tourClockTick();
+}
+async function tourPoll() {
+  tourLastPoll = Date.now();
+  try {
+    const d = await api('tourView');
+    if (!d || d.error) return;
+    if (S) S.tourney = d.tourney || null;
+    const T = tourT(), key = T ? T.id + T.phase + (T.entries || []).length + (T.matches || []).map(m => (m.win == null ? '' : m.win) + (m.at || '')).join() : '';
+    if (key !== tourKeyLast) { if (tourKeyLast && TOUR_CH) TOUR_CH.postMessage('changed'); tourKeyLast = key; }
+    tourSync();
+  } catch (e) { /* 다음에 다시 */ }
+}
+const tourMyNext = T => T && T.phase === 'run' && (T.matches || []).find(m => m.win == null && !m.bye && m.p.includes(MY_ID));
+function tourBeep() {
+  if (!tourBellCtx) return;
+  try { const t = tourBellCtx.currentTime; [0, 0.25].forEach(d => { const o = tourBellCtx.createOscillator(), g = tourBellCtx.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(0.15, t + d); g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.2); o.connect(g).connect(tourBellCtx.destination); o.start(t + d); o.stop(t + d + 0.2); }); } catch (e) { /* 소리 없이 */ }
+}
+function tourClockTick() {
+  if (!TOUR_TAB || $('#tourPage').hidden) return;
+  const T = tourT(), my = tourMyNext(T), left = my && my.at ? my.at - Date.now() : null;
+  if (Date.now() - tourLastPoll > (left != null && left < 60e3 && left > -120e3 ? 3e3 : 10e3) && !document.hidden) tourPoll();
+  const c = $('#tourClock');
+  if (my && my.at) {
+    const name = tourMatchName(my.slot);
+    c.className = 'tourClock' + (left <= 0 ? ' now' : left < 60e3 ? ' soon' : '');
+    c.innerHTML = left > 0 ? `⏰ 내 ${name}까지 <b>${fmtLeft(left)}</b> <span class="dim small">(${fmtClock(my.at)})</span>` : `⚔ 내 ${name} 진행 중`;
+    if (left < 60e3 && !tourWarned[T.id + my.slot]) { tourWarned[T.id + my.slot] = true; tourBeep(); }
+    if (left < 20e3 && !$('#duelWrap') && !tourAuto[T.id + my.slot]) { tourAuto[T.id + my.slot] = true; tourOpenDuel(T, my); } // 경기장을 저절로
+    document.title = left < 60e3 ? (Math.floor(Date.now() / 1000) % 2 ? '⚔ 내 경기 시작! · ' : '⚔⚔⚔ · ') + TOUR_TITLE : `⏰ ${fmtLeft(Math.max(0, left))} · ${TOUR_TITLE}`;
+  } else if (my) { c.className = 'tourClock'; c.innerHTML = '⏰ 내 다음 경기 시각은 아직 미정이에요'; document.title = TOUR_TITLE; }
+  else { c.className = 'tourClock'; c.innerHTML = T ? tourStatusHtml(T).replace(/<span class="mHide">|<\/span>/g, '') || '' : '열린 대회가 없어요'; document.title = TOUR_TITLE; }
+}
+if (TOUR_TAB) {
+  setInterval(tourClockTick, 1000);
+  $('#tourBell').onclick = () => { try { tourBellCtx = tourBellCtx || new (window.AudioContext || window.webkitAudioContext)(); tourBellCtx.resume(); tourBeep(); $('#tourBell').textContent = '🔔 알림 소리 켜짐'; $('#tourBell').disabled = true; } catch (e) { /* 소리를 못 낸다 */ } };
+} else if (TOUR_CH) TOUR_CH.onmessage = () => { if (S && !busy && !$('#game').hidden) refresh(); }; // 게임 탭: 대회 탭에서 결과가 바뀌었다고 알리면 새로 받는다
 function tourDialog() {
   openModal(`<div id="tourBox"></div><div class="modalBtns"><button data-close class="main">닫기</button></div>`);
   $('#modalBox').classList.add('wideBox', 'tourModal');
@@ -1845,7 +1893,7 @@ function tourRender() {
   if (!T) { box.innerHTML = '<h2>🏟 대회</h2><p class="dim">열린 대회가 없어요.</p>'; return; }
   const g = me(), mine = T.entries.some(e => e.uid === MY_ID);
   const PH = { entry: `📝 참가 접수 중 · ${fmtTime(T.entryEnd)}까지 (${R.max}명이 차면 바로 마감)`, run: '⚔ 경기 진행 중', done: '🏆 대회 끝', cancel: '✖ 취소된 대회' };
-  let html = `<h2>${tourIcon(T)} ${tourName(T)}${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''} <button id="tourRules" class="mini">📖 규칙</button></p>`;
+  let html = `<h2>${tourIcon(T)} ${tourName(T)}${T.test ? ' <span class="hi small">(시험)</span>' : ''}</h2><p class="tourPh">${PH[T.phase] || ''} <button id="tourRules" class="mini">📖 규칙</button>${TOUR_TAB ? '' : ' <button id="tourNewTab" class="mini" title="대회만 따로 새 탭에서 보기. 내 경기가 시작되면 경기장이 저절로 열려요">↗ 새 탭으로</button>'}</p>`;
   if (T.phase === 'entry') {
     const war = g ? effStats(g)[tourStatKey(T)] : 0, sameFac = g && g.faction ? T.entries.filter(e => e.faction === g.faction).length : 0;
     const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `${tourStatName(T)} ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : R.factionMax && g.faction && sameFac >= R.factionMax ? `우리 세력은 이미 ${R.factionMax}명이 신청했어요.` : '';
@@ -1870,6 +1918,7 @@ function tourRender() {
   };
   if ($('#tourLeave')) $('#tourLeave').onclick = () => gameConfirm(`${tourIcon(T)} 신청 취소`, `<p>${tourName(T)} 참가 신청을 취소할까요?</p><p>참가비 금 ${fmt(R.fee)}을 돌려받아요.</p>`, '신청 취소', async () => { closeModal(); if (await call('tourneyLeave')) tourDialog(); }, tourDialog); // 신청 취소 (2026-11-15)
   if ($('#tourRules')) $('#tourRules').onclick = () => tourOpenRules();
+  if ($('#tourNewTab')) $('#tourNewTab').onclick = () => { window.open(location.pathname + '?tour', 'ddangTour'); closeModal(); }; // 같은 이름이라 여러 번 눌러도 탭 하나
   box.querySelectorAll('[data-slot]').forEach(el => { el.onclick = () => { const m = T.matches.find(x => x.slot === el.dataset.slot); if (m && m.at && !m.bye) tourOpenDuel(T, m); }; });
   if (box.querySelector('.tbLines')) requestAnimationFrame(() => tourLines(T));
 }
@@ -1927,7 +1976,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119222002&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119224520&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1937,7 +1986,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119222002&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119224520&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1947,7 +1996,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119222002&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119224520&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3390,6 +3439,7 @@ async function enterFlow() {
   if (ok === null) return; // 시즌 준비 중: 이미 첫 화면으로 돌아갔다
   if (!ok) { showTitle('서버에서 세계를 받아 오지 못했어요. 잠시 뒤 다시 들어가 주세요.'); return; }
   renderLegend();
+  if (TOUR_TAB) { enterTourTab(); return; } // 대회 탭: 장수가 없어도 관전은 된다
   // 2. 이번 시즌 내 장수가 없으면 → 7. 장수 생성
   if (!me()) { showCreate(); return; }
   // 2.5 특성을 아직 안 골랐으면 → 금낭 (2026-10-27)
@@ -3543,7 +3593,7 @@ function bgmHold(on) {
 function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
 $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
 
-// ☰ 메뉴 [🤖 물어보기] (2026-11-19): 규칙을 AI에게 묻는다. 서버(aiAsk)가 게임 안에서 찾을 수 있는 자료만 보고 대답한다. 하루 20번
+// ☰ 메뉴 [🤖 물어보기] (2026-11-19): 규칙을 AI에게 묻는다. 서버(aiAsk)가 게임 안에서 찾을 수 있는 자료만 보고 대답한다. 하루 10번 (서버 AI.perDay)
 // 채팅 모양 (2026-11-19 기획자): 말풍선으로 주고받고, 최근 3번의 질문·답을 같이 보내 이어서 물을 수 있다. 대화는 이 페이지를 연 동안만 남는다
 // 제갈량 (2026-11-19 기획자): 초려에서 부채를 부치는 제갈량 도트 GIF 4장(img/ai/zhuge.gif, tools/make_zhuge_gif.js) + "~하오"체. 말투는 서버 index.ts AI_SYSTEM
 // AI_PUBLIC(파일 맨 위): 모두에게 공개 여부. 서버 index.ts AI.public도 같이 바꾼다
