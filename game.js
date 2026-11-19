@@ -1908,7 +1908,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220437&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220700&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1918,7 +1918,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119220437&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119220700&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1928,7 +1928,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220437&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220700&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3528,11 +3528,12 @@ $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
 // 제갈량 (2026-11-19 기획자): 초려에서 부채를 부치는 제갈량 도트 GIF 4장(img/ai/zhuge.gif, tools/make_zhuge_gif.js) + "~하오"체. 말투는 서버 index.ts AI_SYSTEM
 // AI_PUBLIC: 지금은 관리자만 시험 (true로 바꾸면 모두에게 단추가 보인다. 서버 index.ts AI.public도 같이 바꾼다)
 const AI_PUBLIC = false;
+const AI_SCENE = false; // 초려 제갈량 GIF (2026-11-19 기획자: 지금은 숨김). true로 바꾸면 창 위에 다시 보인다
 const AI_CHAT = []; // { q, a } 주고받은 대화 (새로고침하면 비워진다)
 $('#aiBtn').onclick = () => {
   document.querySelector('header').classList.remove('menuOpen');
   openModal(`<h2>🪶 제갈량에게 묻기</h2>
-    <img class="aiScene" src="img/ai/zhuge.gif" alt="초려에서 부채를 부치는 제갈량">
+    ${AI_SCENE ? '<img class="aiScene" src="img/ai/zhuge.gif" alt="초려에서 부채를 부치는 제갈량">' : ''}
     <p class="dim small">도움말·패치노트를 읽은 AI 제갈량이에요. 틀릴 수 있으니 중요한 건 도움말에서 다시 확인해 주세요.</p>
     <div id="aiLog" class="aiLog"></div>
     <div class="aiInput"><textarea id="aiQ" maxlength="200" rows="2" placeholder="예) 치안이 낮으면 어떻게 돼?"></textarea><button id="aiGo" class="main">보내기</button></div>

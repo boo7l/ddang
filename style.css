@@ -1368,6 +1368,7 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 #modalBox.aiBox { width: min(560px, calc(100vw - 32px)); }
 .aiScene { display: block; width: 100%; height: auto; image-rendering: pixelated; border: 2px solid var(--gold-dark); margin-top: 6px; } /* 초려의 제갈량 도트 GIF (238×134, 4장) */
 .aiLog { height: min(34vh, 300px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px; margin-top: 8px; background: var(--panel-dark); border: 1px solid var(--gold-dark); }
+#modalBox.aiBox:not(:has(.aiScene)) .aiLog { height: min(52vh, 460px); } /* 그림을 숨기면 대화 칸을 크게 */
 .aiMsg { max-width: 85%; padding: 6px 10px; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; line-height: 1.5; border: 1px solid var(--gold-dark); }
 .aiMsg.me { align-self: flex-end; background: var(--gold-dark); color: var(--text); }
 .aiMsg.bot { align-self: flex-start; background: var(--panel); color: var(--text); }
