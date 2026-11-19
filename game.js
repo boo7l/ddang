@@ -1594,7 +1594,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
   if (post) {
     // 글 보기: 제목 · 글쓴이 / 본문 / 댓글 / 댓글 쓰기
     body = `<div class="boardWrap boardView">
-      <div class="boardTop"><button type="button" id="boardBack">◀ 목록</button>${isAdmin ? `<button type="button" id="boardPin" class="mini">${post.pinned ? '📌 고정 해제' : '📌 상단 고정'}</button>` : ''}</div>
+      ${isAdmin ? '<div class="boardTop">' : ''}${isAdmin ? `<button type="button" id="boardPin" class="mini">${post.pinned ? '📌 고정 해제' : '📌 상단 고정'}</button>` : ''}${isAdmin ? '</div>' : ''}
       <p class="boardViewTitle">${tag(post)} ${esc(boardTitle(post.text))}</p>
       <p class="boardHead">${who(post)} <span class="dim small">${fmtTime(post.t)}</span>${post.mine && canWrite ? ' <button type="button" class="mini" id="boardEditBtn">✏ 수정</button>' : ''}${delBtn(post, 'post')}</p>
       <div class="boardScroll">
@@ -1629,7 +1629,7 @@ async function boardDialog(page = 0, kind = '', open = null) {
       </div>
     </div>`;
   }
-  openModal(`<h2>💬 게시판</h2>${body}<div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
+  openModal(`<h2>💬 게시판</h2>${body}<div class="modalBtns boardBtns"><button data-close class="main">닫기</button>${post ? '<button type="button" id="boardBack">◀ 목록</button>' : ''}</div>`, box => { // 2026-11-19 기획자: 닫기 왼쪽 아래, 목록 오른쪽 아래
     // 쓰기: 실패하면 쓰던 글을 그대로 두고 이유만 알려 준다
     const send = async (action, payload, btn, after) => {
       btn.disabled = true;
@@ -1907,7 +1907,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119184442&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119185252&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1917,7 +1917,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119184442&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119185252&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1927,7 +1927,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119184442&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119185252&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
