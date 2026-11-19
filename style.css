@@ -486,16 +486,16 @@ aside.mid { width: 340px; }
 /* 처음 안내: 위쪽 항목 단추, 한 번에 한 항목 */
 .helpTabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
 /* 도움말 첫 화면: 섹션 단추 3칸 (2026-11-14) */
-.helpIndex { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 6px 0 4px; } /* 2026-11-19 기획자: PC·모바일 같은 배열 (PC도 2줄) */
+.helpIndex { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 6px 0 4px; }
 .helpIndex button { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; padding: 10px 12px; min-height: 0; font-size: 16px; text-align: left; }
 .helpIndex .hiIc { font-size: 20px; line-height: 1; }
-@media (max-width: 700px) { .helpIndex { } .helpIndex button { padding: 10px 8px; gap: 6px; font-size: 15px; white-space: nowrap; } }
+@media (max-width: 700px) { .helpIndex { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .helpIndex button { padding: 10px 8px; gap: 6px; font-size: 15px; white-space: nowrap; } }
 .helpTabs button { padding: 3px 8px; }
 .helpTabs button.on { background: var(--title); color: var(--panel-dark); border-color: var(--title); }
 #modalBox .helpScroll { max-height: min(340px, 50vh); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--gold-dark) var(--panel-dark); } /* 도움말 전투 상세: 길어서 안에서 스크롤 (2026-11-04) */
 #modalBox .helpSub { margin: 10px 0 2px; color: var(--title); }
 #modalBox .help { min-height: 190px; padding: 10px 4px; border-top: 1px dotted var(--gold-dark); border-bottom: 1px dotted var(--gold-dark); }
-.helpNav { align-items: center; }
+.helpNav { align-items: center; justify-content: space-between; } /* 2026-11-19 기획자: PC·모바일 모두 닫기 왼쪽 아래, 목록 오른쪽 아래 (게시판과 같이) */
 .helpNav .helpPage { margin: 0 6px; }
 
 /* 세력 목록: 두 줄로 촘촘하게 */
