@@ -678,10 +678,10 @@ const RONIN_EXPLORE = [
   { key: 'none', weight: 18 },
   { key: 'gold', weight: 18, min: 300, max: 600, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
   { key: 'sage', weight: 18, min: 40, max: 60 },
-  { key: 'help', weight: 18, min: 5, max: 25 }, // 공적 5~25 (2026-11-19 기획자, 10~30에서)
+  { key: 'help', weight: 19, min: 5, max: 25 }, // 공적 5~25 (2026-11-19 기획자, 10~30에서). 2026-11-19 기획자: 18 → 19 (주머니에서 옮김)
   { key: 'item', weight: 10 },
   { key: 'bandit', weight: 8, goldMinRate: 0.10, goldMaxRate: 0.15 },
-  { key: 'pouch', weight: 7 },
+  { key: 'pouch', weight: 6 }, // 2026-11-19 기획자: 7 → 6 (SSR이 너무 많음)
   { key: 'treasure', weight: 3 },
 ];
 function rollExplore(list = EXPLORE) {
