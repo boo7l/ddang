@@ -1838,7 +1838,7 @@ function tourSync() {
 }
 if ($('#tourBtn')) $('#tourBtn').onclick = () => tourDialog();
 // ===== 대회 탭 (2026-11-19 기획자: 시작 시각을 놓칠까 봐 게임과 대회 창을 오가기 번거롭다는 의견) =====
-// index.html?tour: 대진표 + 내 경기 시계. 서버에서는 대회 정보만(tourView) 10초마다(내 경기 1분 전부터 3초마다) 받는다.
+// index.html?tour: 대진표 + 내 경기 시계. 서버에서는 대회 정보만(tourView) 5초마다(내 경기 1분 전부터 3초마다) 받는다.
 // 내 경기 20초 전에 경기장을 저절로 연다. 1분 전에 소리(🔔를 켰으면)와 탭 제목으로 알린다. 다른 탭(게임)에는 BroadcastChannel로 결과가 바뀐 걸 알린다
 const TOUR_CH = (() => { try { return new BroadcastChannel('ddang-tour'); } catch (e) { return null; } })();
 const TOUR_TITLE = document.title;
@@ -1868,7 +1868,7 @@ function tourBeep() {
 function tourClockTick() {
   if (!TOUR_TAB || $('#tourPage').hidden) return;
   const T = tourT(), my = tourMyNext(T), left = my && my.at ? my.at - Date.now() : null;
-  if (Date.now() - tourLastPoll > (left != null && left < 60e3 && left > -120e3 ? 3e3 : 10e3) && !document.hidden) tourPoll();
+  if (Date.now() - tourLastPoll > (left != null && left < 60e3 && left > -120e3 ? 3e3 : 5e3) && !document.hidden) tourPoll();
   const c = $('#tourClock');
   if (my && my.at) {
     const name = tourMatchName(my.slot);
@@ -1978,7 +1978,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119225807&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119230017&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1988,7 +1988,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119225807&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119230017&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1998,7 +1998,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119225807&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119230017&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3750,6 +3750,7 @@ setInterval(() => {
   showPopup(); // 다른 창이 열려 있으면 닫힌 뒤에 뜬다
   const turnPassed = nextTurn(lastFetch + S.timeOffset) <= now() - turnWait; // 서버가 턴을 처리할 1초 여유 + 흩어 묻기 0~5초
   const tourWatch = $('#tourBox') && tourT() && (tourT().phase === 'entry' || tourT().phase === 'run'); // 무술대회 창을 보는 동안은 15초마다 (대진·결과가 바로 바뀌게, 2026-11-15)
-  if (!busy && !document.hidden && (turnPassed || Date.now() - lastFetch > (tourWatch ? 15 : 60) * 1000)) { refresh(); return; }
+  if (tourWatch && !busy && !document.hidden && Date.now() - tourLastPoll > 5000) tourPoll(); // 대회 창: 대회 정보만 5초마다 가볍게 (2026-11-19, 전엔 세계 전체를 15초마다)
+  if (!busy && !document.hidden && (turnPassed || Date.now() - lastFetch > 60 * 1000)) { refresh(); return; }
   updateTurn();
 }, 1000);
