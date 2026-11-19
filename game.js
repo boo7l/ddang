@@ -3,6 +3,7 @@
 // ===== 화면 =====
 // 게임 계산은 engine.js, 규칙과 숫자는 rules.js, 지도 그리기는 map.js에 있다. 여기는 화면이다.
 let MY_ID = null;     // 내 계정 id (서버 계정)
+const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
 let IS_ADMIN = false; // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
 const me = () => S.generals[MY_ID];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -64,7 +65,7 @@ function applyView(d) {
   IS_ADMIN = !!d.admin;
   $('#adminBtn').hidden = !IS_ADMIN;
   $('#bgmTestBtn').hidden = !IS_ADMIN; // 임시 (2026-11-17): 천통 음악 미리듣기
-  $('#aiBtn').hidden = !(AI_PUBLIC || IS_ADMIN); // AI 도움 봇 (2026-11-19): 지금은 관리자만 시험
+  $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
@@ -1516,6 +1517,7 @@ function showScreen(id) {
   document.body.classList.toggle('inGame', id === 'game'); // 휴대폰: 게임 화면은 앱처럼 (화면 고정, 가운데만 스크롤)
   if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; $('#nowScenario').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
+  $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기: 로그인만 하면 (시즌 문이 닫혀 있어도, 2026-11-19)
   try { bgmSync(); } catch (e) { /* 음악 준비 전 */ } // 화면이 바뀌면 곡도 (첫 화면 곡 ↔ 게임 곡, 2026-11-07)
 }
 
@@ -1908,7 +1910,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221119&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221431&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1918,7 +1920,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119221119&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119221431&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1928,7 +1930,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221119&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221431&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3397,7 +3399,7 @@ $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 // 정보: 이번 시즌 장수가 없으면 흐리게 (2026-11-07, 그 전엔 숨김). 메인 화면에서 아직 세계를 안 받았으면 받아 와서 정한다
-const menuRecordSync = () => { $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
+const menuRecordSync = () => { $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
 const rankLocked = () => !!preparing && !IS_ADMIN; // 문이 닫혀 있으면 관리자 말고는 순위를 못 연다 (2026-11-13 기획자: 관리자 테스트가 보이지 않게)
 $('#menuBtn').onclick = async e => {
   e.stopPropagation();
@@ -3526,8 +3528,7 @@ $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
 // ☰ 메뉴 [🤖 물어보기] (2026-11-19): 규칙을 AI에게 묻는다. 서버(aiAsk)가 게임 안에서 찾을 수 있는 자료만 보고 대답한다. 하루 20번
 // 채팅 모양 (2026-11-19 기획자): 말풍선으로 주고받고, 최근 3번의 질문·답을 같이 보내 이어서 물을 수 있다. 대화는 이 페이지를 연 동안만 남는다
 // 제갈량 (2026-11-19 기획자): 초려에서 부채를 부치는 제갈량 도트 GIF 4장(img/ai/zhuge.gif, tools/make_zhuge_gif.js) + "~하오"체. 말투는 서버 index.ts AI_SYSTEM
-// AI_PUBLIC: 지금은 관리자만 시험 (true로 바꾸면 모두에게 단추가 보인다. 서버 index.ts AI.public도 같이 바꾼다)
-const AI_PUBLIC = true; // 2026-11-19 기획자: 모두에게 공개
+// AI_PUBLIC(파일 맨 위): 모두에게 공개 여부. 서버 index.ts AI.public도 같이 바꾼다
 const AI_SCENE = false; // 초려 제갈량 GIF (2026-11-19 기획자: 지금은 숨김). true로 바꾸면 창 위에 다시 보인다
 const AI_CHAT = []; // { q, a } 주고받은 대화 (새로고침하면 비워진다)
 $('#aiBtn').onclick = () => {
