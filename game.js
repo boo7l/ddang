@@ -931,7 +931,7 @@ function openModal(html, onMount) {
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
 }
-function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox', 'tourModal', 'boardBox'); } // tourModal: 무술대회 창 넓이 (2026-11-15: 안 지워서 게시판이 넓어졌음)
+function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox', 'tourModal', 'boardBox', 'aiBox'); } // tourModal: 무술대회 창 넓이 (2026-11-15: 안 지워서 게시판이 넓어졌음)
 
 // 대화 상자 공통: 목록에서 하나 고르고 예약하기
 // 비용 줄 (2026-11-14 기획자): "금 200 / 1,500" = 드는 값 / 지금 가진 값. 지금 모자라면 가볍게 "부족" 표시만 (예약이라 실행 때 모일 수도 있다)
@@ -1908,7 +1908,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119213116&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119215224&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1918,7 +1918,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119213116&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119215224&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1928,7 +1928,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119213116&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119215224&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3523,31 +3523,42 @@ function bgmHold(on) {
 function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
 $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
 
-// ☰ 메뉴 [🤖 물어보기] (2026-11-19): 규칙을 AI에게 묻는다. 서버(aiAsk)가 도움말·확률표·공적표·패치노트만 보고 대답한다. 하루 20번
+// ☰ 메뉴 [🤖 물어보기] (2026-11-19): 규칙을 AI에게 묻는다. 서버(aiAsk)가 게임 안에서 찾을 수 있는 자료만 보고 대답한다. 하루 20번
+// 채팅 모양 (2026-11-19 기획자): 말풍선으로 주고받고, 최근 3번의 질문·답을 같이 보내 이어서 물을 수 있다. 대화는 이 페이지를 연 동안만 남는다
 // AI_PUBLIC: 지금은 관리자만 시험 (true로 바꾸면 모두에게 단추가 보인다. 서버 index.ts AI.public도 같이 바꾼다)
 const AI_PUBLIC = false;
+const AI_CHAT = []; // { q, a } 주고받은 대화 (새로고침하면 비워진다)
 $('#aiBtn').onclick = () => {
   document.querySelector('header').classList.remove('menuOpen');
   openModal(`<h2>🤖 규칙 물어보기</h2>
-    <p class="dim">도움말·패치노트를 읽은 AI가 대답해요. AI라서 틀릴 수 있으니, 중요한 건 도움말에서 다시 확인해 주세요. (하루 20번)</p>
-    <textarea id="aiQ" maxlength="200" rows="3" placeholder="예) 치안이 낮으면 어떻게 돼?" style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
-    <div id="aiA" class="aiAnswer" hidden style="white-space:pre-wrap;margin-top:10px;padding:8px 10px;border:1px solid currentColor;border-radius:4px;max-height:45vh;overflow:auto"></div>
-    <div class="modalBtns"><span id="aiLeft" class="dim btnLeft" style="align-self:center"></span><button data-close>닫기</button><button id="aiGo" class="main">묻기</button></div>`, box => {
-    const q = box.querySelector('#aiQ'), out = box.querySelector('#aiA'), go = box.querySelector('#aiGo');
+    <p class="dim small">게임 안의 도움말·패치노트를 읽은 AI예요. 틀릴 수 있으니 중요한 건 도움말에서 다시 확인해 주세요.</p>
+    <div id="aiLog" class="aiLog"></div>
+    <div class="aiInput"><textarea id="aiQ" maxlength="200" rows="2" placeholder="예) 치안이 낮으면 어떻게 돼?"></textarea><button id="aiGo" class="main">보내기</button></div>
+    <div class="modalBtns"><span id="aiLeft" class="dim small btnLeft" style="align-self:center"></span><button data-close>닫기</button></div>`, box => {
+    box.classList.add('aiBox');
+    const log = box.querySelector('#aiLog'), q = box.querySelector('#aiQ'), go = box.querySelector('#aiGo'), left = box.querySelector('#aiLeft');
+    const bubble = (who, text) => { const d = document.createElement('div'); d.className = 'aiMsg ' + who; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+    const setLeft = n => { if (typeof n === 'number') left.textContent = `오늘 남은 질문 ${n}번`; };
+    bubble('bot', '안녕하세요! 땅국지 규칙이나 계산이 궁금하면 물어보세요.');
+    for (const m of AI_CHAT) { bubble('me', m.q); bubble('bot', m.a); }
+    api('aiAsk', { peek: true }).then(d => { if (d && !d.error) setLeft(d.left); }).catch(() => {});
     const ask = async () => {
       const text = q.value.trim();
       if (!text || go.disabled) return;
-      go.disabled = true; go.textContent = '생각 중…';
-      out.hidden = false; out.textContent = '…';
+      q.value = ''; go.disabled = true;
+      bubble('me', text);
+      const wait = bubble('bot wait', '생각 중…');
       try {
-        const d = await api('aiAsk', { q: text });
-        out.textContent = d && !d.error ? d.a : (d && d.error) || '대답을 받지 못했어요.';
-        if (d && typeof d.left === 'number') box.querySelector('#aiLeft').textContent = `오늘 남은 질문 ${d.left}번`;
-      } catch (e) { out.textContent = '서버에 연결하지 못했어요.'; }
-      go.disabled = false; go.textContent = '묻기';
+        const d = await api('aiAsk', { q: text, history: AI_CHAT.slice(-3) });
+        if (d && !d.error) { wait.className = 'aiMsg bot'; wait.textContent = d.a; AI_CHAT.push({ q: text, a: d.a }); }
+        else { wait.className = 'aiMsg sys'; wait.textContent = (d && d.error) || '대답을 받지 못했어요.'; }
+        if (d) setLeft(d.left);
+      } catch (e) { wait.className = 'aiMsg sys'; wait.textContent = '서버에 연결하지 못했어요.'; }
+      log.scrollTop = log.scrollHeight;
+      go.disabled = false; q.focus();
     };
     go.onclick = ask;
-    q.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(); } }; // 엔터 = 묻기 (한글 조합 중엔 안 보냄), Shift+엔터 = 줄바꿈
+    q.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(); } }; // 엔터 = 보내기 (한글 조합 중엔 안 보냄), Shift+엔터 = 줄바꿈
     q.focus();
   });
 };
