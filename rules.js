@@ -43,7 +43,7 @@ const RULES = {
   // fee 참가비 · minWar 참가 무력(장비·보물 포함) · max 8명이면 바로 마감 · minN 이보다 적으면 취소·환불 · entryHours 신청 기간 기본값(관리 페이지에서 바꿈)
   // gapMin 마감 뒤 첫 경기까지 [임시: 기획자 확인 전] · slotMin 경기 간격 (한 번에 한 경기) · prize [우승, 준우승]
   tourney: { fee: 500, minWar: 70, max: 8, factionMax: 0 /* 한 세력 최대 신청 인원, 0 = 제한 없음 (2026-11-15 기획자: 시범 리그라 뺌, 그 전 4명) */, minN: 4, entryHours: 2, gapMin: 10, slotMin: 5, prize: [{ gold: 3000, merit: 50, warExp: 80 }, { gold: 1000, merit: 20, warExp: 30 }] }, // 2026-11-15 기획자: 우승 공적 80→50·경험치 50→80, 준우승 공적 30→20·경험치 20→30
-  farMarch: { mult: 2, from: 7 }, // 먼 길 원정 (2026-11-14 기획자, 시즌 7부터): 먼 길로 이어진 이웃 성을 치면 출진 금·군량 × 2. engine marchMult
+  farMarch: { mult: 3, from: 7 }, // 2026-11-19 기획자: × 2 → × 3. 먼 길 원정 (2026-11-14 기획자, 시즌 7부터): 먼 길로 이어진 이웃 성을 치면 출진 금·군량 × 2. engine marchMult
   attackGold: { per1000: 20, min: 20 }, // 출진 금 (2026-11-03 시즌 5, 그 전엔 50): 병력 1,000당 20 (천 단위 버림), 최소 20. attackGoldOf
   defenseOffLoss: { min: 0.10, max: 0.20 }, // 성이 떨어질 때 방어를 끈 장수가 물러나며 잃는 병력 비율 (2026-11-03 시즌 5, 그 전엔 0). 고립되면 isolatedLoss만
   myGoldCost: { draft: 200, train: 30, get explore() { return seasonNow() >= 8 ? 50 : 30; }, plot: 50 }, // 임시: 내 금에서 나가는 금 (plot = 계략 파괴·유언·첩보, 2026-10-26) // 2026-11-16 기획자: 탐색 금 시즌 8부터 30 → 50

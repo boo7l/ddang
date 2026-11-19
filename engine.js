@@ -1090,7 +1090,7 @@ function runAttack(g, o, mark) {
   if (g.troops <= 0) return '병력이 없음';
   const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
-  const mm = marchMult(from, to); // 먼 길 원정이면 × 2 (2026-11-14, 시즌 7)
+  const mm = marchMult(from, to); // 먼 길 원정이면 × RULES.farMarch.mult (2026-11-14, 시즌 7)
   const food = marchFood(g.troops, g.faction) * mm;
   if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
   const why = pay(g, 'attack', attackGoldOf(g.troops) * mm); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
@@ -1132,7 +1132,7 @@ function nextFieldFoe(cur, fought) {
 }
 // 야전에 끌려 나온 장수도 출진한 것: 금·군량을 쓰고 출진 쿨타임이 돈다. 이번 턴 그 출진 명령은 여기서 끝난다
 function joinField(x, to) {
-  const home = S.cities[x.city], mm = marchMult(cityById(x.city), to); // 먼 길 원정 × 2 (2026-11-14)
+  const home = S.cities[x.city], mm = marchMult(cityById(x.city), to); // 먼 길 원정 × RULES.farMarch.mult (2026-11-14)
   home.food -= marchFood(x.troops, x.faction) * mm;
   pay(x, 'attack', attackGoldOf(x.troops) * mm);
   x.attackTurn = S.turn;
