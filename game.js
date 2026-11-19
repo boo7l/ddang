@@ -1908,7 +1908,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220700&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220912&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1918,7 +1918,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119220700&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119220912&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1928,7 +1928,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220700&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119220912&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3541,7 +3541,7 @@ $('#aiBtn').onclick = () => {
     box.classList.add('aiBox');
     const log = box.querySelector('#aiLog'), q = box.querySelector('#aiQ'), go = box.querySelector('#aiGo'), left = box.querySelector('#aiLeft');
     const bubble = (who, text) => { const d = document.createElement('div'); d.className = 'aiMsg ' + who; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }; // 제갈량 이름표는 CSS(.aiMsg.bot::before)
-    const setLeft = n => { if (typeof n === 'number') left.textContent = `오늘 남은 질문 ${n}번`; };
+    const setLeft = n => { if (typeof n === 'number') left.textContent = n < 0 ? '관리자 · 횟수 제한 없음' : `오늘 남은 질문 ${n}번`; }; // -1 = 관리자
     bubble('bot', '어서 오시오. 누추한 초려까지 걸음하였구려.\n규칙이든 셈이든, 궁금한 것이 있으면 물어보시오.');
     for (const m of AI_CHAT) { bubble('me', m.q); bubble('bot', m.a); }
     api('aiAsk', { peek: true }).then(d => { if (d && !d.error) setLeft(d.left); }).catch(() => {});
