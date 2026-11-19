@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261119230502">
+<link rel="stylesheet" href="style.css?v=20261119231112">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -113,7 +113,7 @@
   .tri .ar { stroke: #ffd860; stroke-width: 4; fill: none; }
   .tri text.win { font-size: 13px; fill: #ffd860; }
   .tri text { text-anchor: middle; font-family: Sam3, monospace; }
-  .tri text.ic { font-size: 18px; }
+  .tri image.ic { image-rendering: pixelated; } /* 상성표도 카드 도트 그림 (2026-11-19) */
   .tri text.nm { font-size: 15px; fill: #2a0604; font-weight: bold; }
   .tri .nd circle { stroke: #8a5a14; stroke-width: 2; }
   .tri .nd.win circle { stroke: #7dff8a; stroke-width: 4; }
@@ -288,9 +288,9 @@
         <defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#ffd860"/></marker></defs>
         <path d="M101 55 L123 92" class="ar" marker-end="url(#ah)"/><path d="M108 124 L64 124" class="ar" marker-end="url(#ah)"/><path d="M46 94 L68 57" class="ar" marker-end="url(#ah)"/>
         <text x="128" y="68" class="win">이김</text><text x="86" y="145" class="win">이김</text><text x="42" y="68" class="win">이김</text>
-        <g class="nd" data-t="atk"><circle cx="85" cy="28" r="25" fill="#a3c8f0"/><text x="85" y="24" class="ic">⚡</text><text x="85" y="42" class="nm">속공</text></g>
-        <g class="nd" data-t="tec"><circle cx="138" cy="120" r="25" fill="#f4a39b"/><text x="138" y="116" class="ic">💪</text><text x="138" y="134" class="nm">강타</text></g>
-        <g class="nd" data-t="def"><circle cx="32" cy="120" r="25" fill="#a9dd9b"/><text x="32" y="116" class="ic">🔄</text><text x="32" y="134" class="nm">역습</text></g>
+        <g class="nd" data-t="atk"><circle cx="85" cy="28" r="25" fill="#a3c8f0"/><image x="74" y="8" width="22" height="22" class="ic" href="img/cards/atk.png"/><text x="85" y="42" class="nm">속공</text></g>
+        <g class="nd" data-t="tec"><circle cx="138" cy="120" r="25" fill="#f4a39b"/><image x="127" y="100" width="22" height="22" class="ic" href="img/cards/tec.png"/><text x="138" y="134" class="nm">강타</text></g>
+        <g class="nd" data-t="def"><circle cx="32" cy="120" r="25" fill="#a9dd9b"/><image x="21" y="100" width="22" height="22" class="ic" href="img/cards/def.png"/><text x="32" y="134" class="nm">역습</text></g>
       </svg>
       <div class="hand" id="hand"></div>
       <div></div>
@@ -335,8 +335,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261119230502"></script>
-<script src="rogue_rules.js?v=20261119230502"></script>
+<script src="duel_rules.js?v=20261119231112"></script>
+<script src="rogue_rules.js?v=20261119231112"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
