@@ -366,7 +366,7 @@ const GENERAL_TRAITS = {
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   logistic: { tier: 'N', name: '보급관', desc: '군량 수송 4칸·무제한·공적 +3 · 시세 +1', transportRange: 4, transportNoCap: true, transportMerit: 3, foodPrice: 1 }, // 2026-11-19 기획자: 비전투 군수 특성 (수도 3칸과 겹치면 큰 값 4칸, 양 제한 없음 = 창고가 허락하는 만큼)
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15 }, // 2026-10-28 +10%에서
-  engineer: { tier: 'R', name: '병기도 과학', desc: '병기 제작비 -20%', siegePrice: -0.20 }, // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
+  engineer: { tier: 'R', name: '병기도 과학', get desc() { return seasonNow() >= 8 ? '병기 효과 +40% (충차·정란·벽력거)' : '병기 제작비 -20%'; }, get siegePrice() { return seasonNow() >= 8 ? 0 : -0.20; }, get siegeBoost() { return seasonNow() >= 8 ? 0.4 : 0; } }, // 2026-11-19 기획자: 시즌 8부터 할인 대신 병기 효과 +40% (충차 40→56%, 정란 15→21%, 벽력거 50→70%). // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
   medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 30%가 돌아옴', heal: { chance: 0.3, rate: 0.3 } }, // 2026-11-08 시즌 6: 20% → 30%. // 2026-10-28 50%·25% → 30%·25%, 2026-10-31 30%·20%
   pierce: { tier: 'SR', name: '관통맨', get desc() { return `공격 시 합마다 ${Math.round(this.pierce.chance * 100)}% 확률로 성벽 피해 (병력 ÷ ${this.pierce.per})`; }, pierce: { chance: 0.40, get per() { return seasonNow() >= 8 ? 180 : 200; } } }, // 2026-11-18 기획자: 시즌 8부터 성벽 피해 병력 ÷ 200 → ÷ 180 (+11%). // 2026-11-08 시즌 6: 25%·÷400 → 40%·÷200 (출진 한 번 성벽 18 → 약 60, 시뮬). // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
   persuade: { tier: 'SR', name: '설득민수', get desc() { return `수비할 때 불리하면 합마다 ${Math.round(this.persuade * 100)}% 확률로 상대가 퇴각`; }, get persuade() { return seasonNow() >= 7 ? 0.05 : 0.04; } }, // 2026-11-10 기획자: 시즌 7부터 4% → 5% (시즌 7 패치노트). // 2026-11-07 시즌 6: 3% → 4%. 2026-10-28 5% → 4% → 3%
@@ -491,7 +491,7 @@ const unitTypeBonus = (t, type) => (type === '보병' ? 1 + (t.infantry || 0) : 
 const warBonus = u => 1 + (u.stats.war || 0) * RULES.warPer1; // 2026-11-06: 10 단위로 끊지 않고 1마다
 const attackPower = (a, d) => {
   const t = traitOf(a.faction);
-  return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack : 1)
+  return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack * siegeMul(a) : 1)
     * warBonus(a)
     * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
     * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
@@ -541,7 +541,7 @@ function fightRounds(att, def, wall, left, field = false) {
   // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
   if (!field && att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
     att.struck = true;
-    const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * luck()));
+    const dLoss = Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(att) * luck()));
     def.troops -= dLoss;
     lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`);
   }
@@ -729,6 +729,7 @@ const SIEGE = {
 // 병기 만드는 값: 개인 특성 병기도 과학은 -20%
 const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.faction).siegePrice || 0) + (gTrait(g).siegePrice || 0))); // 조선 신기전, 개인 특성 병기도 과학
 // 병기 효과 (임시값)
+const siegeMul = u => 1 + (gTrait(u).siegeBoost || 0); // 개인 특성 병기도 과학: 병기 효과 배율 (2026-11-19, 시즌 8부터 ×1.4)
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%

@@ -1297,7 +1297,7 @@ function siegeAttack(g, att, from, to, mark, f) {
       : { a: '막는 부대가 없어 곧장 성벽으로 달려들었다!', d: '막는 부대가 없어 적이 곧장 성벽으로 달려들었다!' });
     const sr = RULES.siegeRate, rate = sr.min + Math.random() * (sr.max - sr.min);
     const base = Math.max(1, Math.floor(g.troops * rate));
-    const boost = 1 + (traitOf(g.faction).siege || 0) + (g.siege && g.siege.충차 ? SIEGE_EFFECT.ramWall : 0); // 엄백호·충차: 같은 손실로 더 깎는다
+    const boost = 1 + (traitOf(g.faction).siege || 0) + (g.siege && g.siege.충차 ? SIEGE_EFFECT.ramWall * siegeMul(g) : 0); // 엄백호·충차 (병기도 과학 ×1.4, 2026-11-19): 같은 손실로 더 깎는다
     const dmg = Math.min(cs.wall, Math.floor(base * boost));
     const loss = Math.min(g.troops, Math.round(Math.round(dmg / boost) * RULES.siegeLoss)); // 성벽에서 쏟아지는 화살·돌: 깎은 방어의 siegeLoss(4)배만큼 잃는다. 병력은 정수로 맞춘다
     cs.wall -= dmg;
