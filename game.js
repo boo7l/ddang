@@ -1199,7 +1199,7 @@ function plotDialog(kind) {
 // 군량 구매: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
 function buyFoodDialog() {
   // 쓸 금을 직접 적는다 (1~goldMax). 예전 선택지는 빠른 단추로
-  const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), perGold = foodPrice(), { choices, goldMax } = RULES.foodBuy;
+  const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), perGold = foodPriceOf(p), { choices, goldMax } = RULES.foodBuy;
   openModal(`
     <h2>군량 구매 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
     <p>${esc(at.name)}에 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
@@ -1234,20 +1234,20 @@ const gradeStars = c => `<span class="pstars" title="${GRADE_NAME[c.grade]}">${c
 // 군량 수송: 이 턴에 있을 성과 2칸 안의 우리 성 사이에서 보내기·가져오기. 양은 1~transportMax(10,000) 직접 입력 (빠른 단추도)
 function transportDialog() {
   const p = me(), at = cityAtSlot(p, slot), here = S.cities[at.id];
-  const opts = linkedOwnCities(at.id, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => transportLinked(at, c, p.faction)).map(c => { // 수도가 끼면 3칸 (2026-11-16, 시즌 8부터)
+  const opts = linkedOwnCities(at.id, p.faction, transportReachOf(p)).filter(c => transportLinked(at, c, p.faction, p)).map(c => { // 수도가 끼면 3칸 (2026-11-16, 시즌 8부터)
     const cs = S.cities[c.id];
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${isFarRoad(at, c) ? ' <span class="dim">(먼 길)</span>' : ''}${frontTag(c)}
       <span class="r foodR">${gradeStars(c)}군량 ${fmt(cs.food)} / ${fmt(foodMax(c.grade))}</span></label>`;
   }).join('');
-  const max = RULES.transportMax;
+  const noCap = !!gTrait(p).transportNoCap, max = noCap ? Math.max(...Object.values(RULES.foodMax)) : RULES.transportMax; // 보급관: 제한 없음 (가장 큰 창고만큼까지 적을 수 있게)
   const extra = `
     <p class="sub">방향</p>
     <p class="picks"><label class="opt"><input type="radio" name="dir" value="send" checked> 보내기 <span class="dim">(${esc(at.name)} → 고른 성)</span></label>
       <label class="opt"><input type="radio" name="dir" value="fetch"> 가져오기 <span class="dim">(고른 성 → ${esc(at.name)})</span></label></p>
-    <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
+    <p class="sub">양 <span class="dim">(${noCap ? '보급관: 제한 없음' : `1~${fmt(max)}`})</span></p>
     <p><input type="number" id="tAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
       ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-amt="${n}">${fmt(n)}</button>`).join(' ')}</p>`;
-  pickDialog('군량 수송', `<p>${esc(josa(at.name, '과와'))} 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성 사이에서 군량을 옮겨요${capitalOn() ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 가는 동안 줄지 않아요.</p>
+  pickDialog('군량 수송', `<p>${esc(josa(at.name, '과와'))} 우리 땅으로 ${gTrait(p).transportRange ? `${gTrait(p).transportRange}칸 (보급관)` : `${RULES.moveRange}칸`} 안의 우리 성 사이에서 군량을 옮겨요${capitalOn() && !gTrait(p).transportRange ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 가는 동안 줄지 않아요.</p>
     <p class="dim">${esc(at.name)} 군량 ${fmt(here.food)} / ${fmt(foodMax(at.grade))} · 실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요</p>`,
   opts, '예약', (v, box) => {
     const amount = Math.floor(+box.querySelector('#tAmount').value);
@@ -1905,7 +1905,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119161051&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119161732&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1915,7 +1915,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119161051&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119161732&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1925,7 +1925,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119161051&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119161732&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2649,22 +2649,22 @@ function renderCommander() {
 // 보급 (2026-11-16 기획자, 시즌 8부터): 대도독만. 보내는 성 A와 받는 성 B(A에서 우리 땅 moveRange칸 안)를 골라 예약표의 고른 칸에 넣는다. 양은 수송과 같다
 function supplyDialog() {
   if (seasonOver()) return;
-  const p = me(), mine = citiesOfFaction(p.faction), max = RULES.transportMax;
+  const p = me(), mine = citiesOfFaction(p.faction), noCap = !!gTrait(p).transportNoCap, max = noCap ? Math.max(...Object.values(RULES.foodMax)) : RULES.transportMax;
   if (mine.length < 2) { alert('우리 성이 두 개 이상 있어야 보급할 수 있어요.'); return; }
   const food = c => { const cs = S.cities[c.id] || {}; return `군량 ${fmt(cs.food || 0)} / ${fmt(foodMax(c.grade))}`; };
   const opt = c => `<option value="${esc(c.id)}">${esc(c.name)} · ${food(c)}</option>`;
   openModal(`<h2>🚚 보급</h2>
-    <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${RULES.moveRange}칸 안이어야 해요${capitalOn() ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
+    <p class="dim small">대도독은 어디에 있든 우리 성끼리 군량을 옮길 수 있어요. 받는 성은 보내는 성에서 우리 땅으로 ${gTrait(p).transportRange ? `${gTrait(p).transportRange}칸 (보급관)` : `${RULES.moveRange}칸`} 안이어야 해요${capitalOn() && !gTrait(p).transportRange ? ` (수도가 끼면 ${RULES.capital.transportRange}칸)` : ''}. 예약표의 ${slot + 1}번째 칸에 들어가고 한 턴을 써요.</p>
     <div class="pickHead"><span class="dim small">지도에서 보내는 성 → 받는 성 순서로 골라요</span><button type="button" id="sMapBtn">지도</button></div>
     <p class="sub">보내는 성</p><p><select id="sFrom" style="width:100%"><option value="">(지도에서 누르거나 고르기)</option>${mine.map(opt).join('')}</select></p>
     <p class="sub">받는 성</p><p><select id="sTo" style="width:100%"></select></p>
-    <p class="sub">양 <span class="dim">(1~${fmt(max)})</span></p>
+    <p class="sub">양 <span class="dim">(${noCap ? '보급관: 제한 없음' : `1~${fmt(max)}`})</span></p>
     <p><input type="number" id="sAmount" min="1" max="${max}" step="1" value="1000" style="width:110px">
       ${[1000, 2000, 5000, max].map(n => `<button type="button" class="mini" data-samt="${n}">${fmt(n)}</button>`).join(' ')}</p>
     <p class="dim small">실행할 때 보내는 성에 있는 만큼만, 받는 성에 들어가는 만큼만 옮겨요.</p>
     <div class="modalBtns"><button id="sOk" class="main">예약</button><button data-close>닫기</button></div>`, box => {
     // 지도로 고르기 (2026-11-18 기획자): [지도] → 보내는 성을 누르면 그 성에서 보낼 수 있는 성만 밝게 다시 뜨고, 받는 성을 누른다. 받는 성 지도에서 보내는 성(흰 테두리)을 누르면 처음부터
-    const targetsOf = a => { const ac = cityById(a); return a ? linkedOwnCities(a, p.faction, capitalOn() ? RULES.capital.transportRange : RULES.moveRange).filter(c => c.id !== a && transportLinked(ac, c, p.faction)) : []; }; /* 수도가 끼면 3칸 */
+    const targetsOf = a => { const ac = cityById(a); return a ? linkedOwnCities(a, p.faction, transportReachOf(p)).filter(c => c.id !== a && transportLinked(ac, c, p.faction, p)) : []; }; /* 수도가 끼면 3칸 */
     const fill = () => { const a = box.querySelector('#sFrom').value, list = targetsOf(a); box.querySelector('#sTo').innerHTML = !a ? '<option value="">(보내는 성을 먼저 고르세요)</option>' : list.length ? '<option value="">(지도에서 누르거나 고르기)</option>' + list.map(opt).join('') : `<option value="">(${RULES.moveRange}칸 안에 우리 성이 없어요)</option>`; }; // 받는 성은 미리 고르지 않는다 (지도로 고르게, 2026-11-18)
     box.querySelector('#sFrom').onchange = fill; fill();
     const pickFrom = () => pickMap('보급 · 보내는 성', mine.map(c => c.id), null, box.querySelector('#sFrom').value, id => { box.querySelector('#sFrom').value = id; fill(); pickTo(id); });
@@ -2959,7 +2959,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기'), btn('rumor', '유언', '치안 낮추기'), btn('spy', '첩보', '적 성 엿보기')].join('');
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
-    btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPrice()}`), btn('transport', '군량 수송', '보내기·가져오기'),
+    btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`), btn('transport', '군량 수송', '보내기·가져오기'),
     // 증축 (2026-11-08): 늘 보인다 (눌러서 조건·비용·보상을 언제든 볼 수 있게). 조건이 안 되면 흐리게, 예약은 확인 창에서 막는다
     (() => { const ok = at.faction === p.faction && expandReady(at), can = at.faction === p.faction && at.grade < expandTop(at); return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 4 ? '수도' : at.grade >= expandTop(at) ? '대도시' : '조건 부족', !can); })(), // 2026-11-16: 시즌 8부터 대도시 → 수도 (세력당 하나) // 2026-11-15 기획자: 조건이 모자라도 예약은 된다 (실행하는 턴에 확인)
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야

@@ -20,6 +20,8 @@ const allGenerals = () => Object.values(S.generals);
 const buyFoodGold = o => Math.max(1, Math.min(RULES.foodBuy.goldMax, Math.floor(+(o && o.item)) || RULES.foodBuy.choices[0]));
 // 이번 달 군량 시세 (금 1당 군량). 세계에 없으면 처음 값
 const foodPrice = () => (S && S.foodPrice) || RULES.foodBuy.start;
+const foodPriceOf = g => foodPrice() + (gTrait(g).foodPrice || 0); // 특성 보급관: 시세 +1 (2026-11-19)
+const transportMaxOf = g => (gTrait(g).transportNoCap ? Infinity : RULES.transportMax); // 특성 보급관: 양 제한 없음 (창고가 허락하는 만큼)
 // 세력 특성 (rules.js의 FACTION_TRAITS). 세력이 없거나 특성이 없으면 빈 것
 // 세력 특성: 지도 파일에 적힌 것(trait)이 먼저, 없으면 rules.js FACTION_TRAITS에서 이름으로 (2026-11-06)
 const traitOf = fid => {
@@ -1788,7 +1790,7 @@ function runLevy(g) {
 function runBuyFood(g, o) {
   const city = cityById(g.city), cs = S.cities[g.city], max = foodMax(city.grade);
   if (cs.food >= max) return `${city.name}의 군량 창고가 가득 참 (${fmt(max)})`;
-  const perGold = foodPrice();
+  const perGold = foodPriceOf(g);
   const want = buyFoodGold(o);
   const got = Math.min(want * perGold, max - cs.food);
   const pay = Math.ceil(got / perGold);
@@ -1803,23 +1805,23 @@ function runBuyFood(g, o) {
 // ----- 군량 수송 (2026-10-25) -----
 // 내가 있는 성과 우리 땅으로 2칸 안의 다른 우리 성 사이에서 군량을 옮긴다. dir: send(내 성 → 그 성) / fetch(그 성 → 내 성).
 // 양은 1~5,000 중 플레이어가 정하고, 보내는 성에 있는 만큼만, 받는 성 최대치까지만 옮긴다. 가다가 줄지 않는다
-const transportAmount = o => Math.max(1, Math.min(RULES.transportMax, Math.floor(+(o && o.amount)) || 1));
+const transportAmount = (o, g) => Math.max(1, Math.min(g ? transportMaxOf(g) : Infinity, Math.floor(+(o && o.amount)) || 1)); // g 없으면 (예약표 이름) 넣은 양 그대로
 function runTransport(g, o) {
   const here = cityById(g.city), other = cityById(o.to);
   if (!other) return '없는 성';
   if (other.id === here.id) return '같은 성끼리는 옮길 수 없음';
   if (other.faction !== g.faction) return `${josa(other.name, '은는')} 아군 성이 아님`;
-  if (!transportLinked(here, other, g.faction)) return `${here.name}에서 ${other.name}까지 아군 땅으로 ${transportRangeOf(here, other)}칸 안에 이어져 있지 않음`; // 수도가 끼면 3칸 (시즌 8부터)
+  if (!transportLinked(here, other, g.faction, g)) return `${here.name}에서 ${other.name}까지 아군 땅으로 ${transportRangeOf(here, other, g)}칸 안에 이어져 있지 않음`; // 수도가 끼면 3칸 (시즌 8부터)
   const pull = o.dir === 'fetch', from = pull ? other : here, to = pull ? here : other;
   const src = S.cities[from.id], dst = S.cities[to.id], room = foodMax(to.grade) - dst.food;
   if (src.food <= 0) return `${from.name}에 보낼 군량이 없음`;
   if (room <= 0) return `${to.name}의 군량 창고가 가득 참 (${fmt(foodMax(to.grade))})`;
-  const want = transportAmount(o), n = Math.min(want, src.food, room);
+  const want = transportAmount(o, g), n = Math.min(want, src.food, room);
   src.food -= n;
   dst.food += n;
   const short = n < want ? (src.food <= 0 ? ` (${from.name}에 있는 만큼만)` : ` (${to.name} 창고에 들어가는 만큼만)`) : '';
   addLog(g, `🚚 군량 수송: ${from.name} → ${to.name} ${fmt(n)}${short} · ${from.name} ${fmt(src.food)} · ${to.name} ${fmt(dst.food)}`);
-  addMerit(g, RULES.merit.transport);
+  addMerit(g, RULES.merit.transport + (gTrait(g).transportMerit || 0)); // 보급관 +3
   return '';
 }
 
@@ -1832,16 +1834,16 @@ function runSupply(g, o) {
   if (from.id === to.id) return '같은 성끼리는 옮길 수 없음';
   if (from.faction !== g.faction) return `${josa(from.name, '은는')} 아군 성이 아님`;
   if (to.faction !== g.faction) return `${josa(to.name, '은는')} 아군 성이 아님`;
-  if (!transportLinked(from, to, g.faction)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${transportRangeOf(from, to)}칸 안에 이어져 있지 않음`; // 수도가 끼면 3칸 (시즌 8부터)
+  if (!transportLinked(from, to, g.faction, g)) return `${from.name}에서 ${to.name}까지 아군 땅으로 ${transportRangeOf(from, to, g)}칸 안에 이어져 있지 않음`; // 수도가 끼면 3칸 (시즌 8부터)
   const src = S.cities[from.id], dst = S.cities[to.id], room = foodMax(to.grade) - dst.food;
   if (src.food <= 0) return `${from.name}에 보낼 군량이 없음`;
   if (room <= 0) return `${to.name}의 군량 창고가 가득 참 (${fmt(foodMax(to.grade))})`;
-  const want = transportAmount(o), n = Math.min(want, src.food, room);
+  const want = transportAmount(o, g), n = Math.min(want, src.food, room);
   src.food -= n;
   dst.food += n;
   const short = n < want ? (src.food <= 0 ? ` (${from.name}에 있는 만큼만)` : ` (${to.name} 창고에 들어가는 만큼만)`) : '';
   addLog(g, `🚚 보급: ${from.name} → ${to.name} ${fmt(n)}${short} · ${from.name} ${fmt(src.food)} · ${to.name} ${fmt(dst.food)}`);
-  addMerit(g, RULES.merit.transport);
+  addMerit(g, RULES.merit.transport + (gTrait(g).transportMerit || 0)); // 보급관 +3
   return '';
 }
 
@@ -1892,8 +1894,9 @@ const capitalOf = fid => (fid && capitalOn() ? MAP.cities.find(c => c.faction ==
 const expandTop = c => (capitalOn() && c && c.grade === 3 ? 4 : 3); // 이 성이 오를 수 있는 가장 높은 크기. 2026-11-17: 수도가 있어도 대도시 → 수도 가능 (천도)
 const expandReady = c => !!c && c.grade < expandTop(c) && !expandShort(c, S.cities[c.id]).length;
 // 수도가 출발이나 도착인 수송·보급은 RULES.capital.transportRange칸 (2026-11-16, 시즌 8부터)
-const transportRangeOf = (a, b) => (capitalOn() && (a.grade >= 4 || b.grade >= 4) ? RULES.capital.transportRange : RULES.moveRange);
-const transportLinked = (a, b, fid) => linkedOwnCities(a.id, fid, transportRangeOf(a, b)).includes(b);
+const transportRangeOf = (a, b, g) => Math.max(capitalOn() && (a.grade >= 4 || b.grade >= 4) ? RULES.capital.transportRange : RULES.moveRange, gTrait(g).transportRange || 0); // 보급관 4칸 (2026-11-19)
+const transportLinked = (a, b, fid, g) => linkedOwnCities(a.id, fid, transportRangeOf(a, b, g)).includes(b);
+const transportReachOf = g => Math.max(capitalOn() ? RULES.capital.transportRange : RULES.moveRange, gTrait(g).transportRange || 0); // 화면: 후보 성을 찾는 가장 먼 칸 수
 function runExpand(g) {
   const c = cityById(g.city), cs = S.cities[g.city];
   if (!g.faction || c.faction !== g.faction) return `${josa(c.name, '은는')} 우리 세력 성이 아님`;
