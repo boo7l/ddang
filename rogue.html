@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>맹장집결</title>
-<link rel="stylesheet" href="style.css?v=20261119085730">
+<link rel="stylesheet" href="style.css?v=20261119100510">
 <!-- 무술대회 카드 대결 연구용 (2026-11-14). 로컬 전용: tools/make_web.sh 목록에 없어서 웹에 올라가지 않는다.
      규칙 (기획자 2026-11-14 확정):
      - 동시 제출. 카드 9종 = 속공·강타·역습 × 소·중·대 (2026-11-14 공격·기술·방어에서 이름 바꿈). 상성 속공 > 강타 > 역습 > 속공. 같은 종류면 대 > 중 > 소, 같으면 비김
@@ -249,6 +249,7 @@
   .clrDel { font-size: 12px; padding: 1px 6px; margin-left: 4px; }
   .clr ol.rank { list-style: none; margin: 4px 0 0; padding: 0; } .clr ol.rank li { padding: 3px 0; border-bottom: 1px dashed rgba(0,0,0,.2); } .clr .rk { display: inline-block; min-width: 38px; }
   .clr h4 { margin: 10px 0 4px; color: #7a3d00; } .clr ul { margin: 0; padding-left: 18px; } .clr li { line-height: 1.7; } .clr .pk { font-size: 13px; color: #3a2408; }
+  .clr .ln2 { padding-left: 42px; } .clr .pkT { padding-left: 42px; } .clr .pkT summary { cursor: pointer; font-size: 13px; color: #7a3d00; } .clr .pkT .pk { margin-top: 2px; } /* 순위 줄 (2026-11-19 기획자): 이름 / 체력·무력·시각 / 강화 펼치기 */
   .clr .dim { color: #4a3008; opacity: 1; } /* 노란 상자 위에서 잘 보이게 (2026-11-19 기획자) */
   .card.sp.magic { background: linear-gradient(160deg, #fbf4ff, #e6ccff); border-color: #9a6ad0; } /* 요술: 연보라 흰 카드 */
 </style>
@@ -334,8 +335,8 @@
   </div>
 </div>
 
-<script src="duel_rules.js?v=20261119085730"></script>
-<script src="rogue_rules.js?v=20261119085730"></script>
+<script src="duel_rules.js?v=20261119100510"></script>
+<script src="rogue_rules.js?v=20261119100510"></script>
 <!-- 인트로 소리 (파일로 열어도 되게 글자로) -->
 <script>
 'use strict';
@@ -836,7 +837,7 @@ function showClears() {
     // 순위 (2026-11-17 기획자): 서버가 남은 체력 높은 순 → 같으면 먼저 깬 사람 순으로 준다. 사람마다 가장 좋은 기록 하나
     const when = at => new Date(at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     const medal = i => ['🥇', '🥈', '🥉'][i] || `${i + 1}위`;
-    box.innerHTML = '<section class="rsec clr"><p class="dim">남은 체력이 높은 순서 · 같으면 먼저 깬 사람 · 한 사람당 가장 좋은 기록</p><ol class="rank">' + list.map((r, i) => `<li><span class="rk">${medal(i)}</span> <b>${e(r.name)}</b> · 남은 체력 <b>${r.hp}</b> · 무력 ${r.war} <span class="dim">${when(r.at)}</span>${d.admin ? ` <button class="clrDel" data-id="${r.id}" title="이 기록 지우기 (관리자)">✕ 지우기</button>` : ''}${r.picks ? `<div class="pk">${e(r.picks)}</div>` : ''}</li>`).join('') + '</ol></section>';
+    box.innerHTML = '<section class="rsec clr"><p class="dim">남은 체력이 높은 순서 · 같으면 먼저 깬 사람 · 한 사람당 가장 좋은 기록</p><ol class="rank">' + list.map((r, i) => `<li><span class="rk">${medal(i)}</span> <b>${e(r.name)}</b>${d.admin ? ` <button class="clrDel" data-id="${r.id}" title="이 기록 지우기 (관리자)">✕ 지우기</button>` : ''}<div class="ln2">남은 체력 <b>${r.hp}</b> · 무력 ${r.war} · <span class="dim">${when(r.at)}</span></div>${r.picks ? `<details class="pkT"><summary>강화 ${String(r.picks).split(', ').length}개 보기</summary><div class="pk">${e(r.picks)}</div></details>` : ''}</li>`).join('') + '</ol></section>';
     box.querySelectorAll('.clrDel').forEach(btn => { btn.onclick = () => { // 관리자: 기록 지우기 (2026-11-17 기획자)
       if (btn.dataset.sure !== '1') { btn.dataset.sure = '1'; btn.textContent = '정말 지울까요? 한 번 더'; return; } // 확인 창 대신 두 번 누르기
       btn.disabled = true;
