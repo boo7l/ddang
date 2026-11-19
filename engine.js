@@ -138,6 +138,7 @@ function setOwner(c, fid) {
   c.faction = fid;
   S.owners[c.id] = fid;
   if (before !== fid) (S.ownerLog = S.ownerLog || []).push([S.turn, c.id, fid || '']);
+  if (before !== fid && S.cities[c.id]) clearBesiege(S.cities[c.id]); // 주인이 바뀌면 포위 기록도 처음부터 (2026-11-19)
   const pol = fid && S.policy && S.policy[fid]; // 대도독 방침: 공격 목표 성을 차지하면 공격 목표만 저절로 풀린다 (2026-11-14 기획자)
   if (pol && pol.atk === c.id) { pol.atk = null; if (!pol.def) delete S.policy[fid]; }
   const lost = before && before !== fid && S.policy && S.policy[before]; // 방어 목표 성을 빼앗기면 방어 목표만 저절로 풀린다 (2026-11-14 기획자)
@@ -399,6 +400,7 @@ function advance() {
     const month = dateOf(S.turn).month;
     const foodRate = runRegionEvents(month); // 지역 이벤트 (2026-11-04): 금 수입·수확보다 먼저
     runBandits(); // 도적 (2026-11-18, 시즌 8부터)
+    runBesiege(); // 포위 (2026-11-19, 시즌 8부터)
     // 금: 장수마다 자기가 있는 성의 상업에 따라 자기 금으로
     if (RULES.goldMonths.includes(month)) {
       const heads = {}; // 성 정원 (2026-11-12, 시즌 7부터): 성마다 그 세력 장수 수
@@ -643,7 +645,8 @@ function runDomestic(g, key) {
   if (c[key] >= max && !full) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const R = RULES.recoverBuff, rec = seasonNow() >= R.fromSeason && R.keys.includes(key) && c[key] < newCityState(city.grade)[key] ? R.mult : 1; // 복구 버프 (시즌 8부터, 2026-11-16): 처음 값보다 낮으면 × 1.5
-  const raw = Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus) * rec);
+  const bes = key === 'peace' && c.besieged && besiegeOn() ? RULES.besiege.peaceMul : 1; // 포위된 성: 치안 내정 × 0.6 (2026-11-19)
+  const raw = Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus) * rec * bes);
   const gain = Math.max(0, Math.min(raw, max - c[key]));
   addRecord(g, 'domestic');
   c[key] += gain;
@@ -656,7 +659,7 @@ function runDomestic(g, key) {
     else if (kind === 'guard') { const got = city.faction === g.faction ? Math.max(0, Math.min(amt, RULES.guardMax[city.grade] - (c.guard || 0))) : 0; c.guard = (c.guard || 0) + got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}수비대 +${fmt(got)}`; }
   }
   const fullTurn = full && gain === 0; // 이미 최대치였던 턴: 공적·경험치 절반
-  addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''} (${c[key]}/${max})${extra}`);
+  addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''}${bes < 1 ? ` (포위 ×${bes})` : ''} (${c[key]}/${max})${extra}`);
   addMerit(g, fullTurn ? F.merit : RULES.merit.domestic);
   gainStatExp(g, d.stat, fullTurn ? F.exp : RULES.statExp.domestic);
   return '';
@@ -882,6 +885,53 @@ function capitalLost(to, oldFaction) {
 // 세력 성마다 치안에 따라 확률로 도적이 나온다 (20 미만 3% · 50 미만 1% · 80 미만 0.5%). 나온 성은 3턴 동안 안 나온다.
 // 치안 -5~10, 그 성의 우리 세력 장수 병력·수비대 -5~10%. 병사가 하나도 없으면 대신 방어 -50~100, 방어가 0이 되면 공백지가 된다
 // 그렇게 성을 잃은 세력: 장수 모두 공적 -30 (대도독 -50), 장수들은 함락 때처럼 물러난다, 수도면 수도 함락 벌칙도
+// ===== 포위 (2026-11-19 기획자, 시즌 8부터, rules.js besiege) =====
+// cs.besHits: 출진으로 공격받은 턴 목록 (공성까지 간 출진만, 야전으로 끝난 출진·계략은 안 셈) · cs.besieged: { since, faction } · cs.besFree: 이 턴까지 다시 포위 안 됨
+// 이름 주의: 병기(siege)와 헷갈리지 않게 besiege로 쓴다
+const besiegeOn = () => seasonNow() >= RULES.besiege.fromSeason;
+const hostileCity = (fid, c) => !!c.faction && c.faction !== fid && c.faction !== BANDIT.id && !allied(fid, c.faction);
+function encircled(c) { const ns = neighborsOf(MAP, c); return ns.length > 0 && ns.every(n => hostileCity(c.faction, n)); }
+const besHitMonths = cs => new Set((cs.besHits || []).filter(t => t > S.turn - RULES.besiege.window)).size;
+const besLastHit = cs => (cs.besHits && cs.besHits.length ? Math.max(...cs.besHits) : -Infinity);
+function besiegeHit(c) { // 공성에 들어갈 때 부른다
+  if (!besiegeOn() || !c.faction || c.faction === BANDIT.id) return;
+  const cs = S.cities[c.id], h = cs.besHits || (cs.besHits = []);
+  if (!h.includes(S.turn)) h.push(S.turn);
+}
+function clearBesiege(cs) { delete cs.besieged; delete cs.besHits; delete cs.besFree; }
+function runBesiege() {
+  if (!besiegeOn()) return;
+  const R = RULES.besiege;
+  for (const c of MAP.cities) {
+    const cs = S.cities[c.id];
+    if (!c.faction || c.faction === BANDIT.id) { if (cs.besieged || cs.besHits || cs.besFree) clearBesiege(cs); continue; }
+    if (cs.besHits) { cs.besHits = cs.besHits.filter(t => t > S.turn - R.window); if (!cs.besHits.length) delete cs.besHits; }
+    if (cs.besFree != null && cs.besFree < S.turn) delete cs.besFree;
+    if (cs.besieged) {
+      if (cs.besieged.faction !== c.faction) { delete cs.besieged; continue; }
+      if (!encircled(c) || S.turn - besLastHit(cs) >= R.quiet) { // 풀림
+        delete cs.besieged; cs.besFree = S.turn + R.immune;
+        logAll(`⛓ ${c.name}의 포위가 풀렸다.`);
+        continue;
+      }
+    } else {
+      if (cs.besFree != null && cs.besFree >= S.turn) continue; // 풀린 뒤 immune달
+      if (!encircled(c) || besHitMonths(cs) < R.hits) continue;
+      cs.besieged = { since: S.turn, faction: c.faction };
+      logAll(`⛓ ${factionById(c.faction).name} 세력의 ${josa(c.name, '이가')} 포위되었다!`);
+    }
+    // 포위 효과: 매달 그 성의 모든 부대 병사 -3~5% (포위된 달부터)
+    const rate = () => R.troopLoss[0] + Math.random() * (R.troopLoss[1] - R.troopLoss[0]);
+    for (const g of allGenerals()) {
+      if (g.city !== c.id || g.faction !== c.faction || !(g.troops > 0)) continue;
+      const lost = Math.min(g.troops, Math.max(1, Math.round(g.troops * rate())));
+      g.troops -= lost;
+      addLog(g, `⛓ ${c.name} 포위: 병사 ${fmt(lost)}명이 달아났다. (병력 ${fmt(g.troops)})`);
+    }
+    if (cs.guard > 0) cs.guard -= Math.min(cs.guard, Math.max(1, Math.round(cs.guard * rate())));
+  }
+}
+
 function runBandits() {
   const B = RULES.bandit;
   if (seasonNow() < B.fromSeason) return;
@@ -1147,6 +1197,7 @@ function endField(st, text) {
 // 공성: 수비 부대와 싸우고 성벽을 친다. f는 앞서 치른 야전 (없으면 null): 남은 합·손실·보고서 줄을 이어받는다
 function siegeAttack(g, att, from, to, mark, f) {
   const cs = S.cities[to.id];
+  besiegeHit(to); // 포위 공격 횟수 (2026-11-19): 공성까지 온 출진만
   const oldFaction = to.faction, owner = factionById(oldFaction), myF = factionById(g.faction);
   // 보고서 한 줄: 문자열은 양쪽 다, { a, d }는 공격 쪽과 수비 쪽 문구가 다른 줄 (없는 쪽은 그 줄을 안 본다, 2026-10-31)
   const lines = [];
