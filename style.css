@@ -1362,3 +1362,4 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 
 /* 게시판 아래 단추 (2026-11-19): 닫기 왼쪽, 목록 오른쪽 */
 .modalBtns.boardBtns { justify-content: space-between; }
+.modalBtns.boardBtns > :only-child, .modalBtns.helpNav > :only-child { margin-left: auto; } /* 2026-11-19 기획자: 닫기만 있으면 오른쪽 아래, 목록과 같이 있으면 목록 오른쪽·닫기 왼쪽 */
