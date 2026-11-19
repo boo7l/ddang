@@ -64,6 +64,7 @@ function applyView(d) {
   IS_ADMIN = !!d.admin;
   $('#adminBtn').hidden = !IS_ADMIN;
   $('#bgmTestBtn').hidden = !IS_ADMIN; // 임시 (2026-11-17): 천통 음악 미리듣기
+  $('#aiBtn').hidden = !(AI_PUBLIC || IS_ADMIN); // AI 도움 봇 (2026-11-19): 지금은 관리자만 시험
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
@@ -1907,7 +1908,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119190724&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119213116&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1917,7 +1918,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119190724&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119213116&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1927,7 +1928,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119190724&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119213116&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3521,6 +3522,35 @@ function bgmHold(on) {
 }
 function bgmSync() { if (BGM.on && BGM.ctx && BGM.song !== bgmWant()) bgmPlay(bgmWant()); }
 $('#bgmBtn').onclick = () => bgmSet(!BGM.on);
+
+// ☰ 메뉴 [🤖 물어보기] (2026-11-19): 규칙을 AI에게 묻는다. 서버(aiAsk)가 도움말·확률표·공적표·패치노트만 보고 대답한다. 하루 20번
+// AI_PUBLIC: 지금은 관리자만 시험 (true로 바꾸면 모두에게 단추가 보인다. 서버 index.ts AI.public도 같이 바꾼다)
+const AI_PUBLIC = false;
+$('#aiBtn').onclick = () => {
+  document.querySelector('header').classList.remove('menuOpen');
+  openModal(`<h2>🤖 규칙 물어보기</h2>
+    <p class="dim">도움말·패치노트를 읽은 AI가 대답해요. AI라서 틀릴 수 있으니, 중요한 건 도움말에서 다시 확인해 주세요. (하루 20번)</p>
+    <textarea id="aiQ" maxlength="200" rows="3" placeholder="예) 치안이 낮으면 어떻게 돼?" style="width:100%;box-sizing:border-box;resize:vertical"></textarea>
+    <div id="aiA" class="aiAnswer" hidden style="white-space:pre-wrap;margin-top:10px;padding:8px 10px;border:1px solid currentColor;border-radius:4px;max-height:45vh;overflow:auto"></div>
+    <div class="modalBtns"><span id="aiLeft" class="dim btnLeft" style="align-self:center"></span><button data-close>닫기</button><button id="aiGo" class="main">묻기</button></div>`, box => {
+    const q = box.querySelector('#aiQ'), out = box.querySelector('#aiA'), go = box.querySelector('#aiGo');
+    const ask = async () => {
+      const text = q.value.trim();
+      if (!text || go.disabled) return;
+      go.disabled = true; go.textContent = '생각 중…';
+      out.hidden = false; out.textContent = '…';
+      try {
+        const d = await api('aiAsk', { q: text });
+        out.textContent = d && !d.error ? d.a : (d && d.error) || '대답을 받지 못했어요.';
+        if (d && typeof d.left === 'number') box.querySelector('#aiLeft').textContent = `오늘 남은 질문 ${d.left}번`;
+      } catch (e) { out.textContent = '서버에 연결하지 못했어요.'; }
+      go.disabled = false; go.textContent = '묻기';
+    };
+    go.onclick = ask;
+    q.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(); } }; // 엔터 = 묻기 (한글 조합 중엔 안 보냄), Shift+엔터 = 줄바꿈
+    q.focus();
+  });
+};
 // 관리자 임시 (2026-11-17 기획자): 천통이 아니어도 천하통일 곡을 게임과 같은 음량으로 듣기. 다시 누르면 원래 곡으로
 $('#bgmTestBtn').onclick = () => {
   BGM.force = BGM.force ? null : 'ending';
