@@ -411,6 +411,8 @@ function advance() {
     }
     // 수비대장(유저 없는 세력의 성)은 매달 병력을 조금씩 되찾는다 (2026-10-26). 한번 전멸(0)하면 다시 생기지 않는다 (2026-10-28)
     for (const c of MAP.cities) if (hasGuard(c) && S.cities[c.id].guard > 0) { const cs = S.cities[c.id]; cs.guard = Math.max(cs.guard, Math.min(RULES.guardTroops[c.grade], (cs.guard || 0) + RULES.guardRegen)); } // 징병으로 회복 상한보다 많으면 그대로
+    // 수도 수비대 자동 회복 (2026-11-20 기획자, 시즌 8부터): 장수가 있는 세력의 수도도 매달 +300, 10,000까지 (0이어도 회복, 징병으로 더 많으면 그대로)
+    if (capitalOn()) for (const c of MAP.cities) if (c.grade >= 4 && c.faction && !hasGuard(c)) { const cs = S.cities[c.id]; cs.guard = Math.max(cs.guard || 0, Math.min(RULES.guardTroops[4], (cs.guard || 0) + RULES.capital.guardRegen)); }
     // 세력마다 몸담은 턴 수 (명예의 전당 소속 = 가장 오래 있었던 세력)
     for (const g of allGenerals()) if (g.faction) { g.factionTurns = g.factionTurns || {}; g.factionTurns[g.faction] = (g.factionTurns[g.faction] || 0) + 1; }
     if (S.unified) { // 이번 턴에 통일했다
