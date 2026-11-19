@@ -1416,7 +1416,7 @@ function helpDialog(page = -1) {
       <details class="tipBox"><summary>보물</summary><p>탐색을 하다 보면 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</p></details>
       <details class="tipBox"><summary>세력</summary><p><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</p></details>
       <details class="tipBox"><summary>방어 모드</summary><p>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</p></details>
-      <details class="tipBox"><summary>공적</summary><p><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요.</p></details>
+      <details class="tipBox"><summary>공적</summary><p><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요. <button class="link" id="helpMeritTable">공적표</button></p></details>
       <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요${RULES.medalBonusMax < Infinity ? ` (최대 +${RULES.medalBonusMax})` : ''}.</p></details>
       <details class="tipBox"><summary>수비대장</summary><p><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요. 군량은 먹지 않아요.</p></details></div>`],
   ];
@@ -1441,6 +1441,8 @@ function helpDialog(page = -1) {
     $('#helpList').onclick = () => helpDialog(-1);
     const ex = box.querySelector('#helpExplore');
     if (ex) ex.onclick = () => exploreOddsDialog(page);
+    const mt = box.querySelector('#helpMeritTable');
+    if (mt) mt.onclick = () => meritTableDialog(() => helpDialog(page), '도움말');
     const to = box.querySelector('#helpTraitOdds');
     if (to) to.onclick = () => traitOddsDialog(() => helpDialog(page), '도움말');
   });
@@ -1905,7 +1907,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119162614&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119163637&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1915,7 +1917,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119162614&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119163637&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1925,7 +1927,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119162614&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119163637&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2323,6 +2325,53 @@ function pouchDialog(pick = null, animate = true) {
 
 // 특성 확률표 (2026-10-28): 등급·이름·성능·확률을 모두 공개. 확률은 종이 한 장에 그 특성이 나올 확률 (TRAIT_TIER_WEIGHT로 계산)
 // back: 돌아갈 곳, backName: 돌아가기 단추에 쓸 이름 (2026-10-31). 특성 주머니는 R 이상 1장이 꼭 나온다
+// 공적표 (2026-11-19 기획자): 공적을 얻고 잃는 경우를 한눈에. 숫자는 모두 rules.js에서 읽는다 (시즌별 값은 getter가 알아서)
+function meritTableDialog(back = null, backName = '도움말') {
+  const M = RULES.merit, row = (what, n, note = '') => `<tr><th>${what}</th><td class="num">${n}</td><td class="dim">${note}</td></tr>`;
+  const sec = t => `<tr><td colspan="3" class="mtSec">${t}</td></tr>`;
+  const H = RULES.destroyMerit.heads, byHeads = seasonNow() >= H.fromSeason;
+  const ex = RULES.expand.merit, gName = { 1: '소성 → 중성', 2: '중성 → 대도시', 3: '대도시 → 수도' };
+  const B = RULES.bandit, C = RULES.commander, F = RULES.fullDev;
+  const gain = [
+    sec('⚔ 전투'),
+    row('성 함락 (공격)', '+' + M.win, '함락하면 금 +' + fmt(RULES.battleReward) + '도'),
+    row('공백지 점령', '+' + M.blank),
+    row('출진했지만 함락 못 함', '+' + M.lose),
+    row('적 병력 피해', '+1', `없앤 병력 ${fmt(RULES.meritPerKill)}명당 (공격·수비 모두)`),
+    row('성벽 피해', '+1', `깎은 방어 ${RULES.meritPerWall}당`),
+    row('단기접전 승리 · 책략 · 돌격', '+' + M.duel, '한 번마다'),
+    row('정복 (적 세력 멸망)', byHeads ? `+${H.base.merit}~${H.base.merit + H.per.merit * H.max}` : '+' + RULES.destroyMerit.member, byHeads ? `세력 장수 모두 · 망한 세력 장수 1명당 +${H.per.merit} (${H.max}명까지)` : '세력 장수 모두'),
+    sec('🏘 내정 · 군사'),
+    row('내정 (농업 · 상업 · 축성 · 치안)', '+' + M.domestic, F && seasonNow() >= F.fromSeason ? `최대치에서 하는 초과내정은 +${F.merit}` : ''),
+    row('징병 (수비대 징병 포함)', '+' + M.draft),
+    row('군량 수송 · 보급', '+' + M.transport, '보급관 특성 +' + GENERAL_TRAITS.logistic.transportMerit),
+    row('군량 구매', '+1', `낸 금 ${fmt(RULES.meritBuyGold)}당 (최소 1)`),
+    row('병기 제작', '+' + M.siege),
+    row('이동', '+' + M.move),
+    row('증축', Object.keys(ex).filter(k => k < 3 || capitalOn()).map(k => '+' + ex[k]).join(' / '), Object.keys(ex).filter(k => k < 3 || capitalOn()).map(k => gName[k]).join(' / ')),
+    sec('🕵️ 계략 · 탐색'),
+    row('계략 시도 (첩보 · 파괴 · 유언)', '+' + M.plot),
+    row('계략 성공', '+' + M.plotOk, `시도와 합쳐 +${M.plot + M.plotOk}`),
+    row('탐색', '+' + M.explore),
+  ];
+  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, '재야는 이것 말고는 공적을 얻지 않아요')); }
+  const lose = [
+    row('스스로 하야', `-${Math.round(RULES.resignMeritCut * 100)}%`, '대도독에게 해고되면 없음'),
+  ];
+  if (RULES.fallenMeritLoss > 0) lose.push(row('세력 멸망', `-${Math.round(RULES.fallenMeritLoss * 100)}%`));
+  if (seasonNow() >= B.fromSeason) lose.push(row('도적에게 성을 잃음', `-${B.merit}`, `그 세력 장수 모두 · 대도독 -${B.meritCmd}`));
+  if (commanderOn()) lose.push(row('동맹 파기', `-${C.allyBreakMerit}`, `파기한 세력 장수 모두 · 대도독 -${C.allyBreakMeritCmd}`));
+  openModal(`<h2>📋 공적표</h2>
+    <p class="dim">한 턴에 얻는 공적은 최대 ${RULES.meritTurnMax}이에요. (증축·정복은 따로)</p>
+    <div class="oddsScroll"><table class="oddsTable meritTable">
+      <tr><th>얻는 경우</th><th class="num">공적</th><th>참고</th></tr>${gain.join('')}
+      <tr><td colspan="3" class="mtSec mtLose">잃는 경우</td></tr>${lose.join('')}
+    </table></div>
+    <div class="modalBtns">${back ? `<button id="meritBack" class="main">◀ ${backName}로</button>` : '<button data-close class="main">닫기</button>'}</div>`, box => {
+    if (back) box.querySelector('#meritBack').onclick = back;
+  });
+  $('#modalBox').classList.add('wideBox');
+}
 function traitOddsDialog(back = null, backName = '주머니') {
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
