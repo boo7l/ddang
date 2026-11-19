@@ -26,10 +26,18 @@ async function serverInit() {
   if (ME.nickname) pingSeen(); // 마지막 접속 (2026-11-08): 첫 화면에만 머물러도 접속으로 센다
   return true;
 }
+// 기기 표식 (2026-11-19 기획자, 다계정 확인용): 이 브라우저에 한 번 만든 무작위 번호. 저장이 막힌 브라우저면 빈 값
+function deviceId() {
+  try {
+    let d = localStorage.getItem('ddang_dev');
+    if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)); localStorage.setItem('ddang_dev', d); }
+    return d;
+  } catch (e) { return ''; }
+}
 // 마지막 접속 신호: 들어왔을 때 한 번, 화면을 켜 두면 10분마다 (서버도 같은 계정은 10분에 한 번만 적는다)
 let seenTimer = null;
 function pingSeen() {
-  const go = () => { if (ME && ME.nickname) api('seen').catch(() => {}); };
+  const go = () => { if (ME && ME.nickname) api('seen', { dev: deviceId() }).catch(() => {}); };
   go();
   if (!seenTimer) seenTimer = setInterval(go, 10 * 60 * 1000);
 }
