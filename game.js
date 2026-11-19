@@ -5,7 +5,8 @@
 let MY_ID = null;     // 내 계정 id (서버 계정)
 const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
 let IS_ADMIN = false;
-const TOUR_TAB = new URLSearchParams(location.search).has('tour'); // 대회 탭 (2026-11-19): index.html?tour 로 열면 대회만 보인다 // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
+const TOUR_TAB = new URLSearchParams(location.search).has('tour');
+const ADMIN_TAB = new URLSearchParams(location.search).has('admin'); // 관리 탭 (2026-11-19 기획자): index.html?admin 으로 열면 관리 페이지부터 // 대회 탭 (2026-11-19): index.html?tour 로 열면 대회만 보인다 // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
 const me = () => S.generals[MY_ID];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 // 가운데 점 붙이기·물결 내리기 (2026-11-03, 삼국지3글꼴): 이 글꼴은 '·' 자체가 넓어서 양옆 띄어쓰기를 화면에서 뺀다 ("통솔 87 · 무력" → "통솔 87·무력").
@@ -1977,7 +1978,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119225511&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119225807&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1987,7 +1988,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119225511&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119225807&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1997,7 +1998,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119225511&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119225807&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3440,6 +3441,7 @@ async function enterFlow() {
   if (ok === null) return; // 시즌 준비 중: 이미 첫 화면으로 돌아갔다
   if (!ok) { showTitle('서버에서 세계를 받아 오지 못했어요. 잠시 뒤 다시 들어가 주세요.'); return; }
   renderLegend();
+  if (ADMIN_TAB && IS_ADMIN) { showScreen('title'); openAdmin('ops'); return; } // showScreen: 로딩 그림을 내리고 메뉴를 보인다 (관리 페이지가 첫 화면을 덮는다) // 관리 탭: 관리자면 바로 관리 페이지 (아니면 평소처럼)
   if (TOUR_TAB) { enterTourTab(); return; } // 대회 탭: 장수가 없어도 관전은 된다
   // 2. 이번 시즌 내 장수가 없으면 → 7. 장수 생성
   if (!me()) { showCreate(); return; }
@@ -3649,7 +3651,9 @@ $('#pcBtn').onclick = () => setPcMode(true);
 $('#mobileBtn').onclick = () => setPcMode(false);
 $('#adminBtn').onclick = async () => { document.querySelector('header').classList.remove('menuOpen'); if (!S) await call('state'); if (IS_ADMIN) openAdmin('ops'); }; // 첫 화면에서는 세계를 먼저 받는다 (tAdmin과 같게, 2026-11-19)
 $('#tAdmin').onclick = async () => { if (!S) await call('state'); if (IS_ADMIN) openAdmin('ops'); }; // 첫 화면의 관리 단추 (세계를 아직 안 받았으면 먼저 받는다)
-$('#adminClose').onclick = closeAdmin;
+$('#adminClose').onclick = () => { if (ADMIN_TAB) { location.href = location.pathname; return; } closeAdmin(); }; // 관리 탭에서는 이 탭을 게임 화면으로
+if (ADMIN_TAB) { $('#adminNewTab').hidden = true; $('#adminClose').textContent = '‹ 게임으로'; }
+$('#adminNewTab').onclick = () => window.open(location.pathname + '?admin', 'ddangAdmin'); // 같은 이름이라 여러 번 눌러도 탭 하나
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = rankDialog;

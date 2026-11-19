@@ -9,7 +9,7 @@
   <link rel="preload" href="fonts/Sam3KRFont.woff" as="font" type="font/woff" crossorigin><!-- 글꼴을 가장 먼저 받기 시작 -->
   <link rel="preload" href="img/loading.png" as="image"><!-- 로딩 그림도 먼저 -->
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-<link rel="stylesheet" href="style.css?v=20261119225511">
+<link rel="stylesheet" href="style.css?v=20261119225807">
 </head>
 <body class="loading">
   <header class="win titlebar">
@@ -91,7 +91,7 @@
   </section>
   <!-- 관리 페이지 (2026-11-06, 관리자만): 상단 바·배경은 그대로 두고 화면 가운데에 페이지로. 어느 화면에서든 열고, 돌아가면 보던 화면으로 -->
   <section id="adminPage" class="win" hidden>
-    <div class="pageHead"><button id="adminClose" class="back">‹ 돌아가기</button><div class="pageTitle">🛠 관리</div><span class="spacer"></span></div>
+    <div class="pageHead"><button id="adminClose" class="back">‹ 돌아가기</button><div class="pageTitle">🛠 관리</div><span class="spacer"></span><button id="adminNewTab" class="mini" title="관리 페이지를 새 탭에서 열기 (게임은 이 탭에서 계속)">↗ 새 탭으로</button></div><!-- 관리 새 탭 (2026-11-19): index.html?admin -->
     <div class="adminBody"><nav class="adminTabs" id="adminNav"></nav><!-- 2026-11-18 재디자인: 왼쪽 묶음 메뉴 (휴대폰은 위에 가로로) -->
     <div class="adminLayout"><div id="adminMain"></div><aside id="adminSide" hidden></aside></div></div>
   </section>
@@ -197,22 +197,22 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async></script><!-- 구글 로그인 단추 -->
-  <script src="server.js?v=20261119225511"></script>
-  <script src="mapcore.js?v=20261119225511"></script>
-  <script src="data/map.js?v=20261119225511"></script>
-  <script src="rules.js?v=20261119225511"></script>
-  <script src="faces.js?v=20261119225511"></script>
-  <script src="patchnotes.js?v=20261119225511"></script>
+  <script src="server.js?v=20261119225807"></script>
+  <script src="mapcore.js?v=20261119225807"></script>
+  <script src="data/map.js?v=20261119225807"></script>
+  <script src="rules.js?v=20261119225807"></script>
+  <script src="faces.js?v=20261119225807"></script>
+  <script src="patchnotes.js?v=20261119225807"></script>
   <!-- 시즌별 패치노트: 옛 시즌부터 (마지막 줄이 최신) -->
-  <script src="patchnotes/s3.js?v=20261119225511"></script>
-  <script src="patchnotes/s4.js?v=20261119225511"></script>
-  <script src="patchnotes/s5.js?v=20261119225511"></script>
-  <script src="patchnotes/s6.js?v=20261119225511"></script>
-  <script src="patchnotes/s7.js?v=20261119225511"></script>
-  <script src="patchnotes/s8.js?v=20261119225511"></script>
-  <script src="mapbg.js?v=20261119225511"></script>
-  <script src="map.js?v=20261119225511"></script>
-  <script src="engine.js?v=20261119225511"></script>
-  <script src="game.js?v=20261119225511"></script>
+  <script src="patchnotes/s3.js?v=20261119225807"></script>
+  <script src="patchnotes/s4.js?v=20261119225807"></script>
+  <script src="patchnotes/s5.js?v=20261119225807"></script>
+  <script src="patchnotes/s6.js?v=20261119225807"></script>
+  <script src="patchnotes/s7.js?v=20261119225807"></script>
+  <script src="patchnotes/s8.js?v=20261119225807"></script>
+  <script src="mapbg.js?v=20261119225807"></script>
+  <script src="map.js?v=20261119225807"></script>
+  <script src="engine.js?v=20261119225807"></script>
+  <script src="game.js?v=20261119225807"></script>
 </body>
 </html>
