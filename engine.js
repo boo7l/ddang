@@ -116,18 +116,35 @@ function ensureCities() {
   for (const c of MAP.cities) for (const k of Object.keys(DOMESTIC)) S.cities[c.id][k] = Math.min(S.cities[c.id][k], devMax(c.grade, k));
 }
 
-// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두 공적 +50 · 금 +1,000 · 통솔·무력·지력 경험치 +30 (2026-11-14, 한 턴 최대와 상관없이)
+// 세력별 장수 수 기록 (2026-11-19, 멸망 보상용): S.heads[fid] = 최근 window턴의 장수 수 (테스트 장수 빼고). advance에서 매턴 적는다
+function recordHeads() {
+  const W = RULES.destroyMerit.heads.window, cnt = {};
+  for (const g of allGenerals()) if (g.faction && !g.test) cnt[g.faction] = (cnt[g.faction] || 0) + 1;
+  S.heads = S.heads || {};
+  for (const f of MAP.factions) {
+    if (f.id === BANDIT.id) continue;
+    const a = S.heads[f.id] = S.heads[f.id] || [];
+    a.push(cnt[f.id] || 0);
+    while (a.length > W) a.shift();
+  }
+}
+const headsOf = fid => Math.max(0, ...((S.heads || {})[fid] || []), allGenerals().filter(g => g.faction === fid && !g.test).length);
+// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두. 시즌 7은 공적 +50 · 금 +1,000 · 경험치 +30 고정, 시즌 8부터는 망한 세력 장수 수에 따라 (RULES.destroyMerit.heads, 2026-11-19)
 function destroyReward(fid, gone) {
   if (seasonNow() < 7) return;
-  const R = RULES.destroyMerit, cmd = commanderOf(fid), name = factionById(gone).name;
+  const R0 = RULES.destroyMerit, cmd = commanderOf(fid), name = factionById(gone).name;
+  // 시즌 8부터 (2026-11-19 기획자): 망한 세력의 최근 10턴 최대 장수 수에 따라 (headsOf)
+  const H = R0.heads, byHeads = seasonNow() >= H.fromSeason, n = byHeads ? Math.min(H.max, headsOf(gone)) : 0;
+  const R = byHeads ? { member: H.base.merit + H.per.merit * n, commander: H.base.merit + H.per.merit * n, gold: H.base.gold + H.per.gold * n, exp: H.base.exp + H.per.exp * n } : R0;
+  const who = byHeads ? ` (${name} 장수 ${n}${n >= H.max ? '명 이상' : '명'})` : '';
   for (const g of membersOf(fid)) {
     const m = g === cmd ? R.commander : R.member;
     g.merit = (g.merit || 0) + m;
     const got = earnGold(g, R.gold); // 금 최대치를 넘는 만큼은 못 받는다
-    addLog(g, `☆ ${name} 세력을 멸망시켰다. 공적 +${m} (${fmt(g.merit)}) · 금 +${fmt(got)} · 통솔·무력·지력 경험치 +${R.exp}`);
+    addLog(g, `☆ ${name} 세력을 멸망시켰다${who}. 공적 +${m} (${fmt(g.merit)}) · 금 +${fmt(got)} · 통솔·무력·지력 경험치 +${R.exp}`);
     for (const k of ["lea", "war", "int"]) gainStatExp(g, k, R.exp); // 2026-11-14
   }
-  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다! 우리 세력 장수 모두 공적 +${R.member} · 금 +${fmt(R.gold)} · 통솔·무력·지력 경험치 +${R.exp}${cmd && R.commander !== R.member ? ` (대도독 공적 +${R.commander})` : ""}`);
+  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다${who}! 우리 세력 장수 모두 공적 +${R.member} · 금 +${fmt(R.gold)} · 통솔·무력·지력 경험치 +${R.exp}${cmd && R.commander !== R.member ? ` (대도독 공적 +${R.commander})` : ""}`);
 }
 // 성의 주인. 처음엔 지도 파일대로, 점령하면 S.owners에 기록해서 지도에 덮어쓴다
 function applyOwners() {
@@ -373,6 +390,7 @@ function advance() {
     const mark = nextTurn(S.incomeAt);
     if (turns >= 24 * 30) { S.incomeAt = turnStart(t); break; } // 오래 비워 둬도 최대 720턴치만
     S.turn++; // 게임 속 한 달이 흐른다
+    if (seasonNow() >= RULES.destroyMerit.heads.fromSeason) recordHeads(); // 멸망 보상용 장수 수 (명령 실행 전, 2026-11-19)
     runOrders(mark);
     trimDefense();
     // 개인 특성 기강 잡기 (2026-10-28): 기강 잡기 장수가 머무는 성은 매턴 치안 +2 (여럿이 있어도 성마다 한 번)
