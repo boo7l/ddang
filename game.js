@@ -138,7 +138,7 @@ const unifyHidden = () => { try { return localStorage.getItem('unifyHide') === S
 // 2026-11-18 재디자인: 묶음별 왼쪽 메뉴. 운영 탭은 현황 · 공지 · 시즌 세 화면으로 나눈다 (카드는 한 번에 그리고 data-sec로 골라 보인다)
 const ADMIN_NAV = [
   ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['tourney', '🏟 대회'], ['ops:season', '🗓 시즌'], ['ops:editor', '🧪 에디터']]], // 에디터 (2026-11-18): 세계에 내 장수 혼자일 때만
-  ['회원', [['members', '🗂 가입자'], ['factions', '🚩 세력'], ['users', '👥 장수'], ['chat', '💬 채팅'], ['trash', '🗑 지운 글']]], // 게시판 지운 글 (2026-11-18: 게시판에서 옮김). 2026-11-18 기획자: 묶음 이름 사람 → 회원, 순서 가입자·세력·장수·채팅·지운 글
+  ['회원', [['members', '🗂 가입자'], ['factions', '🚩 세력'], ['users', '👥 장수'], ['chat', '💬 채팅'], ['trash', '🗑 지운 글'], ['aiasks', '🪶 공명']]], // 게시판 지운 글 (2026-11-18: 게시판에서 옮김). 2026-11-18 기획자: 묶음 이름 사람 → 회원, 순서 가입자·세력·장수·채팅·지운 글
 ]; // 무술대회·설전대회는 '대회' 한 화면 (2026-11-18: 대회는 한 번에 하나라 합침. 위에서 종류를 고른다)
 let tourAdminKind = 'martial'; // 대회 화면에서 보고 있는 종류
 let adminTab = 'ops', opsSec = 'status';
@@ -162,7 +162,7 @@ function adminShow(tab, html, onMount) {
   $('#adminMain').innerHTML = html;
   if (onMount) onMount($('#adminMain'));
 }
-function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') { const T = S && S.tourney; tourneyAdminDialog(T && (T.phase === 'entry' || T.phase === 'run') ? tourKind(T) : tourAdminKind); } else if (tab === 'debate') tourneyAdminDialog('debate'); else if (tab === 'trash') adminTrashDialog(); else adminDialog(tab); }
+function openAdmin(tab = 'ops') { closeAdminSide(); if (tab.startsWith('ops')) { if (tab.includes(':')) opsSec = tab.split(':')[1]; adminToolsDialog(); } else if (tab === 'tourney') { const T = S && S.tourney; tourneyAdminDialog(T && (T.phase === 'entry' || T.phase === 'run') ? tourKind(T) : tourAdminKind); } else if (tab === 'debate') tourneyAdminDialog('debate'); else if (tab === 'trash') adminTrashDialog(); else if (tab === 'aiasks') adminAiAsksDialog(); else adminDialog(tab); }
 function adminSide(html, onMount) {
   const s = $('#adminSide');
   s.hidden = false; s.innerHTML = html; $('.adminLayout').classList.add('withSide');
@@ -1704,6 +1704,23 @@ async function adminTrashDialog() {
     }; });
   });
 }
+// 관리 → 🪶 공명 (2026-11-19 기획자): 플레이어가 공명의 조언에 물은 질문과 답. 최근 300건, 계정·질문으로 찾기, 답은 눌러서 펼친다
+async function adminAiAsksDialog() {
+  adminShow('aiasks', '<p class="dim">불러오는 중…</p>');
+  let d;
+  try { d = await api('adminAiAsks', {}); } catch (e) { d = { error: e.message }; }
+  if ($('#adminPage').hidden || adminTab !== 'aiasks') return; // 불러오는 사이에 닫았거나 다른 메뉴로 갔다
+  const st = d.stats || {}, list = d.rows || [];
+  const rows = list.map(r => `<li data-find="${esc((r.name + ' ' + r.q).toLowerCase())}">
+      <div class="trMeta"><b>${esc(r.name)}</b> <span class="dim">${fmtTime(r.t)}</span></div>
+      <details class="aiAskItem"><summary>${esc(r.q)}</summary><div class="trashBody">${esc(r.a)}</div></details></li>`).join('');
+  adminShow('aiasks', d.error ? `<p>${esc(d.error)}</p>` : `<div class="adminCard wide"><div class="acHead"><h3>🪶 공명의 조언 질문</h3><p class="acDesc">오늘 ${st.today || 0}건 · ${st.people || 0}명 · 모두 ${st.total || 0}건 · 최근 300건까지 · 질문을 누르면 답이 펼쳐져요</p></div>
+    <p><input type="text" id="aiFind" placeholder="계정·질문 검색" autocomplete="off"> <span class="dim" id="aiFindCount"></span></p>
+    ${rows ? `<ul class="trashList">${rows}</ul>` : '<p class="dim">아직 질문이 없어요.</p>'}</div>`, box => {
+    const f = box.querySelector('#aiFind'), cnt = box.querySelector('#aiFindCount');
+    if (f) f.oninput = () => { const k = f.value.trim().toLowerCase(); let n = 0; box.querySelectorAll('[data-find]').forEach(li => { const on = !k || li.dataset.find.includes(k); li.hidden = !on; if (on) n++; }); cnt.textContent = k ? `${n}건` : ''; };
+  });
+}
 // 개발자 노트 (2026-11-13): patchnotes.js에서 { dev: '글' }을 항목 사이(items 안)나 파트 사이(groups 안) 아무 데나 넣으면 작은 상자로 보인다
 const devNoteHtml = t => `<div class="devNote">${t}</div>`; // 머리글 없이 글만 (2026-11-13 기획자)
 const noteGroupsHtml = groups => groups.map(gr => gr.dev ? `<div class="notePaper devPaper">${devNoteHtml(gr.dev)}</div>`
@@ -1910,7 +1927,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221742&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119222002&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1920,7 +1937,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119221742&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261119222002&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -1930,7 +1947,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119221742&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261119222002&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
