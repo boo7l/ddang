@@ -406,7 +406,6 @@ function adminToolsDialog() {
       ${tile('문', door)}
     </div>
     <p class="acBtns"><button id="aPause">${S && S.paused ? '▶ 턴 다시 흐르기' : '⏸ 턴 멈추기'}</button><button data-skip="1">+1턴</button><button id="aDoor">${S && S.closed ? '🔓 문 열기 (모두 들어오게)' : '🔒 문 닫기 (관리자만)'}</button></p>
-    <div class="acForm"><label class="lockSw"><input type="checkbox" id="aTestGens"${S && !S.testGensOff ? ' checked' : ''}> 🧪 테스트 장수 칸</label> <span class="dim small">켜 두면 문이 닫혔을 때 관리자 화면에만 보여요</span></div>
     </div>
     <div class="adminCard wide" data-sec="status">
     ${head('지역 이벤트 예약', '그 달이 되면 확률과 상관없이 터져요')}
@@ -539,7 +538,9 @@ function adminToolsDialog() {
 // 🧪 에디터 카드 (2026-11-18 기획자): 내 장수의 능력치·금·공적·병력·병종·특성·보물을 바로 바꾼다. 세계에 내 장수 혼자일 때만 (engine.js editorBlocked, 서버도 같은 검사)
 function editorCardHtml() {
   const g = S && S.generals[MY_ID], why = S ? editorBlocked(g) : '세계를 아직 못 받았어요.';
-  const head = `<div class="acHead"><h3>🧪 에디터</h3><p class="acDesc">테스트용 · 내 장수만 · 세계에 내 장수 혼자일 때만 쓸 수 있어요</p></div>`;
+  // 테스트 장수 칸 켜고 끄기 (2026-11-20 기획자: 지금 시즌 카드에서 여기로). 장수 고치기가 잠겨 있어도 늘 보인다
+  const head = `<div class="acHead"><h3>🧪 에디터</h3><p class="acDesc">테스트용 · 내 장수만 · 세계에 내 장수 혼자일 때만 쓸 수 있어요</p></div>
+    <div class="acForm"><label class="lockSw"><input type="checkbox" id="aTestGens"${S && !S.testGensOff ? ' checked' : ''}> 🧪 테스트 장수 칸</label> <span class="dim small">켜 두면 문이 닫혔을 때 관리자 화면에만 보여요</span></div>`;
   if (why) return `<div class="adminCard wide" data-sec="editor">${head}<div class="acNow">🔒 ${esc(why)}</div></div>`;
   const n = (id, label, v, max, w = '6em') => `<label>${label} <input id="${id}" type="number" min="0"${max ? ` max="${max}"` : ''} value="${v}" style="width:${w}"></label>`;
   return `<div class="adminCard wide" data-sec="editor">${head}
@@ -1993,7 +1994,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120101250&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120184117&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2003,7 +2004,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120101250&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120184117&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2013,7 +2014,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120101250&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120184117&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
