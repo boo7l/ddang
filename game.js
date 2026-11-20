@@ -1994,7 +1994,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120195813&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120200222&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2004,7 +2004,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120195813&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120200222&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2014,7 +2014,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120195813&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120200222&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3446,11 +3446,12 @@ document.addEventListener('click', e => {
 async function onMapReady() {
   try { await serverInit(); } catch (e) { /* 서버가 안 되면 첫 화면에서 알려 준다 */ }
   // 로그인돼 있고 아이디도 정했으면 바로 게임으로, 아니면 첫 화면 (구글로 처음 왔으면 아이디 정하기)
-  if (ME && ME.nickname) enterFlow(); else showTitle(sb ? '' : '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.');
+  if (ME && ME.nickname) enterFlow(true); else showTitle(sb ? '' : '서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.');
 }
 
 // 2~5. 장수·세력이 있는지 보고 알맞은 화면으로 보낸다
-async function enterFlow() {
+// landing: 사이트에 막 들어왔을 때 (onMapReady). 이번 시즌 장수가 없으면 장수 만들기 대신 첫 화면에 머문다 (2026-11-20 기획자)
+async function enterFlow(landing = false) {
   MY_ID = ME.id;
   try { localStorage.removeItem('sam2-save'); } catch (e) { /* 서버로 옮기기 전 브라우저 저장은 이제 안 쓴다 */ }
   const ok = await call('state');
@@ -3460,7 +3461,7 @@ async function enterFlow() {
   if (ADMIN_TAB && IS_ADMIN) { showScreen('title'); openAdmin('ops'); return; } // showScreen: 로딩 그림을 내리고 메뉴를 보인다 (관리 페이지가 첫 화면을 덮는다) // 관리 탭: 관리자면 바로 관리 페이지 (아니면 평소처럼)
   if (TOUR_TAB) { enterTourTab(); return; } // 대회 탭: 장수가 없어도 관전은 된다
   // 2. 이번 시즌 내 장수가 없으면 → 7. 장수 생성
-  if (!me()) { showCreate(); return; }
+  if (!me()) { if (landing) showTitle(); else showCreate(); return; }
   // 2.5 특성을 아직 안 골랐으면 → 금낭 (2026-10-27)
   if (!me().trait) { showTrait(); return; }
   // 3. 소속 세력이 없으면 → 4. 세력 선택 (재야는 게임 화면, 2026-11-16)
