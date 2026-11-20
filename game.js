@@ -308,11 +308,13 @@ function adminDialog(tab = 'users', fid = null) {
       <div class="adminScroll"><table class="stats rank genTable"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>통솔</th><th>무력</th><th>지력</th><th>변경</th><th>예약</th><th>특성</th><th>보물</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
-    const fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
+    const RON = RULES.ronin.chat, fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
+    if (chatOf(RON).length || roninOn()) fs.push({ id: RON, name: '재야', ron: true }); // 재야 채팅방 (2026-11-20 기획자: 관리에서 안 보였음)
+    const roomName = id => (id === RON ? '재야' : factionById(id).name);
     fid = fid || (fs[0] && fs[0].id);
     const list = fid ? chatOf(fid) : [];
-    body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
-      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter && m.letter.admin ? '<b class="adminName">부기</b> <span class="dim small">(관리자)</span>' : ''}${m.letter && !m.letter.sys && !m.letter.admin ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${m.letter && m.letter.admin ? '' : chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>${fid ? `<p class="adminChatSend"><input type="text" id="acText" maxlength="${CHAT_LEN}" placeholder="${esc(factionById(fid).name)} 세력 채팅에 '부기'로 보내기"> <button id="acSend" class="main">보내기</button></p>` : ''}`;
+    body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${f.ron ? '' : swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
+      <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter && m.letter.admin ? '<b class="adminName">부기</b> <span class="dim small">(관리자)</span>' : ''}${m.letter && !m.letter.sys && !m.letter.admin ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${m.letter && m.letter.admin ? '' : chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>${fid ? `<p class="adminChatSend"><input type="text" id="acText" maxlength="${CHAT_LEN}" placeholder="${esc(roomName(fid))}${fid === RON ? '' : ' 세력'} 채팅에 '부기'로 보내기"> <button id="acSend" class="main">보내기</button></p>` : ''}`;
   }
   adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
@@ -1995,7 +1997,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120213412&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120213624&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2005,7 +2007,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120213412&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120213624&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2015,7 +2017,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120213412&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120213624&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
