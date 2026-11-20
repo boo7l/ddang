@@ -88,9 +88,10 @@ function renderInfo() {
 let legendPick = null; // 세력 창에서 눌러 특성을 펼쳐 본 세력
 function renderLegend() {
   const count = id => MAP.cities.filter(c => c.faction === id).length;
+  const full = id => typeof S !== 'undefined' && S && (S.joinFull || []).includes(id); // 임관 제한에 걸린 세력 (2026-11-20 기획자: 재야도 세력 창에서 알 수 있게)
   // 멸망한 세력(성이 하나도 없는 세력)은 목록에서 뺀다. 세력을 누르면 아래에 그 세력 특성이 보인다 (다시 누르면 접힘)
   const rows = MAP.factions.filter(f => count(f.id) > 0).map(f =>
-    `<li data-f="${f.id}" class="pickable${f.id === legendPick ? ' on' : ''}" title="눌러서 세력 특성 보기"><span class="swatch" style="background:${f.color}"></span>${f.name} <span class="cnt">${count(f.id)}</span></li>`);
+    `<li data-f="${f.id}" class="pickable${f.id === legendPick ? ' on' : ''}" title="눌러서 세력 특성 보기"><span class="swatch" style="background:${f.color}"></span>${f.name}${full(f.id) ? ' <span class="joinFull" title="장수가 많아 지금은 임관할 수 없어요">임관 불가</span>' : ''} <span class="cnt">${count(f.id)}</span></li>`);
   if (typeof BANDIT !== 'undefined' && count(BANDIT.id)) rows.push(`<li><span class="swatch" style="background:${BANDIT.color}"></span>${BANDIT.name} <span class="cnt">${count(BANDIT.id)}</span></li>`); // 도적군 (2026-11-18)
   rows.push(`<li><span class="swatch" style="background:var(--empty)"></span>공백지 <span class="cnt">${count('')}</span></li>`);
   $('#legend').innerHTML = rows.join('');
@@ -102,7 +103,8 @@ function renderLegend() {
   const members = f && typeof S !== 'undefined' && S ? Object.values(S.generals).filter(g => g.faction === f.id).length : 0;
   box.innerHTML = !f ? '세력을 누르면 정보가 보여요.'
     : `<b>${f.name} (${members}명)</b><br><b>특성</b> : ${t ? `<span class="tNameW">${t.name}</span>` : '없음'}${t ? `<br>${t.desc}` : ''}`
-      + (typeof factionAllyText === 'function' && seasonNow() >= RULES.commander.fromSeason ? `<br><b>동맹</b> : ${factionAllyText(f.id).replace(/<br>/g, ', ')}` : ''); // 동맹 (2026-11-14, 특성 아래)
+      + (typeof factionAllyText === 'function' && seasonNow() >= RULES.commander.fromSeason ? `<br><b>동맹</b> : ${factionAllyText(f.id).replace(/<br>/g, ', ')}` : '') // 동맹 (2026-11-14, 특성 아래)
+      + (full(f.id) ? `<br><b>임관</b> : <span class="joinFull">불가</span> (장수가 많아서 ${dateText(RULES.joinCap.turns)}까지, 비율이 내려가면 다시 열려요)` : '');
 }
 
 function renderCheck() {
