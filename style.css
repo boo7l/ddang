@@ -698,7 +698,8 @@ details.fold > summary:hover h2 { color: var(--title); }
 #boardWriteBtn[hidden] { display: none; }
 .boardWrap.writing .boardWrite { flex: 1; min-height: 0; flex-direction: column; }
 .boardWrap.writing .boardWrite textarea { flex: 1; min-height: 120px; resize: none; font-size: 16px; padding: 8px 10px; }
-.boardWrap.writing .boardWrite button { align-self: flex-end; padding-left: 24px; padding-right: 24px; }
+.boardWrap.writing .boardWrite button { align-self: flex-end; padding-left: 24px; padding-right: 24px; margin-bottom: 18px; } /* 아래 [◀ 목록]과 붙지 않게 (2026-11-20, 글칸이 그만큼 줄어든다) */
+@media (max-width: 600px) { .boardWrap.writing .boardWrite button { margin-bottom: 28px; } }
 @media (max-width: 600px) {
   #modalBox.wideBox.boardBox { width: calc(100vw - 12px); height: calc(100vh - 12px); height: calc(100dvh - 12px); max-width: none; }
   .boardRow { flex-direction: column; gap: 2px; }
