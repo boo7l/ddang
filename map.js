@@ -91,7 +91,7 @@ function renderLegend() {
   const full = id => typeof S !== 'undefined' && S && (S.joinFull || []).includes(id); // 임관 제한에 걸린 세력 (2026-11-20 기획자: 재야도 세력 창에서 알 수 있게)
   // 멸망한 세력(성이 하나도 없는 세력)은 목록에서 뺀다. 세력을 누르면 아래에 그 세력 특성이 보인다 (다시 누르면 접힘)
   const rows = MAP.factions.filter(f => count(f.id) > 0).map(f =>
-    `<li data-f="${f.id}" class="pickable${f.id === legendPick ? ' on' : ''}" title="눌러서 세력 특성 보기"><span class="swatch" style="background:${f.color}"></span>${f.name}${full(f.id) ? ' <span class="joinFull" title="장수가 많아 지금은 임관할 수 없어요">임관 불가</span>' : ''} <span class="cnt">${count(f.id)}</span></li>`);
+    `<li data-f="${f.id}" class="pickable${f.id === legendPick ? ' on' : ''}" title="눌러서 세력 특성 보기"><span class="swatch" style="background:${f.color}"></span>${f.name}${full(f.id) ? '<span class="joinFull" title="임관 불가: 장수가 많아 지금은 임관할 수 없어요 (눌러서 자세히)">🚫</span>' : ''} <span class="cnt">${count(f.id)}</span></li>`);
   if (typeof BANDIT !== 'undefined' && count(BANDIT.id)) rows.push(`<li><span class="swatch" style="background:${BANDIT.color}"></span>${BANDIT.name} <span class="cnt">${count(BANDIT.id)}</span></li>`); // 도적군 (2026-11-18)
   rows.push(`<li><span class="swatch" style="background:var(--empty)"></span>공백지 <span class="cnt">${count('')}</span></li>`);
   $('#legend').innerHTML = rows.join('');

@@ -1402,4 +1402,6 @@ svg.tbLines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 
 .tourClock.now { color: var(--bad); }
 body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBtn { display: none; }
 @media (max-width: 700px) { #tourPage { padding: 8px; } .tourClock { font-size: 18px; } .tourClock b { font-size: 22px; } }
-#legend .joinFull, #legendTrait .joinFull { color: var(--bad); font-size: 14px; } /* 임관 제한에 걸린 세력 (2026-11-20) */
+#legend .joinFull { font-size: 12px; margin-left: -4px; flex: none; } /* 임관 제한에 걸린 세력: 좁은 두 칸 목록이라 🚫만 (2026-11-20, 글자는 줄바꿈돼서) */
+#legendTrait .joinFull { color: var(--bad); }
+#legend li { white-space: nowrap; }
