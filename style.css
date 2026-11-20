@@ -692,6 +692,12 @@ details.fold > summary:hover h2 { color: var(--title); }
 .boardEdit textarea { width: 100%; box-sizing: border-box; font: inherit; resize: vertical; padding: 8px 10px; background: var(--panel-dark); color: var(--text); border: 2px solid var(--gold-dark); }
 .boardEditBtns { display: flex; justify-content: flex-end; gap: 6px; margin: 6px 0 0; } /* 글 수정 (2026-11-17) */
 .boardReply input { flex: 1; min-width: 0; font-size: 16px; padding: 4px 6px; }
+/* 글쓰기 모드 (2026-11-20 기획자): 목록·탭·쪽 넘김을 숨기고 글칸이 남은 공간을 다 쓴다. 말머리 위, 등록 오른쪽 아래 */
+.boardWrap.writing .boardList, .boardWrap.writing .notePager, .boardWrap.writing .boardTop .helpTabs { display: none; }
+.boardWrap.writing .boardTopBtns { margin-left: auto; }
+.boardWrap.writing .boardWrite { flex: 1; min-height: 0; flex-direction: column; }
+.boardWrap.writing .boardWrite textarea { flex: 1; min-height: 120px; resize: none; font-size: 16px; padding: 8px 10px; }
+.boardWrap.writing .boardWrite button { align-self: flex-end; padding-left: 24px; padding-right: 24px; }
 @media (max-width: 600px) {
   #modalBox.wideBox.boardBox { width: calc(100vw - 12px); height: calc(100vh - 12px); height: calc(100dvh - 12px); max-width: none; }
   .boardRow { flex-direction: column; gap: 2px; }
