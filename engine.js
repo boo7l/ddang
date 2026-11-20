@@ -256,6 +256,7 @@ function drawTraits(prev = [], sure = null) {
 function joinCapInfo(fid) {
   const R = RULES.joinCap;
   if (!R || S.turn > R.turns) return null;
+  if (playable().length <= 2) return null; // 2026-11-20 기획자: 성 있는 세력이 2개 이하면 제한 끔 (둘 다 40%를 넘어 갈 곳이 없어지는 일 막기). 3개 이상이면 40%짜리는 많아야 2개라 늘 한 곳은 열린다
   const list = allGenerals().filter(x => x.faction && !x.test);
   if (list.length < R.minTotal) return null;
   const n = list.filter(x => x.faction === fid).length;
