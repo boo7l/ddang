@@ -125,7 +125,7 @@ function rulesHtml(tour, kind) {
     <li>상대 손패는 종류(색)만 보이고 크기는 안 보여요. 흰 카드는 ${T.kill.name}인지 ${T.dodge.name}인지 몰라요. 재정비는 상대도 알아요.</li>
   </ul></section>`;
   if (tour) {
-    h += `<section class="rsec"><h3>${DB ? '🗣' : '🏟'} 대회 (진행 예정)</h3><ul>
+    h += `<section class="rsec"><h3>${DB ? '🗣' : '🏟'} 대회</h3><ul>
     <li>${ST} ${tour.minWar} 이상 (장비·보물 포함)${tour.factionMax ? ` · 한 세력 ${tour.factionMax}명까지` : ''}. 신청 마감 전에는 취소하고 참가비를 돌려받을 수 있어요.</li>
     <li>${tour.max}명이 차면 바로 마감해요. 신청이 끝났을 때 5~7명이면 부전승을 넣은 8강, 4명이면 4강, ${tour.minN - 1}명 이하면 취소하고 참가비를 돌려줘요.</li>
     <li>대진은 무작위이고, 같은 세력은 웬만하면 첫 경기에서 만나지 않아요. 경기는 한 번에 하나씩 ${tour.slotMin}분마다 열려요.</li>
