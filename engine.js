@@ -943,15 +943,15 @@ function runBesiege() {
       cs.besieged = { since: S.turn, faction: c.faction };
       logAll(`⛓ ${factionById(c.faction).name} 세력의 ${josa(c.name, '이가')} 포위되었다!`);
     }
-    // 포위 효과: 매달 그 성의 모든 부대 병사 -3~5% (포위된 달부터)
+    // 포위 효과: 매달 그 성의 모든 부대 병사 -3~5% (포위된 달부터). 2026-11-21 기획자: 지금 병력이 아니라 최대치 기준 (장수 최대 병력·수비대 최대치, 도적과 같게)
     const rate = () => R.troopLoss[0] + Math.random() * (R.troopLoss[1] - R.troopLoss[0]);
     for (const g of allGenerals()) {
       if (g.city !== c.id || g.faction !== c.faction || !(g.troops > 0)) continue;
-      const lost = Math.min(g.troops, Math.max(1, Math.round(g.troops * rate())));
+      const lost = Math.min(g.troops, Math.max(1, Math.round(troopsMax(g) * rate())));
       g.troops -= lost;
       addLog(g, `⛓ ${c.name} 포위: 병사 ${fmt(lost)}명이 달아났다. (병력 ${fmt(g.troops)})`);
     }
-    if (cs.guard > 0) cs.guard -= Math.min(cs.guard, Math.max(1, Math.round(cs.guard * rate())));
+    if (cs.guard > 0) cs.guard -= Math.min(cs.guard, Math.max(1, Math.round((RULES.guardMax[c.grade] || cs.guard) * rate())));
   }
 }
 
