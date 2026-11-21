@@ -977,7 +977,7 @@ function runBandits() {
       // 2026-11-20 기획자: 지금 병력이 아니라 최대 병력의 5~10% (지금 병력 기준이면 영영 0이 되지 않아 도적군 점령까지 갈 수 없었다). 수비대는 그 성 수비대 최대치, 장수는 각자 최대 병력
       if (cs.guard > 0) { const l = Math.min(cs.guard, Math.ceil((RULES.guardMax[c.grade] || cs.guard) * rate)); cs.guard -= l; lost += l; }
       for (const g of here) if (g.troops > 0) { const l = Math.min(g.troops, Math.ceil(troopsMax(g) * rate)); g.troops -= l; lost += l; addLog(g, `${B.icon} 도적과 싸우느라 병력 -${fmt(l)} (${fmt(g.troops)})`); }
-      fx.push(`병력 -${fmt(lost)}명 (최대치의 ${Math.round(rate * 100)}%)`);
+      fx.push(`병력 -${fmt(lost)}명`); // 2026-11-21 기획자: (최대치의 n%) 괄호 뺌
     } else {
       const dw = Math.min(cs.wall || 0, randInt(B.wall[0], B.wall[1]));
       cs.wall = (cs.wall || 0) - dw; fx.push(`지킬 병사가 없어 방어 -${dw}`);
