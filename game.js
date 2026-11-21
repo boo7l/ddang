@@ -1088,7 +1088,7 @@ function draftDialog() {
     }
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     draftReserve(t);
-  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 내 사병 대신 ${esc(from.name)} 수비대의 병력을 모아요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
+  }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 징병한 병사를 내 병력 대신 ${esc(from.name)} 수비대에 넣어요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`, '', costLine('금', RULES.myGoldCost.draft, p.gold));
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
@@ -1999,7 +1999,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120223749&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121105928&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2009,7 +2009,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261120223749&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121105928&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2019,7 +2019,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261120223749&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121105928&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
