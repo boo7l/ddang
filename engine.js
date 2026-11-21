@@ -305,6 +305,8 @@ function joinFaction(g, fid, cityId) {
 // 테스트용: 관리자 자기 장수의 능력치·금·공적·병력·병종·특성·보물을 바로 바꾼다.
 // 관리자 스스로의 오용도 막으려고, 세계에 장수가 그 관리자 한 명뿐일 때만 된다. 화면(game.js)과 서버가 같은 함수로 막는다
 // 서버: action 'adminEdit' → 관리자인지 확인한 뒤 adminEdit(S.generals[내 id], payload)를 부르고, 돌려준 글이 있으면 error로
+// +1턴 (2026-11-21 기획자): 실제 시즌 중(나 말고 다른 장수가 있으면)에는 못 쓴다. 🧪 테스트 장수는 세지 않는다
+const skipBlocked = g => allGenerals().some(x => !x.test && x !== g);
 function editorBlocked(g) {
   if (!g) return '장수가 없어요.';
   const all = allGenerals();
