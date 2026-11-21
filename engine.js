@@ -668,7 +668,7 @@ function runDomestic(g, key) {
   if (c[key] >= max && !full) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const R = RULES.recoverBuff, rec = seasonNow() >= R.fromSeason && R.keys.includes(key) && c[key] < newCityState(city.grade)[key] ? R.mult : 1; // 복구 버프 (시즌 8부터, 2026-11-16): 처음 값보다 낮으면 × 1.5
-  const bes = key === 'peace' && c.besieged && besiegeOn() ? RULES.besiege.peaceMul : 1; // 포위된 성: 치안 내정 × 0.6 (2026-11-19)
+  const bes = c.besieged && besiegeOn() ? RULES.besiege.devMul : 1; // 포위된 성: 모든 내정 × 0.7 (2026-11-21 기획자, 그 전엔 치안만 × 0.6)
   const raw = Math.round(domesticGain(key, effStats(g)[d.stat]) * (1 + bonus) * rec * bes);
   const gain = Math.max(0, Math.min(raw, max - c[key]));
   addRecord(g, 'domestic');

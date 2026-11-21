@@ -1999,7 +1999,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121112730&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121112953&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2009,7 +2009,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121112730&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121112953&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2019,7 +2019,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121112730&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121112953&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3381,7 +3381,7 @@ function besiegeTip(c) {
   const cs = S && S.cities[c.id], b = cs && cs.besieged, R = RULES.besiege;
   if (!b || !R || seasonNow() < R.fromSeason) return null;
   const hits = cs.besHits || [], last = hits.length ? Math.max(...hits) : b.since, left = Math.max(1, R.quiet - (S.turn - last));
-  return { ic: '⛓', tip: `포위된 성 (${S.turn - b.since + 1}달째) · 치안 내정 효과 ×${R.peaceMul}, 매달 모든 부대 병사 -${Math.round(R.troopLoss[0] * 100)}~${Math.round(R.troopLoss[1] * 100)}% · ${left}달 더 공격받지 않으면 풀려요` };
+  return { ic: '⛓', tip: `포위된 성 (${S.turn - b.since + 1}달째) · 모든 내정 효과 ×${R.devMul}, 매달 모든 부대 병사 -${Math.round(R.troopLoss[0] * 100)}~${Math.round(R.troopLoss[1] * 100)}% · ${left}달 더 공격받지 않으면 풀려요` };
 }
 function recentPlotTips(c) {
   const P = RULES.plotRepeat, cs = S && S.cities[c.id], bt = besiegeTip(c);
