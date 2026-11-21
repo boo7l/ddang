@@ -1486,7 +1486,7 @@ function runExplore(g) {
       if (!open.length) { text = '현인을 만났지만, 이미 더 배울 것이 없었다.'; break; }
       const st = open[randInt(0, open.length - 1)], gain = traitExp(g, st.key, randInt(e.min, e.max));
       const up = addStatExp(g, st.key, gain);
-      text = `★ 현인을 만나 가르침을 받았다! ${st.name} 경험 +${gain}` + (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[st.key]})` : ` (${g.statExp[st.key]}/${expNeed(g.stats[st.key])})`);
+      text = `현인을 만나 가르침을 받았다! ${st.name} 경험 +${gain}` + (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[st.key]})` : ` (${g.statExp[st.key]}/${expNeed(g.stats[st.key])})`);
       break;
     }
     case 'help': { // 재야: 주민 돕기 (2026-11-19 기획자). 공적 10~30, 재야가 공적을 얻는 유일한 길 (한 턴 공적 상한은 지킨다)
