@@ -1191,18 +1191,24 @@ function shopDialog(msg = '') {
 // 계략: 이웃한 다른 세력 성을 고른다. 성공 확률은 지금 지력 기준
 function plotDialog(kind) {
   const p = me(), from = cityAtSlot(me(), slot), int = effStats(p).int, name = PLOT_NAME[kind];
+  let anyAgain = 0;
   const opts = spyTargetsFrom(from.id, me().faction).map(c => {
     const f = factionById(c.faction), cs = S.cities[c.id];
+    // 최근 같은 계략을 맞은 성 (2026-11-21 기획자): 성 정보와 같은 💬·🔨 아이콘. 이 계략과 같은 종류만 (그것만 효과 절반)
+    const pt = PLOT_TIP.find(([k]) => k === kind + 'Turn'), PR = RULES.plotRepeat, left = pt && seasonNow() >= PR.fromSeason && cs[pt[0]] != null ? cs[pt[0]] + PR.turns - S.turn : 0;
+    const again = left > 0 ? ` <span class="plotAgain" title="최근 ${josa(pt[1], '을를')} 맞은 성 · 앞으로 ${left}턴 안에 다시 ${josa(pt[1], '을를')} 맞으면 효과가 절반이에요">${pt[2]}</span>` : '';
+    if (again) anyAgain = PR.turns;
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
-      <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b> <span class="dim">${esc(f.name)}</span>${allyTag(c)}
+      <span class="swatch" style="background:${f.color}"></span><b>${esc(c.name)}</b>${again} <span class="dim">${esc(f.name)}</span>${allyTag(c)}
       <span class="r dim">${kind === 'destroy' ? `방어 ${cs.wall === undefined ? '?' : cs.wall}` : ''}</span></label>`;
   }).join('');
+  const againNote = (anyAgain ? `<p class="dim small">${PLOT_TIP.find(([k]) => k === kind + 'Turn')[2]} 최근 ${anyAgain}턴 안에 ${josa(name, '을를')} 맞은 성 · 또 맞으면 효과가 절반</p>` : '');
   const effect = kind === 'destroy'
     ? `성공하면 그 성의 <b>방어</b>를 ${Math.floor(int * PLOT.destroy.wallPerInt[0])}~${Math.floor(int * PLOT.destroy.wallPerInt[1])} 낮춰요.`
     : `성공하면 그 성의 <b>치안</b>을 ${Math.floor(int * PLOT.rumor.peacePerInt[0])}~${Math.floor(int * PLOT.rumor.peacePerInt[1])}, 농업·상업을 ${Math.floor(int * PLOT.rumor.devPerInt[0])}~${Math.floor(int * PLOT.rumor.devPerInt[1])}씩 낮춰요.`;
   pickDialog(name, `<p>${esc(from.name)}의 이웃한 다른 세력 성에 ${kind === 'destroy' ? '공작대를 보내 성벽을 무너뜨립니다' : '흉흉한 소문을 퍼뜨립니다'}. ${effect} 대성공이면 ${PLOT.critMul}배!</p>
     <p class="dim">지력 ${int} · 성공 확률 약 ${Math.round((PLOT.successRate(int) + (gTrait(p).plot || 0)) * 100)}%</p>`,
-  opts, '예약', v => reserve({ cmd: kind, to: v }), '', 'narrow', costLine('금', RULES.myGoldCost.plot, p.gold));
+  opts, '예약', v => reserve({ cmd: kind, to: v }), againNote, 'narrow', costLine('금', RULES.myGoldCost.plot, p.gold));
 }
 
 // 군량 구매: 얼마어치 살지 고른다 (이 칸이 실행될 때 있을 성에 들어간다)
@@ -1999,7 +2005,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121121441&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121152603&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2009,7 +2015,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121121441&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121152603&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2019,7 +2025,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121121441&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121152603&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
