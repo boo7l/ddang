@@ -142,6 +142,8 @@ const ADMIN_NAV = [
   ['게임', [['ops:status', '📊 현황'], ['ops:notice', '📢 공지'], ['tourney', '🏟 대회'], ['ops:season', '🗓 시즌'], ['ops:editor', '🧪 에디터']]], // 에디터 (2026-11-18): 세계에 내 장수 혼자일 때만
   ['회원', [['members', '🗂 가입자'], ['factions', '🚩 세력'], ['users', '👥 장수'], ['chat', '💬 채팅'], ['trash', '🗑 지운 글'], ['aiasks', '🪶 공명'], ['sanctions', '⚠ 제재']]], // 게시판 지운 글 (2026-11-18: 게시판에서 옮김). 2026-11-18 기획자: 묶음 이름 사람 → 회원, 순서 가입자·세력·장수·채팅·지운 글
 ]; // 무술대회·설전대회는 '대회' 한 화면 (2026-11-18: 대회는 한 번에 하나라 합침. 위에서 종류를 고른다)
+// 지역 이벤트 예약 (2026-11-21 기획자): 고른 구역에 드는 성 이름 (세력 색 점과 함께)
+const regionCityText = r => MAP.cities.filter(c => regionOf(c) === r).map(c => { const f = c.faction && factionById(c.faction); return `${f ? `<span class="swatch" style="background:${f.color}"></span>` : ''}${esc(c.name)}`; }).join(' · ');
 let tourAdminKind = 'martial'; // 대회 화면에서 보고 있는 종류
 let adminTab = 'ops', opsSec = 'status';
 // 관리 페이지를 열 때 보던 화면을 숨기고, 돌아갈 때 다시 보인다 (상단 바·배경은 그대로)
@@ -411,9 +413,10 @@ function adminToolsDialog() {
     </div>
     <div class="adminCard wide" data-sec="status">
     ${head('지역 이벤트 예약', '그 달이 되면 확률과 상관없이 터져요')}
-    ${(S && S.eventPlan || []).length ? `<ul class="acList">${S.eventPlan.map((x, i) => { const e = RULES.regionEvents.find(r => r.key === x.key) || {}; return `<li>${e.icon || ''} <b>${dateText(x.turn)}</b> · ${esc(x.region)} ${esc(e.name || x.key)} <button class="mini" data-evdel="${i}">취소</button></li>`; }).join('')}</ul>` : '<p class="dim">예약 없음</p>'}
+    ${(S && S.eventPlan || []).length ? `<ul class="acList">${S.eventPlan.map((x, i) => { const e = RULES.regionEvents.find(r => r.key === x.key) || {}; return `<li>${e.icon || ''} <b>${dateText(x.turn)}</b> · ${esc(x.region)} ${esc(e.name || x.key)} <span class="dim small">(${regionCityText(x.region)})</span> <button class="mini" data-evdel="${i}">취소</button></li>`; }).join('')}</ul>` : '<p class="dim">예약 없음</p>'}
     <div class="acForm"><select id="aeKey">${RULES.regionEvents.map(e => `<option value="${e.key}">${e.icon} ${e.name}</option>`).join('')}</select>
        <select id="aeRegion">${[...new Set(MAP.cities.map(regionOf).filter(Boolean))].map(r => `<option>${esc(r)}</option>`).join('')}</select>
+       <span class="dim small" id="aeCities">${regionCityText([...new Set(MAP.cities.map(regionOf).filter(Boolean))][0])}</span>
        <label><input id="aeY" type="number" value="${dateOf((S && S.turn || 0) + 1).year}" style="width:5em">년</label> <label><input id="aeM" type="number" min="1" max="12" value="${dateOf((S && S.turn || 0) + 1).month}" style="width:3.5em">월</label> <button id="aeAdd">예약</button></div>
     <p class="dim small">지금 ${dateText(S ? S.turn : 0)} · 구역은 지역 이벤트와 같은 묶음 (형주는 형북·형남)</p>
     </div>
@@ -515,6 +518,7 @@ function adminToolsDialog() {
       const v = id => +$(id).value;
       if (await call('nextOpen', { season: $('#aoS').value === '' ? NaN : v('#aoS'), year: v('#aoY'), month: $('#aoM').value === '' ? NaN : v('#aoM'), day: $('#aoD').value === '' ? NaN : v('#aoD'), hour: v('#aoH'), auto: $('#aoAuto').checked, label: $('#aoL').value.trim() })) afterAdmin();
     };
+    $('#aeRegion').onchange = () => { $('#aeCities').innerHTML = regionCityText($('#aeRegion').value); }; // 고른 구역의 성 미리 보기 (2026-11-21)
     $('#aeAdd').onclick = async () => { if (await call('adminEventPlan', { op: 'add', key: $('#aeKey').value, region: $('#aeRegion').value, year: $('#aeY').value, month: $('#aeM').value })) afterAdmin(); }; // 지역 이벤트 예약 (2026-11-15)
     box.querySelectorAll('[data-evdel]').forEach(b => { b.onclick = async () => { if (await call('adminEventPlan', { op: 'del', i: +b.dataset.evdel })) afterAdmin(); }; });
     if ($('#aoClear')) $('#aoClear').onclick = async () => { if (!confirm('오픈 예약을 취소할까요? 첫 화면 예고도 사라져요.')) return; await call('nextOpen', { clear: true }); afterAdmin(); };
@@ -2028,7 +2032,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121161632&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121173956&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2038,7 +2042,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121161632&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261121173956&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2048,7 +2052,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121161632&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261121173956&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
