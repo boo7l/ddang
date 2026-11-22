@@ -1210,7 +1210,8 @@ function runField(g, att, from, to, mark) {
   for (const st of sides) if (st !== cur) endField(st, text);
   const inField = new Set(sides.map(st => st.g));
   for (const [fid, t] of notes) for (const x of allGenerals()) if (x.faction === fid && !inField.has(x)) addLog(x, t);
-  return { cur, lines };
+  const rows = cur ? sides.filter(x => x.g.faction !== cur.g.faction).map(x => ({ name: x.g.name, ref: x.g, lost: x.lost })) : []; // 공방전 끝 줄에 넣을 야전 상대 (2026-11-22)
+  return { cur, lines, rows };
 }
 // 야전에서 출진이 끝난 장수 (전멸·무승부): 병력을 되돌려 적고, 지금 전투 규칙대로 전적·병기·보물·치료·공적·경험치를 준다
 function endField(st, text) {
@@ -1267,6 +1268,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   // 2. 수비 부대와 싸움
   let left = f ? f.cur.left : RULES.roundsMax, atkLost = f ? f.cur.lost : 0, defLost = f ? f.cur.dealt : 0, pierced = 0;
   const dealtBy = new Map(), lostBy = new Map(), eventBy = new Map(), fought = [];
+  const sideRows = f && f.rows ? f.rows.map(x => ({ ...x })) : []; // 끝 줄: 수비 측 장수마다 남은 병력(-잃은 수). 야전 상대부터 (2026-11-22 기획자)
   if (f) lines.push(...f.lines.map(a => ({ a }))); // 야전 보고서는 공격 쪽만 (수비 쪽 장수 중 야전에 나선 사람은 따로 받는다)
   // 시즌 7부터 (2026-11-10 유저 의견): 수비 쪽 보고서·알림에 공격이 출발한 성을 적고, 'OO 세력' 대신 'OO군'
   const s7 = seasonNow() >= 7;
@@ -1289,6 +1291,7 @@ function siegeAttack(g, att, from, to, mark, f) {
     if (d.ref) lostBy.set(d.ref, (lostBy.get(d.ref) || 0) + r.defLost); // 수비 장수가 잃은 병력 (치료 특성)
     if (d.ref) eventBy.set(d.ref, (eventBy.get(d.ref) || 0) + (d.duelWins || 0) * RULES.merit.duel + (d.schemes || 0) * RULES.merit.scheme + (d.charges || 0) * RULES.merit.charge); // 단기접전 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
     defLost += r.defLost;
+    sideRows.push({ name: d.name, ref: d.ref || null, unit: d, lost: r.defLost });
     lines.push(...r.lines);
     if (d.guard) cs.guard = d.troops;
     if (d.ref) { // 수비 장수의 병력을 되돌려 적는다
@@ -1349,7 +1352,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   if (g.troops <= 0) addRecord(g, 'losses'); // 패전 = 내 부대 전멸 (치료로 돌아오기 전)
   healAfter(g, atkLost, lines);
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
-  lines.push(`${g.name}의 남은 병력 ${fmt(g.troops)}(-${fmt(atkLost)}) · 수비 측 손실 ${fmt(defLost)}`); // 2026-11-22 기획자: 야전 남은 병력 줄처럼 (괄호 = 잃은 수)
+  lines.push([`공격 측(${g.name}) 병력 ${fmt(g.troops)}(-${fmt(atkLost)})`, ...sideRows.map(x => `수비 측(${x.name}) 병력 ${fmt(Math.max(0, x.ref ? x.ref.troops : x.unit.troops))}(-${fmt(x.lost)})`)].join(' · ')); // 2026-11-22 기획자: 끝 줄 = 양쪽 장수마다 남은 병력(잃은 수)
   // 공적: 함락 30 (2026-11-02 50에서) / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor((wallDmg + pierced) / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
