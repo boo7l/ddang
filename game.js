@@ -66,6 +66,7 @@ function applyView(d) {
   if (S && S.letterWait) LETTER_UNTIL = Object.fromEntries(Object.entries(S.letterWait).map(([k, ms]) => [k, Date.now() + ms])); // 외교 서신: 세력마다 다시 보낼 수 있는 시각 (내 컴퓨터 시계 기준)
   IS_ADMIN = !!d.admin;
   $('#adminBtn').hidden = !IS_ADMIN;
+  $('#keysBtn').hidden = !hotkeysOk(); // 단축키: 지금은 관리자만 (2026-11-22)
   $('#bgmTestBtn').hidden = !IS_ADMIN; // 임시 (2026-11-17): 천통 음악 미리듣기
   $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
@@ -2055,7 +2056,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122120433&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124032&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2065,7 +2066,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122120433&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122124032&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2075,7 +2076,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122120433&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124032&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3552,7 +3553,7 @@ $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 // 정보: 이번 시즌 장수가 없으면 흐리게 (2026-11-07, 그 전엔 숨김). 메인 화면에서 아직 세계를 안 받았으면 받아 와서 정한다
-const menuRecordSync = () => { $('#adminBtn').hidden = !IS_ADMIN; $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
+const menuRecordSync = () => { $('#adminBtn').hidden = !IS_ADMIN; $('#keysBtn').hidden = !hotkeysOk(); $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
 const rankLocked = () => !!preparing && !IS_ADMIN; // 문이 닫혀 있으면 관리자 말고는 순위를 못 연다 (2026-11-13 기획자: 관리자 테스트가 보이지 않게)
 $('#menuBtn').onclick = async e => {
   e.stopPropagation();
@@ -3750,7 +3751,8 @@ document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (
 // ===== 단축키 (PC, 2026-11-07) =====
 // 키는 e.code(자판 위치)로 본다: 한글 입력 상태여도 Q는 Q로 동작한다. ☰ 메뉴 [⌨ 단축키]에서 바꾸고, 이 브라우저에만 기억한다
 // 단축키 기능 스위치 (2026-11-07 기획자: 더 다듬을 때까지 숨김). true로 바꾸면 ☰ 메뉴 단추와 키가 다시 살아난다
-const HOTKEYS = false;
+const HOTKEYS_PUBLIC = false; // 모두에게 켜기
+const hotkeysOk = () => HOTKEYS_PUBLIC || IS_ADMIN; // 2026-11-22 기획자: 시험용으로 관리자 계정에만 켠다
 const KEYS_KEY = 'ddang-keys';
 const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['up', '위 칸', 'ArrowUp', '예약표'], ['down', '아래 칸', 'ArrowDown', '예약표'], ['top', '다음 턴 칸으로', 'Home', '예약표'], ['clear', '칸 비우기', 'Delete', '예약표'], ['clearAll', '모두 비우기', 'KeyZ', '예약표'], ['fill', '빈 칸 모두 채우기', 'KeyC', '예약표'],
@@ -3775,7 +3777,7 @@ const keyName = c => (!c ? '없음' : KEY_NAMES[c] || c.replace(/^Key/, '').repl
 const KEYS_ON_KEY = 'ddang-keys-on';
 let keysOn = false;
 try { keysOn = localStorage.getItem(KEYS_ON_KEY) === '1'; } catch (e) { /* 꺼짐 */ }
-const keyOf = id => HOTKEYS && keysOn && KEYMAP[id] ? keyName(KEYMAP[id]) : '';
+const keyOf = id => hotkeysOk() && keysOn && KEYMAP[id] ? keyName(KEYMAP[id]) : '';
 let keyWait = null; // 단축키 창에서 새 키를 기다리는 동작
 
 function keysDialog() {
@@ -3795,8 +3797,8 @@ function keysDialog() {
     box.querySelector('#keysReset').onclick = () => { try { localStorage.removeItem(KEYS_KEY); } catch (e) { /* 무시 */ } loadKeys(); keyWait = null; keysDialog(); if (S && me()) renderCommands(); };
   });
 }
-if (HOTKEYS) $('#keysBtn').onclick = () => { keyWait = null; document.querySelector('header').classList.remove('menuOpen'); keysDialog(); };
-else $('#keysBtn').remove(); // 숨김: 메뉴에서 단추를 뺀다
+$('#keysBtn').onclick = () => { if (!hotkeysOk()) return; keyWait = null; document.querySelector('header').classList.remove('menuOpen'); keysDialog(); };
+$('#keysBtn').hidden = !hotkeysOk(); // 숨김: 관리자가 아니면 메뉴에 단추가 없다 (로그인 뒤 menuRecordSync가 다시 맞춘다)
 
 document.addEventListener('keydown', e => {
   // 단축키 창에서 새 키 정하기
@@ -3812,7 +3814,7 @@ document.addEventListener('keydown', e => {
     keyWait = null; keysDialog();
     return;
   }
-  if (!HOTKEYS) return; // 숨김 중에는 아무 키도 가로채지 않는다
+  if (!hotkeysOk()) return; // 숨김 중에는 아무 키도 가로채지 않는다
   if (e.key === 'Escape' && e.target && e.target.id === 'chatInput') { e.target.blur(); return; } // 채팅칸에서 Esc: 빠져나와 단축키를 다시 쓴다 (마우스 없이, 2026-11-07)
   if (!keysOn || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
   const t = e.target;
