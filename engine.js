@@ -76,6 +76,8 @@ const isCommander = g => !!(g && g.faction && commanderOf(g.faction) === g);
 const membersOf = fid => allGenerals().filter(g => g.faction === fid);
 // 동맹 (2026-11-13, 3단계): S.alliances = [{ a, b, since, end, turns, breaker? }]. end 턴이 되면 풀린다 (그 턴부터 서로 칠 수 있다)
 const allyRec = (a, b) => (S.alliances || []).find(x => ((x.a === a && x.b === b) || (x.a === b && x.b === a)) && S.turn < x.end);
+// 초반 훈장 숨김 (2026-11-22, 시즌 9부터): 임관 제한 기간(joinCap.turns턴) 동안
+const medalHidden = () => seasonNow() >= RULES.medalHideFromSeason && S.turn < RULES.joinCap.turns;
 const allied = (a, b) => !!(a && b && a !== b && allyRec(a, b));
 const alliesOf = fid => (S.alliances || []).filter(x => (x.a === fid || x.b === fid) && S.turn < x.end).map(x => (x.a === fid ? x.b : x.a));
 // a·b가 동맹을 맺으면 적대 세력이 하나도 안 남는 쪽 (2026-11-22 기획자, 시즌 9부터). 적대 세력 = 성이 있는 다른 지도 세력 가운데 동맹이 아닌 곳 (도적군은 안 셈). 없으면 null
