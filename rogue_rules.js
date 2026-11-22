@@ -32,7 +32,7 @@ const BOONS = [
   { id: 'war3', tier: 'N', name: '무력 상승(소)', desc: '무력 +2', fx: m => { m.war += 2; } }, // 2026-11-17 기획자: 하·중·상 2·4·6
   { id: 'hp10', tier: 'N', name: '최대 체력 증가', desc: '최대 체력 +10', fx: (m, f) => { m.hpMax += 10; f.hp += 10; } },
   { id: 'armor', tier: 'N', name: '철갑', desc: '받는 피해 -2', fx: m => { m.armor += 2; } },
-  { id: 'heal30', tier: 'N', name: '응급 처치', desc: '체력 추가 회복 +20 (최대 체력은 넘지 않음)', fx: (m, f) => { f.hp = Math.min(m.hpMax, f.hp + 20); } }, // 2026-11-22 기획자: 25 → 20. 2026-11-17 엑셀: 30 → 25
+  { id: 'heal30', tier: 'N', name: '응급 처치', desc: '체력 추가 회복 +25 (최대 체력은 넘지 않음)', fx: (m, f) => { f.hp = Math.min(m.hpMax, f.hp + 25); } }, // 2026-11-17 엑셀: 30 → 25
   { id: 'early', tier: 'N', name: '기선 제압', desc: '1~3합에 이기면 피해 +5', once: true, fx: m => { m.earlyDmg += 5; } }, // 2026-11-17 기획자 추가, 중복 불가
   { id: 'atk2', tier: 'N', name: '속공 단련', desc: '⚡속공으로 이기면 피해 +3', fx: m => { m.typeDmg.atk += 3; } },
   { id: 'tec2', tier: 'N', name: '강타 단련', desc: '💪강타로 이기면 피해 +3', fx: m => { m.typeDmg.tec += 3; } },
