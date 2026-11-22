@@ -1178,7 +1178,7 @@ function runField(g, att, from, to, mark) {
   let cur = side(g, att, from, to);
   sides.push(cur);
   const lines = [`⚔ ${from.name}~${to.name} 사이 야전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! 들판에서 ${factionById(foe.faction).name} 세력 ${foe.name} 부대와 맞닥뜨렸다!`];
-  const notes = []; // [세력 id, 알림 문구]: 같은 세력 장수들에게
+  const notes = []; // [세력 id, 알림 문구, 출발한 성 id, 수치 줄]: 같은 세력 장수들에게
   const tag = u => `${u.name}(${u.type ? u.type + ' ' : ''}${fmt(u.troops)})`;
   const PER_SORTIE = ['dueled', 'schemed', 'charged']; // 출진 한 번(5합)에 한 번씩만 일어나는 것
   let n = 0;
@@ -1203,8 +1203,10 @@ function runField(g, att, from, to, mark) {
     if (aDead) { lines.push(`${a.name} 부대 전멸!`); st.beaten++; cur.by = st.g; }
     lines.push(`남은 병력: ${a.name} ${fmt(Math.max(0, a.troops))}(-${fmt(r.atkLost)}) · ${d.name} ${fmt(Math.max(0, d.troops))}(-${fmt(r.defLost)})`); // (이번 맞대결에서 잃은 수) // 야전 맞대결이 끝날 때마다 양쪽 남은 병력 (2026-11-22 기획자)
     const res = (foeDead, meDead) => (meDead && !foeDead ? '패배' : foeDead && !meDead ? '승리' : '무승부');
-    notes.push([cur.g.faction, `⚔ ${cur.g.name} 부대가 ${josa(cur.to.name, '으로')} 가던 길에 ${factionById(st.g.faction).name} 세력 ${st.g.name} 부대와 야전을 벌였다 → ${res(dDead, aDead)}`]);
-    notes.push([st.g.faction, `⚔ ${st.g.name} 부대가 ${josa(st.to.name, '으로')} 가던 길에 ${factionById(cur.g.faction).name} 세력 ${cur.g.name} 부대와 야전을 벌였다 → ${res(aDead, dDead)}`]);
+    // 2026-11-22 기획자: 알림 둘째 줄 = 양쪽 장수(세력) 남은 병력(이번 맞대결에서 잃은 수)
+    const sum = `${a.name}(${factionById(cur.g.faction).name}) 병력 ${fmt(Math.max(0, a.troops))}(-${fmt(r.atkLost)}) · ${d.name}(${factionById(st.g.faction).name}) 병력 ${fmt(Math.max(0, d.troops))}(-${fmt(r.defLost)})`;
+    notes.push([cur.g.faction, `⚔ ${cur.g.name} 부대가 ${josa(cur.to.name, '으로')} 가던 길에 ${factionById(st.g.faction).name} 세력 ${st.g.name} 부대와 야전을 벌였다 → ${res(dDead, aDead)}`, cur.from.id, sum]);
+    notes.push([st.g.faction, `⚔ ${st.g.name} 부대가 ${josa(st.to.name, '으로')} 가던 길에 ${factionById(cur.g.faction).name} 세력 ${cur.g.name} 부대와 야전을 벌였다 → ${res(aDead, dDead)}`, st.from.id, sum]);
     if (aDead && dDead) { lines.push('양쪽 부대가 모두 무너졌다.'); cur = null; break; }
     if (!aDead && !dDead) { lines.push(`${RULES.roundsMax}합 안에 승부가 나지 않아 양쪽 모두 자기 성으로 돌아갔다.`); cur = null; break; }
     if (aDead) cur = st; // 진 쪽 대신 이긴 상대가 이어서 싸운다
@@ -1212,11 +1214,13 @@ function runField(g, att, from, to, mark) {
     foe = nextFieldFoe(cur, fought); // 이긴 쪽은 남은 합 안에서 아직 안 싸운 다음 상대와 (합이 0이어도 다음 상대가 있으면 무승부 없이 바로 공성으로 간다)
     if (foe && cur.left <= 0) foe = null;
   }
+  // 2026-11-22 기획자: 야전에서 합을 다 썼으면 이겨도 공성 없이 돌아온다 (성에서는 싸우지 않으니 공방전 보고서도 없다)
+  if (cur && cur.left <= 0) { lines.push(`야전에서 이겼지만 ${RULES.roundsMax}합을 모두 써서 ${josa(cur.from.name, '으로')} 돌아왔다.`); cur = null; }
   if (cur) lines.push(`야전에서 모두 이겼다. 남은 병력 ${fmt(cur.u.troops)}명으로 그대로 ${josa(cur.to.name, '으로')} 쳐들어간다!`);
   const text = lines.join('\n');
   for (const st of sides) if (st !== cur) endField(st, text);
   const inField = new Set(sides.map(st => st.g));
-  for (const [fid, t] of notes) for (const x of allGenerals()) if (x.faction === fid && !inField.has(x)) addLog(x, t);
+  for (const [fid, t, home, sum] of notes) for (const x of allGenerals()) if (x.faction === fid && !inField.has(x)) addLog(x, x.city === home ? t + '\n' + sum : t); // 수치 줄은 출발한 성에 있는 장수만 (2026-11-22 기획자)
   const rows = cur ? sides.filter(x => x.g.faction !== cur.g.faction).map(x => ({ name: x.g.name, ref: x.g, lost: x.lost })) : []; // 공방전 끝 줄에 넣을 야전 상대 (2026-11-22)
   return { cur, lines, rows };
 }
