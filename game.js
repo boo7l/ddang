@@ -1342,18 +1342,18 @@ function moveDialog() {
     opts, '예약', v => reserve({ cmd: 'move', to: v }), '', 'narrow');
 }
 
-// 재야 임관 (2026-11-16, 시즌 8부터): 그 칸에 있을 성의 세력에 들어간다. 하야 대기·임관 상한은 실행할 때 서버가 본다
+// 재야 임관 (2026-11-16, 시즌 8부터): 지금 머무는 성의 세력에 들어간다. 2026-11-22 기획자: 예약 없이 확인하면 바로 (턴을 쓰지 않는다). 하야 대기·임관 상한은 서버가 본다
 function enlistDialog() {
-  const p = me(), at = cityAtSlot(p, slot), f = at.faction && factionById(at.faction);
-  if (!f) { alert(`${at.name}은(는) 주인 없는 땅이라 임관할 세력이 없어요. 세력의 성으로 이동한 뒤 임관하세요.`); return; }
+  const p = me(), at = cityById(p.city), f = at && at.faction && factionById(at.faction);
+  if (!f || f.bandit) { alert(`${at ? at.name : '이곳'}은(는) 임관할 세력이 없는 땅이에요. 세력의 성으로 이동한 뒤 임관하세요.`); return; }
   const wait = rejoinLeft(p, f.id), full = (S.joinFull || []).includes(f.id);
   openModal(`<h2>임관</h2>
-    <p><b class="hi">${esc(at.name)}</b>에서 <span class="swatch" style="background:${f.color}"></span><b>${esc(f.name)}</b> 세력에 들어갑니다.</p>
-    ${wait ? `<p class="bad">지금은 하야 대기 중이에요 (${wait}턴 남음). 대기가 끝나기 전 칸이면 실패해요.</p>` : ''}
+    <p><b class="hi">${esc(at.name)}</b>에서 <span class="swatch" style="background:${f.color}"></span><b>${esc(f.name)}</b> 세력에 임관하시겠습니까?</p>
+    ${wait ? `<p class="bad">지금은 하야 대기 중이에요 (${wait}턴 남음).</p>` : ''}
     ${full ? '<p class="bad">장수가 많은 세력이라 지금은 임관할 수 없어요.</p>' : ''}
-    <p class="dim small">임관하면 예약해 둔 재야 명령은 모두 지워져요.</p>
-    <div class="modalBtns"><button id="enOk" class="main">예약</button><button data-close>닫기</button></div>`, box => {
-    box.querySelector('#enOk').onclick = () => { closeModal(); reserve({ cmd: 'enlist' }); };
+    <p class="dim small">턴을 쓰지 않고 바로 소속돼요. 예약해 둔 재야 명령은 모두 지워져요.</p>
+    <div class="modalBtns"><button data-close>취소</button><button id="enOk" class="main"${wait || full ? ' disabled' : ''}>확인</button></div>`, box => {
+    box.querySelector('#enOk').onclick = async () => { closeModal(); if (await call('enlistNow')) renderAll(); };
   });
 }
 
@@ -2058,7 +2058,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122152112&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122152751&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2068,7 +2068,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122152112&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122152751&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2078,7 +2078,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122152112&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122152751&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3185,7 +3185,7 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
     <p class="dim small">임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>
     <div class="cmds cg-etc">
-      ${btn('move', '이동', '')}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${btn('enlist', '임관', at.faction ? esc(factionById(at.faction).name) : '빈 땅')}
+      ${btn('move', '이동', '')}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}
     </div>
     <div class="qBtnsM">${qBtns}</div>
 ` : `
