@@ -872,7 +872,7 @@ function absorbInto(g, fid, near) {
   const list = near ? (near.faction === fid ? [near] : nearestOwnCities(near, fid)) : [];
   const home = list.length ? list[randInt(0, list.length - 1)] : startCity(fid);
   g.faction = fid;
-  g.joins = (g.joins || 0) + 1;
+  // 저절로 들어간 것은 세력 변경으로 치지 않는다 (2026-11-22 기획자): joins를 올리지 않는다 (천통·남은 세력 하나일 때 재야 흡수, 멸망 뒤 남은 세력으로)
   delete g.fallen;
   g.city = home.id;
   clearOrders(g); // 예전 세력·재야 때 넣은 예약은 지운다
