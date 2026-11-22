@@ -178,7 +178,7 @@ function setOwner(c, fid) {
   if (lost && lost.def === c.id) { lost.def = null; if (!lost.atk) delete S.policy[before]; }
   if (before && before !== BANDIT.id && citiesOfFaction(before).length === 0) logAll(`☆ ${factionById(before).name} 세력이 멸망했다.`);
   if (before && before !== BANDIT.id && fid && citiesOfFaction(before).length === 0) destroyReward(fid, before); // 도적군 성을 다 되찾아도 멸망 보상은 없다
-  checkUnify(fid);
+  checkUnify(fid === BANDIT.id ? soleFaction() : fid); // 도적군이 마지막 다른 세력을 무너뜨려도 남은 한 세력이 통일 (2026-11-22)
   if (before && before !== fid && before !== BANDIT.id && citiesOfFaction(before).length === 0) absorbFree(soleFaction()); // 남은 세력이 하나면 재야를 모두 그 세력으로 (멸망한 세력 장수는 retreatFrom에서)
 }
 
@@ -350,8 +350,15 @@ function adminEdit(g, p = {}) {
 // 다음 시즌은 개발자가 직접 시작한다 (개발자 도구의 "새 시즌 시작")
 function checkUnify(fid) {
   if (S.unified || !fid || fid === BANDIT.id) return;
-  if (citiesOfFaction(BANDIT.id).length) return; // 도적군 성도 다 되찾아야 통일 (2026-11-18)
-  if (MAP.factions.some(f => f.id !== fid && citiesOfFaction(f.id).length > 0)) return;
+  if (MAP.factions.some(f => f.id !== fid && f.id !== BANDIT.id && citiesOfFaction(f.id).length > 0)) return;
+  // 2026-11-22 기획자: 세력이 하나만 남으면 도적군 성은 그 세력이 저절로 흡수하고 통일 (예전엔 도적군 성도 다 되찾아야 했다)
+  const bc = citiesOfFaction(BANDIT.id);
+  for (const c of bc) {
+    c.faction = fid; S.owners[c.id] = fid;
+    (S.ownerLog = S.ownerLog || []).push([S.turn, c.id, fid]);
+    if (S.cities[c.id]) clearBesiege(S.cities[c.id]);
+  }
+  if (bc.length) logAll(`${RULES.bandit.icon} 남은 도적군 성 ${josa(bc.map(c => c.name).join('·'), '이가')} ${factionById(fid).name} 세력에 흡수되었다.`);
   S.unified = { faction: fid, turn: S.turn }; // 기록은 그 턴의 전투 보고서 뒤에 남긴다 (advance)
   absorbFree(fid); // 천통 시점엔 모두가 그 세력원 (2026-11-18 기획자)
 }
