@@ -479,8 +479,9 @@ function advance() {
     S.foodPrice = Math.min(RULES.foodBuy.max, Math.max(RULES.foodBuy.min, foodPrice() + step));
     // 군량: 세력이 있는 성마다 그 성의 농업에 따라 (공백지는 수입 없음)
     if (RULES.harvestMonths.includes(month)) {
-      for (const c of MAP.cities) if (c.faction) harvestFood(S.cities[c.id], c.grade, (foodRate[regionOf(c)] || 0) + (capitalOn() && capitalOf(c.faction) ? RULES.capital.food : 0)); // 수도가 있는 세력 모든 성 수확 +5% (2026-11-20 기획자, 시즌 8부터)
-      for (const g of allGenerals()) if (g.faction) addLog(g, `🌾 ${dateText(S.turn)} 수확: ${cityById(g.city).name} 군량 ${fmt(S.cities[g.city].food)}`);
+      const gotFood = {}; // 이번 수확으로 늘어난 군량 (2026-11-22 기획자: 기록에 '군량 12,345 (+123)')
+      for (const c of MAP.cities) if (c.faction) { const before = S.cities[c.id].food || 0; harvestFood(S.cities[c.id], c.grade, (foodRate[regionOf(c)] || 0) + (capitalOn() && capitalOf(c.faction) ? RULES.capital.food : 0)); gotFood[c.id] = (S.cities[c.id].food || 0) - before; } // 수도가 있는 세력 모든 성 수확 +5% (2026-11-20 기획자, 시즌 8부터)
+      for (const g of allGenerals()) if (g.faction) addLog(g, `🌾 ${dateText(S.turn)} 수확: ${cityById(g.city).name} 군량 ${fmt(S.cities[g.city].food)} (+${fmt(gotFood[g.city] || 0)})`);
     }
     // 병사는 머무는 성의 군량을 먹는다
     for (const g of allGenerals()) if (g.faction && g.troops > 0 && feedTroops(g, S.cities[g.city])) starved.add(g);
