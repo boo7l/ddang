@@ -1194,7 +1194,7 @@ function runField(g, att, from, to, mark) {
     const aDead = a.troops <= 0, dDead = d.troops <= 0;
     if (dDead) { lines.push(`${d.name} 부대 전멸!`); cur.beaten++; st.by = cur.g; }
     if (aDead) { lines.push(`${a.name} 부대 전멸!`); st.beaten++; cur.by = st.g; }
-    lines.push(`남은 병력: ${a.name} ${fmt(Math.max(0, a.troops))} · ${d.name} ${fmt(Math.max(0, d.troops))}`); // 야전 맞대결이 끝날 때마다 양쪽 남은 병력 (2026-11-22 기획자)
+    lines.push(`남은 병력: ${a.name} ${fmt(Math.max(0, a.troops))}(-${fmt(r.atkLost)}) · ${d.name} ${fmt(Math.max(0, d.troops))}(-${fmt(r.defLost)})`); // (이번 맞대결에서 잃은 수) // 야전 맞대결이 끝날 때마다 양쪽 남은 병력 (2026-11-22 기획자)
     const res = (foeDead, meDead) => (meDead && !foeDead ? '패배' : foeDead && !meDead ? '승리' : '무승부');
     notes.push([cur.g.faction, `⚔ ${cur.g.name} 부대가 ${josa(cur.to.name, '으로')} 가던 길에 ${factionById(st.g.faction).name} 세력 ${st.g.name} 부대와 야전을 벌였다 → ${res(dDead, aDead)}`]);
     notes.push([st.g.faction, `⚔ ${st.g.name} 부대가 ${josa(st.to.name, '으로')} 가던 길에 ${factionById(cur.g.faction).name} 세력 ${cur.g.name} 부대와 야전을 벌였다 → ${res(aDead, dDead)}`]);
