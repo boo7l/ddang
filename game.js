@@ -2058,7 +2058,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122194935&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122195117&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2068,7 +2068,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122194935&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122195117&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2078,7 +2078,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122194935&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122195117&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3759,8 +3759,8 @@ const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['up', '위 칸', 'ArrowUp', '예약표'], ['down', '아래 칸', 'ArrowDown', '예약표'], ['top', '다음 턴 칸으로', 'Home', '예약표'], ['clear', '칸 비우기', 'Delete', '예약표'], ['clearAll', '모두 비우기', 'KeyZ', '예약표'], ['fill', '빈 칸 모두 채우기', 'KeyC', '예약표'],
   ['agri', '농업', 'KeyQ', '내정'], ['comm', '상업', 'KeyW', '내정'], ['wall', '축성', 'KeyE', '내정'], ['peace', '치안', 'KeyR', '내정'],
   ['draft', '징병', 'KeyA', '군사'], ['attack', '출진', 'KeyS', '군사'], ['move', '이동', 'KeyD', '군사'], ['siege', '병기', 'KeyF', '군사'],
-  ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyG', '계략'],
-  ['explore', '탐색', 'KeyU', '기타'], ['train', '수련', 'KeyI', '기타'], ['buyFood', '군량 구매', 'KeyH', '기타'], ['transport', '군량 수송', 'KeyJ', '기타'], ['expand', '증축', 'KeyK', '기타'], ['extra', '추가 명령', 'KeyL', '기타'], // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
+  ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyU', '계략'],
+  ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyV', '기타'], ['expand', '증축', 'KeyB', '기타'], ['extra', '추가 명령', 'KeyN', '기타'], // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
   ['home', '내 성 보기', 'Space', '기타 화면'], ['chat', '채팅 입력', 'Slash', '기타 화면'], ['letter', '외교 서신', 'Quote', '기타 화면'], ['music', '음악 켜기·끄기', 'KeyM', '기타 화면'], // 2026-11-22 기획자
 ];
 const EXTRA_CMDS = ['levy']; // '추가 명령' 키가 누르는 특성 명령 (이게 일상이야 → 갈취)
