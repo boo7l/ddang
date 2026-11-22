@@ -2056,7 +2056,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124622&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124748&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2066,7 +2066,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122124622&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122124748&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2076,7 +2076,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124622&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124748&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3219,7 +3219,9 @@ function renderCommands() {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
     const sk = keyOf(EXTRA_CMDS.includes(k) ? 'extra' : k); if (sk) b.title = `단축키 ${sk}`; // PC 단축키 (☰ ⌨ 단축키에서 바꾼다)
+    keyHint(b, sk);
   });
+  for (const [c, id] of [['qFill', 'fill'], ['qClearAll', 'clearAll'], ['qClear', 'clear']]) document.querySelectorAll('.' + c).forEach(b => keyHint(b, keyOf(id))); // 예약표 단추도
   const q = $('#queueBox .queue'), sel = q.querySelector('li.sel');
   q.scrollTop = qTop;
   if (sel && sel.offsetTop < q.scrollTop) q.scrollTop = sel.offsetTop; // 고른 칸이 가려지면 보이게
@@ -3778,13 +3780,23 @@ const KEYS_ON_KEY = 'ddang-keys-on';
 let keysOn = false;
 try { keysOn = localStorage.getItem(KEYS_ON_KEY) === '1'; } catch (e) { /* 꺼짐 */ }
 const keyOf = id => hotkeysOk() && keysOn && KEYMAP[id] ? keyName(KEYMAP[id]) : '';
+// 단추 좌상단에 키를 작게 보여 주기 (2026-11-22 기획자, 단축키 창 체크, 처음엔 켜짐)
+const KEYS_HINT_KEY = 'ddang-keys-hint';
+let keysHint = true;
+try { keysHint = localStorage.getItem(KEYS_HINT_KEY) !== '0'; } catch (e) { /* 켜짐 */ }
+function keyHint(b, k) {
+  if (!b) return;
+  const old = b.querySelector('.keyHint'); if (old) old.remove();
+  if (!k || !keysHint) return;
+  const h = document.createElement('span'); h.className = 'keyHint'; h.textContent = k; b.prepend(h);
+}
 let keyWait = null; // 단축키 창에서 새 키를 기다리는 동작
 
 function keysDialog() {
   const groups = [...new Set(KEY_ACTIONS.map(a => a[3]))];
   openModal(`
     <h2>⌨ 단축키 <span class="dim small">· PC 전용, 이 브라우저에만 저장</span></h2>
-    <p><label><input type="checkbox" id="keysOn"${keysOn ? ' checked' : ''}> 단축키 사용</label></p>
+    <p><label><input type="checkbox" id="keysOn"${keysOn ? ' checked' : ''}> 단축키 사용</label><br><label><input type="checkbox" id="keysHint"${keysHint ? ' checked' : ''}> 단추 왼쪽 위에 단축키 보이기</label></p>
     <p class="dim small">바꿀 칸을 누르고 새 키를 누르세요. 이미 쓰는 키면 그쪽은 비워져요. Esc는 취소, Backspace는 없음.</p>
     <div class="keysGrid">${groups.map(gname => `<div><h3>${gname}</h3>${KEY_ACTIONS.filter(a => a[3] === gname).map(([id, name]) => `<p class="keyRow"><span>${name}</span><button class="mini keyBtn${keyWait === id ? ' on' : ''}" data-key="${id}">${keyWait === id ? '키를 누르세요' : keyName(KEYMAP[id])}</button></p>`).join('')}</div>`).join('')}</div>
     <div class="modalBtns"><button id="keysReset">기본값으로</button><button data-close class="main">닫기</button></div>`, box => {
@@ -3793,6 +3805,11 @@ function keysDialog() {
       keysOn = e.target.checked;
       try { localStorage.setItem(KEYS_ON_KEY, keysOn ? '1' : '0'); } catch (err) { /* 이번만 */ }
       if (S && me()) renderCommands(); // 단추 위 "단축키 Q" 안내도 켜고 끈다
+    };
+    box.querySelector('#keysHint').onchange = e => {
+      keysHint = e.target.checked;
+      try { localStorage.setItem(KEYS_HINT_KEY, keysHint ? '1' : '0'); } catch (err) { /* 이번만 */ }
+      if (S && me()) renderCommands();
     };
     box.querySelector('#keysReset').onclick = () => { try { localStorage.removeItem(KEYS_KEY); } catch (e) { /* 무시 */ } loadKeys(); keyWait = null; keysDialog(); if (S && me()) renderCommands(); };
   });
