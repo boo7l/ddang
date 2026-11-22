@@ -2057,7 +2057,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122132045&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122132414&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2067,7 +2067,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122132045&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122132414&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2077,7 +2077,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122132045&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122132414&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2529,7 +2529,7 @@ function traitOddsDialog(back = null, backName = '주머니') {
   const order = { SSR: 0, SR: 1, R: 2, N: 3 };
   const rows = ids.sort((a, b) => order[GENERAL_TRAITS[a].tier] - order[GENERAL_TRAITS[b].tier]).map(k => {
     const t = GENERAL_TRAITS[k];
-    return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
+    return `<tr><td class="oddsTier t${order[t.tier]}">${t.tier}</td><th>${esc(t.name)}</th><td class="dim">${esc(t.oddsDesc || t.desc)}</td><td class="num">${(weight(k) / total * 100).toFixed(1)}%</td></tr>`;
   }).join('');
   openModal(`<h2>📋 특성 확률표</h2>
     <p class="dim">종이 한 장에 그 특성이 나올 확률이에요. 한 번에 서로 다른 3장이 나와요.${back ? (seasonNow() >= 7 ? '<br>탐색으로 발견한 특성 주머니는 R 이상이 최소 1장 나와요. (다시 뽑기 포함)' : '<br>탐색으로 발견한 특성 주머니는 R 이상이 적어도 1장은 나와요.') : ''}</p>
