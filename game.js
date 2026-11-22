@@ -917,7 +917,8 @@ async function reserve(order) {
   slot = Math.min(at + 1, RULES.queueSize - 1);
   if (!(await queueCall('order', { i: at, order }, q => { q[at] = order; }))) { slot = at; renderCommands(); }
 }
-async function clearSlot(i) {
+async function clearSlot(i, next = false) {
+  if (next) slot = Math.min(i + 1, RULES.queueSize - 1); // 칸 비우기 단추·단축키: 비운 뒤 다음 칸을 고른다 (2026-11-22 기획자, 명령 넣을 때와 같게)
   await queueCall('order', { i, order: null }, q => { q[i] = null; });
 }
 
@@ -2056,7 +2057,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124748&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122125003&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2066,7 +2067,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122124748&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122125003&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2076,7 +2077,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122124748&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122125003&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3229,7 +3230,7 @@ function renderCommands() {
   $('#queueBox').querySelectorAll('.queue li').forEach(li => { li.onclick = () => { slot = +li.dataset.i; renderCommands(); }; });
   $('#queueBox').querySelectorAll('[data-x]').forEach(b => { b.onclick = e => { e.stopPropagation(); clearSlot(+b.dataset.x); }; });
   const onAll = (sel, fn) => document.querySelectorAll(sel).forEach(b => { b.onclick = fn; });
-  onAll('.qClear', () => clearSlot(slot));
+  onAll('.qClear', () => clearSlot(slot, true));
   onAll('.qFill', () => { if (lastOrder) queueCall('fill', { order: lastOrder }, q => q.forEach((o, i) => { if (!o) q[i] = lastOrder; })); });
   onAll('.qClearAll', () => {
     if (!confirm('예약한 명령을 모두 비울까요?')) return;
@@ -3842,7 +3843,7 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
   const last = RULES.queueSize - 1;
   if (id === 'up' || id === 'down' || id === 'top') { slot = id === 'top' ? 0 : Math.max(0, Math.min(last, slot + (id === 'up' ? -1 : 1))); renderCommands(); return; }
-  if (id === 'clear') { if (me().queue[slot] && !S.unified) clearSlot(slot); return; }
+  if (id === 'clear') { if (me().queue[slot] && !S.unified) clearSlot(slot, true); return; }
   if (id === 'clearAll' || id === 'fill') { const b = document.querySelector(id === 'fill' ? '.qFill' : '.qClearAll'); if (b && !b.disabled && b.onclick) b.click(); return; } // 단추를 누른 것과 같다 (모두 비우기는 확인 창이 뜬다)
   if (id === 'chat') { const i = $('#chatInput'); if (i) i.focus(); return; }
   if (id === 'letter') { const b = document.querySelector('#chat .letterBtn'); if (b) b.click(); return; }
