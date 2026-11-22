@@ -306,6 +306,7 @@ aside.wide { width: 380px; }
 .keyHint { position: absolute; top: 1px; left: 3px; font-size: 14px; line-height: 1; color: var(--dim); pointer-events: none; } /* 단축키 표시 (2026-11-22) */
 button:has(> .keyHint) { position: relative; }
 button:hover > .keyHint { color: var(--panel-dark); }
+.pickNum { display: inline-block; min-width: 1em; margin-right: 4px; font-size: 14px; color: var(--dim); } /* 선택 창 번호 (단축키 켜면, 2026-11-22) */
 .cmds button small { display: block; font-size: 14px; color: var(--dim); } /* 2026-11-03 12px → 14px (삼국지3글꼴은 16칸 도트라 12px이 뭉개짐) */
 .cmds button:hover small { color: var(--panel-dark); }
 /* 아래 글씨가 없는 단추(이동·병기·탐색)도 높이를 맞추고 이름을 가운데로 (2026-11-03) */

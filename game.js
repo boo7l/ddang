@@ -965,6 +965,7 @@ function openModal(html, onMount) {
   $('#modal').hidden = false;
   $('#modalBox').querySelectorAll('[data-close]').forEach(b => { b.onclick = closeModal; });
   if (onMount) onMount($('#modalBox'));
+  numberPicks();
 }
 function closeModal() { const bc = document.getElementById('boardCover'); if (bc) bc.remove(); closePickMap(); $('#modal').hidden = true; $('#modalBox').innerHTML = ''; $('#modalBox').classList.remove('wideBox', 'adminBox', 'recBox', 'memberBox', 'playerBox', 'tourModal', 'boardBox', 'aiBox'); } // tourModal: 무술대회 창 넓이 (2026-11-15: 안 지워서 게시판이 넓어졌음)
 
@@ -2057,7 +2058,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122140240&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122140645&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2067,7 +2068,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122140240&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122140645&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2077,7 +2078,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122140240&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122140645&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3788,6 +3789,12 @@ function keyHint(b, k) {
   if (!k || !keysHint) return;
   const h = document.createElement('span'); h.className = 'keyHint'; h.textContent = k; b.prepend(h);
 }
+// 선택 창 숫자 고르기 (2026-11-22 기획자): 단축키를 켜면 저절로. 1~9·0(10번째)으로 고르고, 이미 고른 번호를 한 번 더 누르면 확인. 키는 바꿀 수 없다
+const pickRadios = () => [...$('#modalBox').querySelectorAll('input[name=tgt]')];
+function numberPicks() {
+  if (!(hotkeysOk() && keysOn)) return;
+  pickRadios().slice(0, 10).forEach((r, i) => { const l = r.closest('label'); if (l && !l.querySelector('.pickNum')) { const n = document.createElement('span'); n.className = 'pickNum'; n.textContent = (i + 1) % 10; l.prepend(n); } });
+}
 let keyWait = null; // 단축키 창에서 새 키를 기다리는 동작
 
 function keysDialog() {
@@ -3833,7 +3840,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && e.target && e.target.id === 'chatInput') { e.target.blur(); return; } // 채팅칸에서 Esc: 빠져나와 단축키를 다시 쓴다 (마우스 없이, 2026-11-07)
   if (!keysOn || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
   const t = e.target;
-  if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return; // 글을 쓰는 중
+  if (t && (t.isContentEditable || /^(TEXTAREA|SELECT)$/.test(t.tagName) || (t.tagName === 'INPUT' && !/^(radio|checkbox)$/.test(t.type)))) return; // 글을 쓰는 중 (고르기 단추·체크칸을 누른 뒤에는 단축키가 된다, 2026-11-22)
+  if (!$('#modal').hidden && !keyWait && !document.getElementById('pickMap')) { // 선택 창: 숫자로 고르기
+    const m = /^(?:Digit|Numpad)(d)$/.exec(e.code);
+    if (!m) return;
+    const r = pickRadios()[(+m[1] + 9) % 10]; // 1 → 첫째, 0 → 열째
+    if (!r || r.disabled) return;
+    e.preventDefault();
+    if (r.checked) { const ok = $('#mOk') || $('#modalBox').querySelector('.modalBtns .main'); if (ok && !ok.disabled) ok.click(); return; }
+    r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); if ($('#mOk')) $('#mOk').disabled = false;
+    (r.closest('.opt') || r).scrollIntoView({ block: 'nearest' });
+    return;
+  }
   if (!$('#modal').hidden || !S || !me() || $('#game').hidden || !$('#adminPage').hidden) return;
   const id = Object.keys(KEYMAP).find(k => KEYMAP[k] && KEYMAP[k] === e.code);
   if (!id) return;
