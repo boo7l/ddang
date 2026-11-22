@@ -78,6 +78,12 @@ const membersOf = fid => allGenerals().filter(g => g.faction === fid);
 const allyRec = (a, b) => (S.alliances || []).find(x => ((x.a === a && x.b === b) || (x.a === b && x.b === a)) && S.turn < x.end);
 const allied = (a, b) => !!(a && b && a !== b && allyRec(a, b));
 const alliesOf = fid => (S.alliances || []).filter(x => (x.a === fid || x.b === fid) && S.turn < x.end).map(x => (x.a === fid ? x.b : x.a));
+// a·b가 동맹을 맺으면 적대 세력이 하나도 안 남는 쪽 (2026-11-22 기획자, 시즌 9부터). 적대 세력 = 성이 있는 다른 지도 세력 가운데 동맹이 아닌 곳 (도적군은 안 셈). 없으면 null
+const allyNoEnemy = (a, b) => {
+  if (seasonNow() < RULES.commander.allyEnemyFromSeason) return null;
+  const live = MAP.factions.filter(f => f.id !== BANDIT.id && citiesOfFaction(f.id).length > 0).map(f => f.id);
+  return [a, b].find(x => !live.some(y => y !== x && y !== (x === a ? b : a) && !allied(x, y))) || null;
+};
 // 대도독이 될 수 없는 이유 ('' = 될 수 있다). hand: 넘겨받는 경우 (공적 1위 조건 없음)
 function commanderBlock(g, hand = false) {
   const R = RULES.commander;
