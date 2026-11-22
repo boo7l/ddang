@@ -1270,10 +1270,11 @@ function siegeAttack(g, att, from, to, mark, f) {
   if (f) lines.push(...f.lines.map(a => ({ a }))); // 야전 보고서는 공격 쪽만 (수비 쪽 장수 중 야전에 나선 사람은 따로 받는다)
   // 시즌 7부터 (2026-11-10 유저 의견): 수비 쪽 보고서·알림에 공격이 출발한 성을 적고, 'OO 세력' 대신 'OO군'
   const s7 = seasonNow() >= 7;
+  const t0 = att.troops + (f ? f.cur.lost : 0); // 첫 줄은 전투 전 병력 (야전을 치르고 왔으면 야전 전 병력, 2026-11-22 기획자: 손실·남은 병력과 맞게)
   lines.push({
-    a: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(att.troops)}) 출진! (${owner.name} 세력의 성)`,
-    d: s7 ? `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name}군 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 ${from.name}에서 쳐들어왔다!`
-      : `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(att.troops)}) 부대가 쳐들어왔다!`,
+    a: `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${g.name}(${att.type} ${fmt(t0)}) 출진! (${owner.name} 세력의 성)`,
+    d: s7 ? `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name}군 ${g.name}(${att.type} ${fmt(t0)}) 부대가 ${from.name}에서 쳐들어왔다!`
+      : `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(t0)}) 부대가 쳐들어왔다!`,
   });
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
