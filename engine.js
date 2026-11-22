@@ -152,6 +152,20 @@ function destroyReward(fid, gone) {
 function applyOwners() {
   for (const c of MAP.cities) if (c.id in S.owners) c.faction = S.owners[c.id];
 }
+// 주고받기 (2026-11-22, 시즌 9부터): 이번 함락 바로 전에 주인이 바뀐 지 RULES.recaptureGold.turns 턴 안이면 true
+function recaptured(c, fid) {
+  const R = RULES.recaptureGold;
+  if (seasonNow() < R.fromSeason) return false;
+  const log = S.ownerLog || [];
+  let skip = true; // 맨 끝의 이번 함락 기록은 건너뛴다
+  for (let i = log.length - 1; i >= 0; i--) {
+    const [t, id, f2] = log[i];
+    if (id !== c.id) continue;
+    if (skip && t === S.turn && f2 === fid) { skip = false; continue; }
+    return S.turn - t <= R.turns;
+  }
+  return false;
+}
 function setOwner(c, fid) {
   const before = c.faction;
   c.faction = fid;
@@ -435,6 +449,7 @@ function advance() {
       const floorOn = seasonNow() >= RULES.goldFloor.fromSeason;
       for (const g of allGenerals()) {
         if (!g.faction) continue;
+        if ((S.bans || {})[g.id] > Date.now()) { addLog(g, `💰 ${dateText(S.turn)} 금 수입 없음 (계정 정지 중)`); continue; } // 정지 중엔 금 수입 없음 (2026-11-22)
         const c = cityById(g.city), n = heads[g.faction + '|' + g.city], crowd = crowdRate(c.grade, n);
         const capG = capitalOf(g.faction) ? RULES.capital.gold : 0; // 수도가 있는 세력 금 수입 +5% (2026-11-16, 시즌 8부터)
         const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0) + capG))); // 세력 특성, 개인 특성 부호
@@ -1338,7 +1353,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   const base = captured ? RULES.merit.win : RULES.merit.lose;
   const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme + (att.charges || 0) * RULES.merit.charge; // 단기접전 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
   const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
-  if (captured) { const got = earnGold(g, RULES.battleReward); lines.push({ a: `${g.name} 보상: 금 +${got} · ${meritText}` }); captureTreasure(g, to, lines); } // 함락 보물 1% (2026-11-14, 시즌 7)
+  if (captured) { const rc = recaptured(to, g.faction), got = earnGold(g, Math.floor(RULES.battleReward * (rc ? RULES.recaptureGold.rate : 1))); lines.push({ a: `${g.name} 보상: 금 +${got}${rc ? ' (주고받은 성이라 절반)' : ''} · ${meritText}` }); captureTreasure(g, to, lines); } // 함락 보물 1% (2026-11-14, 시즌 7)
   else lines.push({ a: `${g.name} ${meritText}` });
   for (const [x, dealt] of dealtBy) {
     const m = Math.floor(dealt / RULES.meritPerKill) + (eventBy.get(x) || 0);
