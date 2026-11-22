@@ -260,6 +260,11 @@ async function membersDialog() {
     };
   });
 }
+// 정지 사유 묻기 (2026-11-22): 취소하면 null, 비워 두면 '' (사유 없이 정지). 받은 사람의 기록 · 접속 화면 · 제재 기록에 남는다
+function askBanReason(name, len) {
+  const r = prompt(`${name}의 계정을 ${len} 정지할까요?\n정지되는 동안 아예 접속할 수 없어요.\n\n사유 (100자까지, 비워 둬도 돼요. 본인에게 보여요)`, '부계정 운영');
+  return r === null ? null : r.trim().slice(0, 100);
+}
 function memberBanDialog(m) {
   const banned = m.ban > Date.now();
   adminSide(`<h3>🛠 ${esc(m.name)} <span class="dim small">· 계정 정지</span></h3>
@@ -269,8 +274,10 @@ function memberBanDialog(m) {
     box.querySelector('#mBack').onclick = closeAdminSide;
     box.querySelectorAll('[data-days]').forEach(b => { b.onclick = async () => {
       const days = +b.dataset.days;
-      if (!confirm(days ? `${m.name}의 계정을 ${b.textContent} 정지할까요?` : '계정 정지를 풀까요?')) return;
-      if (await call('adminBan', { id: m.id, days })) { closeAdminSide(); membersDialog(); }
+      const reason = days ? askBanReason(m.name, b.textContent) : '';
+      if (reason === null) return;
+      if (!days && !confirm('계정 정지를 풀까요?')) return;
+      if (await call('adminBan', { id: m.id, days, reason })) { closeAdminSide(); membersDialog(); }
     }; });
   });
 }
@@ -2048,7 +2055,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122092944&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122095537&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2058,7 +2065,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122092944&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122095537&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2068,7 +2075,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122092944&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122095537&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3607,7 +3614,12 @@ function playerDialog(id, backTab = 'users', backF = null) { // 2026-11-08: 옆 
     };
     $('#pKick').onclick = () => act('adminKick', {}, `${g.name}을(를) 세력에서 쫓아낼까요?\n하야처럼 병력은 흩어지고, 그 세력에는 한동안 다시 못 들어가요.`);
     box.querySelectorAll('[data-mute]').forEach(b => { b.onclick = () => act('adminMute', { hours: +b.dataset.mute }, +b.dataset.mute ? `${g.name}의 채팅을 ${b.textContent} 동안 막을까요?` : '채팅 금지를 풀까요?'); });
-    box.querySelectorAll('[data-ban]').forEach(b => { b.onclick = () => act('adminBan', { days: +b.dataset.ban }, +b.dataset.ban ? `${g.name}의 계정을 ${b.textContent} 정지할까요?\n정지되는 동안 아예 접속할 수 없어요.` : '계정 정지를 풀까요?'); });
+    box.querySelectorAll('[data-ban]').forEach(b => { b.onclick = async () => {
+      const days = +b.dataset.ban;
+      if (!days) return act('adminBan', { days }, '계정 정지를 풀까요?');
+      const reason = askBanReason(g.name, b.textContent);
+      if (reason !== null && await call('adminBan', { id, days, reason })) again();
+    }; });
   });
 }
 
