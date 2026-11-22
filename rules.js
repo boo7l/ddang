@@ -566,6 +566,14 @@ function fightRounds(att, def, wall, left, field = false) {
     def.troops -= dLoss;
     lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
   }
+  // 수비 벽력거 (2026-11-22 기획자, 시즌 9부터): 수비 장수의 벽력거도 이번 턴에 처음 맞붙는 공격 부대에게 1번 선제 사격 (공격 쪽 사격 뒤, 반격 없음)
+  const dRef = def.ref, nowTurn = typeof S !== 'undefined' && S ? S.turn || 0 : 0;
+  if (!field && seasonNow() >= SIEGE_EFFECT.defStrikeFrom && def.siege && def.siege.벽력거 && dRef && dRef.defStruck !== nowTurn && def.troops > 0 && att.troops > 0) {
+    dRef.defStruck = nowTurn;
+    const bx = [], aLoss = bondSave(att, Math.min(att.troops, Math.ceil(defensePower(def, wall, att) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(def) * luck())), def, bx);
+    att.troops -= aLoss;
+    lines.push(`💥 ${def.name}의 벽력거 선제 사격! ${att.name} -${aLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
+  }
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
     // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 persuade(지금 4%) 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
@@ -750,7 +758,7 @@ function siegeBreak(x, t, out) {
 const SIEGE = {
   충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
   정란: { price: 2000, desc: '수비 부대와 싸울 때 공격 전투력 +15%' },
-  벽력거: { price: 4000, desc: '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)' },
+  벽력거: { price: 4000, get desc() { return seasonNow() >= 9 ? '싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음). 공격: 처음 맞붙는 수비 부대에게 · 수비: 턴마다 처음 맞붙는 공격 부대에게' : '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)'; } }, // 2026-11-22 시즌 9: 수비도 사격
 };
 // 병기 만드는 값: 개인 특성 병기도 과학은 -20%
 const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.faction).siegePrice || 0) + (gTrait(g).siegePrice || 0))); // 조선 신기전, 개인 특성 병기도 과학
@@ -760,6 +768,7 @@ const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%
   get breakChance() { return seasonNow() >= 7 ? 0.4 : 0.5; }, // 부대가 전멸하면 병기가 부서질 확률 (2026-11-10 기획자: 시즌 7부터 50% → 40%, 시즌 7 패치노트)
+  defStrikeFrom: 9, // 수비 장수의 벽력거도 쏜다 (2026-11-22 기획자, 시즌 9부터): 턴당 1번, 그 턴 처음 맞붙는 공격 부대에게
   firstStrike: 0.5, // 벽력거: 합 전에 쏘는 선제 사격의 피해 = 보통 한 합 피해의 50% (2026-10-26 시즌 2 뒤 "너무 세다"는 의견: 첫 합 무피해 100% → 선제 사격 50% + 5합 그대로)
 };
 

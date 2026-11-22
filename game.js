@@ -1419,7 +1419,7 @@ function helpDialog(page = -1) {
       <li><b>징병</b>: 금 ${RULES.myGoldCost.draft}으로 병사를 모아요. 병종(보병·기병·궁병)을 골라요.</li>
       <li><b>출진</b>: 이웃 성을 공격해요. 공백지는 싸우지 않고 들어가요.</li>
       <li><b>이동</b>: 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성으로 옮겨요.</li>
-      ${RULES.features.siege ? '<li><b>병기</b>: 금으로 충차·정란·벽력거를 만들어요. 공격할 때 힘이 돼요.</li>' : ''}</ul>
+      ${RULES.features.siege ? '<li><b>병기</b>: 금으로 충차·정란·벽력거를 만들어요. 공격할 때 힘이 돼요.' + (seasonNow() >= 9 ? ' 벽력거는 수비할 때도 쏴요.' : '') + '</li>' : ''}</ul>
       <p class="sub">계략 <span class="dim">(지력이 높을수록 잘 돼요)</span></p><ul>
       <li><b>파괴</b>: 이웃 적 성의 방어를 깎아요.</li>
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
@@ -2055,7 +2055,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122095537&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122101913&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2065,7 +2065,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122095537&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122101913&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2075,7 +2075,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122095537&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122101913&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
