@@ -731,10 +731,10 @@ function runDomestic(g, key) {
     else if (kind === 'food') { const got = Math.max(0, Math.min(amt, foodMax(city.grade) - c.food)); c.food += got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}군량 +${fmt(got)}`; }
     else if (kind === 'guard') { const got = city.faction === g.faction ? Math.max(0, Math.min(amt, RULES.guardMax[city.grade] - (c.guard || 0))) : 0; c.guard = (c.guard || 0) + got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}수비대 +${fmt(got)}`; }
   }
-  const fullTurn = full && gain === 0; // 이미 최대치였던 턴: 공적·경험치 절반
+  const fullTurn = full && gain === 0, halfReward = fullTurn && seasonNow() < F.fullFromSeason; // 이미 최대치였던 턴: 공적·경험치 절반 (시즌 9부터는 보통과 같게, 2026-11-23)
   addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''}${bes < 1 ? ` (포위 ×${bes})` : ''} (${c[key]}/${max})${extra}`);
-  addMerit(g, fullTurn ? F.merit : RULES.merit.domestic);
-  gainStatExp(g, d.stat, fullTurn ? F.exp : RULES.statExp.domestic);
+  addMerit(g, halfReward ? F.merit : RULES.merit.domestic);
+  gainStatExp(g, d.stat, halfReward ? F.exp : RULES.statExp.domestic);
   return '';
 }
 
