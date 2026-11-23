@@ -719,7 +719,7 @@ function runDomestic(g, key) {
   const city = cityById(g.city), c = S.cities[g.city], d = DOMESTIC[key];
   const max = devMax(city.grade, key);
   const F = RULES.fullDev, full = seasonNow() >= F.fromSeason && F.reward[key]; // 풀내정 (2026-11-18, 시즌 8부터): 최대치여도 보상
-  const peaceEv = key === 'peace' && seasonNow() >= RULES.s9cmd.fromSeason; // 시즌 9: 치안은 최대치여도 실패하지 않고, 할 때마다 탐색 이벤트 판정 (2026-11-23)
+  const s9 = seasonNow() >= RULES.s9cmd.fromSeason, peaceEv = key === 'peace' && s9; // 시즌 9: 치안은 최대치여도 실패하지 않는다 (2026-11-23)
   if (c[key] >= max && !full && !peaceEv) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const R = RULES.recoverBuff, rec = seasonNow() >= R.fromSeason && R.keys.includes(key) && c[key] < newCityState(city.grade)[key] ? R.mult : 1; // 복구 버프 (시즌 8부터, 2026-11-16): 처음 값보다 낮으면 × 1.5
@@ -740,8 +740,22 @@ function runDomestic(g, key) {
   addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''}${bes < 1 ? ` (포위 ×${bes})` : ''} (${c[key]}/${max})${extra}`);
   addMerit(g, halfReward ? F.merit : RULES.merit.domestic);
   gainStatExp(g, d.stat, halfReward ? F.exp : RULES.statExp.domestic);
-  if (peaceEv && Math.random() < RULES.s9cmd.peaceExplore) runExplore(g, true);
+  if (peaceEv && raw > 0 && gain < raw) counterSpy(g, city, (raw - gain) / raw); // 최대치 치안: 첩자 색출
+  if (s9 && Math.random() < RULES.s9cmd.domExplore) runExplore(g, d.name); // 모든 내정 10% 탐색 이벤트
   return '';
+}
+// 첩자 색출 (2026-11-23 기획자, 시즌 9부터): 치안이 넘친 비율 × counterSpy 확률로, 이 성에 걸린 적 세력 첩보(S.intel)를 모두 끊는다. 첩보가 없으면 아무 일도 없다
+function counterSpy(g, city, share) {
+  if (city.faction !== g.faction) return;
+  const spies = Object.keys(S.intel || {}).filter(fid => fid !== g.faction && (S.intel[fid][city.id] || 0) > S.turn);
+  if (!spies.length || Math.random() >= RULES.s9cmd.counterSpy * share) return;
+  for (const fid of spies) {
+    delete S.intel[fid][city.id];
+    if (typeof factionNotice === 'function') factionNotice(fid, `🕵 ${city.name}에 보낸 첩자가 붙잡혔다. 더는 그 성을 볼 수 없다.`);
+  }
+  const names = spies.map(fid => (factionById(fid) || { name: '?' }).name).join('·');
+  addLog(g, `🛡 ${city.name}: 숨어든 첩자를 색출했다! ${names} 세력의 정보망을 끊었다.`);
+  if (typeof factionNotice === 'function') factionNotice(g.faction, `🛡 ${g.name}${josa(g.name, '이가').slice(-1)} ${city.name}에 숨어든 ${names} 세력 첩자를 색출했다.`);
 }
 
 // ----- 징병 -----
@@ -1500,7 +1514,7 @@ function captureTreasure(g, city, lines) {
 }
 
 // ----- 탐색 -----
-// viaPeace (2026-11-23, 시즌 9부터): 치안 내정 중에 일어난 탐색 이벤트. 금을 내지 않고, 공적은 치안 내정 몫만 받는다
+// viaPeace (2026-11-23, 시즌 9부터): 내정 중에 일어난 탐색 이벤트 (값 = 내정 이름, 기록 문구용). 금을 내지 않고, 공적은 치안 내정 몫만 받는다
 function runExplore(g, viaPeace = false) {
   const city = cityById(g.city), cs = S.cities[g.city];
   const why = viaPeace ? '' : pay(g, 'explore');
@@ -1662,7 +1676,7 @@ function runExplore(g, viaPeace = false) {
     default:
       text = '주변을 살폈으나 별다른 일은 없었다.';
   }
-  addLog(g, viaPeace ? `🎲 ${city.name} 순찰 중: ${text}` : `${city.name} 탐색: ${text}`);
+  addLog(g, viaPeace ? `🎲 ${city.name}에서 ${viaPeace}에 힘쓰던 중: ${text}` : `${city.name} 탐색: ${text}`);
   if (warExp) gainStatExp(g, 'war', warExp); // 도적과 싸움 (2026-11-08)
   if (!viaPeace) addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 공적이 붙는다
   return '';

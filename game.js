@@ -1417,7 +1417,8 @@ function helpDialog(page = -1) {
       <li><b>농업</b>: 성의 농업을 올려요. 4·10월 수확 때 군량이 더 들어와요. (지력)</li>
       <li><b>상업</b>: 성의 상업을 올려요. 1·4·7·10월에 금이 더 들어와요. (지력)</li>
       <li><b>축성</b>: 성의 방어를 올려요. 그 성을 지킬 때 받는 피해가 줄어요 (${wallCutStepped() ? '방어가 높을수록 피해 감소 (최대 25%)' : `방어 100마다 피해 ${Math.round(RULES.wallCutPer100 * 100)}% 감소`}). (무력)</li>
-      <li><b>치안</b>: 치안을 올려요. ${RULES.peaceOk} 아래면 수입·징병 -${Math.round((1 - peaceIncome(RULES.peaceLow)) * 100)}%, ${RULES.peaceLow} 아래면 수입 -${Math.round((1 - peaceIncome(0)) * 100)}%에 징병할 수 없어요. (통솔)${seasonNow() >= RULES.s9cmd.fromSeason ? `<br>치안을 할 때마다 ${Math.round(RULES.s9cmd.peaceExplore * 100)}% 확률로 <button class="link" id="helpExplore"><b>탐색 이벤트</b></button>가 일어나요 (금·군량·의병·장비·보물·특성 주머니 등, 가끔 도적). 치안이 최대치여도 할 수 있어요.` : ''}</li></ul>
+      <li><b>치안</b>: 치안을 올려요. ${RULES.peaceOk} 아래면 수입·징병 -${Math.round((1 - peaceIncome(RULES.peaceLow)) * 100)}%, ${RULES.peaceLow} 아래면 수입 -${Math.round((1 - peaceIncome(0)) * 100)}%에 징병할 수 없어요. (통솔)${seasonNow() >= RULES.s9cmd.fromSeason ? `<br>치안이 최대치여도 할 수 있어요. 이때 이 성에 적 첩보가 걸려 있으면 ${Math.round(RULES.s9cmd.counterSpy * 100)}% 확률로 <b>첩자 색출</b>: 적 세력의 정보망을 끊어요.` : ''}${seasonNow() >= RULES.s9cmd.fromSeason ? `</li>
+      <li>🎲 모든 내정은 ${Math.round(RULES.s9cmd.domExplore * 100)}% 확률로 <button class="link" id="helpExplore"><b>탐색 이벤트</b></button>가 함께 일어나요 (금·군량·의병·장비·보물·특성 주머니 등, 가끔 도적).` : ''}</li></ul>
       <p class="sub">군사</p><ul>
       <li><b>징병</b>: 금 ${RULES.myGoldCost.draft}으로 병사를 모아요. 병종(보병·기병·궁병)을 골라요.</li>
       <li><b>출진</b>: 이웃 성을 공격해요. 공백지는 싸우지 않고 들어가요.</li>
@@ -1515,7 +1516,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
     help: e => `공적 +${e.min}~${e.max}`,
     treasure: () => `전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>${seasonNow() >= 7 ? '이미 보물이 있으면 교환 가능, 남은 보물이 없으면 장비 발견' : '이미 보물이 있으면 장비 발견'}`, // 시즌 7부터 바꾸기·팔기 (2026-11-13 표 문구)
   };
-  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '적 첩자 포획', engineer: '기술자', treasure: '★ 보물', sage: '현인', help: '주민 돕기' };
+  const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '첩자 심문', engineer: '기술자', treasure: '★ 보물', sage: '현인', help: '주민 돕기' };
   const rows = list => list.filter(e => e.weight > 0).sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   // 일반 / 재야 탭 (2026-11-19 기획자). 재야 표는 시즌 8부터 (재야가 생긴 시즌)
   const roninOk = typeof RONIN_EXPLORE !== 'undefined' && (!S || seasonNow() >= RULES.ronin.fromSeason);
@@ -2060,7 +2061,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123220519&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123221435&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2070,7 +2071,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123220519&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123221435&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2080,7 +2081,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123220519&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123221435&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
