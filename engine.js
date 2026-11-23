@@ -735,7 +735,7 @@ function runDraft(g, o) {
   let note = '';
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   const t = traitOf(g.faction);
-  const raw = Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))); // 수도에서 징병 +5% (2026-11-16, 시즌 8부터)
+  const raw = Math.floor(draftGain(effStats(g), g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))); // 수도에서 징병 +5% (2026-11-16, 시즌 8부터)
   const gain = Math.min(raw, troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
   g.unitType = type;
   g.troops += gain;
@@ -767,7 +767,7 @@ function runGuardDraft(g) {
   let note = '';
   delete cs.guardType; // 2026-11-14: 수비대는 병종 없음 (다른 병종이라 흩어지는 일도 없다)
   const t = traitOf(g.faction);
-  const gain = Math.min(Math.floor(draftGain(effStats(g).lea, g.merit) * rate * (1 + (t.draft || 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))), max - (cs.guard || 0)); // 수도에서 징병 +5% (2026-11-16)
+  const gain = Math.min(Math.floor(draftGain(effStats(g), g.merit) * rate * (1 + (t.draft || 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))), max - (cs.guard || 0)); // 수도에서 징병 +5% (2026-11-16)
   cs.guard = (cs.guard || 0) + gain;
   addRecord(g, 'drafted', gain);
   const drop = Math.min(cs.peace, Math.round(gain / draftPeaceOf(S.season) * (1 + (t.draftPeace || 0))));
@@ -891,6 +891,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
   const out = [];
   for (const g of allGenerals()) {
     if (g.city !== c.id || g.faction !== oldFaction) continue;
+    if (seasonNow() >= SIEGE_EFFECT.retreatFrom) siegeLoseRoll(g, out); // 2026-11-23 기획자 (시즌 9부터): 방어를 끄고 퇴각·고립 퇴각·병력 0·멸망도 함락되면 병기 판정 (싸우다 전멸해 이미 굴린 장수는 한 번만)
     loseTreasures(g, byGen, true); // 병력이 없거나 방어를 꺼서 싸우지 않았어도 함락되면 판정 (싸우다 전멸한 수비 장수는 한 번만)
     const near = neighborsOf(MAP, c).filter(n => n.faction === oldFaction);
     const far = near.length ? [] : nearestOwnCities(c, oldFaction);
@@ -1038,6 +1039,7 @@ function runBandits() {
       cs.wall = RULES.captureWall[c.grade];
       cs.guard = RULES.guardTroops[c.grade];
     } else cs.guard = 0;
+    siegeRolled = new Set();
     for (const line of retreatFrom(c, fid, null, null)) for (const g of membersOf(fid)) addLog(g, line);
     logAll(`${B.icon} ${f ? f.name + ' 세력의 ' : ''}${josa(c.name, '이가')} ${what}!${wasCapital ? ' (수도)' : ''}${occ ? ` 도적군 ${fmt(cs.guard)}명이 들어앉았다.` : ''}`);
   }
@@ -1082,6 +1084,14 @@ function healAfter(x, lost, lines) {
 }
 
 // 보물 (2026-11-07): 전투에서 내 부대가 전멸하면 보물마다 2% 실종 · 3% 이긴 쪽 장수에게 넘어감 (수비대장뿐이거나 이긴 쪽이 이미 보물이 있으면 실종)
+// 병기 잃음 판정 (부서질 확률 SIEGE_EFFECT.breakChance): 출진 한 번마다 장수당 한 번만 (전멸 + 함락 퇴각으로 두 번 굴리지 않게, 2026-11-23)
+let siegeRolled = new Set();
+function siegeLoseRoll(x, out) {
+  if (siegeRolled.has(x)) return;
+  siegeRolled.add(x);
+  const t = x.siege && Object.keys(x.siege).find(k => x.siege[k]);
+  if (t) siegeBreak(x, t, out);
+}
 let treasureRolled = new Set(); // 이번 출진에서 이미 보물 판정을 한 장수 (전멸 + 함락으로 두 번 굴리지 않게, runAttack마다 비운다)
 // fell: 성이 함락돼 물러나거나 멸망한 경우 (싸우다 전멸한 게 아님, 2026-11-09) → 알림 문구만 다르다
 function loseTreasures(loser, winner, fell = false) {
@@ -1136,6 +1146,7 @@ function runAttack(g, o, mark) {
   g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
   const att = unitOf(g);
+  siegeRolled = new Set();
   treasureRolled = new Set(); // 출진 한 번(야전 + 공성)마다 보물 판정은 장수당 한 번
   // 야전 (시즌 7부터): 상대 성에서 우리 성으로 출진할 장수가 이번 턴에 아직 남아 있으면 들판에서 먼저 맞붙는다
   if (to.faction && fieldOn()) {
@@ -1240,8 +1251,7 @@ function endField(st, text) {
   addRecord(x, 'battles');
   if (x.troops <= 0) {
     addRecord(x, 'losses');
-    const t = x.siege && Object.keys(x.siege).find(k => x.siege[k]);
-    if (t) siegeBreak(x, t, out); // 기술자 보수면 한 번 버팀 (2026-11-14)
+    siegeLoseRoll(x, out); // 기술자 보수면 한 번 버팀 (2026-11-14)
     loseTreasures(x, st.by);
   }
   healAfter(x, st.lost, out);
@@ -1362,8 +1372,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   }
   // 전투에서 전멸한 부대의 병기는 50% 확률로 부서진다 (공격한 장수와 수비 장수 모두)
   for (const x of [g, ...defs.filter(d => d.ref).map(d => d.ref)]) {
-    const t = x.troops <= 0 && x.siege && Object.keys(x.siege).find(k => x.siege[k]);
-    if (t) siegeBreak(x, t, lines); // 기술자 보수면 한 번 버팀 (2026-11-14)
+    if (x.troops <= 0) siegeLoseRoll(x, lines); // 기술자 보수면 한 번 버팀 (2026-11-14)
   }
   const topDealer = [...dealtBy].sort((x, y) => y[1] - x[1])[0];
   if (g.troops <= 0) loseTreasures(g, topDealer ? topDealer[0] : null);

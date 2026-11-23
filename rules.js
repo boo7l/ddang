@@ -97,6 +97,7 @@ const RULES = {
   draftPerMerit: 0.1,       // 징병에 공적 × 0.1명이 더 모인다 (2026-10-25)
   draftPeacePer: 350,       // 징병하면 그 성의 치안이 모은 병사 350명당 1 떨어진다 (2026-10-25 200 → 250, 2026-10-26 "치안이 너무 잘 깎인다" 의견으로 300, 2026-11-11 시즌 6 도중 350: 기획자가 공지)
   draftPeacePerS7: 350,     // 시즌 7부터 350명당 1 (2026-11-09 기획자, 징병 치안 감소 완화. 시즌 7 패치노트에 넣음). draftPeaceOf()
+  statV1: { fromSeason: 9, troopsPerAvg: 100, draftPer: { min: 12, max: 14 } }, // 능력치 개편 V1 (2026-11-23 적용): 시즌 9부터 상한 평균 × 100, 징병 (평균 + 통솔) × 12~14
   troopsPerLea: 100,        // 장수 한 명의 최대 병력 = 통솔 × 100
 
   // 군량은 성마다 따로 쌓인다. 상한은 성 규모(1 소성, 2 중성, 3 대도시)마다 다르다 (임시값)
@@ -260,12 +261,22 @@ const domesticGain = (key, stat) => {
 const draftPeaceOf = season => ((season || 1) >= 7 ? RULES.draftPeacePerS7 : RULES.draftPeacePer);
 // 징병 1회로 늘어나는 병력: 통솔 × 10~20 (무작위)
 // 징병 1회 = 통솔 × 15~25 (무작위) + 공적 × 0.1
-const draftGain = (lea, merit = 0) => lea * randInt(RULES.draftPerLea.min, RULES.draftPerLea.max) + Math.floor(merit * RULES.draftPerMerit);
+// 능력치 개편 V1 (2026-11-17 초안, 2026-11-23 기획자 적용, 시즌 9부터. docs/balance/stat-rework.md):
+// 병력 상한 = 세 능력치 평균 × 100, 징병 1회 = (평균 + 통솔) × 12~14 + 공적 × 0.1. 통솔은 "많이"가 아니라 "빨리 채우는" 능력치
+const statV1 = () => seasonNow() >= RULES.statV1.fromSeason;
+const statAvg = st => ((st.lea || 0) + (st.war || 0) + (st.int || 0)) / 3;
+// 공적 보너스 빼고 징병 1회 기본 범위 [최소, 최대]. st = 능력치(effStats). 예전처럼 숫자(통솔)만 줘도 된다
+const draftBase = st => {
+  if (typeof st === 'number') st = { lea: st, war: st, int: st };
+  if (statV1()) { const b = statAvg(st) + st.lea, P = RULES.statV1.draftPer; return [Math.round(b * P.min), Math.round(b * P.max)]; }
+  return [st.lea * RULES.draftPerLea.min, st.lea * RULES.draftPerLea.max];
+};
+const draftGain = (st, merit = 0) => { const [lo, hi] = draftBase(st); return randInt(lo, hi) + Math.floor(merit * RULES.draftPerMerit); };
 // 출진에 필요한 군량
 // 출진 군량 (2026-11-06: 세력 특성 군량 소비도 적용. fid = 출진하는 세력)
 const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)));
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
-const troopsMax = g => effStats(g).lea * RULES.troopsPerLea + (gTrait(g).troopsBonus || 0); // 개인 특성 마성의 장수 +1,000 (2026-11-08)
+const troopsMax = g => { const st = effStats(g); return (statV1() ? Math.round(statAvg(st) * RULES.statV1.troopsPerAvg) : st.lea * RULES.troopsPerLea) + (gTrait(g).troopsBonus || 0); }; // 시즌 9부터 평균 × 100 (V1). // 개인 특성 마성의 장수 +1,000 (2026-11-08)
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
 // 농업·상업은 그 성 최대치 대비 찬 비율로 깎는 비율이 정해진다 (RULES.captureCutDev, 2026-11-07). 치안은 RULES.captureCut
 function captureDamage(cs, grade, repeat = false) {
@@ -786,6 +797,7 @@ const siegeMul = u => 1 + (gTrait(u).siegeBoost || 0); // 개인 특성 병기�
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%
+  retreatFrom: 9, // 2026-11-23 기획자: 시즌 9부터 성이 함락될 때 싸우지 않고 물러난 장수(방어 끔·고립·병력 0·멸망)도 병기 잃음 판정
   durFrom: 9, durMax: 6, durFix: [2, 4], // 병기 내구도 (2026-11-23, 시즌 9부터): 가득 6, 기술자 회복 2~4
   get breakChance() { return seasonNow() >= 9 ? 0.25 : seasonNow() >= 7 ? 0.4 : 0.5; }, // 시즌 9부터 25% (2026-11-22 기획자, 내구도와 함께). 부대가 전멸하면 병기가 부서질 확률 (2026-11-10 기획자: 시즌 7부터 50% → 40%, 시즌 7 패치노트)
   defStrikeFrom: 9, // 수비 장수의 벽력거도 쏜다 (2026-11-22 기획자, 시즌 9부터): 턴당 1번, 그 턴 처음 맞붙는 공격 부대에게
