@@ -483,11 +483,11 @@ function advance() {
         if (!g.faction) continue;
         if ((S.bans || {})[g.id] > Date.now()) { addLog(g, `💰 ${dateText(S.turn)} 금 수입 없음 (계정 정지 중)`); continue; } // 정지 중엔 금 수입 없음 (2026-11-22)
         const c = cityById(g.city), n = heads[g.faction + '|' + g.city], crowd = crowdRate(c.grade, n);
-        const capG = capitalOf(g.faction) ? RULES.capital.gold : 0; // 수도가 있는 세력 금 수입 +5% (2026-11-16, 시즌 8부터)
-        const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0) + capG))); // 세력 특성, 개인 특성 부호
+        const capG = capitalOf(g.faction) ? RULES.capital.gold : 0, cmdG = cmdPerk(g) ? RULES.commander.perkGold : 0; // 대도독 금 수입 +5% (2026-11-23, 시즌 9부터) // 수도가 있는 세력 금 수입 +5% (2026-11-16, 시즌 8부터)
+        const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0) + capG + cmdG))); // 세력 특성, 개인 특성 부호
         const crowdPct = crowd < 1 ? Math.round((1 - goldIncome(cs, 0, crowd, fac) / goldIncome(cs, 0, 1, fac)) * 100) : 0; // 정원 초과로 줄어든 비율 (전체 금 수입 기준)
         const floorText = fac ? ` · 세력 평균 상업 ${fac.avg}${fac.n * RULES.goldFloor.perCity >= 0.005 ? ` · 성 ${fac.n}개 +${Math.round(Math.min(RULES.goldFloor.cityMax, fac.n * RULES.goldFloor.perCity) * 1000) / 10}%` : ''}` : '';
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${capG ? ` · 수도 +${Math.round(capG * 100)}%` : ''}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${capG ? ` · 수도 +${Math.round(capG * 100)}%` : ''}${cmdG ? ` · 대도독 +${Math.round(cmdG * 100)}%` : ''}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
       }
     }
     // 군량 시세: 매달 RULES.foodBuy.steps 확률로 -2~+2 (4~8, 2026-11-10)
