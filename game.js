@@ -2058,7 +2058,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123210856&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123213240&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2068,7 +2068,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123210856&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123213240&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2078,7 +2078,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123210856&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123213240&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2492,7 +2492,9 @@ function meritTableDialog(back = null, backName = '도움말') {
     row('적 병력 피해', '+1', `없앤 병력 ${fmt(RULES.meritPerKill)}명당 (공격·수비 모두)`),
     row('성벽 피해', '+1', `깎은 방어 ${RULES.meritPerWall}당`),
     row('단기접전 승리 · 책략 · 돌격', '+' + M.duel, '한 번마다'),
-    row('정복 (적 세력 멸망)', byHeads ? `+${H.base.merit}~${H.base.merit + H.per.merit * H.max}` : '+' + RULES.destroyMerit.member, byHeads ? `세력 장수 모두 · 망한 세력 장수 1명당 +${H.per.merit} (${H.max}명까지)` : '세력 장수 모두'),
+    seasonNow() >= RULES.destroyS9.fromSeason // 2026-11-23 시즌 9: 0명 세력은 보상 없음, 장수 2명부터 +3씩, 우리 세력 인원 배율
+      ? row('정복 (적 세력 멸망)', `+${H.base.merit}~${H.base.merit + H.per.merit * (RULES.destroyS9.maxN - 1)}`, `세력 장수 모두 · 망한 세력 장수 1명이면 +${H.base.merit}, 1명 늘 때마다 +${H.per.merit} (${RULES.destroyS9.maxN}명까지) · 장수 없는 세력은 없음 · 우리 세력이 6~10명이면 ×0.8, 11~15명 ×0.6, 16명 이상 ×0.4`)
+      : row('정복 (적 세력 멸망)', byHeads ? `+${H.base.merit}~${H.base.merit + H.per.merit * H.max}` : '+' + RULES.destroyMerit.member, byHeads ? `세력 장수 모두 · 망한 세력 장수 1명당 +${H.per.merit} (${H.max}명까지)` : '세력 장수 모두'),
     sec('🏘 내정 · 군사'),
     row('내정 (농업 · 상업 · 축성 · 치안)', '+' + M.domestic, F && seasonNow() >= F.fromSeason ? `최대치에서 하는 초과내정은 +${F.merit}` : ''),
     row('징병 (수비대 징병 포함)', '+' + M.draft),

@@ -144,9 +144,15 @@ function destroyReward(fid, gone) {
   if (seasonNow() < 7) return;
   const R0 = RULES.destroyMerit, cmd = commanderOf(fid), name = factionById(gone).name;
   // 시즌 8부터 (2026-11-19 기획자): 망한 세력의 최근 10턴 최대 장수 수에 따라 (headsOf)
-  const H = R0.heads, byHeads = seasonNow() >= H.fromSeason, n = byHeads ? Math.min(H.max, headsOf(gone)) : 0;
-  const R = byHeads ? { member: H.base.merit + H.per.merit * n, commander: H.base.merit + H.per.merit * n, gold: H.base.gold + H.per.gold * n, exp: H.base.exp + H.per.exp * n } : R0;
-  const who = byHeads ? ` (${name} 장수 ${n}${n >= H.max ? '명 이상' : '명'})` : '';
+  const H = R0.heads, byHeads = seasonNow() >= H.fromSeason, D9 = RULES.destroyS9, s9 = seasonNow() >= D9.fromSeason;
+  // 시즌 9부터 (2026-11-23 기획자): 장수 0명 세력은 보상 없음, n = N - 1, 받는 세력 인원 배율
+  const N = s9 ? Math.min(D9.maxN, headsOf(gone)) : 0;
+  if (s9 && N <= 0) return;
+  const n = s9 ? N - 1 : byHeads ? Math.min(H.max, headsOf(gone)) : 0;
+  const size = membersOf(fid).filter(g => !g.test).length, mul = s9 ? D9.sizeMul.find(([upTo]) => size <= upTo)[1] : 1;
+  const sc = v => Math.round(v * mul);
+  const R = byHeads ? { member: sc(H.base.merit + H.per.merit * n), commander: sc(H.base.merit + H.per.merit * n), gold: sc(H.base.gold + H.per.gold * n), exp: sc(H.base.exp + H.per.exp * n) } : R0;
+  const who = s9 ? ` (${name} 장수 ${N}${N >= D9.maxN ? '명 이상' : '명'}${mul < 1 ? ` · 우리 세력 ${size}명이라 ×${mul}` : ''})` : byHeads ? ` (${name} 장수 ${n}${n >= H.max ? '명 이상' : '명'})` : '';
   for (const g of membersOf(fid)) {
     const m = g === cmd ? R.commander : R.member;
     g.merit = (g.merit || 0) + m;
