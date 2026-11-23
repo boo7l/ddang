@@ -1351,6 +1351,7 @@ function siegeAttack(g, att, from, to, mark, f) {
     g.troops -= loss;
     atkLost += loss;
     lines.push(`🏯 성벽 공격${g.siege && g.siege.충차 ? ' (충차)' : ''}: 방어 -${fmt(dmg)} (남은 방어 ${fmt(cs.wall)}) · 병력 -${fmt(loss)}`);
+    if (g.siege && g.siege.충차 && dmg > 0) siegeWear(g, '충차', lines); // 내구도 -1 (시즌 9부터)
     if (cs.wall <= 0) {
       captured = true;
       lines.push({ a: `${g.name}의 승리! 성벽이 무너져 ${josa(to.name, '을를')} 점령했다. (${owner.name} 세력에게서 빼앗음)`, d: `성벽이 무너져 ${josa(to.name, '이가')} ${myF.name} 세력 ${g.name}에게 함락되었다!` });
@@ -1585,6 +1586,19 @@ function runExplore(g) {
     }
     case 'engineer': { // 기술자 (2026-11-14, 시즌 7): 병기가 있으면 보수 (부서질 때 1번 버팀, 겹치지 않음), 없으면 병기 하나를 받는다 (보수 없이)
       const have = Object.keys(SIEGE).find(t => g.siege && g.siege[t]);
+      if (have && siegeDurOn()) { // 시즌 9부터 (2026-11-22 기획자): 50% 내구도 2~4 회복 / 50% 강화. 가득이면 강화, 이미 강화면 회복, 둘 다면 효과 없음
+        const M = SIEGE_EFFECT.durMax, full = siegeDur(g) >= M;
+        if (full && g.siegeFix) { text = `떠돌이 기술자를 만났지만, ${josa(have, '은는')} 멀쩡한 데다 이미 튼튼하게 강화되어 있었다.`; break; }
+        if (full || (!g.siegeFix && Math.random() < 0.5)) {
+          g.siegeFix = true;
+          text = `★ 떠돌이 기술자가 ${josa(have, '을를')} 강화해 주었다! 부대가 전멸해 병기가 부서질 때 한 번 버틴다.`;
+        } else {
+          const before = siegeDur(g);
+          g.siegeDur = Math.min(M, before + randInt(SIEGE_EFFECT.durFix[0], SIEGE_EFFECT.durFix[1]));
+          text = `★ 떠돌이 기술자가 ${josa(have, '을를')} 손봐 주었다! 내구도 ${before} → ${g.siegeDur} (최대 ${M})`;
+        }
+        break;
+      }
       if (have) {
         if (g.siegeFix) { text = `떠돌이 기술자를 만났지만, ${josa(have, '은는')} 이미 튼튼하게 강화되어 있었다.`; break; }
         g.siegeFix = true;
@@ -1594,6 +1608,7 @@ function runExplore(g) {
       let r = Math.random() * Object.values(e.give).reduce((a, b) => a + b, 0), type = Object.keys(e.give)[0];
       for (const [k, w] of Object.entries(e.give)) { r -= w; if (r < 0) { type = k; break; } }
       g.siege = { [type]: true };
+      g.siegeDur = SIEGE_EFFECT.durMax;
       delete g.siegeFix;
       text = `★ 떠돌이 기술자에게서 ${josa(type, '을를')} 얻어 부대에 갖췄다! (${SIEGE[type].desc})`;
       break;
@@ -1757,6 +1772,7 @@ function runSiege(g, o) {
   // 부대마다 병기는 하나만. 다른 병기를 가지고 있었으면 버린다
   const old = Object.keys(g.siege).find(t => g.siege[t]);
   g.siege = { [o.type]: true };
+  g.siegeDur = SIEGE_EFFECT.durMax; // 새 병기는 내구도 가득 (시즌 9부터 쓰임)
   delete g.siegeFix; // 새 병기에는 기술자 보수가 없다 (2026-11-14)
   addMerit(g, RULES.merit.siege);
   addLog(g, `${city.name}: ${josa(o.type, '을를')} 만들어 부대에 갖췄다! (${w.desc}) 내 금 -${fmt(price)}` + (old ? ` · 가지고 있던 ${josa(old, '은는')} 버렸다` : ''));

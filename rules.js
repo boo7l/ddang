@@ -139,7 +139,7 @@ const RULES = {
   // 임관 상한 (2026-11-15 기획자): 시즌 시작부터 turns턴까지, 세력에 든 장수(관리자 장수 포함, 테스트 장수만 제외)의 rate 이상이 된 세력에는 새로 임관 못 함.
   // minTotal: 세력에 든 장수가 이만큼 될 때부터 센다 (시즌 첫 장수들이 막히지 않게, 임시값). 이미 들어간 장수는 그대로
   joinCap: { rate: 0.4, turns: 60, minTotal: 5 },
-  medalHideFromSeason: 9, // 2026-11-22 기획자: 시즌 9부터 초반(임관 제한과 같은 joinCap.turns턴까지) 다른 사람 훈장을 숨긴다. 훈장 보고 세력 고르기 막기. 내 훈장·관리자는 그대로 // 2026-11-20 기획자: S8 도중 50% → 40%, 10명부터 → 5명부터
+  medalHideFromSeason: 99, // 2026-11-23 기획자: 보류 (시스템 바뀔 때 한꺼번에 정할 수도 있음, 다시 켜려면 9). 2026-11-22 기획자: 시즌 9부터 초반(임관 제한과 같은 joinCap.turns턴까지) 다른 사람 훈장을 숨긴다. 훈장 보고 세력 고르기 막기. 내 훈장·관리자는 그대로 // 2026-11-20 기획자: S8 도중 50% → 40%, 10명부터 → 5명부터
   // 대도독 (2026-11-13, 시즌 7부터, 기획서 "대도독 · 동맹"): 세력마다 한 명. 자격이 되는 장수가 직접 수락해야 오른다
   commander: { fromSeason: 7, supplyFromSeason: 8 /* 보급 (2026-11-16 기획자): 대도독만, 어디에 있든 우리 성 A → B 군량 (A·B는 우리 땅 2칸 안), 수송과 같은 양·공적, 한 턴 쓰는 명령 */, minMerit: 500, minMembers: 5, offline: 12 * 60 * 60 * 1000, handWait: 60 * 60 * 1000, seenEvery: 10 * 60 * 1000, noticeLen: 80, allyMin: 12, allyMax: 48 /* 2026-11-16 기획자: 36 → 48 */, allyMax2: 2, allyEnemyFromSeason: 9 /* 2026-11-22 기획자: 시즌 9부터 동맹을 맺어도 양쪽 모두 적대 세력(동맹 아닌 살아 있는 세력)이 하나 이상 남아야 한다 */, allyBreakTurns: 5, allyBreakMerit: 30, allyBreakMeritCmd: 50 /* 2026-11-15 기획자: 80 → 50 (2026-11-19 잠깐 80으로 했다가 50 유지로 되돌림) */, fireOffline: 18 * HOUR /* 2026-11-16 기획자: 24 → 18시간 */ }, // 동맹 (2026-11-13): 기간 12~36턴, 세력당 2개, 파기하면 5턴 뒤 풀림 + 파기한 세력 장수 공적 -30 · 대도독 -80(포함, 2026-11-13 100 → 80) // noticeLen: 공지 글자 수 // offline: 이만큼(실제 시간) 접속이 없으면 자리를 잃는다. handWait: 넘겨받을 장수가 수락할 시간. seenEvery: 마지막 접속 시각을 적는 간격
   get meritIncome() { return seasonNow() >= 9 ? 0.00004 : seasonNow() >= 7 ? 0.00005 : 0.0001; }, // 2026-11-22 기획자: 시즌 9부터 공적 250마다 1%. // 2026-11-12 시즌 7부터 공적 200마다 1% (기획자). 공적 보너스: 공적 100마다 수입 1% 더 (1,000이면 10%. 2026-10-25 0.0001 → 0.0002, 2026-10-31 다시 0.0001)
@@ -566,6 +566,7 @@ function fightRounds(att, def, wall, left, field = false) {
     const bx = [], dLoss = bondSave(def, Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(att) * luck())), att, bx);
     def.troops -= dLoss;
     lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
+    siegeWear(att, '벽력거', lines); // 내구도 -1 (시즌 9부터)
   }
   // 수비 벽력거 (2026-11-22 기획자, 시즌 9부터): 수비 장수의 벽력거도 이번 턴에 처음 맞붙는 공격 부대에게 1번 선제 사격 (공격 쪽 사격 뒤, 반격 없음)
   const dRef = def.ref, nowTurn = typeof S !== 'undefined' && S ? S.turn || 0 : 0;
@@ -574,7 +575,9 @@ function fightRounds(att, def, wall, left, field = false) {
     const bx = [], aLoss = bondSave(att, Math.min(att.troops, Math.ceil(defensePower(def, wall, att) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(def) * luck())), def, bx);
     att.troops -= aLoss;
     lines.push(`💥 ${def.name}의 벽력거 선제 사격! ${att.name} -${aLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
+    siegeWear(def, '벽력거', lines); // 내구도 -1 (시즌 9부터)
   }
+  const tower = !!(att.siege && att.siege.정란); // 정란: 이 맞대결에서 한 합이라도 싸우면 내구도 -1 (시즌 9부터)
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
     // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 persuade(지금 4%) 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
@@ -644,6 +647,7 @@ function fightRounds(att, def, wall, left, field = false) {
       if (hit > 0) { wall -= hit; pierced += hit; lines.push(`🔩 관통! 성벽 방어 -${hit.toLocaleString('ko-KR')}`); }
     }
   }
+  if (tower && used > 0) siegeWear(att, '정란', lines);
   return { used, lines, atkLost: a0 - att.troops, defLost: d0 - def.troops, pierced };
 }
 
@@ -754,7 +758,21 @@ function addStatExp(g, key, gain) {
 function siegeBreak(x, t, out) {
   if (Math.random() >= SIEGE_EFFECT.breakChance) return;
   if (x.siegeFix) { delete x.siegeFix; out.push(`${x.name}의 ${josa(t, '이가')} 부서질 뻔했지만, 기술자가 강화해 둔 덕에 버텼다!`); return; }
-  x.siege = {}; out.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`);
+  x.siege = {}; delete x.siegeDur; out.push(`${x.name}의 ${josa(t, '이가')} 부서졌다…`);
+}
+// 병기 내구도 (2026-11-22 기획자 확정, 2026-11-23 적용, 시즌 9부터): 모든 병기 내구도 durMax(6). 효과가 실제로 나온 1번마다 -1, 0이 되면 사라진다
+// 벽력거 = 사격 1번 (공격·수비), 충차 = 성벽을 깎은 1번, 정란 = 수비(야전 상대) 부대 하나와 맞붙은 전투 1번. 값이 없으면(예전 병기) 가득으로 본다
+const siegeDurOn = () => seasonNow() >= SIEGE_EFFECT.durFrom;
+const siegeDur = g => (g.siegeDur == null ? SIEGE_EFFECT.durMax : g.siegeDur);
+const siegeDurText = g => (siegeDurOn() && g && g.siege && Object.values(g.siege).some(Boolean) ? ` (내구도 ${siegeDur(g)}/${SIEGE_EFFECT.durMax})` : ''); // 화면 표시용
+function siegeWear(x, t, out) {
+  if (!siegeDurOn()) return;
+  const g = x.ref || x; // 전투 부대면 장수에게 적는다
+  if (!g.siege || !g.siege[t]) return;
+  g.siegeDur = siegeDur(g) - 1;
+  if (g.siegeDur > 0) return;
+  g.siege = {}; x.siege = {}; delete g.siegeDur; delete g.siegeFix;
+  out.push(`🔧 ${g.name}의 ${josa(t, '이가')} 다 닳아서 못 쓰게 되었다. (내구도 0)`);
 }
 const SIEGE = {
   충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
@@ -768,7 +786,8 @@ const siegeMul = u => 1 + (gTrait(u).siegeBoost || 0); // 개인 특성 병기�
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%
-  get breakChance() { return seasonNow() >= 7 ? 0.4 : 0.5; }, // 부대가 전멸하면 병기가 부서질 확률 (2026-11-10 기획자: 시즌 7부터 50% → 40%, 시즌 7 패치노트)
+  durFrom: 9, durMax: 6, durFix: [2, 4], // 병기 내구도 (2026-11-23, 시즌 9부터): 가득 6, 기술자 회복 2~4
+  get breakChance() { return seasonNow() >= 9 ? 0.25 : seasonNow() >= 7 ? 0.4 : 0.5; }, // 시즌 9부터 25% (2026-11-22 기획자, 내구도와 함께). 부대가 전멸하면 병기가 부서질 확률 (2026-11-10 기획자: 시즌 7부터 50% → 40%, 시즌 7 패치노트)
   defStrikeFrom: 9, // 수비 장수의 벽력거도 쏜다 (2026-11-22 기획자, 시즌 9부터): 턴당 1번, 그 턴 처음 맞붙는 공격 부대에게
   firstStrike: 0.5, // 벽력거: 합 전에 쏘는 선제 사격의 피해 = 보통 한 합 피해의 50% (2026-10-26 시즌 2 뒤 "너무 세다"는 의견: 첫 합 무피해 100% → 선제 사격 50% + 5합 그대로)
 };

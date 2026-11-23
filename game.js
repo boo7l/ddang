@@ -1183,7 +1183,7 @@ function siegeDialog() {
       <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
   pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
-    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}${p.siegeFix ? '(강화) · 새로 만들면 강화가 사라져요' : ''}</p>`, opts, '예약', v => {
+    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}${siegeDurText(p)}${p.siegeFix ? '(강화) · 새로 만들면 강화가 사라져요' : ''}${siegeDurOn() ? ` · 새 병기는 내구도 ${SIEGE_EFFECT.durMax}` : ''}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
     reserve({ cmd: 'siege', type: v });
@@ -2059,7 +2059,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122231802&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123203235&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2069,7 +2069,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261122231802&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123203235&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2079,7 +2079,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261122231802&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123203235&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3012,7 +3012,7 @@ function memberDialog(id) {
   const tierNo = t ? { SSR: 0, SR: 1, R: 2, N: 3 }[t.tier] : 3; // 색은 특성 확률표(.oddsTier)와 같다
   const eff = effStats(g);
   const gear = Object.keys(SHOP).filter(k => gearCount(g, k)).map(k => `${k} ${gearCount(g, k)}`).join(' · ');
-  const siege = Object.keys(SIEGE).filter(k => g.siege && g.siege[k]).map(k => k + (g.siegeFix ? '(강화)' : '')).join(' · '); // 기술자 강화 (2026-11-15)
+  const siege = Object.keys(SIEGE).filter(k => g.siege && g.siege[k]).map(k => k + siegeDurText(g) + (g.siegeFix ? '(강화)' : '')).join(' · '); // 기술자 강화 (2026-11-15), 내구도 (시즌 9)
   const guarding = g.defense && g.troops > 0; // 장수 창과 같이 병력이 없으면 꺼짐
   openModal(`<div class="mHead"><span id="mFace"></span><div><div class="mName">${esc(g.name)}${flagOf(g.id)}</div><div><span class="swatch" style="background:${f.color}"></span>${esc(f.name)}</div></div></div>
     <table class="mTable">
@@ -3059,7 +3059,7 @@ function renderGeneral() {
         <tr><th>군량</th><td>${S.cities[p.city].food === undefined ? '?' : fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
-        ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).map(t => t + (p.siegeFix ? '(강화)' : '')).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
+        ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).map(t => t + siegeDurText(p) + (p.siegeFix ? '(강화)' : '')).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
         ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${trLabel(n)}</span></span> <button class="mini gSell" data-sell="${esc(n)}">팔기</button>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
