@@ -75,7 +75,7 @@ const RULES = {
   ronin: { fromSeason: 8, moveRange: 2, quest: [100, 300], questMerit: 0.05, questMeritMax: 100, train: { min: 50, max: 70 }, get cmds() { return seasonNow() >= 9 ? ['move', 'explore', 'quest', 'enlist'] : ['move', 'explore', 'train', 'quest', 'enlist']; }, chat: '_ronin' }, // 2026-11-18 기획자: 의뢰 금에 공적 × 0.05 (최대 +100) 더함 (처음 0.02) (패치노트엔 안 씀). 이동(누구 땅이든 2칸)·탐색·수련(50~70)·의뢰(금 100~300)·임관(있는 성의 세력). 공적은 없음, 탐색·수련 금은 같음
   // 2026-11-23 기획자 (시즌 9부터): 수련 잠정 폐지(재야 포함), 일반 장수 탐색 폐지(재야 탐색은 남김). 대신 모든 내정(농업·상업·축성·치안)마다 domExplore 확률로 탐색 이벤트(탐색표 그대로, 금 없음). 치안이 최대치여도 실패하지 않고 공적·경험치 보통.
   // 최대치 치안 = 첩자 색출: 우리 성에 적 세력 첩보가 걸려 있으면 counterSpy × 넘친 비율 확률로 그 정보망을 모두 끊는다 (같은 날 처음엔 치안만 30% 탐색 이벤트였다가 바꿈)
-  s9cmd: { fromSeason: 9, domExplore: 0.1, counterSpy: 0.3 },
+  s9cmd: { fromSeason: 9, domExplore: 0.15, counterSpy: 0.3 }, // domExplore 2026-11-23 같은 날 10% → 15%
   lateExp: { fromSeason: 9, afterTurn: 60, turns: 150, mul: 1.25 }, // 중도 참가 경험치 (2026-11-23 기획자, 시즌 9부터): 시즌 afterTurn턴 이후 그 계정이 처음 만든 장수는 경험치 ×1.25. 능력치 합이 세력 장수 평균(테스트 제외)을 넘거나 turns턴이 지나면 끝
   lateGold: { fromSeason: 8, perTurns: 10, gold: 200, max: 5000 }, // 중도 참가 금 (2026-11-16 기획자, 시즌 8부터): 시즌 시작 후 10턴마다 +200 (최대 5,000, 250턴에 다 참). 2026-11-18 기획자: 30턴마다 +500에서 바꿈. 이번 시즌에 그 계정이 처음 만드는 장수만 (지우고 다시 만들면 없음)
   playerGoldMax: 15000,     // 장수 한 명이 가질 수 있는 금 (2026-11-13 시즌 7: 10,000 → 15,000)
