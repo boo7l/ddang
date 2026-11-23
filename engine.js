@@ -274,8 +274,8 @@ const rejoinLeft = (g, fid) => (g && g.leftFaction && (g.leftFaction.all || g.le
 // 티어마다 뽑힐 비율이 다르다: 상이 가장 드물고 하가 가장 흔하다 (TRAIT_TIER_WEIGHT, 2026-10-28)
 // sure: 이 티어들 중 하나는 꼭 나오게 한다 (탐색 특성 주머니는 중 이상 1장 보장, 2026-10-28). 안 나왔으면 무작위 한 장을 그 티어에서 다시 뽑아 바꾼다
 function drawTraits(prev = [], sure = null) {
-  let pool = Object.keys(GENERAL_TRAITS).filter(k => !prev.includes(k));
-  if (pool.length < TRAIT_DRAW) pool = Object.keys(GENERAL_TRAITS);
+  let pool = traitIds().filter(k => !prev.includes(k));
+  if (pool.length < TRAIT_DRAW) pool = traitIds();
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
   const pick = list => { // 티어 비율대로 하나 (뽑은 것은 list에서 뺀다)
     let r = Math.random() * list.reduce((s, k) => s + weight(k), 0), i = 0;
@@ -399,7 +399,11 @@ const meritRanking = () => allGenerals()
 
 // 기능 스위치가 꺼진 명령인지
 const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', explore: 'explore', shop: 'shop', buy: 'shop' };
-const cmdOn = cmd => !FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]];
+// 시즌 9부터 없어진 명령 (2026-11-23): 수련은 모두, 탐색은 재야만 남김. g가 없으면 일반 장수로 본다
+const cmdGone = (cmd, g) => seasonNow() >= RULES.s9cmd.fromSeason && (cmd === 'train' || (cmd === 'explore' && !isRonin(g)));
+const cmdOn = (cmd, g) => (!FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]]) && !cmdGone(cmd, g);
+// 뽑을 수 있는 특성 (시즌마다 off로 빠지는 것 제외, 2026-11-23)
+const traitIds = () => Object.keys(GENERAL_TRAITS).filter(k => !GENERAL_TRAITS[k].off);
 
 // fid 세력 성 가운데, fromId에서 그 세력 땅만 밟고 maxSteps칸 안에 갈 수 있는 성들 (이동 목적지)
 // (fromId가 아직 내 성이 아니어도 된다: 예약표에서 출진 뒤 그 성에 있을 거라고 짐작할 때)
@@ -602,7 +606,7 @@ function runOrders(mark) {
     if (isRonin(g) && !RULES.ronin.cmds.includes(order.cmd)) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야는 쓸 수 없는 명령 → 대기`); continue; }
     if (g.faction && (order.cmd === 'quest' || order.cmd === 'enlist')) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야만 쓰는 명령 → 대기`); continue; }
     if (fieldDone.has(g.id)) continue; // 야전에서 이미 싸워 이번 턴 출진이 끝났다
-    const fail = COMMANDS[order.cmd] && cmdOn(order.cmd) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
+    const fail = COMMANDS[order.cmd] && cmdOn(order.cmd, g) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
     else addRecord(g, 'n_' + order.cmd); // 명령별 성공 횟수 (2026-11-08, 시즌 기록용: n_explore · n_move · n_transport …)
   }
@@ -715,7 +719,8 @@ function runDomestic(g, key) {
   const city = cityById(g.city), c = S.cities[g.city], d = DOMESTIC[key];
   const max = devMax(city.grade, key);
   const F = RULES.fullDev, full = seasonNow() >= F.fromSeason && F.reward[key]; // 풀내정 (2026-11-18, 시즌 8부터): 최대치여도 보상
-  if (c[key] >= max && !full) return `${josa(d.label, '이가')} 이미 최대치`;
+  const peaceEv = key === 'peace' && seasonNow() >= RULES.s9cmd.fromSeason; // 시즌 9: 치안은 최대치여도 실패하지 않고, 할 때마다 탐색 이벤트 판정 (2026-11-23)
+  if (c[key] >= max && !full && !peaceEv) return `${josa(d.label, '이가')} 이미 최대치`;
   const t = traitOf(g.faction), bonus = (key === 'comm' ? t.comm || 0 : 0) + ((gTrait(g).dev || {})[key] || 0); // 도겸: 상업 내정 +5%, 개인 특성 상재·둔전·장인·전문정치팀
   const R = RULES.recoverBuff, rec = seasonNow() >= R.fromSeason && R.keys.includes(key) && c[key] < newCityState(city.grade)[key] ? R.mult : 1; // 복구 버프 (시즌 8부터, 2026-11-16): 처음 값보다 낮으면 × 1.5
   const bes = c.besieged && besiegeOn() ? RULES.besiege.devMul : 1; // 포위된 성: 모든 내정 × 0.7 (2026-11-21 기획자, 그 전엔 치안만 × 0.6)
@@ -731,10 +736,11 @@ function runDomestic(g, key) {
     else if (kind === 'food') { const got = Math.max(0, Math.min(amt, foodMax(city.grade) - c.food)); c.food += got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}군량 +${fmt(got)}`; }
     else if (kind === 'guard') { const got = city.faction === g.faction ? Math.max(0, Math.min(amt, RULES.guardMax[city.grade] - (c.guard || 0))) : 0; c.guard = (c.guard || 0) + got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}수비대 +${fmt(got)}`; }
   }
-  const fullTurn = full && gain === 0, halfReward = fullTurn && seasonNow() < F.fullFromSeason; // 이미 최대치였던 턴: 공적·경험치 절반 (시즌 9부터는 보통과 같게, 2026-11-23)
+  const fullTurn = (full || peaceEv) && gain === 0, halfReward = fullTurn && seasonNow() < F.fullFromSeason; // 이미 최대치였던 턴: 공적·경험치 절반 (시즌 9부터는 보통과 같게, 2026-11-23)
   addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''}${bes < 1 ? ` (포위 ×${bes})` : ''} (${c[key]}/${max})${extra}`);
   addMerit(g, halfReward ? F.merit : RULES.merit.domestic);
   gainStatExp(g, d.stat, halfReward ? F.exp : RULES.statExp.domestic);
+  if (peaceEv && Math.random() < RULES.s9cmd.peaceExplore) runExplore(g, true);
   return '';
 }
 
@@ -1494,9 +1500,10 @@ function captureTreasure(g, city, lines) {
 }
 
 // ----- 탐색 -----
-function runExplore(g) {
+// viaPeace (2026-11-23, 시즌 9부터): 치안 내정 중에 일어난 탐색 이벤트. 금을 내지 않고, 공적은 치안 내정 몫만 받는다
+function runExplore(g, viaPeace = false) {
   const city = cityById(g.city), cs = S.cities[g.city];
-  const why = pay(g, 'explore');
+  const why = viaPeace ? '' : pay(g, 'explore');
   if (why) return why;
   const table = isRonin(g) ? RONIN_EXPLORE : EXPLORE; // 재야는 따로 (2026-11-19)
   let e = rollExplore(table);
@@ -1655,9 +1662,9 @@ function runExplore(g) {
     default:
       text = '주변을 살폈으나 별다른 일은 없었다.';
   }
-  addLog(g, `${city.name} 탐색: ${text}`);
+  addLog(g, viaPeace ? `🎲 ${city.name} 순찰 중: ${text}` : `${city.name} 탐색: ${text}`);
   if (warExp) gainStatExp(g, 'war', warExp); // 도적과 싸움 (2026-11-08)
-  addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 공적이 붙는다
+  if (!viaPeace) addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 공적이 붙는다
   return '';
 }
 

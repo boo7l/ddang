@@ -713,7 +713,7 @@ function rankDialog() {
   const list = meritRanking(), rows = rankRows(list);
   openModal(`<h2>🏆 공적 순위 <span class="dim small">· ${dateText(S.turn)} · 상위 10명 (장수 ${list.length}명)</span></h2>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table></div>` : '<p class="dim">아직 장수가 없어요.</p>'}
-    <p class="dim">공적은 수련을 뺀 명령마다 쌓이고, 전투에 이기면 많이 쌓여요.<br>천하통일 때 이 순위로 시즌을 마무리해요.</p>
+    <p class="dim">공적은 ${seasonNow() >= RULES.s9cmd.fromSeason ? '' : '수련을 뺀 '}명령마다 쌓이고, 전투에 이기면 많이 쌓여요.<br>천하통일 때 이 순위로 시즌을 마무리해요.</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
@@ -1311,7 +1311,7 @@ async function resignDialog() {
 - 예약해 둔 명령은 모두 지워져요.
 ${RULES.resignMeritCut ? `- 공적이 ${Math.round(RULES.resignMeritCut * 100)}% 줄어요. (지금 ${fmt(p.merit)} → ${fmt(p.merit - Math.floor(p.merit * RULES.resignMeritCut))})
 - 금·능력치는 그대로예요.` : '- 공적·금·능력치는 그대로예요.'}
-${roninOn() ? `- ${me().city ? cityById(me().city).name : '이 성'}에 재야로 남아요. 이동·탐색·수련·의뢰를 할 수 있고, 들어갈 세력의 성에 가서 [임관]해요.` : '- 세력을 새로 골라 들어가요.'}
+${roninOn() ? `- ${me().city ? cityById(me().city).name : '이 성'}에 재야로 남아요. 이동·탐색·${seasonNow() >= RULES.s9cmd.fromSeason ? '' : '수련·'}의뢰를 할 수 있고, 들어갈 세력의 성에 가서 [임관]해요.` : '- 세력을 새로 골라 들어가요.'}
 - ${seasonNow() >= RULES.rejoinAllFrom ? `모든 세력에 ${RULES.rejoinWait}턴 동안 임관할 수 없어요.` : `${f.name} 세력에는 ${RULES.rejoinWait}턴 동안 다시 들어갈 수 없어요.`}`)) return;
   if (await call('resign')) { if (isRonin(me())) renderAll(); else showJoin(); } // 시즌 8부터 재야로 남는다
 }
@@ -1377,7 +1377,7 @@ function helpDialog(page = -1) {
       <li><b>통솔</b>: 징병 속도(빨리 채움), 치안, 보병</li>` : `<li><b>통솔</b>: 최대 병력(통솔 × ${RULES.troopsPerLea}), 징병, 치안, 보병</li>`}
       <li><b>무력</b>: 축성, 기병, <b>단기접전</b>(양쪽 무력 ${RULES.duel.minWar} 이상이면 전투 중 가끔), <b>돌격</b>(무력 ${RULES.charge.minWar} 이상이면 전투 중 가끔), 모든 병종 전투력에 보너스 (무력 10마다 +${Math.round(RULES.warPer1 * 10 * 1000) / 10}%)</li>
       <li><b>지력</b>: 농업·상업, 궁병, <b>계략</b>(파괴·유언·첩보 성공률), <b>책략</b>(지력 ${RULES.scheme.minInt} 이상이면 전투 중 가끔)</li>
-      <li>행동하면 그 능력치의 <b>경험치</b>가 쌓이고, 다 차면 1 올라요. (내정 → 그 내정의 능력치, 출진 → 병종의 능력치, <b>수련</b> → 고른 능력치)</li>
+      <li>행동하면 그 능력치의 <b>경험치</b>가 쌓이고, 다 차면 1 올라요. (내정 → 그 내정의 능력치, 출진 → 병종의 능력치${seasonNow() >= RULES.s9cmd.fromSeason ? '' : ', <b>수련</b> → 고른 능력치'})</li>
       <li><b>상점</b>(장수 창의 단추)에서 명마(통솔)·명검(무력)·서적(지력)를 사면 하나에 +${SHOP.명검.bonus}. 예약 없이 바로 사지고, 여러 번 살 수 있지만 살 때마다 비싸져요.</li></ul>`],
     ['⚔ 싸우는 법', `<ol>
       <li><b>징병</b>으로 병사를 모아요. 병종은 <b>기병 → 보병 → 궁병 → 기병</b> 순으로 상대에게 강해요 (전투력 +${Math.round((seasonNow() >= 7 ? RULES.matchupS7 : RULES.matchup) * 100)}%). 다른 병종을 모으면 있던 병력은 흩어지니 조심해요.</li>
@@ -1417,7 +1417,7 @@ function helpDialog(page = -1) {
       <li><b>농업</b>: 성의 농업을 올려요. 4·10월 수확 때 군량이 더 들어와요. (지력)</li>
       <li><b>상업</b>: 성의 상업을 올려요. 1·4·7·10월에 금이 더 들어와요. (지력)</li>
       <li><b>축성</b>: 성의 방어를 올려요. 그 성을 지킬 때 받는 피해가 줄어요 (${wallCutStepped() ? '방어가 높을수록 피해 감소 (최대 25%)' : `방어 100마다 피해 ${Math.round(RULES.wallCutPer100 * 100)}% 감소`}). (무력)</li>
-      <li><b>치안</b>: 치안을 올려요. ${RULES.peaceOk} 아래면 수입·징병 -${Math.round((1 - peaceIncome(RULES.peaceLow)) * 100)}%, ${RULES.peaceLow} 아래면 수입 -${Math.round((1 - peaceIncome(0)) * 100)}%에 징병할 수 없어요. (통솔)</li></ul>
+      <li><b>치안</b>: 치안을 올려요. ${RULES.peaceOk} 아래면 수입·징병 -${Math.round((1 - peaceIncome(RULES.peaceLow)) * 100)}%, ${RULES.peaceLow} 아래면 수입 -${Math.round((1 - peaceIncome(0)) * 100)}%에 징병할 수 없어요. (통솔)${seasonNow() >= RULES.s9cmd.fromSeason ? `<br>치안을 할 때마다 ${Math.round(RULES.s9cmd.peaceExplore * 100)}% 확률로 <button class="link" id="helpExplore"><b>탐색 이벤트</b></button>가 일어나요 (금·군량·의병·장비·보물·특성 주머니 등, 가끔 도적). 치안이 최대치여도 할 수 있어요.` : ''}</li></ul>
       <p class="sub">군사</p><ul>
       <li><b>징병</b>: 금 ${RULES.myGoldCost.draft}으로 병사를 모아요. 병종(보병·기병·궁병)을 골라요.</li>
       <li><b>출진</b>: 이웃 성을 공격해요. 공백지는 싸우지 않고 들어가요.</li>
@@ -1428,8 +1428,8 @@ function helpDialog(page = -1) {
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
       ${cmdOn('spy') ? `<li><b>첩보</b>: ${spyRange() > 1 ? `${spyRange()}칸 안의` : '이웃'} 적 성의 농업·상업·방어·치안·군량을 알아내요. 성공하면 ${RULES.spyTurns}턴 동안 우리 세력 모두가 볼 수 있어요.</li>` : ''}</ul>
       <p class="sub">기타</p><ul>
-      ${RULES.features.explore ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·보물을 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
-      <li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>
+      ${RULES.features.explore && seasonNow() < RULES.s9cmd.fromSeason ? `<li><button class="link" id="helpExplore"><b>탐색</b></button>: 금 ${RULES.myGoldCost.explore}으로 주변을 뒤져요. 금·군량·의병·장비·보물을 얻거나, 가끔 도적을 만나요. <span class="dim">(탐색을 누르면 확률표)</span></li>` : ''}
+      ${seasonNow() >= RULES.s9cmd.fromSeason ? '' : `<li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>`}
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
       <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? "·대도시" : ""}을 한 단계 키워요${capitalOn() ? " (대도시 → 수도는 세력당 하나)" : ""}. 많은 금을 쓰는 대신 공적과 능력 경험치를 얻을 수 있어요.</li></ul>`],
@@ -1460,7 +1460,7 @@ function helpDialog(page = -1) {
     // 작은 팁 (2026-11-10): 제목 상자만 보이고, 누르면 펼쳐지고 다시 누르면 접힌다 (details)
     ['💡 작은 팁', `<div class="tipBoxes">
       <details class="tipBox"><summary>특성</summary><p>각 세력과 장수에게 개성을 주는 <b>특성</b>이 있어요. 장수 정보에서 확인할 수 있고, 탐색을 하면 특성을 바꿀 기회를 얻을 수도 있어요. <button class="link" id="helpTraitOdds">확률표</button></p></details>
-      <details class="tipBox"><summary>보물</summary><p>탐색을 하다 보면 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</p></details>
+      <details class="tipBox"><summary>보물</summary><p>${seasonNow() >= RULES.s9cmd.fromSeason ? '치안 순찰(탐색 이벤트)이나 적 성 함락에서' : '탐색을 하다 보면'} 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</p></details>
       <details class="tipBox"><summary>세력</summary><p><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</p></details>
       <details class="tipBox"><summary>방어 모드</summary><p>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</p></details>
       <details class="tipBox"><summary>공적</summary><p><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요. <button class="link" id="helpMeritTable">공적표</button></p></details>
@@ -2060,7 +2060,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123215847&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123220519&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2070,7 +2070,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123215847&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261123220519&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2080,7 +2080,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123215847&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261123220519&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2508,7 +2508,7 @@ function meritTableDialog(back = null, backName = '도움말') {
     sec('🕵️ 계략 · 탐색'),
     row('계략 시도 (첩보 · 파괴 · 유언)', '+' + M.plot),
     row('계략 성공', '+' + M.plotOk, `시도와 합쳐 +${M.plot + M.plotOk}`),
-    row('탐색', '+' + M.explore),
+    seasonNow() >= RULES.s9cmd.fromSeason ? '' : row('탐색', '+' + M.explore),
   ];
   if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, '재야는 이것 말고는 공적을 얻지 않아요')); }
   const lose = [
@@ -2530,7 +2530,7 @@ function meritTableDialog(back = null, backName = '도움말') {
 }
 function traitOddsDialog(back = null, backName = '주머니') {
   const weight = k => TRAIT_TIER_WEIGHT[GENERAL_TRAITS[k].tier] || 1;
-  const ids = Object.keys(GENERAL_TRAITS), total = ids.reduce((s, k) => s + weight(k), 0);
+  const ids = traitIds(), total = ids.reduce((s, k) => s + weight(k), 0);
   const order = { SSR: 0, SR: 1, R: 2, N: 3 };
   const rows = ids.sort((a, b) => order[GENERAL_TRAITS[a].tier] - order[GENERAL_TRAITS[b].tier]).map(k => {
     const t = GENERAL_TRAITS[k];
@@ -3155,7 +3155,7 @@ function renderCommands() {
   const statName = k => STATS.find(s => s.key === k).name;
   // 명령 단추 아래 작은 글씨에는 금을 쓰지 않는다 (2026-11-03, 14px로 키우면서 한 줄에 들어가게). 금은 각 명령 창에 보인다 탐색만 예외: 창이 없어 단추에 금을 쓴다 (2026-11-04)
   const COOL = '이 칸은 쿨타임'; // 이 글씨가 붙은 단추는 휴대폰에서 흐리게 (작은 글씨를 숨기므로, 2026-11-07)
-  const btn = (cmd, name, sub, dim = false) => (cmdOn(cmd) ? `<button data-cmd="${cmd}"${sub === COOL || dim ? ' class="cool"' : ''}>${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
+  const btn = (cmd, name, sub, dim = false) => (cmdOn(cmd, p) ? `<button data-cmd="${cmd}"${sub === COOL || dim ? ' class="cool"' : ''}>${name}${sub ? `<small>${sub}</small>` : ''}</button>` : '');
   const rows = p.queue.map((o, i) => `<li data-i="${i}" class="${i === slot ? 'sel' : ''}${o ? '' : ' idle'}${isNightTurn(slotTime(i)) ? ' night' : ''}">
       <span class="t">${dateOf(S.turn + 1 + i).month}월${RULES.goldMonths.includes(dateOf(S.turn + 1 + i).month) ? '💰' : ''}${RULES.harvestMonths.includes(dateOf(S.turn + 1 + i).month) ? '🌾' : ''}</span>
       <span class="clock">${fmtClock(slotTime(i))}</span>
@@ -3207,7 +3207,7 @@ function renderCommands() {
     </div>
     <p class="sub">🎭 계략</p>
     <div class="cmds cg-plot">${plot}</div>
-    ${etc ? `<p class="sub subRow">🎒 기타${lockStat ? `<label class="lockSw" title="켜 두면 수련을 누르자마자 지금 능력치로 예약해요"><input type="checkbox" id="trainLock"${trainLock ? ' checked' : ''}> 능력 고정</label>` : ''}</p>
+    ${etc ? `<p class="sub subRow">🎒 기타${lockStat && cmdOn('train', p) ? `<label class="lockSw" title="켜 두면 수련을 누르자마자 지금 능력치로 예약해요"><input type="checkbox" id="trainLock"${trainLock ? ' checked' : ''}> 능력 고정</label>` : ''}</p>
     <div class="cmds cg-etc">${etc}</div>` : ''}
     <div class="qBtnsM">${qBtns}</div>
 `;
