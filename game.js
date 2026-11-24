@@ -68,7 +68,7 @@ function applyView(d) {
   $('#adminBtn').hidden = !IS_ADMIN;
   $('#keysBtn').hidden = !hotkeysOk(); // 단축키: 지금은 관리자만 (2026-11-22)
   $('#bgmTestBtn').hidden = !IS_ADMIN; // 임시 (2026-11-17): 천통 음악 미리듣기
-  $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
+  syncPrepBtns(); // 도움말·제갈량에게 묻기 (문 닫힘이면 관리자만)
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
@@ -720,7 +720,14 @@ function rankDialog() {
 // 첫 화면: 지금 시즌 상태 (로그인 없이 서버에 물어본다)
 // 시즌이 끝나고 새 시즌을 시작하기 전에는 관리자만 게임에 들어온다 (2026-10-27). 로그인과 아이디 정하기는 그때도 된다: 게시판을 쓸 수 있게 (2026-10-31)
 let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
+// 시즌 준비 중 (문 닫힘, 2026-11-24 기획자): 관리자가 아니면 도움말·공명의 조언을 숨긴다. 다음 시즌 규칙이 미리 보이지 않게 (상단 메뉴는 첫 화면에도 보인다)
+function syncPrepBtns() {
+  const locked = !!preparing && !IS_ADMIN;
+  $('#helpBtn').hidden = locked;
+  $('#aiBtn').hidden = locked || !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
+}
 function applyLoginGate() {
+  syncPrepBtns();
   const closed = preparing && !IS_ADMIN;
   $('#tPrep').hidden = !closed;
   $('#tPrep').textContent = closed ? `🛠 시즌 ${preparing} 준비 중이에요.` : '';
@@ -1565,7 +1572,7 @@ function showScreen(id) {
   document.body.classList.toggle('inGame', id === 'game'); // 휴대폰: 게임 화면은 앱처럼 (화면 고정, 가운데만 스크롤)
   if (id !== 'game') { $('#nowDate').textContent = ''; $('#nowSeason').textContent = ''; $('#nowScenario').textContent = ''; }
   $('#whoName').textContent = ME ? ME.nickname : '';
-  $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기: 로그인만 하면 (시즌 문이 닫혀 있어도, 2026-11-19)
+  syncPrepBtns(); // 도움말·제갈량에게 묻기: 문이 닫혀 있으면 관리자만 (2026-11-24)
   try { bgmSync(); } catch (e) { /* 음악 준비 전 */ } // 화면이 바뀌면 곡도 (첫 화면 곡 ↔ 게임 곡, 2026-11-07)
 }
 
@@ -2061,7 +2068,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124201415&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124204425&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2071,7 +2078,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124201415&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124204425&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2081,7 +2088,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124201415&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124204425&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3560,7 +3567,7 @@ $('#logout').onclick = logout;
 $('#helpBtn').onclick = () => helpDialog(); // 클릭 정보가 쪽 번호로 들어가지 않게
 // 제목줄 ☰ 메뉴 (2026-10-28, 휴대폰·PC): 누르면 순위·관리·메인·로그아웃이 아래로 펼쳐진다. 메뉴 안 단추를 누르거나 바깥을 누르면 닫힌다
 // 정보: 이번 시즌 장수가 없으면 흐리게 (2026-11-07, 그 전엔 숨김). 메인 화면에서 아직 세계를 안 받았으면 받아 와서 정한다
-const menuRecordSync = () => { $('#adminBtn').hidden = !IS_ADMIN; $('#keysBtn').hidden = !hotkeysOk(); $('#aiBtn').hidden = !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
+const menuRecordSync = () => { $('#adminBtn').hidden = !IS_ADMIN; $('#keysBtn').hidden = !hotkeysOk(); syncPrepBtns(); $('#recordBtn').hidden = false; $('#recordBtn').disabled = !(S && me()); $('#rankBtn').disabled = !S || rankLocked(); };
 const rankLocked = () => !!preparing && !IS_ADMIN; // 문이 닫혀 있으면 관리자 말고는 순위를 못 연다 (2026-11-13 기획자: 관리자 테스트가 보이지 않게)
 $('#menuBtn').onclick = async e => {
   e.stopPropagation();
