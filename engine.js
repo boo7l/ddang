@@ -814,7 +814,7 @@ function runDraft(g, o) {
 function runRoninDraft(g, type) {
   const city = cityById(g.city), R = RULES.roninArmy;
   if (!roninArmyOn()) return '재야는 모병할 수 없음';
-  if (unitTier2(type)) return '재야는 1티어 병종만 모을 수 있음';
+  if (unitTier2(type)) return '재야는 정예 병종을 모을 수 없음';
   if (g.troops >= troopsMax(g) && g.unitType === type) return '병력이 이미 최대치';
   const why = pay(g, 'draft');
   if (why) return why;
