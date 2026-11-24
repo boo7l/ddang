@@ -33,18 +33,27 @@ const traitOf = fid => {
   return FACTION_TRAITS[f.name] || {};
 };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
-// 중도 참가 경험치 (2026-11-23 기획자, 시즌 9부터, RULES.lateExp): 늦게 온 장수(g.lateExpFrom = 만든 턴)는 능력치 합이 평균보다 낮은 동안 최대 turns턴 경험치 ×mul
-const statSum = g => (g.stats.lea || 0) + (g.stats.war || 0) + (g.stats.int || 0);
-let lateAvgMemo = null;
-const lateAvg = () => {
-  if (lateAvgMemo && lateAvgMemo.S === S && lateAvgMemo.turn === S.turn) return lateAvgMemo.v;
-  const gs = allGenerals().filter(x => x.faction && !x.test), v = gs.length ? gs.reduce((a, x) => a + statSum(x), 0) / gs.length : 0;
-  lateAvgMemo = { S, turn: S.turn, v };
-  return v;
+// 성장 보너스 (2026-11-24 기획자, 시즌 9부터, RULES.catchUp): 공적 100 이상 장수끼리 능력치 합 하위 구간이면 경험치 배율. 턴마다 한 번 계산
+const statSum = g => { const s = effStats(g); return (s.lea || 0) + (s.war || 0) + (s.int || 0); };
+let catchUpMemo = null;
+const catchUpMul = g => {
+  const C = RULES.catchUp;
+  if (S.myCatchUpId && S.myCatchUpId === g.id) return S.myCatchUp || 1; // 화면: 서버가 계산해 준 내 배율 (다른 장수 능력치를 모르니)
+  if (seasonNow() < C.fromSeason || (S.turn || 0) < C.afterTurn || g.test || (g.merit || 0) < C.minMerit) return 1;
+  if (!catchUpMemo || catchUpMemo.S !== S || catchUpMemo.turn !== S.turn) {
+    const sums = allGenerals().filter(x => !x.test && (x.merit || 0) >= C.minMerit).map(statSum).sort((a, b) => a - b);
+    catchUpMemo = { S, turn: S.turn, sums, at: {} };
+  }
+  const m = catchUpMemo;
+  if (m.at[g.id] == null) {
+    const v = statSum(g), n = m.sums.length;
+    const below = m.sums.filter(x => x < v).length; // 동점은 유리하게: 나보다 낮은 사람 수만 센다
+    const p = n ? below / n : 1, t = C.tiers.find(([lim]) => p < lim);
+    m.at[g.id] = t ? t[1] : 1;
+  }
+  return m.at[g.id];
 };
-const lateExpLeft = g => { const L = RULES.lateExp; return seasonNow() >= L.fromSeason && g.lateExpFrom != null ? Math.max(0, g.lateExpFrom + L.turns - (S.turn || 0)) : 0; };
-const lateExpOn = g => lateExpLeft(g) > 0 && statSum(g) < lateAvg();
-const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}, tr = treasuresOf(g).reduce((a, n) => a + (TREASURES[n].exp || 0), 0); return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0) + tr) * (lateExpOn(g) ? RULES.lateExp.mul : 1)); }; // 개인 특성 차돌애호가 · 보물 옥새 경험치 (2026-11-14)
+const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}, tr = treasuresOf(g).reduce((a, n) => a + (TREASURES[n].exp || 0), 0); return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0) + tr) * catchUpMul(g)); }; // 개인 특성 차돌애호가 · 보물 옥새 경험치 (2026-11-14)
 // 이동 거리: 보통 2칸, 개인 특성 뼈에게 닿기를은 4칸 (군량 수송은 그대로 2칸)
 const moveRangeOf = g => Math.max(1, (gTrait(g).moveRange || RULES.moveRange) + (traitOf(g.faction).move || 0)); // 세력 특성 이동 거리 (2026-11-06)
 // 시각은 언제나 한국 시간으로 적는다 (서버는 다른 나라 시간일 수 있다)
