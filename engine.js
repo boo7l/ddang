@@ -652,7 +652,7 @@ function attackBlocked(g, i) {
 }
 function setOrder(g, i, order) {
   if (!Number.isInteger(i) || i < 0 || i >= RULES.queueSize) return '없는 칸이에요.';
-  if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd))) return '쓸 수 없는 명령이에요.';
+  if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd, g))) return '쓸 수 없는 명령이에요.'; // 2026-11-25: g를 넘겨야 재야 탐색(시즌 9)이 막히지 않는다
   if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
   if (order && order.cmd === 'attack') { const why = attackBlocked(g, i); if (why) return why; }
   g.queue[i] = order ? { ...order, orderedAt: now() } : null;
