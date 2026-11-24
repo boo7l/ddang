@@ -139,6 +139,7 @@ h1 small { font-size: 16px; color: var(--text); letter-spacing: 1px; margin-left
 .link { color: var(--title); text-decoration: none; cursor: pointer; }
 .link:hover { color: var(--panel-dark); background: var(--title); }
 button.link { background: none; border: 0; box-shadow: none; padding: 0; font: inherit; text-decoration: underline dotted; } /* 글자처럼 보이는 단추 (관리자 유저 목록의 장수 이름, 2026-10-28) */
+button.link.perkTip, button.link.perkTip:hover { font-size: 14px; color: var(--dim); text-decoration: none; cursor: help; background: none; vertical-align: 2px; } /* 대도독 혜택 툴팁 (2026-11-25) */
 button.link.capIcon, button.link.capIcon:hover { text-decoration: none; cursor: help; background: none; } /* 성 정보 최근 함락 아이콘 (2026-11-12) */
 .capTip { font-size: 14px; margin-top: 2px; }
 
