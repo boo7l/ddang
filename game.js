@@ -1040,7 +1040,7 @@ const ADMIN_SEE_ALL = false; // 2026-11-25 기획자: 관리자 장수도 일반
 const seeAll = () => ADMIN_SEE_ALL && !!IS_ADMIN;
 // link: 성 정보의 수비 칸에서는 장수 이름을 누르면 장수 정보 창 (2026-11-22 기획자, 이름이 보이는 사람만). 출진 창은 고르는 목록이라 링크 없음
 function defenseText(c, defs, sep, link = false) {
-  const ours = c.faction === me().faction || !!(S.cities[c.id] || {}).spied || seeAll();
+  const ours = c.faction === me().faction || !!(S.cities[c.id] || {}).spied || !!(S.cities[c.id] || {}).here || seeAll(); // here: 재야가 머무는 성 (2026-11-25)
   const out = ours ? defs.map(d => (d.guard ? `<span class="guardDef">${esc(d.name)} · ${fmt(d.troops)}</span>` : `${link && d.ref && S.generals[d.ref.id] ? `<button class="link${d.ref.id === MY_ID ? ' mine' : ''}" data-gid="${esc(d.ref.id)}">${esc(d.name)}</button>` : esc(d.name)} · ${d.type} ${fmt(d.troops)}`)) : []; // 수비대장은 살짝 회색 (2026-11-06)
   if (!ours && defs.some(d => d.guard)) out.push('<span class="guardDef">수비대 있음</span>'); // 첩보가 없으면 수비대도 있는지만 (2026-11-04)
   if (!ours && defs.some(d => !d.guard)) out.push('장수 수비 있음');
@@ -1053,7 +1053,7 @@ function attackDialog() {
     const f = factionById(c.faction);
     const defs = defendersOf(c);
     const d = defs[0];
-    const hidden = defs.length > 0 && !(S.cities[c.id] || {}).spied && !seeAll(); // 2026-11-04 수비대 병력도 첩보가 있어야 안다. // 장수가 지키면 병력을 몰라 예상할 수 없다 (첩보가 유효하면 안다, 2026-10-30)
+    const hidden = defs.length > 0 && !(S.cities[c.id] || {}).spied && !(S.cities[c.id] || {}).here && !seeAll(); // 2026-11-04 수비대 병력도 첩보가 있어야 안다. // 장수가 지키면 병력을 몰라 예상할 수 없다 (첩보가 유효하면 안다, 2026-10-30)
     // 다른 세력 성의 방어는 첩보가 있어야 안다 (2026-10-26)
     const wall = c.faction ? S.cities[c.id].wall : 0, seen = wall !== undefined;
     // 맨 앞에서 요격할 부대와 맞붙었을 때를 비교한다 (상성 포함, 지금 기준. 수비대장만 있을 때)
@@ -2111,7 +2111,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125003741&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125003927&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2121,7 +2121,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125003741&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125003927&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2131,7 +2131,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125003741&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125003927&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3537,7 +3537,7 @@ function cityDetailRows(c) {
   if (c.faction) rows.push(`<tr class="wide"><th>군량</th><td>${cs.food === undefined ? '?' : fmt(cs.food)} <span class="dim">/ ${fmt(foodMax(c.grade))}</span></td></tr>`);
   // 소속 장수 (2026-11-09): 그 성에 머무는 장수 목록, 눌러서 펼치고 접는다 (병력 많은 순, 이름을 누르면 장수 정보 창)
   // 우리 세력 성, 그리고 첩보가 유효한 다른 세력 성 (서버가 그 성 장수 정보를 모두 보내 준다)
-  if (c.faction && ((p && p.faction && (c.faction === p.faction || cs.spied)) || seeAll())) { // 관리자는 모든 성 (2026-11-20)
+  if (c.faction && ((p && p.faction && (c.faction === p.faction || cs.spied)) || cs.here || seeAll())) { // cs.here: 재야가 머무는 성 (2026-11-25) // 관리자는 모든 성 (2026-11-20)
     const list = allGenerals().filter(g => g.faction === c.faction && g.city === c.id).sort((a, b) => b.troops - a.troops || b.merit - a.merit);
     const open = cityMembersOpen && list.length;
     const cap = seasonNow() >= RULES.crowdFromSeason ? RULES.crowdCap[c.grade] : 0, crowd = cap ? crowdRate(c.grade, list.length) : 1; // 성 정원 (2026-11-12, 시즌 7부터)
