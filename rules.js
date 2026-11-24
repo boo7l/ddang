@@ -72,7 +72,7 @@ const RULES = {
   spyTurns: 5, spyDiv: 110, spyBase: 0, spyMax: 0.9, // 첩보: 성공하면 5턴 동안 보임 (2026-10-30 6에서), 성공 확률 = 지력 ÷ 110 (최대 90%. 2026-11-01 ÷ 100에서, 2026-11-03 기본 +5% 뺌)
   startGold: 500,           // 임시: 장수를 만들 때 가진 금
   // 재야 (2026-11-16 기획자, 시즌 8부터): 하야·해고·멸망한 장수는 세력 선택 화면 대신 그 성에 재야로 남아 재야 명령만 쓴다. 새 장수는 그대로 세력 선택 화면
-  ronin: { fromSeason: 8, moveRange: 2, quest: [100, 300], questMerit: 0.05, questMeritMax: 100, train: { min: 50, max: 70 }, get cmds() { return seasonNow() >= 9 ? ['move', 'explore', 'quest', 'enlist'] : ['move', 'explore', 'train', 'quest', 'enlist']; }, chat: '_ronin' }, // 2026-11-18 기획자: 의뢰 금에 명성 × 0.05 (최대 +100) 더함 (처음 0.02) (패치노트엔 안 씀). 이동(누구 땅이든 2칸)·탐색·수련(50~70)·의뢰(금 100~300)·임관(있는 성의 세력). 명성은 없음, 탐색·수련 금은 같음
+  ronin: { fromSeason: 8, moveRange: 2, quest: [100, 300], questMerit: 0.05, questMeritMax: 100, train: { min: 50, max: 70 }, get cmds() { return seasonNow() >= 9 ? ['move', 'explore', 'quest', 'enlist', 'draft', 'buyFood'] : ['move', 'explore', 'train', 'quest', 'enlist']; }, chat: '_ronin' }, // 2026-11-18 기획자: 의뢰 금에 명성 × 0.05 (최대 +100) 더함 (처음 0.02) (패치노트엔 안 씀). 이동(누구 땅이든 2칸)·탐색·수련(50~70)·의뢰(금 100~300)·임관(있는 성의 세력). 명성은 없음, 탐색·수련 금은 같음
   // 2026-11-23 기획자 (시즌 9부터): 수련 잠정 폐지(재야 포함), 일반 장수 탐색 폐지(재야 탐색은 남김). 대신 모든 내정(농업·상업·축성·치안)마다 domExplore 확률로 탐색 이벤트(탐색표 그대로, 금 없음). 치안이 최대치여도 실패하지 않고 명성·경험치 보통.
   // 최대치 치안 = 첩자 색출: 우리 성에 적 세력 첩보가 걸려 있으면 counterSpy × 넘친 비율 확률로 그 정보망을 모두 끊는다 (같은 날 처음엔 치안만 30% 탐색 이벤트였다가 바꿈)
   s9cmd: { fromSeason: 9, domExplore: 0.15, counterSpy: 0.3, counterSpyMerit: 10 }, // counterSpyMerit: 첩자 색출 성공 명성 (2026-11-24 기획자) // domExplore 2026-11-23 같은 날 10% → 15%
@@ -190,6 +190,7 @@ const RULES = {
   // 단기접전 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
   duel: { minWar: 70, chance: 0.04, lossPerWar: [15, 20], lossCap: 1, exp: 40 }, // 2026-11-07 시즌 6: 상한 50%를 넣었다가 같은 날 뺌 (1 = 상한 없음. 소규모 부대의 역전 요소로 둔다). // 2026-11-07 시즌 6: 진 쪽 손실 무력 × 13~20 → 15~20. // 2026-11-03 시즌 5: 단기접전 승리 경험치 50 → 40, 발생 확률 합마다 5% → 4%. // 단기접전: 진 쪽 병력 손실 = 이긴 쪽 무력 × 13~20 (2026-10-31, 그 전엔 진 쪽 병력의 30% → 25%). 양쪽 무력 70 이상이면 합마다 5% (2026-10-28 8%에서, 빠뜨롱 나와 특성은 10%),출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
   // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (60~90) × 10 × (지력 차이 ÷ 10)^0.6 (2026-10-31 (50~100), 지수 0.7에서)
+  roninArmy: { fromSeason: 9, draftRate: 0.75, foodMax: 3000, foodBase: 500, foodPerLea: 5 }, // 재야 모병·개인 군량 (2026-11-24 기획자, 시즌 9부터): 1티어만, 징병의 75%, 성 치안 안 깎음 · 개인 군량 최대 3,000, 반기(수확 달) 500 + 통솔 × 5, 군량 구매도 개인 창고로 · 임관하면 병력 유지·개인 군량 증발, 하야하면 병력 해산(그대로)
   tier2: { gold: 500, gradeMin: 3, upPer1000: 250, upMerit: 5, upExp: 10, food: 1.5 }, // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 징병 금 500 · 대도시 이상 · 승급 1,000명당 250 (명성 5 · 경험치 10, 이탈 없음) · 매달 군량 1.5배
   anySideFrom: 9, // 책략·돌격: 시즌 9부터 상대보다 낮아도 쓴다 (pickSkill, 2026-11-24 기획자)
   charge: { minWar: 70, chancePerWar: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, troopRef: 5000, troopExp: 0.3, statExp: 30 }, // 2026-11-07 시즌 6: 피해 × min(1, (쓰는 쪽 병력 ÷ 5,000)^0.3) (작은 부대 싸움 운빨 줄이기). // 2026-11-03 시즌 5 발동 확률 능력치 ÷ 1500 → ÷ 2000, 경험치 40 → 30. 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 같은 수식에 지력 대신 무력. 무력 경험치 40, 명성 20. 침착이면 피해 -50%
@@ -373,6 +374,7 @@ const UNIT_TYPES = {
   중기병: { stat: 'war', beats: '보병', base: '기병', from: 9, dmgUp: 0.10, desc: '주는 피해 +10%' },
   노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, scheme: 0.02, schemeDmg: 0.2, desc: '책략 발동 +2%p · 책략 피해 +20%' },
 };
+const roninArmyOn = () => seasonNow() >= RULES.roninArmy.fromSeason;
 const unitFam = t => (UNIT_TYPES[t] && UNIT_TYPES[t].base) || t; // 병종 계통 (중보병 → 보병)
 const unitTier2 = t => !!(UNIT_TYPES[t] && UNIT_TYPES[t].base);
 const unitTypesNow = () => Object.keys(UNIT_TYPES).filter(t => !UNIT_TYPES[t].from || seasonNow() >= UNIT_TYPES[t].from); // 이번 시즌에 모을 수 있는 병종

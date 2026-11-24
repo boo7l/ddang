@@ -343,6 +343,7 @@ function joinFaction(g, fid, cityId) {
   g.joins = (g.joins || 0) + 1; // 세력에 들어간 횟수 (개국공신은 한 번만 들어간 장수)
   if (g.joins === 1) g.firstJoin = Date.now(); // 첫 임관 시각: 명성 1위가 동점일 때 먼저 임관한 장수가 받는다 (2026-11-02)
   delete g.fallen; // 멸망 알림은 새 세력에 들어가면 끝
+  if (g.food) { addLog(g, `🌾 개인 군량 ${fmt(g.food)}은 임관하며 흩어졌다.`); delete g.food; } // 재야 개인 군량은 임관하면 증발 (2026-11-24, 병력은 유지)
   g.city = home.id;
   capDefense(g);
   addLog(g, `${g.name}, ${f.name} 세력에 몸을 담다. ${home.name}에서 첫발을 내딛는다.`);
@@ -512,9 +513,14 @@ function advance() {
       const gotFood = {}; // 이번 수확으로 늘어난 군량 (2026-11-22 기획자: 기록에 '군량 12,345 (+123)')
       for (const c of MAP.cities) if (c.faction) { const before = S.cities[c.id].food || 0; harvestFood(S.cities[c.id], c.grade, (foodRate[regionOf(c)] || 0) + (capitalOn() && capitalOf(c.faction) ? RULES.capital.food : 0)); gotFood[c.id] = (S.cities[c.id].food || 0) - before; } // 수도가 있는 세력 모든 성 수확 +5% (2026-11-20 기획자, 시즌 8부터)
       for (const g of allGenerals()) if (g.faction) addLog(g, `🌾 ${dateText(S.turn)} 수확: ${cityById(g.city).name} 군량 ${fmt(S.cities[g.city].food)} (+${fmt(gotFood[g.city] || 0)})`);
+      if (roninArmyOn()) for (const g of allGenerals()) if (isRonin(g)) { // 재야 개인 군량 (2026-11-24): 500 + 통솔 × 5, 최대 3,000
+        const R = RULES.roninArmy, before = g.food || 0; g.food = Math.min(R.foodMax, before + R.foodBase + effStats(g).lea * R.foodPerLea);
+        addLog(g, `🌾 ${dateText(S.turn)} 개인 군량 ${fmt(g.food)}/${fmt(R.foodMax)} (+${fmt(g.food - before)})`);
+      }
     }
     // 병사는 머무는 성의 군량을 먹는다
     for (const g of allGenerals()) if (g.faction && g.troops > 0 && feedTroops(g, S.cities[g.city])) starved.add(g);
+    if (roninArmyOn()) for (const g of allGenerals()) if (isRonin(g) && g.troops > 0) { const st = { food: g.food || 0 }; if (feedTroops(g, st)) starved.add(g); g.food = st.food; } // 재야는 개인 군량을 먹는다
     S.incomeAt = mark;
     turns++;
   }
@@ -771,8 +777,10 @@ function counterSpy(g, city, share) {
 // ----- 징병 -----
 function runDraft(g, o) {
   const city = cityById(g.city), type = o.unit;
+  if (o.who === 'guard' && isRonin(g)) return '재야는 수비대 징병을 할 수 없음';
   if (o.who === 'guard') return runGuardDraft(g); // 수비대는 병종 없음 (2026-11-14). 예전 예약(unit: 보병 등)도 그대로 된다
   if (!UNIT_TYPES[type] || !unitTypesNow().includes(type)) return '없는 병종';
+  if (isRonin(g)) return runRoninDraft(g, type);
   if (o.upgrade) return runUpgrade(g, type);
   if (unitTier2(type) && city.grade < RULES.tier2.gradeMin) return `${type}은 대도시 이상 성에서만 모을 수 있음`; // 2티어 (2026-11-24)
   if (g.troops >= troopsMax(g) && g.unitType === type) return '병력이 이미 최대치';
@@ -798,6 +806,25 @@ function runDraft(g, o) {
   cs.peace -= drop;
   addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${toGuard ? ` · 넘친 ${fmt(toGuard)}명은 수비대로 (${fmt(cs.guard)}/${fmt(gmax)})` : ''}${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
+  gainStatExp(g, 'lea', RULES.statExp.draft);
+  return '';
+}
+
+// 재야 모병 (2026-11-24 기획자, 시즌 9부터 RULES.roninArmy): 1티어만, 어느 성에서나, 징병의 75%, 성 치안을 깎지 않는다 (치안이 낮아도 된다). 금은 징병과 같다
+function runRoninDraft(g, type) {
+  const city = cityById(g.city), R = RULES.roninArmy;
+  if (!roninArmyOn()) return '재야는 모병할 수 없음';
+  if (unitTier2(type)) return '재야는 1티어 병종만 모을 수 있음';
+  if (g.troops >= troopsMax(g) && g.unitType === type) return '병력이 이미 최대치';
+  const why = pay(g, 'draft');
+  if (why) return why;
+  let note = '';
+  if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
+  const gain = Math.min(Math.floor(draftGain(effStats(g), g.merit) * R.draftRate * (1 + (gTrait(g).draft || 0))), troopsMax(g) - g.troops);
+  g.unitType = type;
+  g.troops += gain;
+  addRecord(g, 'drafted', gain);
+  addLog(g, `${city.name}: 의병을 모아 ${type}을 꾸렸다. 병력 +${fmt(gain)} (${fmt(g.troops)})${note}`);
   gainStatExp(g, 'lea', RULES.statExp.draft);
   return '';
 }
@@ -1934,6 +1961,7 @@ function runLevy(g) {
 // 금을 내고 지금 있는 성에 군량을 들인다. 예약할 때 얼마어치(금) 살지 고른다 (order.item = 금액).
 // 창고(군량 최대치)에 다 안 들어가면 들어가는 만큼만 사고, 금도 그만큼만 낸다
 function runBuyFood(g, o) {
+  if (isRonin(g)) return runRoninBuyFood(g, o);
   const city = cityById(g.city), cs = S.cities[g.city], max = foodMax(city.grade);
   if (cs.food >= max) return `${city.name}의 군량 창고가 가득 참 (${fmt(max)})`;
   const perGold = foodPriceOf(g);
@@ -1945,6 +1973,19 @@ function runBuyFood(g, o) {
   cs.food += got;
   addLog(g, `${city.name}: 상인에게서 군량을 사들였다. 군량 +${fmt(got)} (${fmt(cs.food)}) · 내 금 -${fmt(pay)} · 시세 1:${perGold}`);
   addMerit(g, Math.max(1, Math.floor(pay / RULES.meritBuyGold))); // 낸 금에 비례 (2026-11-02, 그 전엔 얼마를 사든 10)
+  return '';
+}
+
+// 재야 군량 구매 (2026-11-24, 시즌 9부터): 개인 군량으로 (최대 RULES.roninArmy.foodMax). 명성은 없음
+function runRoninBuyFood(g, o) {
+  if (!roninArmyOn()) return '재야는 군량을 살 수 없음';
+  const max = RULES.roninArmy.foodMax, have = g.food || 0, city = cityById(g.city);
+  if (have >= max) return `개인 군량이 가득 참 (${fmt(max)})`;
+  const perGold = foodPriceOf(g), got = Math.min(buyFoodGold(o) * perGold, max - have), cost = Math.ceil(got / perGold);
+  if (g.gold < cost) return `내 금 부족 (필요 ${fmt(cost)}, 있음 ${fmt(g.gold)})`;
+  g.gold -= cost; addRecord(g, 'goldSpent', cost);
+  g.food = have + got;
+  addLog(g, `${city.name}: 상인에게서 군량을 샀다. 개인 군량 +${fmt(got)} (${fmt(g.food)}/${fmt(max)}) · 내 금 -${fmt(cost)} · 시세 1:${perGold}`);
   return '';
 }
 

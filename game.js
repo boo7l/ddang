@@ -1109,6 +1109,17 @@ const draftLockUnit = (p, at) => {
 const draftReserve = unit => { draftLock = true; try { localStorage.setItem(DRAFT_LAST_KEY, unit === GUARD_UNIT ? 'guard' : 'own'); localStorage.setItem(DRAFT_LOCK_KEY, '1'); } catch (e) { /* 이번만 */ } reserve(unit === GUARD_UNIT ? { cmd: 'draft', unit: GUARD_UNIT, who: 'guard' } : { cmd: 'draft', unit }); };
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
+  if (isRonin(p)) { // 재야 모병 (2026-11-24, 시즌 9부터): 1티어만, 징병의 75%, 치안 안 깎음
+    const R = RULES.roninArmy, [b0, b1] = draftBase(effStats(p)), bonus = Math.floor(p.merit * RULES.draftPerMerit);
+    const lo = Math.floor((b0 + bonus) * R.draftRate), hi = Math.floor((b1 + bonus) * R.draftRate), sn = k => STATS.find(s => s.key === k).name;
+    const ropts = unitTypesNow().filter(t => !unitTier2(t)).map(t => { const u = UNIT_TYPES[t]; return `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
+      <b>${t}</b> <span class="dim">${sn(u.stat)} ${effStats(p)[u.stat]}</span><span class="r dim">${u.beats}에 강함</span></label>`; }).join('');
+    pickDialog('모병', `<p>${esc(from.name)}에서 의병 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. (징병의 ${Math.round(R.draftRate * 100)}% · 성 치안은 깎지 않아요)</p>
+      ${p.troops > 0 ? `<p>현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))} · 다른 병종을 모으면 지금 병력은 흩어져요.</p>` : ''}
+      <p class="dim">병사는 개인 군량을 먹어요 (지금 ${fmt(p.food || 0)}/${fmt(R.foodMax)}). 임관하면 병력은 그대로, 개인 군량은 사라져요.</p>`,
+      ropts, '예약', t => { if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false; reserve({ cmd: 'draft', unit: t }); }, '', '', costLine('금', RULES.myGoldCost.draft, p.gold));
+    return;
+  }
   const lockUnit = draftLockUnit(p, slot);
   if (draftLock && lockUnit && !(unitTier2(lockUnit) && from.grade < RULES.tier2.gradeMin)) { draftReserve(lockUnit); return; } // 2티어는 대도시가 아니면 창을 띄운다
   const bonus = Math.floor(p.merit * RULES.draftPerMerit), [b0, b1] = draftBase(effStats(p));
@@ -1269,11 +1280,12 @@ function plotDialog(kind) {
 function buyFoodDialog() {
   // 쓸 금을 직접 적는다 (1~goldMax). 예전 선택지는 빠른 단추로
   const p = me(), at = cityAtSlot(p, slot), cs = S.cities[at.id], max = foodMax(at.grade), perGold = foodPriceOf(p), { choices, goldMax } = RULES.foodBuy;
+  const ronin = isRonin(p), rMax = RULES.roninArmy.foodMax; // 재야: 개인 군량으로 (2026-11-24)
   openModal(`
     <h2>군량 구매 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
-    <p>${esc(at.name)}에 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
+    <p>${ronin ? '개인 군량으로' : `${esc(at.name)}에`} 군량을 들입니다. <b class="hi">이번 달 시세는 금 1당 군량 ${perGold}</b>이에요.</p>
     <p class="dim">시세는 매달 바뀌어요 (${RULES.foodBuy.min}~${RULES.foodBuy.max}). 실제로는 예약한 턴의 시세로 사요.</p>
-    <p class="dim">${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>
+    <p class="dim">${ronin ? `개인 군량 ${fmt(p.food || 0)} / ${fmt(rMax)}` : `${esc(at.name)} 군량 ${fmt(cs.food)} / ${fmt(max)}`} · 창고에 다 안 들어가면 들어가는 만큼만 사고 금도 그만큼만 내요</p>
     <p class="dim">지금 내 금 <b class="hi">${fmt(p.gold)}</b></p>
     <p class="sub">쓸 금 <span class="dim">(1~${fmt(goldMax)})</span></p>
     <p><input type="number" id="bGold" min="1" max="${goldMax}" step="1" value="${choices[0]}" style="width:110px">
@@ -2086,7 +2098,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124223339&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124230135&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2096,7 +2108,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124223339&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124230135&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2106,7 +2118,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124223339&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124230135&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3085,7 +3097,7 @@ function renderGeneral() {
       <table class="stats">
         <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${esc(f.name)}` : '<span class="dim">재야</span>'}</td></tr>
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
-        <tr><th>군량</th><td>${S.cities[p.city].food === undefined ? '?' : fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>
+        ${isRonin(p) && roninArmyOn() ? `<tr><th>군량</th><td>${fmt(p.food || 0)} <span class="dim">/ ${fmt(RULES.roninArmy.foodMax)} (개인)</span></td></tr>` : `<tr><th>군량</th><td>${S.cities[p.city].food === undefined ? '?' : fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>`}<!-- 재야 개인 군량 (2026-11-24) -->
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
         ${(() => { const m = catchUpMul(p); return m > 1 ? `<tr><th>📈</th><td>성장 보너스 경험치 ×${m}</td></tr>` : ''; })()}<!-- 성장 보너스 (2026-11-24, 시즌 9): 구간(%)은 보이지 않는다 -->
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
@@ -3216,7 +3228,7 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
     <p class="dim small">임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>
     <div class="cmds cg-etc">
-      ${btn('move', '이동', '')}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}
+      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) + btn('buyFood', '군량 구매', `개인 ${fmt(p.food || 0)}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}
     </div>
     <div class="qBtnsM">${qBtns}</div>
 ` : `
