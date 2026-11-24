@@ -1003,7 +1003,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       if (heir) { absorbInto(g, heir, c); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
       g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost, troopsLost };
       g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
-      if (roninArmyOn() && g.city) { g.food = Math.min(RULES.roninArmy.foodMax, RULES.roninArmy.startFood); addLog(g, `🌾 재야가 되어 개인 군량 ${fmt(g.food)}을 챙겼다.`); } // 멸망으로 재야가 돼도 기본 군량 500 (2026-11-25 기획자)
+      if (roninArmyOn() && g.city) g.food = Math.min(RULES.roninArmy.foodMax, RULES.roninArmy.startFood); // 멸망으로 재야가 돼도 기본 군량 500 (2026-11-25 기획자)
       continue;
     }
     g.city = to.id;
@@ -2069,7 +2069,7 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (명성은 �
   clearOrders(g);
   const food0 = roninArmyOn() && g.city ? RULES.roninArmy.startFood : 0; // 재야 기본 군량 (2026-11-25 기획자)
   if (food0) g.food = Math.min(RULES.roninArmy.foodMax, food0);
-  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 명성 -${fmt(cut)} (${fmt(g.merit)})` : ''}${food0 ? ` · 개인 군량 ${fmt(g.food)}` : ''}`);
+  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 명성 -${fmt(cut)} (${fmt(g.merit)})` : ''}`); // 개인 군량은 기록에 안 씀 (2026-11-25 기획자)
   return '';
 }
 
