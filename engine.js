@@ -2065,7 +2065,9 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (명성은 �
   Object.assign(g, { faction: null, city: roninOn() ? g.city : null, troops: 0, unitType: null }); // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
   g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait, ...(!kicked && seasonNow() >= RULES.rejoinAllFrom ? { all: true } : {}) }; // 떠난 세력에는 한동안 다시 못 들어간다. 시즌 8부터 스스로 하야하면 모든 세력에 (해고·추방은 떠난 세력만)
   clearOrders(g);
-  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 명성 -${fmt(cut)} (${fmt(g.merit)})` : ''}`);
+  const food0 = roninArmyOn() && g.city ? RULES.roninArmy.startFood : 0; // 재야 기본 군량 (2026-11-25 기획자)
+  if (food0) g.food = Math.min(RULES.roninArmy.foodMax, food0);
+  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 명성 -${fmt(cut)} (${fmt(g.merit)})` : ''}${food0 ? ` · 개인 군량 ${fmt(g.food)}` : ''}`);
   return '';
 }
 
