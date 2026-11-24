@@ -343,7 +343,7 @@ function joinFaction(g, fid, cityId) {
   g.joins = (g.joins || 0) + 1; // 세력에 들어간 횟수 (개국공신은 한 번만 들어간 장수)
   if (g.joins === 1) g.firstJoin = Date.now(); // 첫 임관 시각: 명성 1위가 동점일 때 먼저 임관한 장수가 받는다 (2026-11-02)
   delete g.fallen; // 멸망 알림은 새 세력에 들어가면 끝
-  if (g.food) { addLog(g, `🌾 개인 군량 ${fmt(g.food)}은 임관하며 흩어졌다.`); delete g.food; } // 재야 개인 군량은 임관하면 증발 (2026-11-24, 병력은 유지)
+  delete g.food; // 재야 개인 군량은 임관하면 증발 (2026-11-24, 병력은 유지). 2026-11-25 기획자: 기록은 남기지 않는다
   g.city = home.id;
   capDefense(g);
   addLog(g, `${g.name}, ${f.name} 세력에 몸을 담다. ${home.name}에서 첫발을 내딛는다.`);
