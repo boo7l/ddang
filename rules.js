@@ -190,6 +190,7 @@ const RULES = {
   // 단기접전 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
   duel: { minWar: 70, chance: 0.04, lossPerWar: [15, 20], lossCap: 1, exp: 40 }, // 2026-11-07 시즌 6: 상한 50%를 넣었다가 같은 날 뺌 (1 = 상한 없음. 소규모 부대의 역전 요소로 둔다). // 2026-11-07 시즌 6: 진 쪽 손실 무력 × 13~20 → 15~20. // 2026-11-03 시즌 5: 단기접전 승리 경험치 50 → 40, 발생 확률 합마다 5% → 4%. // 단기접전: 진 쪽 병력 손실 = 이긴 쪽 무력 × 13~20 (2026-10-31, 그 전엔 진 쪽 병력의 30% → 25%). 양쪽 무력 70 이상이면 합마다 5% (2026-10-28 8%에서, 빠뜨롱 나와 특성은 10%),출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
   // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (60~90) × 10 × (지력 차이 ÷ 10)^0.6 (2026-10-31 (50~100), 지수 0.7에서)
+  anySideFrom: 9, // 책략·돌격: 시즌 9부터 상대보다 낮아도 쓴다 (pickSkill, 2026-11-24 기획자)
   charge: { minWar: 70, chancePerWar: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, troopRef: 5000, troopExp: 0.3, statExp: 30 }, // 2026-11-07 시즌 6: 피해 × min(1, (쓰는 쪽 병력 ÷ 5,000)^0.3) (작은 부대 싸움 운빨 줄이기). // 2026-11-03 시즌 5 발동 확률 능력치 ÷ 1500 → ÷ 2000, 경험치 40 → 30. 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 같은 수식에 지력 대신 무력. 무력 경험치 40, 공적 20. 침착이면 피해 -50%
   scheme: { minInt: 70, chancePerInt: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, troopRef: 5000, troopExp: 0.3, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 30 }, // 2026-11-07 시즌 6: 피해 × min(1, (쓰는 쪽 병력 ÷ 5,000)^0.3). 2026-11-03 시즌 5 발동 확률 지력 ÷ 1500 → ÷ 2000, 경험치 40 → 30. // 책략 한 번에 지력 경험치 40 (2026-10-27 30에서). 출진 한 번(5합)에 최대 1번
 
@@ -572,6 +573,22 @@ function bondSave(u, loss, foe, out) {
   foe.troops -= dmg;
   return u.troops - 1;
 }
+// 책략·돌격 누가 쓰나 (2026-11-24 기획자, 시즌 9부터 RULES.anySideFrom): 능력치가 min 이상이면 상대보다 낮아도 쓸 수 있다.
+// 능력치 높은 쪽이 먼저 판정하고(같으면 무작위), 발동하면 그 합의 상대는 기회를 잃는다. 차이가 1 이하면 차이 1로 친다 (최저 위력)
+// 시즌 8까지: min 이상이고 상대보다 높은 쪽만. chanceOf(u) = 합마다 발동 확률. 발동하면 [쓰는 쪽, 받는 쪽, 차이]
+function pickSkill(att, def, key, min, chanceOf) {
+  const a = att.stats[key] || 0, d = def.stats[key] || 0;
+  if (seasonNow() < RULES.anySideFrom) {
+    const s = a >= min && a > d ? [att, def, a - d] : d >= min && d > a ? [def, att, d - a] : null;
+    return s && Math.random() < chanceOf(s[0]) ? s : null;
+  }
+  const order = a > d || (a === d && Math.random() < 0.5) ? [[att, def], [def, att]] : [[def, att], [att, def]];
+  for (const [me, foe] of order) {
+    if ((me.stats[key] || 0) < min) continue;
+    if (Math.random() < chanceOf(me)) return [me, foe, Math.max(1, (me.stats[key] || 0) - (foe.stats[key] || 0))];
+  }
+  return null;
+}
 function fightRounds(att, def, wall, left, field = false) {
   if (field) wall = 0;
   const luck = () => 1 + (Math.random() * 2 - 1) * RULES.battleRandom;
@@ -625,9 +642,9 @@ function fightRounds(att, def, wall, left, field = false) {
     }
     // 책략 (2026-10-26): 지력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (지력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 보통 교전 대신 일방적으로 친다.
     // 피해 = (60~90) × 10 × ((지력 차이 + 5) ÷ 10)^0.6 (2026-11-04 시즌 5: 차이에 +5, 작은 차이의 저점을 올림). 병종·공수·수비대장 가리지 않음, 병력 상한 없음
-    const C = RULES.scheme, ai = att.stats.int || 0, di = def.stats.int || 0;
-    const sch = ai >= C.minInt && ai > di ? [att, def, ai - di] : di >= C.minInt && di > ai ? [def, att, di - ai] : null;
-    if (sch && !att.schemed && Math.random() < sch[0].stats.int * C.chancePerInt + (gTrait(sch[0]).scheme || 0)) { // 책사: 책략 발동 +2.5%p (시즌 8부터)
+    const C = RULES.scheme;
+    const sch = !att.schemed && pickSkill(att, def, 'int', C.minInt, u => u.stats.int * C.chancePerInt + (gTrait(u).scheme || 0)); // 책사: 책략 발동 +2.5%p (시즌 8부터)
+    if (sch) {
       att.schemed = true; // 책략도 출진 한 번(5합)에 최대 1번 (어느 쪽이 쓰든)
       const [me, foe, gap] = sch;
       const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow((gap + C.gapAdd) / C.ref, C.exp) * troopScale(me, C) * (1 - (gTrait(foe).calm || 0)))); // 침착: 책략 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
@@ -640,9 +657,9 @@ function fightRounds(att, def, wall, left, field = false) {
     }
     // 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 무력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (무력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 보통 교전 대신 일방적으로 친다.
     // 피해 = (60~90) × 10 × ((무력 차이 + 5) ÷ 10)^0.6 (2026-11-04 시즌 5: 차이에 +5). 출진 한 번(5합)에 최대 1번 (책략과 따로 센다)
-    const G = RULES.charge, aw = att.stats.war || 0, dw = def.stats.war || 0;
-    const chg = aw >= G.minWar && aw > dw ? [att, def, aw - dw] : dw >= G.minWar && dw > aw ? [def, att, dw - aw] : null;
-    if (chg && !att.charged && Math.random() < chg[0].stats.war * G.chancePerWar) {
+    const G = RULES.charge;
+    const chg = !att.charged && pickSkill(att, def, 'war', G.minWar, u => u.stats.war * G.chancePerWar);
+    if (chg) {
       att.charged = true;
       const [me, foe, gap] = chg;
       const loss = Math.min(foe.troops, Math.round((G.base[0] + Math.random() * (G.base[1] - G.base[0])) * G.ref * Math.pow((gap + G.gapAdd) / G.ref, G.exp) * troopScale(me, G) * (1 - (gTrait(foe).calm || 0)))); // 침착: 돌격 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
