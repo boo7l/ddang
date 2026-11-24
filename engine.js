@@ -1002,7 +1002,9 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const heir = soleFaction();
       if (heir) { absorbInto(g, heir, c); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
       g.fallen = { faction: old ? old.name : '', city: c.name, by: by ? by.name : '', turn: S.turn, meritLost, troopsLost };
-      g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); continue; // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
+      g.faction = null; g.city = roninOn() ? c.id : null; if (roninOn()) clearOrders(g); // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
+      if (roninArmyOn() && g.city) { g.food = Math.min(RULES.roninArmy.foodMax, RULES.roninArmy.startFood); addLog(g, `🌾 재야가 되어 개인 군량 ${fmt(g.food)}을 챙겼다.`); } // 멸망으로 재야가 돼도 기본 군량 500 (2026-11-25 기획자)
+      continue;
     }
     g.city = to.id;
     if (!near.length && g.troops > 0) { // 고립된 성: 패잔병으로 빠져나간다
