@@ -1826,7 +1826,7 @@ function runTrain(g, o) {
 // ----- 병기 생산 (내 금) -----
 function runSiege(g, o) {
   const city = cityById(g.city), cs = S.cities[g.city], w = SIEGE[o.type];
-  if (!w) return '없는 병기';
+  if (!w || !siegeTypes().includes(o.type)) return '없는 병기';
   g.siege = g.siege || {};
   if (g.siege[o.type]) return `${josa(o.type, '은는')} 이미 가지고 있음`;
   const price = siegePrice(g, o.type);

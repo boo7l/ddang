@@ -1182,14 +1182,14 @@ function trainDialog() {
 
 function siegeDialog() {
   const p = me();
-  const opts = Object.entries(SIEGE).map(([t, w]) => {
+  const opts = siegeTypes().map(t => [t, SIEGE[t]]).map(([t, w]) => {
     const have = p.siege && p.siege[t];
     // 설명은 16px, 괄호 부분은 다음 줄로 (2026-11-03: 충차·벽력거)
     return `<label class="opt siegeOpt"><input type="radio" name="tgt" value="${t}"${have ? ' disabled' : ''}>
       <b>${t}</b> <span class="dim">금 ${fmt(siegePrice(p, t))}</span>
       <span class="r ${have ? 'dim' : ''}">${have ? '가지고 있음' : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
-  pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. 공격할 때만 효과가 있어요. 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
+  pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다. ${seasonNow() >= 9 ? '연노는 수비할 때, 다른 병기는 공격할 때 효과가 있어요 (벽력거는 수비 때도 쏴요).' : '공격할 때만 효과가 있어요.'} 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
     <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}${siegeDurText(p)}${p.siegeFix ? '(강화) · 새로 만들면 강화가 사라져요' : ''}${siegeDurOn() ? ` · 새 병기는 내구도 ${SIEGE_EFFECT.durMax}` : ''}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
@@ -1413,7 +1413,7 @@ function helpDialog(page = -1) {
       <li>남은 병력이 많을수록 방어를 많이 깎지만, 성벽에서 날아오는 화살·돌에 그만큼 병력도 잃어요. (예: 병력 10,000이면 방어 ${fmt(10000 * RULES.siegeRate.min)}~${fmt(10000 * RULES.siegeRate.max)}을 깎고 ${fmt(10000 * RULES.siegeRate.min * RULES.siegeLoss)}~${fmt(10000 * RULES.siegeRate.max * RULES.siegeLoss)}명을 잃어요)</li>
       <li><b>방어가 0이 되면 점령</b>이에요. 점령하면 방어는 성 크기에 따라 조금 다시 세워져요.</li>
       <li>방어가 높은 성을 지키는 부대는 받는 피해가 줄어요. (방어 1,000이면 피해 ${wallCutStepped() ? 25 : 30}% 감소)</li>
-      <li><b>충차</b>는 방어를 더 많이 깎고, <b>정란</b>은 수비 부대와 싸울 때 강해지고, <b>벽력거</b>는 싸우기 전에 먼저 쏴요.</li></ul>
+      <li><b>충차</b>는 방어를 더 많이 깎고, <b>정란</b>은 수비 부대와 싸울 때 강해지고, <b>벽력거</b>는 싸우기 전에 먼저 쏴요.${seasonNow() >= 9 ? ' <b>연노</b>는 성을 지킬 때 강해져요.' : ''}</li></ul>
       ${seasonNow() >= RULES.fieldFromSeason ? `<p class="helpSub">🏕 야전</p><ul>
       <li>같은 턴에 두 성이 <b>서로를 향해 출진</b>하면, 성 밖 들판에서 먼저 1:1로 맞붙어요. (예약 순서대로)</li>
       <li>들판에는 <b>성벽이 없어서</b> 양쪽 모두 공격하는 쪽으로 싸워요.</li>
@@ -1432,7 +1432,7 @@ function helpDialog(page = -1) {
       <li><b>징병</b>: 금 ${RULES.myGoldCost.draft}으로 병사를 모아요. 병종(보병·기병·궁병)을 골라요.</li>
       <li><b>출진</b>: 이웃 성을 공격해요. 공백지는 싸우지 않고 들어가요.</li>
       <li><b>이동</b>: 우리 땅으로 ${RULES.moveRange}칸 안의 우리 성으로 옮겨요.</li>
-      ${RULES.features.siege ? '<li><b>병기</b>: 금으로 충차·정란·벽력거를 만들어요. 공격할 때 힘이 돼요.' + (seasonNow() >= 9 ? ' 벽력거는 수비할 때도 쏴요.' : '') + '</li>' : ''}</ul>
+      ${RULES.features.siege ? '<li><b>병기</b>: 금으로 충차·정란·벽력거' + (seasonNow() >= 9 ? '·연노' : '') + '를 만들어요. 공격할 때 힘이 돼요.' + (seasonNow() >= 9 ? ' 벽력거는 수비할 때도 쏘고, 연노는 수비할 때만 힘이 돼요.' : '') + '</li>' : ''}</ul>
       <p class="sub">계략 <span class="dim">(지력이 높을수록 잘 돼요)</span></p><ul>
       <li><b>파괴</b>: 이웃 적 성의 방어를 깎아요.</li>
       <li><b>유언</b>: 이웃 적 성의 치안·농업·상업을 깎아요.</li>
@@ -2070,7 +2070,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124210824&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124211450&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2080,7 +2080,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124210824&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124211450&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2090,7 +2090,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124210824&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124211450&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }

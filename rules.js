@@ -387,7 +387,7 @@ const GENERAL_TRAITS = {
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   logistic: { tier: 'N', name: '보급관', get desc() { return `군량 수송 범위 4칸·수송량 무제한·${seasonNow() >= 9 ? '수송·보급' : '수송'} 공적 +${this.transportMerit}·구매 시세 +1`; }, transportRange: 4, transportNoCap: true, get transportMerit() { return seasonNow() >= 9 ? 5 : 3; }, foodPrice: 1 }, // 2026-11-23 기획자: 시즌 9부터 수송·보급 공적 +3 → +5 (기본 5와 합쳐 10). // 2026-11-19 기획자: 비전투 군수 특성 (수도 3칸과 겹치면 큰 값 4칸, 양 제한 없음 = 창고가 허락하는 만큼)
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15, get off() { return seasonNow() >= 9; } }, // 2026-11-23 기획자: 시즌 9부터 수련과 함께 없앰 (off = 뽑기·확률표에서 빠짐) // 2026-10-28 +10%에서
-  engineer: { tier: 'R', name: '병기도 과학', get desc() { return seasonNow() >= 8 ? '병기 효과 +40% (충차·정란·벽력거)' : '병기 제작비 -20%'; }, get siegePrice() { return seasonNow() >= 8 ? 0 : -0.20; }, get siegeBoost() { return seasonNow() >= 8 ? 0.4 : 0; } }, // 2026-11-19 기획자: 시즌 8부터 할인 대신 병기 효과 +40% (충차 40→56%, 정란 15→21%, 벽력거 50→70%). // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
+  engineer: { tier: 'R', name: '병기도 과학', get desc() { return seasonNow() >= 8 ? `병기 효과 +40% (${seasonNow() >= 9 ? '충차·정란·벽력거·연노' : '충차·정란·벽력거'})` : '병기 제작비 -20%'; }, get siegePrice() { return seasonNow() >= 8 ? 0 : -0.20; }, get siegeBoost() { return seasonNow() >= 8 ? 0.4 : 0; } }, // 2026-11-19 기획자: 시즌 8부터 할인 대신 병기 효과 +40% (충차 40→56%, 정란 15→21%, 벽력거 50→70%). // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
   medic: { tier: 'R', name: '너 치료된 거야', desc: '전투 뒤 30% 확률로 잃은 병력의 30%가 돌아옴', heal: { chance: 0.3, rate: 0.3 } }, // 2026-11-08 시즌 6: 20% → 30%. // 2026-10-28 50%·25% → 30%·25%, 2026-10-31 30%·20%
   pierce: { tier: 'SR', name: '관통맨', get desc() { return `공격 시 합마다 ${Math.round(this.pierce.chance * 100)}% 확률로 성벽 피해 (병력 ÷ ${this.pierce.per})`; }, pierce: { chance: 0.40, get per() { return seasonNow() >= 9 ? 130 : seasonNow() >= 8 ? 180 : 200; } } }, // 2026-11-23 기획자: 시즌 9부터 ÷ 180 → ÷ 130 (축성 한 번에 메워지는 수준이라. 처음 120으로 했다가 같은 날 130, 실전 시뮬 출진 평균 57 → 약 79). 2026-11-18 기획자: 시즌 8부터 성벽 피해 병력 ÷ 200 → ÷ 180 (+11%). // 2026-11-08 시즌 6: 25%·÷400 → 40%·÷200 (출진 한 번 성벽 18 → 약 60, 시뮬). // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
   bond: { tier: 'SR', name: '유대', desc: '전멸 피해를 25% 확률로 1명으로 버팀 (상대 고정피해)', oddsDesc: '전멸 피해를 25% 확률로 1명으로 버팀 (상대에게 능력치 평균 × 20 고정 피해)', bond: { chance: 0.25, perTurn: Infinity, dmgPer: 20 } }, // 2026-11-22 기획자: 턴당 2회 제한 없앰 (무제한). // 2026-11-22 기획자: 고정 피해 평균 × 10 → × 20. 2026-11-19 기획자: 버티면 상대에게 능력치 평균 × 10 고정 피해 (설명에는 안 씀). 공격·수비·야전·단기접전·책략·돌격·벽력거 모두, 같은 전투에서 연달아도 됨 (턴당 2회). 피해 공적 포함 (손실로 셈)
@@ -535,6 +535,7 @@ const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (t.defense || 0)) * warBonus(d) // 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다 (wallCut)
     * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1) * unitTypeBonus(t, d.type)
+    * (d.siege && d.siege.연노 && seasonNow() >= SIEGE.연노.from ? 1 + SIEGE_EFFECT.crossbowDefense * siegeMul(d) : 1) // 연노 (2026-11-24, 시즌 9부터)
     * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 뼈에게 닿기를 (철벽은 2026-11-07부터 받는 피해 감소: dmgCut)
 };
 
@@ -597,6 +598,7 @@ function fightRounds(att, def, wall, left, field = false) {
     siegeWear(def, '벽력거', lines); // 내구도 -1 (시즌 9부터)
   }
   const tower = !!(att.siege && att.siege.정란); // 정란: 이 맞대결에서 한 합이라도 싸우면 내구도 -1 (시즌 9부터)
+  const xbow = !field && !!(def.siege && def.siege.연노); // 연노: 수비하며 한 합이라도 싸우면 내구도 -1 (2026-11-24)
   while (used < left && att.troops > 0 && def.troops > 0) {
     used++;
     // 개인 특성 설득민수 (2026-10-28): 수비 쪽이 이번 합에 전투력이 밀리면 합마다 persuade(지금 4%) 확률로 상대가 설득당해 물러난다 (출진이 그대로 끝남)
@@ -667,6 +669,7 @@ function fightRounds(att, def, wall, left, field = false) {
     }
   }
   if (tower && used > 0) siegeWear(att, '정란', lines);
+  if (xbow && used > 0) siegeWear(def, '연노', lines);
   return { used, lines, atkLost: a0 - att.troops, defLost: d0 - def.troops, pierced };
 }
 
@@ -704,7 +707,7 @@ const EXPLORE = [ // 2026-11-14 기획자 시즌 7 표: 군량 15 · 금 15 · �
   { key: 'spy', weight: 8 },                           // 적 첩자 포획 (2026-11-07): 가장 가까운 적 성 중 하나의 정보가 우리 세력에 spyTurns턴 보인다
   { key: 'pouch', get weight() { return seasonNow() >= 9 ? 6 : seasonNow() >= 8 ? 5 : seasonNow() >= 7 ? 6 : 8; } }, // 2026-11-19 기획자: 시즌 8부터 6 → 5 (SSR이 너무 많음, 1은 의병 합류로). // 2026-11-14 기획자: 시즌 7부터 8 → 6. 특성 주머니 발견 (2026-10-28, 2026-10-31 2 → 5%, 2026-11-08 8%로 올리고 레어에서 뺌: ★ 없음). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 1번
   // 기술자 (2026-11-14 기획자, 시즌 7부터 6%): 병기가 있으면 보수 (부대 전멸로 부서질 때 1번 버팀, 겹치지 않음, 새 병기를 만들면 사라짐). 없으면 병기 하나를 받는다 (보수 없이)
-  { key: 'engineer', get weight() { return seasonNow() >= 7 ? 6 : 0; }, give: { 충차: 40, 정란: 40, 벽력거: 20 } },
+  { key: 'engineer', get weight() { return seasonNow() >= 7 ? 6 : 0; }, get give() { return seasonNow() >= 9 ? { 충차: 30, 연노: 30, 정란: 30, 벽력거: 10 } : { 충차: 40, 정란: 40, 벽력거: 20 }; } }, // 2026-11-24 기획자: 시즌 9 연노 포함 30·30·30·10
   { key: 'treasure', get weight() { return seasonNow() >= 9 ? 4 : seasonNow() >= 7 ? 2 : 3; } }, // 2026-11-23 시즌 9: 4 (탐색이 내정 10%로 줄어서) // 2026-11-14 기획자: 시즌 7부터 3 → 2. 레어: 보물 발견 (2026-11-07). 주인 없는 보물이 없으면 장비 발견으로 바뀐다
 ];
 
@@ -799,8 +802,10 @@ function siegeWear(x, t, out) {
 const SIEGE = {
   충차: { price: 1000, desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
   정란: { price: 2000, desc: '수비 부대와 싸울 때 공격 전투력 +15%' },
+  연노: { price: 2000, from: 9, desc: '방어 모드로 성을 지킬 때 수비 전투력 +15%' }, // 수비 병기 (2026-11-24 기획자, 시즌 9부터): 정란을 뒤집은 것. 공격 부대 하나와 한 합이라도 싸우면 내구도 -1, 야전·공격엔 효과 없음
   벽력거: { price: 4000, get desc() { return seasonNow() >= 9 ? '싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음). 공격: 처음 맞붙는 수비 부대에게 · 수비: 턴마다 처음 맞붙는 공격 부대에게' : '수비 부대와 싸우기 전에 선제 사격 (보통 한 합 피해의 50%, 반격 없음)'; } }, // 2026-11-22 시즌 9: 수비도 사격
 };
+const siegeTypes = () => Object.keys(SIEGE).filter(t => !SIEGE[t].from || seasonNow() >= SIEGE[t].from); // 이번 시즌에 만들 수 있는 병기 (연노는 시즌 9부터)
 // 병기 만드는 값: 개인 특성 병기도 과학은 -20%
 const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.faction).siegePrice || 0) + (gTrait(g).siegePrice || 0))); // 조선 신기전, 개인 특성 병기도 과학
 // 병기 효과 (임시값)
@@ -808,6 +813,7 @@ const siegeMul = u => 1 + (gTrait(u).siegeBoost || 0); // 개인 특성 병기�
 const SIEGE_EFFECT = {
   ramWall: 0.4,     // 충차: 성벽 공격으로 깎는 방어 +40% (같은 손실로 더 깎는다)
   towerAttack: 0.15, // 정란: 수비 부대와 싸울 때 공격 전투력 +15%
+  crossbowDefense: 0.15, // 연노 (시즌 9부터): 성을 지킬 때 수비 전투력 +15%
   retreatFrom: 9, // 2026-11-23 기획자: 시즌 9부터 성이 함락될 때 싸우지 않고 물러난 장수(방어 끔·고립·병력 0·멸망)도 병기 잃음 판정
   durFrom: 9, durMax: 6, durFix: [2, 4], // 병기 내구도 (2026-11-23, 시즌 9부터): 가득 6, 기술자 회복 2~4
   get breakChance() { return seasonNow() >= 9 ? 0.25 : seasonNow() >= 7 ? 0.4 : 0.5; }, // 시즌 9부터 25% (2026-11-22 기획자, 내구도와 함께). 부대가 전멸하면 병기가 부서질 확률 (2026-11-10 기획자: 시즌 7부터 50% → 40%, 시즌 7 패치노트)
