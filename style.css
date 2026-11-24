@@ -366,6 +366,10 @@ button.pick.on .grade, button.pick:hover .grade { color: #8a1e0a; text-shadow: n
 .opt input { accent-color: var(--title); margin: 0; }
 .opt .r { margin-left: auto; font-size: 14px; }
 .opt.siegeOpt .r { font-size: 16px; }
+.siegeUses { display: inline-flex; gap: 2px; margin: 0 -4px; } /* 병기 제작 창: 이름과 비용 사이 공(빨강)·수(파랑) 표시 (2026-11-25) */
+.siegeUse { font-size: 12px; line-height: 1; padding: 2px 3px; border-radius: 3px; color: #fff; }
+.siegeUse.atk { background: #b8433a; }
+.siegeUse.def { background: #3a6db8; }
 .opt .r.foodR { font-size: 16px; color: #d4ccbe; } /* 이동·군량 수송 목록의 군량: 한 단계 크게, 옅은 회색 (2026-11-03, 흰색에서 바꿈) */ /* 병기 제작 창 설명은 한 단계 크게 (2026-11-03) */
 .tl { position: relative; top: 0.25em; } /* 물결(~): 삼국지3글꼴은 위에 붙어 있어서 글자 가운데로 내린다 (game.js가 화면의 ~를 감싼다, 2026-11-03) */
 .opt b { font-weight: normal; color: var(--title); } /* 선택창의 중요한 단어(병기·병종·성 이름 등): 굵게 대신 노란색 (2026-11-03, 삼국지3글꼴은 가짜 굵게가 노랗게 번져 보였다) */
