@@ -2111,7 +2111,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125081946&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125082106&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2121,7 +2121,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125081946&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125082106&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2131,7 +2131,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125081946&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125082106&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2889,7 +2889,7 @@ function renderCommander() {
   body += allyBoxHtml(p, c === p);
   // 대도독 혜택 작은 툴팁 (2026-11-25 기획자): PC는 마우스를 올리면, 폰은 누르면 제목 아래 한 줄
   const perk = seasonNow() >= R.perkFromSeason ? `대도독 혜택: 병력 상한 +${fmt(R.perkTroops)} · 금 수입 +${Math.round(R.perkGold * 100)}%` : '';
-  box.innerHTML = `<h2>🚩 대도독${perk ? ` <button class="link perkTip" data-perktip title="${perk}">혜택</button>` : ''}</h2>${perk && cmdPerkOpen ? `<p class="dim small">${perk}</p>` : ''}${body}`;
+  box.innerHTML = `<h2>🚩 대도독${perk ? ` <button class="perkTip" data-perktip title="${perk}" aria-label="대도독 혜택">?</button>` : ''}</h2>${perk && cmdPerkOpen ? `<p class="dim small">${perk}</p>` : ''}${body}`;
   box.onclick = async e => {
     if (e.target.closest('[data-perktip]')) { cmdPerkOpen = !cmdPerkOpen; renderCommander(); return; }
     const gb = e.target.closest('[data-gid]'); if (gb) { memberDialog(gb.dataset.gid); return; }
