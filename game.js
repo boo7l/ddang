@@ -1036,7 +1036,8 @@ function pickMap(title, ids, homeId, picked, onPick, o = {}) { // o.homeLabel: �
 // 성의 수비 부대 글: 우리 세력 성이면 모두 보여 주고, 다른 세력 성이면 수비대·장수 모두 있는지만 (2026-11-04, 그 전엔 수비대장은 자세히)
 // 첩보가 유효한 성은 수비 장수도 이름·병종·병력까지 (2026-10-30)
 // 관리자 장수는 모든 성을 첩보한 것처럼 본다 (2026-11-20 기획자: 게임 흐름 파악용. 서버도 관리자에게는 성·장수 정보를 숨기지 않는다)
-const seeAll = () => !!IS_ADMIN;
+const ADMIN_SEE_ALL = false; // 2026-11-25 기획자: 관리자 장수도 일반 장수처럼 첩보로만 (서버 api.js ADMIN_SEE_ALL과 같이)
+const seeAll = () => ADMIN_SEE_ALL && !!IS_ADMIN;
 // link: 성 정보의 수비 칸에서는 장수 이름을 누르면 장수 정보 창 (2026-11-22 기획자, 이름이 보이는 사람만). 출진 창은 고르는 목록이라 링크 없음
 function defenseText(c, defs, sep, link = false) {
   const ours = c.faction === me().faction || !!(S.cities[c.id] || {}).spied || seeAll();
@@ -2110,7 +2111,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125002348&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125002547&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2120,7 +2121,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125002348&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125002547&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2130,7 +2131,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125002348&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125002547&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
