@@ -1110,13 +1110,26 @@ const draftReserve = unit => { draftLock = true; try { localStorage.setItem(DRAF
 function draftDialog() {
   const p = me(), from = cityAtSlot(me(), slot), cur = unitAtSlot(p, slot);
   const lockUnit = draftLockUnit(p, slot);
-  if (draftLock && lockUnit) { draftReserve(lockUnit); return; }
+  if (draftLock && lockUnit && !(unitTier2(lockUnit) && from.grade < RULES.tier2.gradeMin)) { draftReserve(lockUnit); return; } // 2티어는 대도시가 아니면 창을 띄운다
   const bonus = Math.floor(p.merit * RULES.draftPerMerit), [b0, b1] = draftBase(effStats(p));
   const lo = b0 + bonus, hi = b1 + bonus;  const statName = k => STATS.find(s => s.key === k).name;
   const gcs = S.cities[from.id] || {}, gNow = gcs.guard || 0, gMax = RULES.guardMax[from.grade], gFull = false; // 이 성 수비대장. 2026-11-11부터 방어 모드 장수가 꽉 차도 수비대 징병이 된다
-  const opts = Object.entries(UNIT_TYPES).map(([t, u]) => `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
-      <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
-      <span class="r dim">${u.beats}에 강함 · ${Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].beats === t)}에 약함</span></label>`).join('');
+  // 2티어 병종 (2026-11-24, 시즌 9부터): 대도시 이상 성에서만 (아니면 흐리게), 금 500. 승급: 지금 병력을 같은 계통 2티어로 (1,000명당 250)
+  const T2 = RULES.tier2, bigCity = from.grade >= T2.gradeMin;
+  const opts = unitTypesNow().map(t => {
+    const u = UNIT_TYPES[t], t2 = unitTier2(t), off = t2 && !bigCity;
+    const weak = Object.keys(UNIT_TYPES).find(k => !UNIT_TYPES[k].base && UNIT_TYPES[k].beats === unitFam(t));
+    return `<label class="opt${off ? ' dim' : ''}"><input type="radio" name="tgt" value="${t}"${t === cur && !off ? ' checked' : ''}${off ? ' disabled data-off="1"' : ''}>
+      <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}${t2 ? ` · 금 ${fmt(T2.gold)}` : ''}</span>
+      <span class="r dim">${t2 ? (off ? '대도시 이상 성에서만' : u.desc) + '<br>' : ''}${u.beats}에 강함 · ${weak}에 약함</span></label>`;
+  }).join('') + (() => {
+    const up = cur && p.troops > 0 && !unitTier2(cur) ? unitUp(cur) : null;
+    if (!up) return '';
+    const off = !bigCity;
+    return `<label class="opt${off ? ' dim' : ''}"><input type="radio" name="tgt" value="up:${up}"${off ? ' disabled data-off="1"' : ''}>
+      <b>⬆ 승급</b> <span class="dim">${cur} → ${up} · 금 ${fmt(upgradeCost(p.troops))}</span>
+      <span class="r dim">${off ? '대도시 이상 성에서만' : `지금 병력 ${fmt(p.troops)}명을 흩어지지 않고 ${up}으로 (1,000명당 ${T2.upPer1000})`}</span></label>`;
+  })();
   pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
     ${p.troops > 0 ? `<p id="draftHave">현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))}</p>` : ""}    <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>`,
   opts, '예약', (t, box) => {
@@ -1124,17 +1137,20 @@ function draftDialog() {
       draftReserve(GUARD_UNIT); // 2026-11-14: 수비대는 병종 없음
       return;
     }
+    if (t.startsWith('up:')) { reserve({ cmd: 'draft', unit: t.slice(3), upgrade: true }); return; } // 승급 (2026-11-24)
     if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
     draftReserve(t);
   }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 징병한 병사를 내 병력 대신 ${esc(from.name)} 수비대에 넣어요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
-    <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`, '', costLine('금', RULES.myGoldCost.draft, p.gold));
+    <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`, '', `<span id="draftCost">${costLine('금', unitTier2(cur) && bigCity ? T2.gold : RULES.myGoldCost.draft, p.gold)}</span>`);
+  // 고른 병종(2티어 500 · 승급)에 따라 비용 줄을 바꾼다 (2026-11-24)
+  $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => r.addEventListener('change', () => { const v = r.value; $('#draftCost').innerHTML = costLine('금', v.startsWith('up:') ? upgradeCost(p.troops) : unitTier2(v) ? T2.gold : RULES.myGoldCost.draft, p.gold); }));
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
   const ownNow = $('#draftNow').textContent;
   gBox.onchange = () => {
     $('#draftNow').textContent = gBox.checked ? '수비대는 병종 없이 모아요.' : ownNow;
-    $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => { r.disabled = gBox.checked; }); // 수비대 징병이면 병종 선택을 막는다
-    if (gBox.checked) { const r = $('#modalBox').querySelector('input[name=tgt]'); if (r && !$('#modalBox').querySelector('input[name=tgt]:checked')) r.checked = true; $('#mOk').disabled = false; }
+    $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => { r.disabled = gBox.checked || r.dataset.off === '1'; }); // 수비대 징병이면 병종 선택을 막는다 (대도시가 아니라 막힌 2티어는 그대로)
+    if (gBox.checked) { const r = $('#modalBox').querySelector('input[name=tgt]:not([data-off])'); if (r && !$('#modalBox').querySelector('input[name=tgt]:checked')) r.checked = true; $('#mOk').disabled = false; }
   };
 }
 
@@ -2070,7 +2086,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124220648&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124222823&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2080,7 +2096,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124220648&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124222823&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2090,7 +2106,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124220648&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124222823&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }

@@ -772,17 +772,19 @@ function counterSpy(g, city, share) {
 function runDraft(g, o) {
   const city = cityById(g.city), type = o.unit;
   if (o.who === 'guard') return runGuardDraft(g); // 수비대는 병종 없음 (2026-11-14). 예전 예약(unit: 보병 등)도 그대로 된다
-  if (!UNIT_TYPES[type]) return '없는 병종';
+  if (!UNIT_TYPES[type] || !unitTypesNow().includes(type)) return '없는 병종';
+  if (o.upgrade) return runUpgrade(g, type);
+  if (unitTier2(type) && city.grade < RULES.tier2.gradeMin) return `${type}은 대도시 이상 성에서만 모을 수 있음`; // 2티어 (2026-11-24)
   if (g.troops >= troopsMax(g) && g.unitType === type) return '병력이 이미 최대치';
   const peace = S.cities[g.city].peace, rate = peaceDraft(peace);
   if (!rate) return `${city.name}의 치안이 너무 낮음 (${peace}, ${RULES.peaceLow} 미만은 징병 불가)`;
-  const why = pay(g, 'draft');
+  const why = pay(g, 'draft', unitTier2(type) ? RULES.tier2.gold : undefined); // 2티어 징병 금 500
   if (why) return why;
   // 다른 병종을 모으면 있던 병력은 모두 흩어지고 새 부대가 된다
   let note = '';
   if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
   const t = traitOf(g.faction);
-  const raw = Math.floor(draftGain(effStats(g), g.merit) * rate * (1 + (t.draft || 0) + (type === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))); // 수도에서 징병 +5% (2026-11-16, 시즌 8부터)
+  const raw = Math.floor(draftGain(effStats(g), g.merit) * rate * (1 + (t.draft || 0) + (unitFam(type) === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))); // 수도에서 징병 +5% (2026-11-16, 시즌 8부터)
   const gain = Math.min(raw, troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
   g.unitType = type;
   g.troops += gain;
@@ -797,6 +799,25 @@ function runDraft(g, o) {
   addLog(g, `${city.name}: ${type}을 모았다. 병력 +${fmt(gain)} (${fmt(g.troops)})${toGuard ? ` · 넘친 ${fmt(toGuard)}명은 수비대로 (${fmt(cs.guard)}/${fmt(gmax)})` : ''}${rate < 1 ? ` · 치안 ${peace}으로 덜 모임` : ''}${note} · 치안 -${drop} (${cs.peace})`);
   addMerit(g, RULES.merit.draft);
   gainStatExp(g, 'lea', RULES.statExp.draft);
+  return '';
+}
+
+// 승급 (2026-11-24 기획자, 시즌 9부터): 지금 병력을 같은 계통 2티어로 바꾼다 (보병 → 중보병). 대도시 이상 성, 1,000명당 금 250, 이탈 없음, 공적 5 · 그 병종 능력치 경험치 10
+function runUpgrade(g, type) {
+  const city = cityById(g.city), T = RULES.tier2;
+  if (!unitTier2(type)) return '승급할 수 없는 병종';
+  if (city.grade < T.gradeMin) return '승급은 대도시 이상 성에서만 할 수 있음';
+  if (!(g.troops > 0)) return '승급할 병력이 없음';
+  if (g.unitType === type) return `이미 ${type}`;
+  if (UNIT_TYPES[type].base !== g.unitType) return `${g.unitType}은 ${type}으로 승급할 수 없음 (같은 계통만)`;
+  const cost = upgradeCost(g.troops);
+  const why = pay(g, 'upgrade', cost);
+  if (why) return why;
+  const from = g.unitType;
+  g.unitType = type;
+  addLog(g, `${city.name}: ⬆ ${from} ${fmt(g.troops)}명을 ${type}으로 승급했다 · 금 -${fmt(cost)}`);
+  addMerit(g, T.upMerit);
+  gainStatExp(g, UNIT_TYPES[type].stat, T.upExp);
   return '';
 }
 
@@ -2065,7 +2086,7 @@ const COMMANDS = {
   tech: { label: () => '기술', run: g => runDomestic(g, 'tech') },
   wall: { label: () => '축성', run: g => runDomestic(g, 'wall') },
   peace: { label: () => '치안', run: g => runDomestic(g, 'peace') },
-  draft: { label: o => (o.who === 'guard' ? '징병 (수비)' : `징병 (${o.unit})`), run: runDraft },
+  draft: { label: o => (o.who === 'guard' ? '징병 (수비)' : o.upgrade ? `승급 (${o.unit})` : `징병 (${o.unit})`), run: runDraft },
   attack: { label: o => `출진 → ${cityName(o.to)}`, run: runAttack },
   move: { label: o => `이동 → ${cityName(o.to)}`, run: runMove },
   destroy: { label: o => `파괴 → ${cityName(o.to)}`, run: (g, o) => runPlot(g, 'destroy', o) },

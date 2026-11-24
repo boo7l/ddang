@@ -190,6 +190,7 @@ const RULES = {
   // 단기접전 (무력): 양쪽 무력이 70 이상이면 합마다 낮은 확률로 벌어진다 (임시값)
   duel: { minWar: 70, chance: 0.04, lossPerWar: [15, 20], lossCap: 1, exp: 40 }, // 2026-11-07 시즌 6: 상한 50%를 넣었다가 같은 날 뺌 (1 = 상한 없음. 소규모 부대의 역전 요소로 둔다). // 2026-11-07 시즌 6: 진 쪽 손실 무력 × 13~20 → 15~20. // 2026-11-03 시즌 5: 단기접전 승리 경험치 50 → 40, 발생 확률 합마다 5% → 4%. // 단기접전: 진 쪽 병력 손실 = 이긴 쪽 무력 × 13~20 (2026-10-31, 그 전엔 진 쪽 병력의 30% → 25%). 양쪽 무력 70 이상이면 합마다 5% (2026-10-28 8%에서, 빠뜨롱 나와 특성은 10%),출진 한 번(5합)에 최대 1번 (2026-10-26 10%·제한 없음에서 바꿈) 이기면 무력 경험치 50 (2026-10-27 40에서)
   // 전투 중 책략 (2026-10-26): 지력 70 이상이고 상대보다 높으면, 합마다 (지력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 일방 공격 (처음 ÷ 10에서 낮춤). 피해 = (60~90) × 10 × (지력 차이 ÷ 10)^0.6 (2026-10-31 (50~100), 지수 0.7에서)
+  tier2: { gold: 500, gradeMin: 3, upPer1000: 250, upMerit: 5, upExp: 10, food: 1.5 }, // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 징병 금 500 · 대도시 이상 · 승급 1,000명당 250 (공적 5 · 경험치 10, 이탈 없음) · 매달 군량 1.5배
   anySideFrom: 9, // 책략·돌격: 시즌 9부터 상대보다 낮아도 쓴다 (pickSkill, 2026-11-24 기획자)
   charge: { minWar: 70, chancePerWar: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, troopRef: 5000, troopExp: 0.3, statExp: 30 }, // 2026-11-07 시즌 6: 피해 × min(1, (쓰는 쪽 병력 ÷ 5,000)^0.3) (작은 부대 싸움 운빨 줄이기). // 2026-11-03 시즌 5 발동 확률 능력치 ÷ 1500 → ÷ 2000, 경험치 40 → 30. 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 같은 수식에 지력 대신 무력. 무력 경험치 40, 공적 20. 침착이면 피해 -50%
   scheme: { minInt: 70, chancePerInt: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, troopRef: 5000, troopExp: 0.3, kinds: ['🔥 화공', '🪨 낙석', '🏹 복병'], statExp: 30 }, // 2026-11-07 시즌 6: 피해 × min(1, (쓰는 쪽 병력 ÷ 5,000)^0.3). 2026-11-03 시즌 5 발동 확률 지력 ÷ 1500 → ÷ 2000, 경험치 40 → 30. // 책략 한 번에 지력 경험치 40 (2026-10-27 30에서). 출진 한 번(5합)에 최대 1번
@@ -354,7 +355,7 @@ const dateText = (turn, year) => { const d = dateOf(turn, year); return `${yearT
 
 // 매달 장수의 병사가 군량을 먹는다. 모자라면 병력이 흩어진다. 굶었으면 true
 function feedTroops(g, cs) {
-  const need = Math.ceil(g.troops * RULES.foodPerTroops * (1 + (traitOf(g.faction).food || 0))); // 장로: 덜 먹는다
+  const need = Math.ceil(g.troops * RULES.foodPerTroops * (1 + (traitOf(g.faction).food || 0)) * (unitTier2(g.unitType) ? RULES.tier2.food : 1)); // 장로: 덜 먹는다 · 2티어 병종 1.5배 (2026-11-24)
   if (cs.food >= need) { cs.food -= need; return false; }
   cs.food = 0;
   g.troops = Math.floor(g.troops * (1 - RULES.starveLoss));
@@ -367,7 +368,17 @@ const UNIT_TYPES = {
   보병: { stat: 'lea', beats: '궁병' },
   기병: { stat: 'war', beats: '보병' },
   궁병: { stat: 'int', beats: '기병' },
+  // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 대도시 이상 성에서만 징병·승급. 상성은 1티어와 같은 계통 (beats는 계통 이름)
+  중보병: { stat: 'lea', beats: '궁병', base: '보병', from: 9, dmgCut: 0.10, desc: '받는 피해 -10%' },
+  중기병: { stat: 'war', beats: '보병', base: '기병', from: 9, dmgUp: 0.10, desc: '주는 피해 +10%' },
+  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, scheme: 0.02, schemeDmg: 0.2, desc: '책략 발동 +2%p · 책략 피해 +20%' },
 };
+const unitFam = t => (UNIT_TYPES[t] && UNIT_TYPES[t].base) || t; // 병종 계통 (중보병 → 보병)
+const unitTier2 = t => !!(UNIT_TYPES[t] && UNIT_TYPES[t].base);
+const unitTypesNow = () => Object.keys(UNIT_TYPES).filter(t => !UNIT_TYPES[t].from || seasonNow() >= UNIT_TYPES[t].from); // 이번 시즌에 모을 수 있는 병종
+const unitUp = t => Object.keys(UNIT_TYPES).find(k => UNIT_TYPES[k].base === t && (!UNIT_TYPES[k].from || seasonNow() >= UNIT_TYPES[k].from)); // 승급할 병종 (보병 → 중보병)
+const upgradeCost = troops => Math.ceil(troops / 1000 * RULES.tier2.upPer1000); // 승급 금 (1,000명당 250)
+const unitFx = (u, k) => (UNIT_TYPES[u.type] && UNIT_TYPES[u.type][k]) || 0; // 2티어 효과 값
 
 // ===== 장수 특성 (2026-10-27, 금낭: 장수를 만든 뒤 비단 주머니에서 3장을 뽑아 하나를 영구로 고른다. 다시 뽑기 1번) =====
 // 2026-10-28 기획자 목록 18개. tier(상·중·하)마다 뽑힐 비율이 다르다 (TRAIT_TIER_WEIGHT). 효과가 붙는 곳은 engine.js·아래 전투 공식에서 gTrait(장수 또는 부대)로 읽는다
@@ -504,20 +515,21 @@ function unitPower(u) {
 function matchupOf(a, b) {
   const season = typeof S !== 'undefined' && S ? S.season || 1 : 1; // 전투 시뮬레이터처럼 S가 없으면 지금 값
   if (!UNIT_TYPES[a.type] || !UNIT_TYPES[b.type]) return 1; // 병종 없는 수비대는 상성을 주지도 받지도 않는다 (2026-11-14)
-  if (UNIT_TYPES[a.type].beats === b.type) return 1 + (season >= 7 ? RULES.matchupS7 : RULES.matchup);
+  if (UNIT_TYPES[a.type].beats === unitFam(b.type)) return 1 + (season >= 7 ? RULES.matchupS7 : RULES.matchup);
   return 1;
 }
 // 공격 전투력: 정란이 있으면 더 세다
 // 세력 특성: 기병(마등), 출진 공격(손견)
 // 무력 보너스: 병종과 상관없이 무력 1마다 전투력 +0.15% (10마다 +1.5%), 공격·수비 모두 (2026-11-06 시즌 6. 2026-11-04 시즌 5 20마다에서 10마다로. 2026-10-26 처음, 무력의 가치를 올리려고)
 // 보병·궁병 전투력 (세력 특성, 2026-11-06). 기병은 cavalry로 따로
-const unitTypeBonus = (t, type) => (type === '보병' ? 1 + (t.infantry || 0) : type === '궁병' ? 1 + (t.archer || 0) : 1);
+const unitTypeBonus = (t, type) => (unitFam(type) === '보병' ? 1 + (t.infantry || 0) : unitFam(type) === '궁병' ? 1 + (t.archer || 0) : 1);
 const warBonus = u => 1 + (u.stats.war || 0) * RULES.warPer1; // 2026-11-06: 10 단위로 끊지 않고 1마다
 const attackPower = (a, d) => {
   const t = traitOf(a.faction);
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack * siegeMul(a) : 1)
     * warBonus(a)
-    * (1 + (t.attack || 0)) * (a.type === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
+    * (1 + (t.attack || 0)) * (unitFam(a.type) === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
+    * (1 + unitFx(a, 'dmgUp')) // 중기병: 주는 피해 +10% (2026-11-24)
     * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
 };
 // 수비 전투력 (성 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다: wallCut)
@@ -535,7 +547,8 @@ const wallCut = wall => {
 const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (t.defense || 0)) * warBonus(d) // 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다 (wallCut)
-    * (d.type === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1) * unitTypeBonus(t, d.type)
+    * (unitFam(d.type) === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1) * unitTypeBonus(t, d.type)
+    * (1 + unitFx(d, 'dmgUp')) // 중기병: 주는 피해 +10% (2026-11-24)
     * (d.siege && d.siege.연노 && seasonNow() >= SIEGE.연노.from ? 1 + SIEGE_EFFECT.crossbowDefense * siegeMul(d) : 1) // 연노 (2026-11-24, 시즌 9부터)
     * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 뼈에게 닿기를 (철벽은 2026-11-07부터 받는 피해 감소: dmgCut)
 };
@@ -643,11 +656,11 @@ function fightRounds(att, def, wall, left, field = false) {
     // 책략 (2026-10-26): 지력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (지력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 보통 교전 대신 일방적으로 친다.
     // 피해 = (60~90) × 10 × ((지력 차이 + 5) ÷ 10)^0.6 (2026-11-04 시즌 5: 차이에 +5, 작은 차이의 저점을 올림). 병종·공수·수비대장 가리지 않음, 병력 상한 없음
     const C = RULES.scheme;
-    const sch = !att.schemed && pickSkill(att, def, 'int', C.minInt, u => u.stats.int * C.chancePerInt + (gTrait(u).scheme || 0)); // 책사: 책략 발동 +2.5%p (시즌 8부터)
+    const sch = !att.schemed && pickSkill(att, def, 'int', C.minInt, u => u.stats.int * C.chancePerInt + (gTrait(u).scheme || 0) + unitFx(u, 'scheme')); // 책사: 책략 발동 +2.5%p (시즌 8부터)
     if (sch) {
       att.schemed = true; // 책략도 출진 한 번(5합)에 최대 1번 (어느 쪽이 쓰든)
       const [me, foe, gap] = sch;
-      const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow((gap + C.gapAdd) / C.ref, C.exp) * troopScale(me, C) * (1 - (gTrait(foe).calm || 0)))); // 침착: 책략 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
+      const loss = Math.min(foe.troops, Math.round((C.base[0] + Math.random() * (C.base[1] - C.base[0])) * C.ref * Math.pow((gap + C.gapAdd) / C.ref, C.exp) * troopScale(me, C) * (1 + unitFx(me, 'schemeDmg')) * (1 - (gTrait(foe).calm || 0)))); // 노병: 책략 피해 +20% (2026-11-24) · 침착: 책략 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
       const bx = [], kept = bondSave(foe, loss, me, bx);
       foe.troops -= kept;
       me.schemes = (me.schemes || 0) + 1;
@@ -670,8 +683,8 @@ function fightRounds(att, def, wall, left, field = false) {
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
-    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck()) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
-    const hitAtt = Math.ceil((field ? fieldPower(def, att) : defensePower(def, wall, att)) * RULES.roundRate * luck());
+    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck() * (1 - unitFx(def, 'dmgCut'))) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0) + unitFx(def, 'dmgCut')))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
+    const hitAtt = Math.ceil((field ? fieldPower(def, att) : defensePower(def, wall, att)) * RULES.roundRate * luck() * (1 - unitFx(att, 'dmgCut'))); // 중보병: 받는 피해 -10% (2026-11-24)
     const bx = []; // 유대: 양쪽이 동시에 맞으니, 각자 버틸지 본 뒤에 깎는다 (상대 유대 피해는 그 뒤에 남은 병력에서)
     const dLoss = bondSave(def, Math.min(def.troops, hitDef), att, bx);
     def.troops -= dLoss;
