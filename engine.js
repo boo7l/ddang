@@ -763,7 +763,8 @@ function counterSpy(g, city, share) {
     if (typeof factionNotice === 'function') factionNotice(fid, `🕵 ${city.name}에 보낸 첩자가 붙잡혔다. 더는 그 성을 볼 수 없다.`);
   }
   const names = spies.map(fid => (factionById(fid) || { name: '?' }).name).join('·');
-  addLog(g, `🛡 ${city.name}: 숨어든 첩자를 색출했다! ${names} 세력의 정보망을 끊었다.`);
+  const cm = RULES.s9cmd.counterSpyMerit || 0; if (cm) addMerit(g, cm); // 색출 성공 공적 (2026-11-24 기획자)
+  addLog(g, `🛡 ${city.name}: 숨어든 첩자를 색출했다! ${names} 세력의 정보망을 끊었다.${cm ? ` · 공적 +${cm}` : ''}`);
   if (typeof factionNotice === 'function') factionNotice(g.faction, `🛡 ${g.name}${josa(g.name, '이가').slice(-1)} ${city.name}에 숨어든 ${names} 세력 첩자를 색출했다.`);
 }
 
