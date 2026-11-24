@@ -3,6 +3,7 @@
 // ===== 화면 =====
 // 게임 계산은 engine.js, 규칙과 숫자는 rules.js, 지도 그리기는 map.js에 있다. 여기는 화면이다.
 let MY_ID = null;     // 내 계정 id (서버 계정)
+const RANK_PUBLIC = false; // 🏆 공적 순위 단추 (2026-11-24 기획자: 시즌 도중 순위는 일단 숨김, 관리자만). true로 바꾸면 모두에게 다시 보인다
 const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
 let IS_ADMIN = false;
 const TOUR_TAB = new URLSearchParams(location.search).has('tour');
@@ -724,6 +725,7 @@ let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
 function syncPrepBtns() {
   const locked = !!preparing && !IS_ADMIN;
   $('#helpBtn').hidden = locked;
+  $('#rankBtn').hidden = !RANK_PUBLIC && !IS_ADMIN;
   $('#aiBtn').hidden = locked || !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
 }
 function applyLoginGate() {
@@ -2068,7 +2070,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124204425&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124204636&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2078,7 +2080,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124204425&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124204636&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2088,7 +2090,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124204425&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124204636&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3758,7 +3760,7 @@ if (ADMIN_TAB) { $('#adminNewTab').hidden = true; $('#adminClose').textContent =
 $('#adminNewTab').onclick = () => window.open(location.pathname + '?admin', 'ddangAdmin'); // 같은 이름이라 여러 번 눌러도 탭 하나
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
-$('#rankBtn').onclick = rankDialog;
+$('#rankBtn').onclick = () => { if (RANK_PUBLIC || IS_ADMIN) rankDialog(); };
 $('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
 document.addEventListener('keydown', e => { if (e.key !== 'Escape' || keyWait) return; if (document.getElementById('pickMap')) closePickMap(); else if (!$('#modal').hidden) closeModal(); }); // 지도 팝업이 열려 있으면 그것만 닫는다 (2026-11-10)
 
