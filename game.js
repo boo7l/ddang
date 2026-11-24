@@ -1167,7 +1167,10 @@ function draftDialog() {
     const ck = $('#modalBox').querySelector('input[name=tgt]:checked');
     if (ck && ck.closest('[data-dtab]').hidden) { ck.checked = false; if (!$('#draftGuard').checked) $('#mOk').disabled = true; }
   }; });
-  $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => r.addEventListener('change', () => { const v = r.value; $('#draftCost').innerHTML = costLine('금', v.startsWith('up:') ? upgradeCost(p.troops) : unitTier2(v) ? T2.gold : RULES.myGoldCost.draft, p.gold); }));
+  // 비용 줄: 수비대 징병이면 고른 병종과 상관없이 보통 징병 값 (2026-11-25 버그: 정예 탭에서 수비대 징병이 500으로 나옴)
+  const draftCostNow = () => { const ck = $('#modalBox').querySelector('input[name=tgt]:checked'), v = ck ? ck.value : '';
+    $('#draftCost').innerHTML = costLine('금', $('#draftGuard').checked || !v ? RULES.myGoldCost.draft : v.startsWith('up:') ? upgradeCost(p.troops) : unitTier2(v) ? T2.gold : RULES.myGoldCost.draft, p.gold); };
+  $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => r.addEventListener('change', draftCostNow));
   // 체크하면 병종 선택을 수비대장 병종으로 맞춘다
   const gBox = $('#draftGuard');
   const ownNow = $('#draftNow').textContent;
@@ -1175,6 +1178,7 @@ function draftDialog() {
     $('#draftNow').textContent = gBox.checked ? '수비대는 병종 없이 모아요.' : ownNow;
     $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => { r.disabled = gBox.checked || r.dataset.off === '1'; }); // 수비대 징병이면 병종 선택을 막는다 (대도시가 아니라 막힌 2티어는 그대로)
     if (gBox.checked) { const r = $('#modalBox').querySelector('input[name=tgt]:not([data-off])'); if (r && !$('#modalBox').querySelector('input[name=tgt]:checked')) r.checked = true; $('#mOk').disabled = false; }
+    draftCostNow();
   };
 }
 
@@ -2111,7 +2115,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125083736&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125083811&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2121,7 +2125,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125083736&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125083811&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2131,7 +2135,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125083736&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125083811&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
