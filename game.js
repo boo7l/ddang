@@ -3,7 +3,7 @@
 // ===== 화면 =====
 // 게임 계산은 engine.js, 규칙과 숫자는 rules.js, 지도 그리기는 map.js에 있다. 여기는 화면이다.
 let MY_ID = null;     // 내 계정 id (서버 계정)
-const RANK_PUBLIC = false; // 🏆 공적 순위 단추 (2026-11-24 기획자: 시즌 도중 순위는 일단 숨김, 관리자만). true로 바꾸면 모두에게 다시 보인다
+const RANK_PUBLIC = false; // 🏆 명성 순위 단추 (2026-11-24 기획자: 시즌 도중 순위는 일단 숨김, 관리자만). true로 바꾸면 모두에게 다시 보인다
 const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
 let IS_ADMIN = false;
 const TOUR_TAB = new URLSearchParams(location.search).has('tour');
@@ -73,7 +73,7 @@ function applyView(d) {
   // 오른쪽 위 순위 단추에 내 순위를 함께 (세계를 받아 올 때마다 새로)
   const myRank = S && me() ? meritRanking().findIndex(g => g.name === me().name && g.faction === me().faction) + 1 : 0;
   $('#rankBtn').textContent = myRank ? `🏆 순위 (${myRank}위)` : '🏆 순위';
-  bgmSync(); // 공적이 1,000·2,000을 넘으면 곡을 바꾼다
+  bgmSync(); // 명성이 1,000·2,000을 넘으면 곡을 바꾼다
   ACCOUNTS = d.accounts || {};
   lastFetch = Date.now();
   turnWait = 1000 + Math.random() * 5000; // 다음 턴에 받아 올 때 기다릴 시간 (사람마다 다르게)
@@ -121,14 +121,14 @@ let celebrated = false; // 이번에 페이지를 연 뒤 축하 화면을 띄�
 // u를 주면 그 내용으로 보여 준다 (개발자 도구의 미리 보기: 진행 상태는 바꾸지 않는다)
 function unifyDialog(u = S.unified) {
   const f = factionById(u.faction);
-  // 공적 순위의 소속은 명예의 전당처럼 가장 오래 몸담은 세력으로 (2026-10-27)
+  // 명성 순위의 소속은 명예의 전당처럼 가장 오래 몸담은 세력으로 (2026-10-27)
   const rows = rankRows(meritRanking().map(r => ({ ...r, faction: homeFaction(S.generals[r.id]) })));
   openModal(`
     <h2>🏆 천하통일</h2>
     <p class="unifyHead"><span class="swatch" style="background:${f.color}"></span><b class="hi">${esc(f.name)}</b> 세력이 천하를 손에 넣었습니다!</p>
     <p class="dim">${dateText(0)} → ${dateText(u.turn)} (${u.turn}달)</p>
-    <h3>공적 순위 <span class="dim small">· 상위 10명</span></h3>
-    <table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table>
+    <h3>명성 순위 <span class="dim small">· 상위 10명</span></h3>
+    <table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>명성</th></tr>${rows}</table>
     <p class="dim">이번 시즌은 여기서 끝났어요. 다음 시즌을 기다려 주세요.<br>(메뉴에서 음악을 틀면 전용 음악 재생)</p>
     <div class="modalBtns"><button id="unifyHide" class="btnLeft hideBtn">다시 보지 않기</button><button data-close class="main">닫기</button></div>`, () => {
     $('#unifyHide').onclick = () => { try { localStorage.setItem('unifyHide', String(S.season)); } catch (e) { /* 저장 못 해도 닫기는 된다 */ } closeModal(); };
@@ -311,7 +311,7 @@ function adminDialog(tab = 'users', fid = null) {
       <td class="num">${fmt(x.troops)}</td><td class="num">${fmt(x.gold)}</td><td class="num">${fmt(x.merit)}</td>
       <td class="num">${x.lea}</td><td class="num">${x.war}</td><td class="num">${x.int}</td></tr>`).join('');
     body = `<p class="dim">세력 ${fs.filter(x => x.cs.length).length}개 · 성 ${total}개 중 빈 땅 ${empty}개 · 장수 ${gens.length}명 (재야 ${free}명)</p>
-      <div class="adminScroll"><table class="stats rank"><tr><th>세력</th><th>장수</th><th>성</th><th>성 규모</th><th title="장수 병력 합 (수비대 제외)">총 병력</th><th>총 금</th><th>총 공적</th><th>평균 통솔</th><th>평균 무력</th><th>평균 지력</th></tr>${rows}</table></div>
+      <div class="adminScroll"><table class="stats rank"><tr><th>세력</th><th>장수</th><th>성</th><th>성 규모</th><th title="장수 병력 합 (수비대 제외)">총 병력</th><th>총 금</th><th>총 명성</th><th>평균 통솔</th><th>평균 무력</th><th>평균 지력</th></tr>${rows}</table></div>
       <p class="dim small">총 병력은 장수 병력만 더했어요 (다른 세력 성의 수비대는 숨겨져 있어서 빠져요). 세력 이름을 누르면 그 세력 장수 목록으로 가요.</p>`;
   } else if (tab === 'users') {
     // 세력을 눌러 그 세력 장수만 본다 (재야는 '-'). 처음엔 장수가 가장 많은 세력
@@ -330,7 +330,7 @@ function adminDialog(tab = 'users', fid = null) {
       <td class="num">${changes(g)}</td><td class="num">${queueCount(g)}</td><td>${traitText(g)}</td><td>${treasureText(g)}</td></tr>`).join('');
     body = `<div class="picks">${summary}</div><p class="dim">모두 ${gens.length}명 · ${pick === '*' ? '전체' : fname(pick)} ${pick === '*' ? gens.length : counts[pick] || 0}명${adminLoyalOnly ? ` 중 세력 변경 0회 ${(rows.match(/<tr>/g) || []).length}명` : ''} 보는 중
         <label class="lockSw" style="margin-left:12px"><input type="checkbox" id="aLoyal" data-keep="${pick || '-'}"${adminLoyalOnly ? ' checked' : ''}> 세력 변경 0회만</label></p>
-      <div class="adminScroll"><table class="stats rank genTable"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>공적</th><th>통솔</th><th>무력</th><th>지력</th><th>변경</th><th>예약</th><th>특성</th><th>보물</th></tr>${rows}</table></div>`;
+      <div class="adminScroll"><table class="stats rank genTable"><tr><th>아이디</th><th>장수</th><th>얼굴</th><th>세력</th><th>위치</th><th>병력</th><th>금</th><th>명성</th><th>통솔</th><th>무력</th><th>지력</th><th>변경</th><th>예약</th><th>특성</th><th>보물</th></tr>${rows}</table></div>`;
   } else {
     // 채팅이 있거나 장수가 있는 세력만
     const RON = RULES.ronin.chat, fs = MAP.factions.filter(f => chatOf(f.id).length || counts[f.id]);
@@ -363,7 +363,7 @@ const openText = ({ season, at, label }) => { const k = new Date(at + 9 * 360000
 
 // ===== 관리 창 (관리자만, 어느 화면에서든 오른쪽 위 "🛠 관리") =====
 // 장수가 없거나 세력에 들기 전에도 쓸 수 있다. 턴·시즌을 바꾸면 모든 장수에게 적용된다
-// 🧪 테스트 장수 칸 (2026-11-13, 관리자): 문이 닫힌 시즌에서 테스트 장수를 넣고, 공적을 바꾸고, 대신 대도독 행동을 시킨다
+// 🧪 테스트 장수 칸 (2026-11-13, 관리자): 문이 닫힌 시즌에서 테스트 장수를 넣고, 명성을 바꾸고, 대신 대도독 행동을 시킨다
 function testCardHtml() {
   if (!S) return '';
   const facs = playable(), gens = allGenerals().filter(g => g.faction).sort((a, b) => String(a.faction).localeCompare(String(b.faction)) || b.merit - a.merit);
@@ -380,9 +380,9 @@ function testCardHtml() {
   return `<h2>🧪 테스트 장수</h2>
     <p class="dim small">관리자만 · 문이 닫힌 시즌에서만 추가 · 새 시즌 시작하면 사라지고 시즌 번호에 안 세요</p>
     <p>세력 <select id="atF">${facs.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join('')}</select>
-      수 <input id="atN" type="number" min="1" max="10" value="5" style="width:4em"> 공적 <input id="atM" type="number" min="0" value="600" style="width:6em">
+      수 <input id="atN" type="number" min="1" max="10" value="5" style="width:4em"> 명성 <input id="atM" type="number" min="0" value="600" style="width:6em">
       <button id="atAdd">추가</button> <button id="atClear">테스트 장수 모두 지우기</button></p>
-    ${gens.length ? `<div class="adminScroll"><table class="stats rank"><tr><th>장수</th><th>세력</th><th>공적</th><th>대도독 (테스트 장수 대신)</th></tr>${gens.map(g => `<tr><td>${esc(g.name)}${flagOf(g.id)}${g.test ? ' <span class="dim small">테스트</span>' : ''}</td><td>${esc(factionById(g.faction).name)}</td>
+    ${gens.length ? `<div class="adminScroll"><table class="stats rank"><tr><th>장수</th><th>세력</th><th>명성</th><th>대도독 (테스트 장수 대신)</th></tr>${gens.map(g => `<tr><td>${esc(g.name)}${flagOf(g.id)}${g.test ? ' <span class="dim small">테스트</span>' : ''}</td><td>${esc(factionById(g.faction).name)}</td>
       <td><input type="number" min="0" value="${g.merit || 0}" data-tmerit="${esc(g.id)}" style="width:5em"></td><td>${acts(g)}</td></tr>`).join('')}</table></div>` : '<p class="dim">세력에 든 장수가 없어요.</p>'}`;
 }
 // 예약표 오른쪽 칸 (2026-11-13 기획자): 관리자가 문이 닫힌 시즌을 볼 때만. 1초마다 다시 그리지 않고 내용이 바뀔 때만, 입력 중이면 건너뛴다
@@ -566,7 +566,7 @@ function adminToolsDialog() {
     };
   });
 }
-// 🧪 에디터 카드 (2026-11-18 기획자): 내 장수의 능력치·금·공적·병력·병종·특성·보물을 바로 바꾼다. 세계에 내 장수 혼자일 때만 (engine.js editorBlocked, 서버도 같은 검사)
+// 🧪 에디터 카드 (2026-11-18 기획자): 내 장수의 능력치·금·명성·병력·병종·특성·보물을 바로 바꾼다. 세계에 내 장수 혼자일 때만 (engine.js editorBlocked, 서버도 같은 검사)
 function editorCardHtml() {
   const g = S && S.generals[MY_ID], why = S ? editorBlocked(g) : '세계를 아직 못 받았어요.';
   // 테스트 장수 칸 켜고 끄기 (2026-11-20 기획자: 지금 시즌 카드에서 여기로). 장수 고치기가 잠겨 있어도 늘 보인다
@@ -577,7 +577,7 @@ function editorCardHtml() {
   return `<div class="adminCard wide" data-sec="editor">${head}
     <p><b class="hi">${esc(g.name)}</b> <span class="dim small">· 비우거나 그대로 두면 안 바뀌어요</span></p>
     <div class="acForm">${STATS.map(st => n(`ed_${st.key}`, st.name, g.stats[st.key], RULES.statMax, '4.5em')).join(' ')} <span class="dim small">1~${RULES.statMax} (보물·장비·훈장 보너스 빼고)</span></div>
-    <div class="acForm">${n('ed_gold', '금', g.gold || 0)} ${n('ed_merit', '공적', g.merit || 0)}</div>
+    <div class="acForm">${n('ed_gold', '금', g.gold || 0)} ${n('ed_merit', '명성', g.merit || 0)}</div>
     <div class="acForm"><label>병종 <select id="ed_unit"><option value=""${g.unitType ? '' : ' selected'}>없음</option>${Object.keys(UNIT_TYPES).map(u => `<option${g.unitType === u ? ' selected' : ''}>${u}</option>`).join('')}</select></label>
       ${n('ed_troops', '병력', g.troops || 0, troopsMax(g))} <span class="dim small">최대 ${fmt(troopsMax(g))} (통솔을 바꾸면 새 통솔 기준)</span></div>
     <div class="acForm"><label>특성 <select id="ed_trait"><option value="">없음</option>${Object.entries(GENERAL_TRAITS).map(([k, t]) => `<option value="${k}"${g.trait === k ? ' selected' : ''}>${esc(t.name)} (${t.tier})</option>`).join('')}</select></label>
@@ -650,7 +650,7 @@ function tourneyAdminDialog(kind = 'martial') {
     ${T.entries.length ? `<table class="stats tourList"><tr><th class="num">#</th><th>장수</th><th>세력</th><th class="num">${tourStatName(T)}</th><th>신청</th></tr>${entries}</table>` : '<p class="dim">아직 신청한 장수가 없어요.</p>'}
     ${matches ? `<table class="stats tourList"><tr><th>단계</th><th>대진</th><th>시각</th><th>결과</th></tr>${matches}</table>` : ''}
     ${T && T.phase === 'done' && !T.hidden && Date.now() - (T.doneAt || 0) < TOUR_SHOW_DONE ? `<p><button id="atHide">${tourName(T)} 단추 내리기</button> <span class="dim small">${fmtClock((T.doneAt || 0) + TOUR_SHOW_DONE)}에 저절로 사라져요</span></p>` : ''}
-    ${live ? `<p>보상 바꾸기 · 우승 금 <input id="apP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> 공적 <input id="apP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4em"> 경험치 <input id="apP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4em"><br>준우승 금 <input id="apP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> 공적 <input id="apP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4em"> 경험치 <input id="apP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4em"> <button id="apSave">보상 저장</button> <span class="dim small">(참가비는 못 바꿔요)</span></p>` : ''}
+    ${live ? `<p>보상 바꾸기 · 우승 금 <input id="apP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> 명성 <input id="apP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4em"> 경험치 <input id="apP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4em"><br>준우승 금 <input id="apP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> 명성 <input id="apP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4em"> 경험치 <input id="apP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4em"> <button id="apSave">보상 저장</button> <span class="dim small">(참가비는 못 바꿔요)</span></p>` : ''}
     ${T && T.phase === 'entry' ? '<p><button id="atCloseNow">지금 마감</button> <span class="dim small">신청 기간을 기다리지 않고 바로 마감하고 대진을 짜요 (${R.minN - 1}명 이하면 취소·환불)</span></p>' : ''}
     ${live ? '<p><button id="atCancel" class="danger">대회 취소</button> <span class="dim small">접수 중에 취소하면 참가비를 돌려줘요. 경기가 시작된 뒤에 취소하면 보상 없이 끝나요.</span></p>' : ''}`
       : otherLive ? `<p class="dim">지금은 ${tourName(T0)}가 진행 중이에요. 대회는 한 번에 하나만 열 수 있어요.</p>` : `<p class="dim">아직 연 ${KN0}가 없어요.</p>`}
@@ -660,8 +660,8 @@ function tourneyAdminDialog(kind = 'martial') {
     <p>신청 기간 <input id="atHours" type="number" min="0.02" max="48" step="0.5" value="${R.entryHours}" style="width:5em"> 시간
        · 마감 뒤 첫 경기까지 <input id="atGap" type="number" min="1" max="180" value="${R.gapMin}" style="width:5em"> 분</p>
     <p>참가비 금 <input id="atFee" type="number" min="0" value="${C.fee}" style="width:6em"> <button id="atDefault" class="mini">기본값</button> <span class="dim small">(금 ${fmt(R.fee)} · 우승 ${fmt(R.prize[0].gold)}·${R.prize[0].merit}·${R.prize[0].warExp} · 준우승 ${fmt(R.prize[1].gold)}·${R.prize[1].merit}·${R.prize[1].warExp})</span></p>
-    <p>우승 금 <input id="atP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> · 공적 <input id="atP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4.5em"> · ${SN0} 경험치 <input id="atP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4.5em"></p>
-    <p>준우승 금 <input id="atP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> · 공적 <input id="atP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4.5em"> · ${SN0} 경험치 <input id="atP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4.5em"></p>
+    <p>우승 금 <input id="atP0g" type="number" min="0" value="${C.prize[0].gold}" style="width:6em"> · 명성 <input id="atP0m" type="number" min="0" value="${C.prize[0].merit}" style="width:4.5em"> · ${SN0} 경험치 <input id="atP0x" type="number" min="0" value="${C.prize[0].warExp}" style="width:4.5em"></p>
+    <p>준우승 금 <input id="atP1g" type="number" min="0" value="${C.prize[1].gold}" style="width:6em"> · 명성 <input id="atP1m" type="number" min="0" value="${C.prize[1].merit}" style="width:4.5em"> · ${SN0} 경험치 <input id="atP1x" type="number" min="0" value="${C.prize[1].warExp}" style="width:4.5em"></p>
     <p class="dim small">${SN0} ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ' · 세력 제한 없음'} · ${R.max}명이 차면 바로 마감 · ${R.minN - 1}명 이하면 취소·환불 · 경기는 ${R.slotMin}분마다 한 경기</p>
     <p><label class="lockSw"><input type="checkbox" id="atTest"> 시험 대회</label> <span class="dim small">공지 없이 관리자만 보이고 신청도 관리자만 해요. 보상·환불 없음. 경기는 정해지면 1분 뒤 한꺼번에 (5분 간격 없음)</span></p>
     <p id="atBotsRow" hidden>시험 참가자 <input id="atBots" type="number" min="0" max="${R.max - 1}" value="${R.max - 1}" style="width:4em"> 명 <span class="dim small">(능력치 80~120 무작위, 늘 컴퓨터가 둬요)</span></p>
@@ -676,12 +676,12 @@ function tourneyAdminDialog(kind = 'martial') {
       const KN = KN0; // 탭 종류로 연다 (2026-11-15)
       const hours = +$('#atHours').value, gap = +$('#atGap').value, test = $('#atTest').checked, bots = +$('#atBots').value;
       const fee = +$('#atFee').value, prize = [0, 1].map(k => ({ gold: +$(`#atP${k}g`).value, merit: +$(`#atP${k}m`).value, warExp: +$(`#atP${k}x`).value }));
-      const money = `\n참가비 금 ${fmt(fee)} · 우승 금 ${fmt(prize[0].gold)}·공적 ${prize[0].merit}·경험치 ${prize[0].warExp} · 준우승 금 ${fmt(prize[1].gold)}·공적 ${prize[1].merit}·경험치 ${prize[1].warExp}`;
+      const money = `\n참가비 금 ${fmt(fee)} · 우승 금 ${fmt(prize[0].gold)}·명성 ${prize[0].merit}·경험치 ${prize[0].warExp} · 준우승 금 ${fmt(prize[1].gold)}·명성 ${prize[1].merit}·경험치 ${prize[1].warExp}`;
       if (!confirm(test ? `시험 대회를 열까요?\n공지 없이 관리자만 보여요. 시험 참가자 ${bots}명.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}` : `${KN}를 열까요?\n모든 장수에게 공지가 가요.\n신청 ${hours}시간 · 마감 뒤 ${gap}분에 첫 경기${money}`)) return;
       if (await call('tourneyOpen', { hours, gap, test, bots, fee, prize, kind })) afterAdmin();
     };
     if ($('#apSave')) $('#apSave').onclick = async () => { const prize = [0, 1].map(k => ({ gold: +$(`#apP${k}g`).value, merit: +$(`#apP${k}m`).value, warExp: +$(`#apP${k}x`).value })); if (!confirm(`이 대회 보상을 바꿀까요?
-우승 금 ${fmt(prize[0].gold)}·공적 ${prize[0].merit}·경험치 ${prize[0].warExp} / 준우승 금 ${fmt(prize[1].gold)}·공적 ${prize[1].merit}·경험치 ${prize[1].warExp}`)) return; if (await call('tourneyPrize', { prize })) afterAdmin(); }; // 진행 중 대회 보상 (2026-11-15)
+우승 금 ${fmt(prize[0].gold)}·명성 ${prize[0].merit}·경험치 ${prize[0].warExp} / 준우승 금 ${fmt(prize[1].gold)}·명성 ${prize[1].merit}·경험치 ${prize[1].warExp}`)) return; if (await call('tourneyPrize', { prize })) afterAdmin(); }; // 진행 중 대회 보상 (2026-11-15)
     if ($('#atHide')) $('#atHide').onclick = async () => { if (!confirm(`모두의 화면에서 ${tourName(T)} 단추를 내릴까요? (결과는 이 관리 탭에서 계속 볼 수 있어요)`)) return; if (await call('tourneyHide')) afterAdmin(); };
     if ($('#atCloseNow')) $('#atCloseNow').onclick = async () => {
       if (!confirm(`신청을 지금 마감할까요? (${T.entries.length}명)${T.entries.length < R.minN ? `\n${R.minN}명이 안 돼서 대회가 취소되고 참가비를 돌려줘요.` : ''}`)) return;
@@ -694,9 +694,9 @@ function tourneyAdminDialog(kind = 'martial') {
   });
 }
 
-// ===== 공적 순위 (오른쪽 위 "🏆 순위") =====
-// 모든 장수의 공적 순위. 세계를 새로 받아 올 때마다(턴이 바뀔 때, 1분마다) 최신으로 바뀐다
-// 공적 순위 표의 줄들: 상위 10명만. 내가 10위 밖이면 맨 아래에 내 줄을 따로 붙인다
+// ===== 명성 순위 (오른쪽 위 "🏆 순위") =====
+// 모든 장수의 명성 순위. 세계를 새로 받아 올 때마다(턴이 바뀔 때, 1분마다) 최신으로 바뀐다
+// 명성 순위 표의 줄들: 상위 10명만. 내가 10위 밖이면 맨 아래에 내 줄을 따로 붙인다
 function rankRows(list) {
   const isMe = g => g.id === MY_ID; // 소속을 바꿔 보여 줄 때도 나를 찾게 계정 id로
   const myIdx = list.findIndex(isMe);
@@ -712,9 +712,9 @@ function rankRows(list) {
 function rankDialog() {
   if (!S || rankLocked()) return;
   const list = meritRanking(), rows = rankRows(list);
-  openModal(`<h2>🏆 공적 순위 <span class="dim small">· ${dateText(S.turn)} · 상위 10명 (장수 ${list.length}명)</span></h2>
-    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>공적</th></tr>${rows}</table></div>` : '<p class="dim">아직 장수가 없어요.</p>'}
-    <p class="dim">공적은 ${seasonNow() >= RULES.s9cmd.fromSeason ? '' : '수련을 뺀 '}명령마다 쌓이고, 전투에 이기면 많이 쌓여요.<br>천하통일 때 이 순위로 시즌을 마무리해요.</p>
+  openModal(`<h2>🏆 명성 순위 <span class="dim small">· ${dateText(S.turn)} · 상위 10명 (장수 ${list.length}명)</span></h2>
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>순위</th><th>장수</th><th>세력</th><th>명성</th></tr>${rows}</table></div>` : '<p class="dim">아직 장수가 없어요.</p>'}
+    <p class="dim">명성은 ${seasonNow() >= RULES.s9cmd.fromSeason ? '' : '수련을 뺀 '}명령마다 쌓이고, 전투에 이기면 많이 쌓여요.<br>천하통일 때 이 순위로 시즌을 마무리해요.</p>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`);
 }
 
@@ -756,7 +756,7 @@ async function renderSeasonBadge() {
 }
 
 // ===== 명예의 전당 (첫 화면 아래) =====
-// 시즌이 끝날 때마다 서버가 남긴 공적 상위 10명 (소속 = 가장 오래 몸담은 세력. 시즌 1은 그 기록이 없어 소속 칸을 안 보인다). 모두 접혀 있고, 시즌 제목을 누르면 펼쳐진다
+// 시즌이 끝날 때마다 서버가 남긴 명성 상위 10명 (소속 = 가장 오래 몸담은 세력. 시즌 1은 그 기록이 없어 소속 칸을 안 보인다). 모두 접혀 있고, 시즌 제목을 누르면 펼쳐진다
 // 첫 화면에는 단추 하나, 내용은 하위 페이지 (2026-11-01). HOF는 최신 시즌이 맨 앞
 let HOF = [], hofCur = 0, hofStart = 0;
 const hofPerPage = () => (innerWidth <= 700 ? 3 : 6); // 한 줄에 보이는 시즌 수. 다 들어가면 화살표를 숨긴다
@@ -779,16 +779,16 @@ function hofRender() {
   $('#chipPrev').disabled = hofStart === 0;
   $('#chipNext').disabled = hofStart + n >= HOF.length;
   const h = HOF[hofCur], heroes = h.heroes || [];
-  // 공적 1위 훈장은 시즌 4부터 (2026-11-02). 상위 10명 표의 맨 위 한 명 (동점이면 서버가 먼저 임관한 장수를 맨 위에 둔다)
+  // 명성 1위 훈장은 시즌 4부터 (2026-11-02). 상위 10명 표의 맨 위 한 명 (동점이면 서버가 먼저 임관한 장수를 맨 위에 둔다)
   const topMerit = h.season === 4 && h.top.length && h.top[0].merit > 0 ? [h.top[0]] : [];
   const isHero = name => heroes.some(x => x.name === name) || topMerit.some(x => x.name === name);
   const hasFaction = h.top.some(g => g.faction);
   // 훈장 칸: 시즌 4부터는 계정 기준 누적이 표에 저장된다. 그 전 시즌은 시즌 3에서 처음 받은 훈장뿐이라 개국공신이면 1
   const medals = g => g.medals ?? (isHero(g.name) ? 1 : 0);
   $('#hofView').innerHTML = `<div class="winCard"><span class="s">시즌 ${h.season}${h.scenario ? ` (${esc(h.scenario)})` : ''} · ${dateText(h.turn, h.start_year || 190)} 천하통일</span><span class="w">${hofSw(h.winner_color)} ${esc(h.winner || '?')}</span></div>
-    <div class="hofScroll"><table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">공적</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${medalBadge(medals(g))}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td></tr>`).join('')}</table></div>
-    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> ${h.season >= 5 ? "공적 상위 5명" : "개국공신"}: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
-    ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 공적 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}
+    <div class="hofScroll"><table class="hofTable2"><tr><th></th><th>이름</th>${hasFaction ? '<th>소속</th>' : ''}<th class="num">명성</th><th class="num">통솔</th><th class="num">무력</th><th class="num">지력</th></tr>${h.top.map((g, i) => `<tr${i === 0 ? ' class="top"' : ''}><td class="num">${i + 1}</td><td>${esc(g.name)}${medalBadge(medals(g))}</td>${hasFaction ? `<td>${g.faction ? `${hofSw(g.color)}<span class="fName">${esc(g.faction)}</span>` : '<span class="dim">-</span>'}</td>` : ''}<td class="num">${fmt(g.merit)}</td><td class="num">${g.lea ?? '-'}</td><td class="num">${g.war ?? '-'}</td><td class="num">${g.int ?? '-'}</td></tr>`).join('')}</table></div>
+    ${heroes.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> ${h.season >= 5 ? "명성 상위 5명" : "개국공신"}: ${heroes.map(x => esc(x.name)).join(', ')}</p>` : ''}
+    ${topMerit.length ? `<p class="hofHeroes"><span class="medal">${MEDAL}</span> 명성 1위: ${topMerit.map(x => esc(x.name)).join(', ')}</p>` : ''}
     ${HOF_NOTES[h.season] ? `<p class="hofNote dim">${esc(HOF_NOTES[h.season])}</p>` : ''}${h.rp ? '<p class="replayRow"><button id="hofReplay" class="replayBtn">▶ 세력 변화 보기</button></p>' : ''}${hofTitles(h.titles)}`;
   if ($('#hofReplay')) $('#hofReplay').onclick = () => openReplay(h);
 }
@@ -1215,7 +1215,7 @@ function siegeDialog() {
   $('#modalBox').querySelectorAll('input[name=tgt]').forEach(r => r.addEventListener('change', () => { $('#siegeCost').innerHTML = costLine('금', siegePrice(p, r.value), p.gold); }));
 }
 
-// 상점: 예약 없이 바로 산다 (턴을 쓰지 않고, 공적은 없다). 사면 창을 그대로 두고 값만 다시 보여 준다
+// 상점: 예약 없이 바로 산다 (턴을 쓰지 않고, 명성은 없다). 사면 창을 그대로 두고 값만 다시 보여 준다
 function shopDialog(msg = '') {
   const p = me(), statName = k => STATS.find(s => s.key === k).name;
   const rows = Object.entries(SHOP).map(([name, it]) => {
@@ -1334,8 +1334,8 @@ async function resignDialog() {
 
 - 거느린 병사는 모두 흩어져요.
 - 예약해 둔 명령은 모두 지워져요.
-${RULES.resignMeritCut ? `- 공적이 ${Math.round(RULES.resignMeritCut * 100)}% 줄어요. (지금 ${fmt(p.merit)} → ${fmt(p.merit - Math.floor(p.merit * RULES.resignMeritCut))})
-- 금·능력치는 그대로예요.` : '- 공적·금·능력치는 그대로예요.'}
+${RULES.resignMeritCut ? `- 명성이 ${Math.round(RULES.resignMeritCut * 100)}% 줄어요. (지금 ${fmt(p.merit)} → ${fmt(p.merit - Math.floor(p.merit * RULES.resignMeritCut))})
+- 금·능력치는 그대로예요.` : '- 명성·금·능력치는 그대로예요.'}
 ${roninOn() ? `- ${me().city ? cityById(me().city).name : '이 성'}에 재야로 남아요. 이동·탐색·${seasonNow() >= RULES.s9cmd.fromSeason ? '' : '수련·'}의뢰를 할 수 있고, 들어갈 세력의 성에 가서 [임관]해요.` : '- 세력을 새로 골라 들어가요.'}
 - ${seasonNow() >= RULES.rejoinAllFrom ? `모든 세력에 ${RULES.rejoinWait}턴 동안 임관할 수 없어요.` : `${f.name} 세력에는 ${RULES.rejoinWait}턴 동안 다시 들어갈 수 없어요.`}`)) return;
   if (await call('resign')) { if (isRonin(me())) renderAll(); else showJoin(); } // 시즌 8부터 재야로 남는다
@@ -1346,7 +1346,7 @@ async function deleteGeneralDialog() {
   const p = me();
   if (!confirm(`장수 ${josa(p.name, '을를')} 지우고 처음부터 다시 만들까요?
 
-- 장수·병력·금·공적·능력치·기록이 모두 사라져요. 되돌릴 수 없어요.
+- 장수·병력·금·명성·능력치·기록이 모두 사라져요. 되돌릴 수 없어요.
 - 계정(아이디)은 그대로예요.
 - 지운 뒤 ${Math.round(RULES.recreateWait / MIN / 60)}시간 동안은 새 장수를 만들 수 없어요.`)) return;
   if (await call('deleteGeneral')) { slot = 0; showTitle(); } // 지운 뒤에는 메인 화면으로 (2026-11-07, 그 전엔 바로 장수 생성). 입장하기를 누르면 장수 생성으로 간다
@@ -1458,14 +1458,14 @@ function helpDialog(page = -1) {
       ${seasonNow() >= RULES.s9cmd.fromSeason ? '' : `<li><b>수련</b>: 금 ${RULES.myGoldCost.train}으로 고른 능력치의 경험치를 쌓아요.</li>`}
       <li><b>군량 구매</b>: 금을 군량으로 바꿔요. 시세는 매달 바뀌어요.</li>
       <li><b>군량 수송</b>: ${RULES.moveRange}칸 안의 우리 성과 군량을 주고받아요.</li>
-      <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? "·대도시" : ""}을 한 단계 키워요${capitalOn() ? " (대도시 → 수도는 세력당 하나)" : ""}. 많은 금을 쓰는 대신 공적과 능력 경험치를 얻을 수 있어요.</li></ul>`],
+      <li><b>증축</b>: 모든 내정치가 최대치의 ${Math.round(RULES.expand.ready * 100)}% 이상인 우리 소성·중성${capitalOn() ? "·대도시" : ""}을 한 단계 키워요${capitalOn() ? " (대도시 → 수도는 세력당 하나)" : ""}. 많은 금을 쓰는 대신 명성과 능력 경험치를 얻을 수 있어요.</li></ul>`],
     // 대도독 · 동맹 (2026-11-13 도움말, 시즌 7부터): 숫자는 RULES.commander에서
     ...(seasonNow() >= RULES.commander.fromSeason ? [['🚩 대도독', (R => `<div class="helpScroll">
       <p>세력마다 한 명 둘 수 있는 길잡이예요. 다른 장수에게 명령을 내리지는 못하고, 공지 · 방침 · 동맹을 맡아요. 대도독 칸은 명령 창 아래에 있어요.</p>
       <p class="helpSub">🚩 대도독 되기</p><ul>
-      <li>공적 ${fmt(R.minMerit)} 이상이고 세력 장수가 ${R.minMembers}명 이상이면 <b>도독직 수락</b>으로 오를 수 있어요. 세력의 첫 대도독은 세력 공적 1위만 될 수 있어요.</li>
-      <li>공적 ${fmt(R.minMerit)} 이상인 같은 세력 장수에게 <b>위임</b>할 수 있어요. 받는 장수가 ${R.handWait / (60 * MIN)}시간 안에 수락해야 넘어가요.</li>
-      <li>직접 <b>반납</b>할 수 있어요. ${R.offline / (60 * MIN)}시간 넘게 접속하지 않거나, 공적이 ${fmt(R.minMerit)} 아래로 떨어지거나, 세력 장수가 ${R.minMembers}명 아래로 줄면 자리를 잃어요.</li>
+      <li>명성 ${fmt(R.minMerit)} 이상이고 세력 장수가 ${R.minMembers}명 이상이면 <b>도독직 수락</b>으로 오를 수 있어요. 세력의 첫 대도독은 세력 명성 1위만 될 수 있어요.</li>
+      <li>명성 ${fmt(R.minMerit)} 이상인 같은 세력 장수에게 <b>위임</b>할 수 있어요. 받는 장수가 ${R.handWait / (60 * MIN)}시간 안에 수락해야 넘어가요.</li>
+      <li>직접 <b>반납</b>할 수 있어요. ${R.offline / (60 * MIN)}시간 넘게 접속하지 않거나, 명성이 ${fmt(R.minMerit)} 아래로 떨어지거나, 세력 장수가 ${R.minMembers}명 아래로 줄면 자리를 잃어요.</li>
       <li>대도독은 이름 옆에 🚩가 붙어요.</li>${seasonNow() >= R.perkFromSeason ? `
       <li><b>혜택</b>: 병력 상한 +${fmt(R.perkTroops)}, 금 수입 +${Math.round(R.perkGold * 100)}%</li>
       <li>직접 반납하면 ${R.resignWait}턴 동안 다시 맡을 수 없어요. (위임은 괜찮아요)</li>` : ''}</ul>
@@ -1477,7 +1477,7 @@ function helpDialog(page = -1) {
       <li>양쪽 세력 모두 대도독이 있어야 해요. 기간을 ${R.allyMin}~${R.allyMax}턴 중에 정해 제안하고, 상대 대도독이 ${R.handWait / (60 * MIN)}시간 안에 수락하면 맺어져요.</li>
       <li>동맹 중에는 서로 <b>출진 · 파괴 · 유언</b>을 할 수 없어요. 예약은 되지만 실행할 때 막히고, 금 · 군량은 들지 않아요. 첩보는 돼요.</li>
       <li>세력당 ${R.allyMax2}개까지 맺을 수 있어요.</li>
-      <li><b>파기</b>하면 ${R.allyBreakTurns}턴 뒤에 풀려요. (그동안은 아직 동맹) 파기한 세력 장수 모두 공적 -${R.allyBreakMerit}, 대도독은 -${R.allyBreakMeritCmd}예요.</li>
+      <li><b>파기</b>하면 ${R.allyBreakTurns}턴 뒤에 풀려요. (그동안은 아직 동맹) 파기한 세력 장수 모두 명성 -${R.allyBreakMerit}, 대도독은 -${R.allyBreakMeritCmd}예요.</li>
       <li>기간이 끝나서 풀리면 벌칙은 없어요.</li></ul>
       <p class="helpSub">🚪 해고</p><ul>
       <li>${R.fireOffline / HOUR}시간 넘게 접속하지 않은 세력 장수를 해고할 수 있어요.</li>
@@ -1489,8 +1489,8 @@ function helpDialog(page = -1) {
       <details class="tipBox"><summary>보물</summary><p>${seasonNow() >= RULES.s9cmd.fromSeason ? '치안 순찰(탐색 이벤트)이나 적 성 함락에서' : '탐색을 하다 보면'} 아주 드물게 <b>전설의 보물</b>을 찾을 수 있어요. 능력치를 +3~+7 올려 주고, 능력치 최대치(${RULES.statMax})를 넘길 수도 있어요. 보물은 세상에 하나씩이고 장수 한 명당 1개까지 가질 수 있어요. 싸우다 내 부대가 전멸하면 낮은 확률로 보물이 사라지거나(${Math.round(TREASURE_RULES.loseRate * 100)}%) 적에게 빼앗길 수 있으니(${Math.round(TREASURE_RULES.takeRate * 100)}%) 조심하세요.</p></details>
       <details class="tipBox"><summary>세력</summary><p><b>세력</b> 창에서 세력을 누르면 그 세력의 인원수와 특성을 볼 수 있어요.</p></details>
       <details class="tipBox"><summary>방어 모드</summary><p>장수 창의 <b>방어 모드</b>를 켜 두면, 내가 있는 성이 공격받을 때 앞장서서 막아요. 한 성에 최대 ${RULES.defenseMax}명까지 켤 수 있고, 수비 장수가 쓰러지면 병력 많은 장수가 자동으로 이어받아요.</p></details>
-      <details class="tipBox"><summary>공적</summary><p><b>공적</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요. <button class="link" id="helpMeritTable">공적표</button></p></details>
-      <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 공적 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요${RULES.medalBonusMax < Infinity ? ` (최대 +${RULES.medalBonusMax})` : ''}.</p></details>
+      <details class="tipBox"><summary>명성</summary><p><b>명성</b>이 높을수록 금 수입과 징병되는 병사가 늘어나요. <button class="link" id="helpMeritTable">명성표</button></p></details>
+      <details class="tipBox"><summary>훈장</summary><p>시즌이 끝날 때 세력과 상관없이 명성 상위 ${RULES.heroCount}명이 받아요. 하나마다 다음 시즌부터 통솔·무력·지력 +${RULES.medalBonus}로 시작해요${RULES.medalBonusMax < Infinity ? ` (최대 +${RULES.medalBonusMax})` : ''}.</p></details>
       <details class="tipBox"><summary>수비대장</summary><p><b>수비대장</b>은 게임 초반 공백지를 제외한 성을 지켜주는 NPC 부대예요. 해당 세력의 소속 장수가 없는 동안에는 매턴 병력을 조금씩 회복하고, 한번 전멸하면 다시 생기지 않아요. 군량은 먹지 않아요.</p></details>
       <details class="tipBox"><summary>임관 제한</summary><p>시즌 초반 ${Math.round(RULES.joinCap.turns / 12)}년(${dateText(RULES.joinCap.turns)})까지는 한 세력에 장수가 몰리지 않도록, 전체 장수의 ${Math.round(RULES.joinCap.rate * 100)}% 이상이 모인 세력에는 새로 임관할 수 없어요. (세력에 든 장수가 ${RULES.joinCap.minTotal}명 이상일 때부터, 성이 남은 세력이 2개 이하가 되면 제한 없음)</p></details></div>`], // 임관 제한 팁 (2026-11-20 기획자)
   ];
@@ -1538,14 +1538,14 @@ function exploreOddsDialog(from, backName = '도움말로') {
     spy: () => `가장 가까운 적 성 하나의 정보가 ${RULES.spyTurns}턴 동안 우리 세력에 보임`,
     engineer: () => siegeDurOn() ? `병기가 있으면 반반: 내구도 ${SIEGE_EFFECT.durFix[0]}~${SIEGE_EFFECT.durFix[1]} 회복 또는 강화 (부서질 때 1번 버팀)<br><span class="dim">가득이면 강화, 이미 강화면 회복</span><br>없으면 병기 하나 무작위 획득 (내구도 ${SIEGE_EFFECT.durMax})` : '병기가 있으면 강화: 부서질 때 1번 버팀 (중첩 불가)<br>없으면 병기 하나 무작위 획득', // 2026-11-15 기획자 문구
     sage: e => `무작위 능력치 경험치 +${e.min}~${e.max}${seasonNow() >= RULES.s9cmd.fromSeason ? '' : '<br><span class="dim">수련 횟수에는 안 셈</span>'}`, // 재야 (2026-11-19)
-    help: e => `공적 +${e.min}~${e.max}`,
+    help: e => `명성 +${e.min}~${e.max}`,
     treasure: () => `전설의 보물 하나 (능력치 +3~+7, 세상에 하나씩, 장수당 1개까지)<br>${seasonNow() >= 7 ? '이미 보물이 있으면 교환 가능, 남은 보물이 없으면 장비 발견' : '이미 보물이 있으면 장비 발견'}`, // 시즌 7부터 바꾸기·팔기 (2026-11-13 표 문구)
   };
   const name = { gold: '금 발견', food: '군량 발견', troops: '의병 합류', item: '장비 발견', feast: '마을 잔치', none: '허탕', bandit: '도적', master: '★ 달인', pouch: '특성 주머니', spy: '첩자 심문', engineer: '기술자', treasure: '★ 보물', sage: '현인', help: '주민 돕기' };
   const rows = list => list.filter(e => e.weight > 0).sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   // 일반 / 재야 탭 (2026-11-19 기획자). 재야 표는 시즌 8부터 (재야가 생긴 시즌)
   const roninOk = typeof RONIN_EXPLORE !== 'undefined' && (!S || seasonNow() >= RULES.ronin.fromSeason);
-  const tabs = [{ k: 'normal', label: '일반', list: EXPLORE, head: `금 ${RULES.myGoldCost.explore} · 공적 +${RULES.merit.explore}` }];
+  const tabs = [{ k: 'normal', label: '일반', list: EXPLORE, head: `금 ${RULES.myGoldCost.explore} · 명성 +${RULES.merit.explore}` }];
   if (roninOk) tabs.push({ k: 'ronin', label: '재야', list: RONIN_EXPLORE, head: `금 ${RULES.myGoldCost.explore}` });
   const start = roninOk && S && S.generals && isRonin(me()) ? 'ronin' : 'normal'; // 재야인 장수는 재야 탭부터 (2026-11-19 기획자 확인)
   openModal(`
@@ -2009,7 +2009,7 @@ function tourRender() {
     const why = !g ? '장수가 있어야 나갈 수 있어요.' : war < R.minWar ? `${tourStatName(T)} ${R.minWar} 이상만 나갈 수 있어요. (지금 ${war})` : g.gold < R.fee ? `참가비 금 ${fmt(R.fee)}이 모자라요.` : R.factionMax && g.faction && sameFac >= R.factionMax ? `우리 세력은 이미 ${R.factionMax}명이 신청했어요.` : '';
     html += `<div class="tourEntry">
       <p>참가비 <b>금 ${fmt(R.fee)}</b> · ${tourStatName(T)} ${R.minWar} 이상${R.factionMax ? ` · 한 세력 ${R.factionMax}명까지` : ''} · 마감 전에는 취소할 수 있어요</p>
-      <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · ${tourStatName(T)} 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · ${tourStatName(T)} 경험치 ${R.prize[1].warExp}</p>
+      <p class="dim small">우승 금 ${fmt(R.prize[0].gold)} · 명성 ${R.prize[0].merit} · ${tourStatName(T)} 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 명성 ${R.prize[1].merit} · ${tourStatName(T)} 경험치 ${R.prize[1].warExp}</p>
       ${mine ? '<p class="hi">✔ 신청했어요. 대진이 정해지면 경기 시각이 나와요. <button id="tourLeave" class="mini">신청 취소</button></p>' : `<p><button id="tourEnter" class="main"${why ? ' disabled' : ''}>참가 신청 (금 ${fmt(R.fee)})</button> ${why ? `<span class="dim small">${why}</span>` : ''}</p>`}
     </div>
     <p class="sub">신청한 장수 ${T.entries.length} / ${R.max}</p>
@@ -2018,7 +2018,7 @@ function tourRender() {
     const fin = T.matches.find(m => m.slot === 'f');
     html += tourBracketHtml(T);
     if (T.champ) html += `<p class="tourChamp">👑 우승 <b>${esc(T.champ.name)}</b> · 준우승 ${esc(T.runner.name)}</p>`;
-    else if (fin) html += `<p class="dim small center">우승 금 ${fmt(R.prize[0].gold)} · 공적 ${R.prize[0].merit} · ${tourStatName(T)} 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 공적 ${R.prize[1].merit} · ${tourStatName(T)} 경험치 ${R.prize[1].warExp}</p>`;
+    else if (fin) html += `<p class="dim small center">우승 금 ${fmt(R.prize[0].gold)} · 명성 ${R.prize[0].merit} · ${tourStatName(T)} 경험치 ${R.prize[0].warExp} / 준우승 금 ${fmt(R.prize[1].gold)} · 명성 ${R.prize[1].merit} · ${tourStatName(T)} 경험치 ${R.prize[1].warExp}</p>`;
     html += '<p class="dim small center">경기를 누르면 경기장이 열려요 (내 경기는 직접 참가하고, 다른 경기는 관전).</p>';
   }
   box.innerHTML = html;
@@ -2086,7 +2086,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124222823&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124223339&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2096,7 +2096,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124222823&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261124223339&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2106,7 +2106,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124222823&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261124223339&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2505,7 +2505,7 @@ function pouchDialog(pick = null, animate = true) {
 
 // 특성 확률표 (2026-10-28): 등급·이름·성능·확률을 모두 공개. 확률은 종이 한 장에 그 특성이 나올 확률 (TRAIT_TIER_WEIGHT로 계산)
 // back: 돌아갈 곳, backName: 돌아가기 단추에 쓸 이름 (2026-10-31). 특성 주머니는 R 이상 1장이 꼭 나온다
-// 공적표 (2026-11-19 기획자): 공적을 얻고 잃는 경우를 한눈에. 숫자는 모두 rules.js에서 읽는다 (시즌별 값은 getter가 알아서)
+// 명성표 (2026-11-19 기획자): 명성을 얻고 잃는 경우를 한눈에. 숫자는 모두 rules.js에서 읽는다 (시즌별 값은 getter가 알아서)
 function meritTableDialog(back = null, backName = '도움말') {
   const M = RULES.merit, row = (what, n, note = '') => `<tr><th>${what}</th><td class="num">${n}</td><td class="dim">${note}</td></tr>`;
   const sec = t => `<tr><td colspan="3" class="mtSec">${t}</td></tr>`;
@@ -2536,17 +2536,17 @@ function meritTableDialog(back = null, backName = '도움말') {
     row('계략 성공', '+' + M.plotOk, `시도와 합쳐 +${M.plot + M.plotOk}`),
     seasonNow() >= RULES.s9cmd.fromSeason ? '' : row('탐색', '+' + M.explore),
   ];
-  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, '재야는 이것 말고는 공적을 얻지 않아요')); }
+  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, '재야는 이것 말고는 명성을 얻지 않아요')); }
   const lose = [
     row('스스로 하야', `-${Math.round(RULES.resignMeritCut * 100)}%`, '대도독에게 해고되면 없음'),
   ];
   if (RULES.fallenMeritLoss > 0) lose.push(row('세력 멸망', `-${Math.round(RULES.fallenMeritLoss * 100)}%`));
   if (seasonNow() >= B.fromSeason) lose.push(row('도적에게 성을 잃음', `-${B.merit}`, `그 세력 장수 모두 · 대도독 -${B.meritCmd}`));
   if (commanderOn()) lose.push(row('동맹 파기', `-${C.allyBreakMerit}`, `파기한 세력 장수 모두 · 대도독 -${C.allyBreakMeritCmd}`));
-  openModal(`<h2>📋 공적표</h2>
-    <p class="dim">한 턴에 얻는 공적은 최대 ${RULES.meritTurnMax}이에요. (정복 보상은 예외)</p>
+  openModal(`<h2>📋 명성표</h2>
+    <p class="dim">한 턴에 얻는 명성은 최대 ${RULES.meritTurnMax}이에요. (정복 보상은 예외)</p>
     <div class="oddsScroll"><table class="oddsTable meritTable">
-      <tr><th>얻는 경우</th><th class="num">공적</th><th>참고</th></tr>${gain.join('')}
+      <tr><th>얻는 경우</th><th class="num">명성</th><th>참고</th></tr>${gain.join('')}
       <tr><td colspan="3" class="mtSec mtLose">잃는 경우</td></tr>${lose.join('')}
     </table></div>
     <div class="modalBtns">${back ? `<button id="meritBack" class="main">◀ ${backName}로</button>` : '<button data-close class="main">닫기</button>'}</div>`, box => {
@@ -2632,7 +2632,7 @@ function fallenDialog() {
   const key = `${MY_ID}|${S.season || 1}|${f.turn}|${f.faction}`;
   try { if (localStorage.getItem('fallenSeen') === key) return; localStorage.setItem('fallenSeen', key); } catch (e) { /* 저장 못 하는 브라우저는 이번 접속에만 한 번 */ }
   openModal(`<h2>⚔ ${esc(f.faction)} 세력 멸망</h2>
-    <p>${dateText(f.turn)}, 마지막 성 <b>${esc(f.city)}</b>${f.by ? `${josa(f.city, '이가').slice(-1)} <b>${esc(f.by)}</b> 세력에게 함락되어` : `${josa(f.city, '을를').slice(-1)} 잃어`}${esc(f.faction)} 세력이 멸망했어요.${f.meritLost ? ` 공적이 ${fmt(f.meritLost)} 줄었어요.` : ''}${f.troopsLost ? ` 거느리던 병사 ${fmt(f.troopsLost)}명은 흩어졌어요.` : ''}</p>
+    <p>${dateText(f.turn)}, 마지막 성 <b>${esc(f.city)}</b>${f.by ? `${josa(f.city, '이가').slice(-1)} <b>${esc(f.by)}</b> 세력에게 함락되어` : `${josa(f.city, '을를').slice(-1)} 잃어`}${esc(f.faction)} 세력이 멸망했어요.${f.meritLost ? ` 명성이 ${fmt(f.meritLost)} 줄었어요.` : ''}${f.troopsLost ? ` 거느리던 병사 ${fmt(f.troopsLost)}명은 흩어졌어요.` : ''}</p>
     ${isRonin(me()) ? `<p>${esc(cityById(me().city).name)}에 재야로 남았어요. 들어갈 세력의 성으로 가서 [임관]하세요.</p>
     <div class="modalBtns"><button data-close class="main">확인</button></div>` : `<p>새 세력을 골라 다시 천하를 노려 보세요.</p>
     <div class="modalBtns"><button data-close class="main">세력 고르기</button></div>`}`); // 시즌 8부터 재야 (2026-11-16)
@@ -2832,7 +2832,7 @@ function renderAll() {
   else if ($('#modal').hidden) treasureGotCheck();
 }
 
-// 우리 세력 장수: 누가 어디에 얼마나 있는지 (공적 순). 남의 예약·금은 서버가 보내 주지 않는다
+// 우리 세력 장수: 누가 어디에 얼마나 있는지 (명성 순). 남의 예약·금은 서버가 보내 주지 않는다
 // 대도독 칸 (2026-11-13, 시즌 7부터): 지금 대도독 · 넘겨받기 수락 · 도독직 수락 · 해고 · 위임 · 반납
 function renderCommander() {
   const box = $('#cmdr'), p = me();
@@ -2855,8 +2855,8 @@ function renderCommander() {
     // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
     const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
     const req = [[mates.length >= R.minMembers, `세력 장수 ${R.minMembers}명 이상 (지금 ${mates.length}명)`],
-      [(p.merit || 0) >= R.minMerit, `공적 ${fmt(R.minMerit)} 이상 (지금 ${fmt(p.merit || 0)})`],
-      ...(!(S.cmdEver || {})[p.faction] ? [[rank === 1, `첫 대도독은 세력 공적 1위 (지금 ${rank}위)`]] : [])];
+      [(p.merit || 0) >= R.minMerit, `명성 ${fmt(R.minMerit)} 이상 (지금 ${fmt(p.merit || 0)})`],
+      ...(!(S.cmdEver || {})[p.faction] ? [[rank === 1, `첫 대도독은 세력 명성 1위 (지금 ${rank}위)`]] : [])];
     body += `<p class="small">${req.map(([ok, t]) => `<span class="${ok ? '' : 'dim'}">${ok ? '✔' : '✘'} ${t}</span>`).join('<br>')}</p>`;
     if (!commanderBlock(p)) body += '<p class="cmds one"><button data-cmdr="cmdAccept" class="main">도독직 수락</button></p>';
   }
@@ -2972,7 +2972,7 @@ function allyDialog() {
     const send = box.querySelector('#aSend');
     if (send) send.onclick = () => { const to = box.querySelector('#aTo').value; if (!to) return; done('allyPropose', { to, turns: +box.querySelector('#aTurns').value }); };
     box.querySelectorAll('[data-cancel]').forEach(b => { b.onclick = () => done('allyCancel', { to: b.dataset.cancel }); });
-    box.querySelectorAll('[data-break]').forEach(b => { b.onclick = () => { const w = b.dataset.break; gameConfirm('💔 동맹 파기', `<p><b>${fName(w)}</b> 세력과의 동맹을 파기할까요?</p><ul><li>${R.allyBreakTurns}턴 뒤에 풀려요 (그때까지는 동맹)</li><li>우리 세력 장수 모두 공적 <b class="bad">-${R.allyBreakMerit}</b>, 대도독은 <b class="bad">-${R.allyBreakMeritCmd}</b></li></ul>`, '파기', async () => { closeModal(); await call('allyBreak', { with: w }); renderAll(); }, allyDialog, true); }; }); // 브라우저 확인 창 대신 게임 창 (2026-11-15 기획자)
+    box.querySelectorAll('[data-break]').forEach(b => { b.onclick = () => { const w = b.dataset.break; gameConfirm('💔 동맹 파기', `<p><b>${fName(w)}</b> 세력과의 동맹을 파기할까요?</p><ul><li>${R.allyBreakTurns}턴 뒤에 풀려요 (그때까지는 동맹)</li><li>우리 세력 장수 모두 명성 <b class="bad">-${R.allyBreakMerit}</b>, 대도독은 <b class="bad">-${R.allyBreakMeritCmd}</b></li></ul>`, '파기', async () => { closeModal(); await call('allyBreak', { with: w }); renderAll(); }, allyDialog, true); }; }); // 브라우저 확인 창 대신 게임 창 (2026-11-15 기획자)
   });
 }
 // 게임 안 확인 창 (2026-11-15): 브라우저 confirm 대신. onNo가 있으면 [취소]를 눌렀을 때 그 창으로 돌아간다 (없으면 그냥 닫기). danger면 확인 단추를 빨갛게
@@ -2989,25 +2989,25 @@ function fireDialog() {
   const p = me(), R = RULES.commander;
   const list = membersOf(p.faction).filter(fireable).sort((a, b) => a.seenAt - b.seenAt); // fireOffline 넘은 장수만 (2026-11-13 기획자)
   openModal(`<h2>🚪 해고</h2>
-    <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (공적은 그대로)</p>
+    <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (명성은 그대로)</p>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td>${agoText(g.seenAt)} 💤</td><td><button class="mini danger" data-fire="${esc(g.id)}">해고</button></td></tr>`).join('')}</table></div>`
       : `<p class="dim">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수가 없어요.</p>`}
     <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
     box.onclick = async e => {
       const b = e.target.closest('[data-fire]'); if (!b) return;
       const g = S.generals[b.dataset.fire];
-      if (!g || !confirm(`${g.name}을(를) 해고할까요?\n재야가 되고 거느리던 병력은 흩어져요. 공적은 그대로예요.`)) return;
+      if (!g || !confirm(`${g.name}을(를) 해고할까요?\n재야가 되고 거느리던 병력은 흩어져요. 명성은 그대로예요.`)) return;
       if (await call('cmdFire', { to: g.id })) { renderAll(); fireDialog(); }
     };
   });
 }
-// 넘길 장수 고르기: 같은 세력 공적 500 이상 (공적 순)
+// 넘길 장수 고르기: 같은 세력 명성 500 이상 (명성 순)
 function commanderHandDialog() {
   const p = me(), list = membersOf(p.faction).filter(g => g !== p && (g.merit || 0) >= RULES.commander.minMerit).sort((a, b) => b.merit - a.merit);
   openModal(`<h2>📜 대도독 위임</h2>
     <p class="dim small">받는 장수가 ${RULES.commander.handWait / MIN}분 안에 수락하면 넘어가요.</p>
-    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>공적</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">위임</button></td></tr>`).join('')}</table></div>`
-      : `<p class="dim">공적 ${fmt(RULES.commander.minMerit)} 이상인 장수가 없어요.</p>`}
+    ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>명성</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td class="num">${fmt(g.merit)}</td><td><button class="mini" data-hand="${esc(g.id)}">위임</button></td></tr>`).join('')}</table></div>`
+      : `<p class="dim">명성 ${fmt(RULES.commander.minMerit)} 이상인 장수가 없어요.</p>`}
     <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
     box.onclick = async e => { const b = e.target.closest('[data-hand]'); if (!b) return; const g = S.generals[b.dataset.hand]; if (!g || !confirm(`${g.name}에게 대도독을 넘길까요?`)) return; closeModal(); await call('cmdHand', { to: g.id }); renderAll(); };
   });
@@ -3017,7 +3017,7 @@ function renderMembers() {
   const list = allGenerals().filter(g => (f ? g.faction === p.faction : isRonin(g))).sort((a, b) => b.merit - a.merit);
   $('#membersTitle').textContent = `· ${f ? f.name : '재야'} ${list.length}명`;
   if ($('#membersHead')) $('#membersHead').textContent = f ? '우리 세력 장수' : '재야 장수';
-  $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>공적</th></tr>${list.map(g => `
+  $('#members').innerHTML = `<table class="stats rank members"><tr><th>장수</th><th>위치</th><th>병력</th><th>명성</th></tr>${list.map(g => `
       <tr class="${g.id === MY_ID ? 'mine' : ''}"><td class="name" title="${esc(g.name)}"><button class="link" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}${medalOf(g.id)}${fireable(g) ? '<span title="오래 접속하지 않음 (해고할 수 있어요)">💤</span>' : ''}</td><td>${esc(cityById(g.city).name)}</td>
         <td class="num">${g.unitType ? `${g.unitType[0]} ` : ''}${fmt(g.troops)}</td><td class="num">${fmt(g.merit)}</td></tr>`).join('')}</table>`;
   $('#members').onclick = e => { const b = e.target.closest('[data-gid]'); if (b) memberDialog(b.dataset.gid); };
@@ -3053,7 +3053,7 @@ function memberDialog(id) {
       <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)}</td></tr>
       <tr><th>병기</th><td>${siege ? esc(siege) : none}</td></tr>
       <tr><th>수비</th><td class="${guarding ? 'mOn' : 'dim'}">${guarding ? '켜짐' : '꺼짐'}</td></tr>
-      <tr><th>공적</th><td>${fmt(g.merit)}</td></tr>
+      <tr><th>명성</th><td>${fmt(g.merit)}</td></tr>
       <tr><th>훈장</th><td>${S.medalHide && id !== MY_ID ? '<span class="dim" title="시즌 초반에는 다른 장수의 훈장이 보이지 않아요">초반 비공개</span>' : `${(S.medals && S.medals[id]) || 0}개`}</td></tr>
       ${allyOrders(g) ? `<tr><th>예약</th><td>${allyOrders(g)}</td></tr>` : ''}
       ${seenRow}
@@ -3093,7 +3093,7 @@ function renderGeneral() {
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
         ${treasuresOf(p).length ? `<tr><th>보물</th><td>${treasuresOf(p).map(n => `<span class="treasure">💎${esc(n)} <span class="dim">${trLabel(n)}</span></span> <button class="mini gSell" data-sell="${esc(n)}">팔기</button>`).join(' ')}</td></tr>` : ''}<!-- 보물 (2026-11-07) -->
         <tr><th>금</th><td>${fmt(p.gold)}</td></tr>
-        <tr><th>공적</th><td>${fmt(p.merit)}</td></tr>
+        <tr><th>명성</th><td>${fmt(p.merit)}</td></tr>
       </table>
     </div></div>
     <details id="gTraits" class="traitFold"${traitsOpen ? ' open' : ''}><summary>특성</summary>
@@ -3166,7 +3166,7 @@ function expandConfirm() {
       ${row('수비대', RULES.guardMax[g0], RULES.guardMax[g1])}
     </table></div>
     <p class="exHead">보상</p><div class="exBody">
-    <p>공적 <b class="hi">+${fmt(Math.round(E.merit[g0] * rw))}</b><br>통솔·무력·지력 경험치 각각 <b class="hi">+${Math.round(E.exp[g0] * rw)}</b>${again ? ' <span class="dim small">(우리 세력은 수도를 세운 적이 있어서 절반)</span>' : ''}</p></div>
+    <p>명성 <b class="hi">+${fmt(Math.round(E.merit[g0] * rw))}</b><br>통솔·무력·지력 경험치 각각 <b class="hi">+${Math.round(E.exp[g0] * rw)}</b>${again ? ' <span class="dim small">(우리 세력은 수도를 세운 적이 있어서 절반)</span>' : ''}</p></div>
     ${ready ? '' : '<p class="bad">지금은 조건이 모자라요. 예약은 할 수 있고, 실행하는 턴까지 채우면 증축돼요.</p>'}
     <p class="dim small exNote">실행하는 턴에도 내정이 모두 최대치의 ${Math.round(E.ready * 100)}% 이상이어야 하고, 금이 있어야 해요. 아니면 실패하고 금은 들지 않아요. 성을 빼앗겨도 등급은 그대로예요.</p>
     <div class="modalBtns"><button data-close>취소</button><button id="exOk" class="main">예약</button></div>`, () => {
@@ -3622,7 +3622,7 @@ function playerDialog(id, backTab = 'users', backF = null) { // 2026-11-08: 옆 
         <tr><th>세력</th><td>${f ? `<span class="swatch" style="background:${f.color}"></span>${esc(f.name)}` : '재야'} · ${g.city ? esc(cityById(g.city).name) : '-'}</td></tr>
         <tr><th>병력</th><td>${g.unitType ? `${g.unitType} ` : ''}${fmt(g.troops)} <span class="dim">/ ${fmt(troopsMax(g))}</span></td></tr>
         <tr><th>금</th><td>${fmt(g.gold || 0)}</td></tr>
-        <tr><th>공적</th><td>${fmt(g.merit)}</td></tr>
+        <tr><th>명성</th><td>${fmt(g.merit)}</td></tr>
         <tr><th>특성</th><td>${t ? `${esc(t.name)} <span class="dim">(${t.tier})</span>` : '-'}</td></tr>
       </table>
     </div></div>
@@ -3665,15 +3665,15 @@ function recordDialog() {
   $('#modalBox').classList.add('recBox');
 }
 $('#recordBtn').onclick = recordDialog;
-// ☰ 메뉴 [♪ 음악] (2026-11-07): 배경 음악 켜기·끄기. 내 장수 공적 1,000 미만 역사풍(history), 1,000~2,000 출정(march, 2026-11-07), 2,000 이상 웅장풍(epic).
+// ☰ 메뉴 [♪ 음악] (2026-11-07): 배경 음악 켜기·끄기. 내 장수 명성 1,000 미만 역사풍(history), 1,000~2,000 출정(march, 2026-11-07), 2,000 이상 웅장풍(epic).
 // 곡은 audio/bgm_*.wav (preview/bgm/make_midi.js로 작곡 → tools/save_bgm.js로 녹음). 처음 켤 때만 받아 온다.
 // 들어올 때마다 항상 꺼진 채로 시작한다 (2026-11-07 기획자: 켠 상태를 기억하지 않는다)
 const BGM = { on: false, ctx: null, gain: null, src: null, song: null, bufs: {}, loading: null };
 const BGM_MERIT = 2000, BGM_MARCH = 1000;
-// 메인 화면~장수 생성·특성·세력 선택(과 명예의 전당)에서는 첫 화면 곡 title (2026-11-07). 게임 화면에서는 공적에 따라
+// 메인 화면~장수 생성·특성·세력 선택(과 명예의 전당)에서는 첫 화면 곡 title (2026-11-07). 게임 화면에서는 명성에 따라
 const BGM_TITLE_SCREENS = ['title', 'hofPage', 'leavePage', 'create', 'trait', 'join'];
-// 2026-11-08: 첫 화면 곡과 공적 0~1,000 곡을 맞바꿈 (첫 화면 → history, 게임 공적 1,000 미만 → title)
-// 2026-11-08 파일 이름을 쓰임새대로: title(첫 화면들) · game1(공적 1,000 미만) · game2(1,000~2,000) · game3(2,000 이상) · mini(미니게임)
+// 2026-11-08: 첫 화면 곡과 명성 0~1,000 곡을 맞바꿈 (첫 화면 → history, 게임 명성 1,000 미만 → title)
+// 2026-11-08 파일 이름을 쓰임새대로: title(첫 화면들) · game1(명성 1,000 미만) · game2(1,000~2,000) · game3(2,000 이상) · mini(미니게임)
 // 천하통일 곡 (2026-11-17 기획자): 통일되면 누구에게나 어느 화면에서든 audio/ending.mp3 (기획자 파일). 다른 곡보다 작게 녹음돼서 1.7배
 const BGM_FILE = { ending: 'audio/ending.mp3' }, BGM_SONG_GAIN = { ending: 1.7 };
 const bgmWant = () => { if (BGM.force) return BGM.force; if (S && S.unified) return 'ending'; if (BGM_TITLE_SCREENS.some(id => $('#' + id) && !$('#' + id).hidden)) return 'title'; const m = S && me() ? me().merit : 0; return m >= BGM_MERIT ? 'game3' : m >= BGM_MARCH ? 'game2' : 'game1'; };

@@ -33,7 +33,7 @@ const traitOf = fid => {
   return FACTION_TRAITS[f.name] || {};
 };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
-// 성장 보너스 (2026-11-24 기획자, 시즌 9부터, RULES.catchUp): 공적 100 이상 장수끼리 능력치 합 하위 구간이면 경험치 배율. 턴마다 한 번 계산
+// 성장 보너스 (2026-11-24 기획자, 시즌 9부터, RULES.catchUp): 명성 100 이상 장수끼리 능력치 합 하위 구간이면 경험치 배율. 턴마다 한 번 계산
 const statSum = g => { const s = effStats(g); return (s.lea || 0) + (s.war || 0) + (s.int || 0); };
 let catchUpMemo = null;
 const catchUpMul = g => {
@@ -88,7 +88,7 @@ function addLog(g, text, all = false) {
 const logAll = text => allGenerals().forEach(g => addLog(g, text, true)); // 전체 메시지: 기록 창에 노란색으로 보인다 (2026-11-02)
 
 // ===== 대도독 (2026-11-13, 시즌 7부터, 기획서 "대도독 · 동맹") =====
-// S.commanders: 세력 id → 대도독 장수 id. S.cmdEver: 대도독이 한 번이라도 있었던 세력 (첫 대도독만 공적 1위여야 한다)
+// S.commanders: 세력 id → 대도독 장수 id. S.cmdEver: 대도독이 한 번이라도 있었던 세력 (첫 대도독만 명성 1위여야 한다)
 // S.cmdHand: 세력 id → { from, to, until } 넘기는 중 (받는 장수가 until(게임 시각 ms)까지 수락해야 넘어간다)
 const commanderOn = () => seasonNow() >= RULES.commander.fromSeason;
 const commanderOf = fid => { const id = fid && (S.commanders || {})[fid], g = id && S.generals[id]; return g && g.faction === fid ? g : null; };
@@ -106,15 +106,15 @@ const allyNoEnemy = (a, b) => {
   const live = MAP.factions.filter(f => f.id !== BANDIT.id && citiesOfFaction(f.id).length > 0).map(f => f.id);
   return [a, b].find(x => !live.some(y => y !== x && y !== (x === a ? b : a) && !allied(x, y))) || null;
 };
-// 대도독이 될 수 없는 이유 ('' = 될 수 있다). hand: 넘겨받는 경우 (공적 1위 조건 없음)
+// 대도독이 될 수 없는 이유 ('' = 될 수 있다). hand: 넘겨받는 경우 (명성 1위 조건 없음)
 function commanderBlock(g, hand = false) {
   const R = RULES.commander;
   if (!commanderOn()) return `대도독은 시즌 ${R.fromSeason}부터 있어요.`;
   if (!g || !g.faction) return '세력에 소속해야 해요.';
   const n = membersOf(g.faction).length;
   if (n < R.minMembers) return `세력 장수가 ${R.minMembers}명 이상이어야 해요. (지금 ${n}명)`;
-  if ((g.merit || 0) < R.minMerit) return `공적이 ${fmt(R.minMerit)} 이상이어야 해요. (지금 ${fmt(g.merit || 0)})`;
-  if (!hand && !(S.cmdEver || {})[g.faction] && membersOf(g.faction).some(o => o.merit > g.merit)) return '세력의 첫 대도독은 공적 1위여야 해요.';
+  if ((g.merit || 0) < R.minMerit) return `명성이 ${fmt(R.minMerit)} 이상이어야 해요. (지금 ${fmt(g.merit || 0)})`;
+  if (!hand && !(S.cmdEver || {})[g.faction] && membersOf(g.faction).some(o => o.merit > g.merit)) return '세력의 첫 대도독은 명성 1위여야 해요.';
   return '';
 }
 
@@ -159,7 +159,7 @@ function recordHeads() {
   }
 }
 const headsOf = fid => Math.max(0, ...((S.heads || {})[fid] || []), allGenerals().filter(g => g.faction === fid && !g.test).length);
-// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두. 시즌 7은 공적 +50 · 금 +1,000 · 경험치 +30 고정, 시즌 8부터는 망한 세력 장수 수에 따라 (RULES.destroyMerit.heads, 2026-11-19)
+// 멸망시킨 세력 보상 (2026-11-13 기획자, 시즌 7부터): 마지막 성을 빼앗은 세력의 장수 모두. 시즌 7은 명성 +50 · 금 +1,000 · 경험치 +30 고정, 시즌 8부터는 망한 세력 장수 수에 따라 (RULES.destroyMerit.heads, 2026-11-19)
 function destroyReward(fid, gone) {
   if (seasonNow() < 7) return;
   const R0 = RULES.destroyMerit, cmd = commanderOf(fid), name = factionById(gone).name;
@@ -177,10 +177,10 @@ function destroyReward(fid, gone) {
     const m = g === cmd ? R.commander : R.member;
     g.merit = (g.merit || 0) + m;
     const got = earnGold(g, R.gold); // 금 최대치를 넘는 만큼은 못 받는다
-    addLog(g, `☆ ${name} 세력을 멸망시켰다${who}. 공적 +${m} (${fmt(g.merit)}) · 금 +${fmt(got)} · 통솔·무력·지력 경험치 +${R.exp}`);
+    addLog(g, `☆ ${name} 세력을 멸망시켰다${who}. 명성 +${m} (${fmt(g.merit)}) · 금 +${fmt(got)} · 통솔·무력·지력 경험치 +${R.exp}`);
     for (const k of ["lea", "war", "int"]) gainStatExp(g, k, R.exp); // 2026-11-14
   }
-  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다${who}! 우리 세력 장수 모두 공적 +${R.member} · 금 +${fmt(R.gold)} · 통솔·무력·지력 경험치 +${R.exp}${cmd && R.commander !== R.member ? ` (대도독 공적 +${R.commander})` : ""}`);
+  if (typeof factionNotice === "function") factionNotice(fid, `☆ ${name} 세력을 멸망시켰다${who}! 우리 세력 장수 모두 명성 +${R.member} · 금 +${fmt(R.gold)} · 통솔·무력·지력 경험치 +${R.exp}${cmd && R.commander !== R.member ? ` (대도독 명성 +${R.commander})` : ""}`);
 }
 // 성의 주인. 처음엔 지도 파일대로, 점령하면 S.owners에 기록해서 지도에 덮어쓴다
 function applyOwners() {
@@ -341,7 +341,7 @@ function joinFaction(g, fid, cityId) {
   const home = picked && picked.faction === f.id ? picked : startCity(f.id);
   g.faction = f.id;
   g.joins = (g.joins || 0) + 1; // 세력에 들어간 횟수 (개국공신은 한 번만 들어간 장수)
-  if (g.joins === 1) g.firstJoin = Date.now(); // 첫 임관 시각: 공적 1위가 동점일 때 먼저 임관한 장수가 받는다 (2026-11-02)
+  if (g.joins === 1) g.firstJoin = Date.now(); // 첫 임관 시각: 명성 1위가 동점일 때 먼저 임관한 장수가 받는다 (2026-11-02)
   delete g.fallen; // 멸망 알림은 새 세력에 들어가면 끝
   g.city = home.id;
   capDefense(g);
@@ -350,7 +350,7 @@ function joinFaction(g, fid, cityId) {
 }
 
 // ===== 관리자 에디터 (2026-11-18 기획자) =====
-// 테스트용: 관리자 자기 장수의 능력치·금·공적·병력·병종·특성·보물을 바로 바꾼다.
+// 테스트용: 관리자 자기 장수의 능력치·금·명성·병력·병종·특성·보물을 바로 바꾼다.
 // 관리자 스스로의 오용도 막으려고, 세계에 장수가 그 관리자 한 명뿐일 때만 된다. 화면(game.js)과 서버가 같은 함수로 막는다
 // 서버: action 'adminEdit' → 관리자인지 확인한 뒤 adminEdit(S.generals[내 id], payload)를 부르고, 돌려준 글이 있으면 error로
 // +1턴 (2026-11-21 기획자): 실제 시즌 중(나 말고 다른 장수가 있으면)에는 못 쓴다. 🧪 테스트 장수는 세지 않는다
@@ -397,8 +397,8 @@ function checkUnify(fid) {
   absorbFree(fid); // 천통 시점엔 모두가 그 세력원 (2026-11-18 기획자)
 }
 
-// 공적 순위: 모든 장수를 공적 순으로
-// 가장 오래 몸담은 세력 (같으면 지금 세력). 명예의 전당과 통일 화면의 공적 순위에 쓴다
+// 명성 순위: 모든 장수를 명성 순으로
+// 가장 오래 몸담은 세력 (같으면 지금 세력). 명예의 전당과 통일 화면의 명성 순위에 쓴다
 function homeFaction(g) {
   const turns = g.factionTurns || {};
   return Object.keys(turns).reduce((best, f) => (!best || turns[f] > turns[best] || (turns[f] === turns[best] && f === g.faction) ? f : best), null) || g.faction;
@@ -500,7 +500,7 @@ function advance() {
         const cs = S.cities[g.city], fac = floorOn ? facStat(g.faction) : null, got = earnGold(g, Math.floor(goldIncome(cs, g.merit, crowd, fac) * (1 + (traitOf(g.faction).gold || 0) + (gTrait(g).gold || 0) + capG + cmdG))); // 세력 특성, 개인 특성 부호
         const crowdPct = crowd < 1 ? Math.round((1 - goldIncome(cs, 0, crowd, fac) / goldIncome(cs, 0, 1, fac)) * 100) : 0; // 정원 초과로 줄어든 비율 (전체 금 수입 기준)
         const floorText = fac ? ` · 세력 평균 상업 ${fac.avg}${fac.n * RULES.goldFloor.perCity >= 0.005 ? ` · 성 ${fac.n}개 +${Math.round(Math.min(RULES.goldFloor.cityMax, fac.n * RULES.goldFloor.perCity) * 1000) / 10}%` : ''}` : '';
-        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${capG ? ` · 수도 +${Math.round(capG * 100)}%` : ''}${cmdG ? ` · 대도독 +${Math.round(cmdG * 100)}%` : ''}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 공적 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
+        addLog(g, `💰 ${dateText(S.turn)} 금 수입 +${fmt(got)} (${c.name} 상업 ${cs.comm}${floorText}${capG ? ` · 수도 +${Math.round(capG * 100)}%` : ''}${cmdG ? ` · 대도독 +${Math.round(cmdG * 100)}%` : ''}${crowdPct ? ` · 정원초과로 -${crowdPct}%` : ''}${g.merit * RULES.meritIncome >= 0.01 ? ` · 명성 +${Math.floor(g.merit * RULES.meritIncome * 100)}%` : ''}${peaceIncome(cs.peace) < 1 ? ` · 낮은 치안으로 -${Math.round((1 - peaceIncome(cs.peace)) * 100)}%` : ''})`);
       }
     }
     // 군량 시세: 매달 RULES.foodBuy.steps 확률로 -2~+2 (4~8, 2026-11-10)
@@ -696,10 +696,10 @@ function earnGold(g, n) {
   return got;
 }
 
-// 공적: 수련을 뺀 명령마다 쌓이는 점수. 순위를 매기는 데 쓴다
-// 한 턴에 얻는 공적은 장수마다 최대 RULES.meritTurnMax (2026-10-28: 이벤트가 겹쳐도 100까지). 실제로 더한 양을 돌려준다
+// 명성: 수련을 뺀 명령마다 쌓이는 점수. 순위를 매기는 데 쓴다
+// 한 턴에 얻는 명성은 장수마다 최대 RULES.meritTurnMax (2026-10-28: 이벤트가 겹쳐도 100까지). 실제로 더한 양을 돌려준다
 function addMerit(g, n) {
-  if (isRonin(g)) return 0; // 재야는 공적을 얻지 않는다 (2026-11-16)
+  if (isRonin(g)) return 0; // 재야는 명성을 얻지 않는다 (2026-11-16)
   if (g.meritTurn !== S.turn) { g.meritTurn = S.turn; g.meritThisTurn = 0; }
   const got = Math.max(0, Math.min(n, RULES.meritTurnMax - g.meritThisTurn));
   g.meritThisTurn += got;
@@ -745,7 +745,7 @@ function runDomestic(g, key) {
     else if (kind === 'food') { const got = Math.max(0, Math.min(amt, foodMax(city.grade) - c.food)); c.food += got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}군량 +${fmt(got)}`; }
     else if (kind === 'guard') { const got = city.faction === g.faction ? Math.max(0, Math.min(amt, RULES.guardMax[city.grade] - (c.guard || 0))) : 0; c.guard = (c.guard || 0) + got; extra = ` · ${gain ? '넘친 몫으로 ' : ''}수비대 +${fmt(got)}`; }
   }
-  const fullTurn = (full || peaceEv) && gain === 0; // // 이미 최대치였던 턴: 공적·경험치 절반 (시즌 9부터는 보통과 같게, 2026-11-23)
+  const fullTurn = (full || peaceEv) && gain === 0; // // 이미 최대치였던 턴: 명성·경험치 절반 (시즌 9부터는 보통과 같게, 2026-11-23)
   addLog(g, fullTurn ? `${city.name}: ${VERB[key]}. ${josa(d.label, '은는')} 이미 최대치 (${max})${extra}` : `${city.name}: ${VERB[key]}. ${d.label} +${gain}${rec > 1 ? ` (복구 ×${rec})` : ''}${bes < 1 ? ` (포위 ×${bes})` : ''} (${c[key]}/${max})${extra}`);
   addMerit(g, fullTurn ? F.merit : RULES.merit.domestic);
   gainStatExp(g, d.stat, fullTurn ? F.exp : RULES.statExp.domestic);
@@ -763,8 +763,8 @@ function counterSpy(g, city, share) {
     if (typeof factionNotice === 'function') factionNotice(fid, `🕵 ${city.name}에 보낸 첩자가 붙잡혔다. 더는 그 성을 볼 수 없다.`);
   }
   const names = spies.map(fid => (factionById(fid) || { name: '?' }).name).join('·');
-  const cm = RULES.s9cmd.counterSpyMerit || 0; if (cm) addMerit(g, cm); // 색출 성공 공적 (2026-11-24 기획자)
-  addLog(g, `🛡 ${city.name}: 숨어든 첩자를 색출했다! ${names} 세력의 정보망을 끊었다.${cm ? ` · 공적 +${cm}` : ''}`);
+  const cm = RULES.s9cmd.counterSpyMerit || 0; if (cm) addMerit(g, cm); // 색출 성공 명성 (2026-11-24 기획자)
+  addLog(g, `🛡 ${city.name}: 숨어든 첩자를 색출했다! ${names} 세력의 정보망을 끊었다.${cm ? ` · 명성 +${cm}` : ''}`);
   if (typeof factionNotice === 'function') factionNotice(g.faction, `🛡 ${g.name}${josa(g.name, '이가').slice(-1)} ${city.name}에 숨어든 ${names} 세력 첩자를 색출했다.`);
 }
 
@@ -802,7 +802,7 @@ function runDraft(g, o) {
   return '';
 }
 
-// 승급 (2026-11-24 기획자, 시즌 9부터): 지금 병력을 같은 계통 2티어로 바꾼다 (보병 → 중보병). 대도시 이상 성, 1,000명당 금 250, 이탈 없음, 공적 5 · 그 병종 능력치 경험치 10
+// 승급 (2026-11-24 기획자, 시즌 9부터): 지금 병력을 같은 계통 2티어로 바꾼다 (보병 → 중보병). 대도시 이상 성, 1,000명당 금 250, 이탈 없음, 명성 5 · 그 병종 능력치 경험치 10
 function runUpgrade(g, type) {
   const city = cityById(g.city), T = RULES.tier2;
   if (!unitTier2(type)) return '승급할 수 없는 병종';
@@ -821,7 +821,7 @@ function runUpgrade(g, type) {
   return '';
 }
 
-// 수비대 징병 (2026-11-04 시즌 5, 화면 이름은 '수비대 징병'. 부대 이름은 그대로 수비대장): 내 사병 대신 머무는 성의 수비대장 병력을 모은다. 양·금·치안·공적·경험치는 보통 징병과 같다.
+// 수비대 징병 (2026-11-04 시즌 5, 화면 이름은 '수비대 징병'. 부대 이름은 그대로 수비대장): 내 사병 대신 머무는 성의 수비대장 병력을 모은다. 양·금·치안·명성·경험치는 보통 징병과 같다.
 // 최대치는 RULES.guardMax (성 규모별). 다른 병종을 모으면 있던 수비대 병력은 흩어진다. 0인 성에서도 다시 모을 수 있다
 function runGuardDraft(g) {
   const city = cityById(g.city), cs = S.cities[g.city], max = RULES.guardMax[city.grade];
@@ -931,7 +931,7 @@ function nearestOwnCities(c, fid) {
   return [];
 }
 // 천통 직전 흡수 (2026-11-18 기획자): 성을 가진 세력이 하나만 남으면, 세력 없는 장수(방금 멸망한 세력 장수 · 재야 · 아직 임관 안 한 장수)는 모두 그 세력에 자동으로 들어간다.
-// 천통 시점엔 모두가 그 세력원. 바로 같은 세력 채팅을 주고받을 수 있게. 도적군은 세력으로 치지 않는다. 멸망 공적 손실은 그대로 (훈장은 시즌 5부터 세력과 상관없는 공적 상위 5명이라 영향 없음)
+// 천통 시점엔 모두가 그 세력원. 바로 같은 세력 채팅을 주고받을 수 있게. 도적군은 세력으로 치지 않는다. 멸망 명성 손실은 그대로 (훈장은 시즌 5부터 세력과 상관없는 명성 상위 5명이라 영향 없음)
 function soleFaction() {
   const left = MAP.factions.filter(f => f.id !== BANDIT.id && citiesOfFaction(f.id).length > 0);
   return left.length === 1 ? left[0].id : null;
@@ -967,7 +967,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
     const to = list.length ? list[randInt(0, list.length - 1)] : null;
     if (!to) { // 마지막 성까지 빼앗겼다: 세력 멸망. 다음 접속 때 화면이 멸망 알림을 띄운다 (2026-10-30, 세력에 다시 들어가면 지운다)
       const old = factionById(oldFaction), by = byFid && factionById(byFid);
-      const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 공적 손실 (2026-10-31)
+      const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 명성 손실 (2026-10-31)
       g.merit -= meritLost;
       const troopsLost = g.troops > 0 ? g.troops : 0; // 2026-11-19 기획자: 멸망해도 하야처럼 병사는 흩어진다 (방어를 끈 장수가 병력을 들고 재야가 되던 것 막음)
       if (troopsLost) addLog(g, `거느리던 ${g.unitType} ${fmt(troopsLost)}명은 흩어졌다.`);
@@ -1015,7 +1015,7 @@ function capitalLost(to, oldFaction) {
 // ===== 도적 (2026-11-18 기획자, 시즌 8부터, rules.js bandit) =====
 // 세력 성마다 치안에 따라 확률로 도적이 나온다 (20 미만 3% · 50 미만 1.5% · 80 미만 0.5%). 나온 성은 3턴 동안 안 나온다.
 // 치안 -5~10, 그 성의 우리 세력 장수 병력·수비대 -5~10%. 병사가 하나도 없으면 대신 방어 -50~100, 방어가 0이 되면 공백지가 된다
-// 그렇게 성을 잃은 세력: 장수 모두 공적 -30 (대도독 -50), 장수들은 함락 때처럼 물러난다, 수도면 수도 함락 벌칙도
+// 그렇게 성을 잃은 세력: 장수 모두 명성 -30 (대도독 -50), 장수들은 함락 때처럼 물러난다, 수도면 수도 함락 벌칙도
 // ===== 포위 (2026-11-19 기획자, 시즌 8부터, rules.js besiege) =====
 // cs.besHits: 출진으로 공격받은 턴 목록 (공성까지 간 출진만, 야전으로 끝난 출진·계략은 안 셈) · cs.besieged: { since, faction } · cs.besFree: 이 턴까지 다시 포위 안 됨
 // 이름 주의: 병기(siege)와 헷갈리지 않게 besiege로 쓴다
@@ -1100,7 +1100,7 @@ function runBandits() {
     for (const g of membersOf(fid)) {
       const m = Math.min(g.merit || 0, g === cmd ? B.meritCmd : B.merit);
       g.merit = (g.merit || 0) - m;
-      addLog(g, `${B.icon} ${josa(c.name, '이가')} ${what}. 공적 -${m} (${fmt(g.merit)})`);
+      addLog(g, `${B.icon} ${josa(c.name, '이가')} ${what}. 명성 -${m} (${fmt(g.merit)})`);
     }
     const wasCapital = c.grade >= 4;
     setOwner(c, occ);
@@ -1318,7 +1318,7 @@ function runField(g, att, from, to, mark) {
   const rows = cur ? sides.filter(x => x.g.faction !== cur.g.faction).map(x => ({ name: x.g.name, ref: x.g, lost: x.lost })) : []; // 공방전 끝 줄에 넣을 야전 상대 (2026-11-22)
   return { cur, lines, rows };
 }
-// 야전에서 출진이 끝난 장수 (전멸·무승부): 병력을 되돌려 적고, 지금 전투 규칙대로 전적·병기·보물·치료·공적·경험치를 준다
+// 야전에서 출진이 끝난 장수 (전멸·무승부): 병력을 되돌려 적고, 지금 전투 규칙대로 전적·병기·보물·치료·명성·경험치를 준다
 function endField(st, text) {
   const x = st.g, u = st.u, out = [];
   x.troops = Math.max(0, u.troops);
@@ -1330,7 +1330,7 @@ function endField(st, text) {
   }
   healAfter(x, st.lost, out);
   const ev = (u.duelWins || 0) * RULES.merit.duel + (u.schemes || 0) * RULES.merit.scheme + (u.charges || 0) * RULES.merit.charge;
-  out.push(`${x.name} 공적 +${addMerit(x, RULES.merit.lose + Math.floor(st.dealt / RULES.meritPerKill) + ev)} · 남은 병력 ${fmt(x.troops)}`);
+  out.push(`${x.name} 명성 +${addMerit(x, RULES.merit.lose + Math.floor(st.dealt / RULES.meritPerKill) + ev)} · 남은 병력 ${fmt(x.troops)}`);
   const statKey = UNIT_TYPES[u.type] ? UNIT_TYPES[u.type].stat : 'lea';
   gainStatExp(x, statKey, RULES.statExp.battle);
   if (st.beaten) gainStatExp(x, statKey, RULES.statExp.win * st.beaten);
@@ -1355,7 +1355,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   if (!oldFaction) {
     lines.push(`⚔ ${to.name} (${fmtClock(mark)}): 주인 없는 땅이라 ${josa(to.name, '을를')} 손쉽게 차지했다.`);
     capture(g, to, oldFaction, lines);
-    lines.push(`공적 +${RULES.merit.blank}`);
+    lines.push(`명성 +${RULES.merit.blank}`);
     addMerit(g, RULES.merit.blank);
     addLog(g, reportFor('a'));
     gainStatExp(g, statKey, RULES.statExp.battle);
@@ -1391,9 +1391,9 @@ function siegeAttack(g, att, from, to, mark, f) {
     pierced += r.pierced;
     left -= r.used;
     atkLost += r.atkLost;
-    if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 공적)
+    if (d.ref) dealtBy.set(d.ref, (dealtBy.get(d.ref) || 0) + r.atkLost); // 수비 장수가 공격 쪽에 준 피해 (피해 명성)
     if (d.ref) lostBy.set(d.ref, (lostBy.get(d.ref) || 0) + r.defLost); // 수비 장수가 잃은 병력 (치료 특성)
-    if (d.ref) eventBy.set(d.ref, (eventBy.get(d.ref) || 0) + (d.duelWins || 0) * RULES.merit.duel + (d.schemes || 0) * RULES.merit.scheme + (d.charges || 0) * RULES.merit.charge); // 단기접전 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
+    if (d.ref) eventBy.set(d.ref, (eventBy.get(d.ref) || 0) + (d.duelWins || 0) * RULES.merit.duel + (d.schemes || 0) * RULES.merit.scheme + (d.charges || 0) * RULES.merit.charge); // 단기접전 승리·책략·돌격 명성 (2026-10-28, 돌격 2026-11-03)
     defLost += r.defLost;
     sideRows.push({ name: d.name, ref: d.ref || null, unit: d, lost: r.defLost });
     lines.push(...r.lines);
@@ -1457,17 +1457,17 @@ function siegeAttack(g, att, from, to, mark, f) {
   healAfter(g, atkLost, lines);
   for (const [x, lost] of lostBy) healAfter(x, lost, lines);
   lines.push([`공격 측(${g.name}) 병력 ${fmt(g.troops)}(-${fmt(atkLost)})`, ...sideRows.map(x => `수비 측(${x.name}) 병력 ${fmt(Math.max(0, x.ref ? x.ref.troops : x.unit.troops))}(-${fmt(x.lost)})`)].join(' · ')); // 2026-11-22 기획자: 끝 줄 = 양쪽 장수마다 남은 병력(잃은 수)
-  // 공적: 함락 30 (2026-11-02 50에서) / 그 밖 10 + 피해 공적 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
+  // 명성: 함락 30 (2026-11-02 50에서) / 그 밖 10 + 피해 명성 (적 병력 300명당 1, 깎은 방어 30당 1). 수비 장수도 자기가 준 피해만큼 받는다 (2026-10-26)
   const hitMerit = Math.floor(defLost / RULES.meritPerKill), wallMerit = Math.floor((wallDmg + pierced) / RULES.meritPerWall);
   const base = captured ? RULES.merit.win : RULES.merit.lose;
-  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme + (att.charges || 0) * RULES.merit.charge; // 단기접전 승리·책략·돌격 공적 (2026-10-28, 돌격 2026-11-03)
-  const meritText = `공적 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
+  const eventMerit = (att.duelWins || 0) * RULES.merit.duel + (att.schemes || 0) * RULES.merit.scheme + (att.charges || 0) * RULES.merit.charge; // 단기접전 승리·책략·돌격 명성 (2026-10-28, 돌격 2026-11-03)
+  const meritText = `명성 +${addMerit(g, base + hitMerit + wallMerit + eventMerit)}`; // 합계만 적는다 (한 턴 최대 100)
   if (captured) { const rc = recaptured(to, g.faction), got = earnGold(g, Math.floor(RULES.battleReward * (rc ? RULES.recaptureGold.rate : 1))); lines.push({ a: `${g.name} 보상: 금 +${got}${rc ? ' (주고받은 성이라 절반)' : ''} · ${meritText}` }); captureTreasure(g, to, lines); } // 함락 보물 1% (2026-11-14, 시즌 7)
   else lines.push({ a: `${g.name} ${meritText}` });
   for (const [x, dealt] of dealtBy) {
     const m = Math.floor(dealt / RULES.meritPerKill) + (eventBy.get(x) || 0);
     const got = m > 0 ? addMerit(x, m) : 0;
-    if (got > 0) lines.push(`${x.name} 공적 +${got}`);
+    if (got > 0) lines.push(`${x.name} 명성 +${got}`);
   }
   addLog(g, reportFor('a'));
   const defText = reportFor('d');
@@ -1551,7 +1551,7 @@ function captureTreasure(g, city, lines) {
 }
 
 // ----- 탐색 -----
-// viaPeace (2026-11-23, 시즌 9부터): 내정 중에 일어난 탐색 이벤트 (값 = 내정 이름, 기록 문구용). 금을 내지 않고, 공적은 치안 내정 몫만 받는다
+// viaPeace (2026-11-23, 시즌 9부터): 내정 중에 일어난 탐색 이벤트 (값 = 내정 이름, 기록 문구용). 금을 내지 않고, 명성은 치안 내정 몫만 받는다
 function runExplore(g, viaPeace = false) {
   const city = cityById(g.city), cs = S.cities[g.city];
   const why = viaPeace ? '' : pay(g, 'explore');
@@ -1616,11 +1616,11 @@ function runExplore(g, viaPeace = false) {
       text = `현인을 만나 가르침을 받았다! ${st.name} 경험 +${gain}` + (up ? ` · ★ ${josa(st.name, '이가')} 올랐다! (${g.stats[st.key]})` : ` (${g.statExp[st.key]}/${expNeed(g.stats[st.key])})`);
       break;
     }
-    case 'help': { // 재야: 주민 돕기 (2026-11-19 기획자). 공적 10~30, 재야가 공적을 얻는 유일한 길 (한 턴 공적 상한은 지킨다)
+    case 'help': { // 재야: 주민 돕기 (2026-11-19 기획자). 명성 10~30, 재야가 명성을 얻는 유일한 길 (한 턴 명성 상한은 지킨다)
       if (g.meritTurn !== S.turn) { g.meritTurn = S.turn; g.meritThisTurn = 0; }
       const got = Math.max(0, Math.min(randInt(e.min, e.max), RULES.meritTurnMax - g.meritThisTurn));
       g.meritThisTurn += got; g.merit += got;
-      text = got > 0 ? `주민을 만나 일을 도와주었다! 공적 +${got} (${fmt(g.merit)})` : '주민을 만나 일을 도와주었다.';
+      text = got > 0 ? `주민을 만나 일을 도와주었다! 명성 +${got} (${fmt(g.merit)})` : '주민을 만나 일을 도와주었다.';
       break;
     }
     case 'feast': { // 마을 잔치 (2026-10-31): 그 성의 치안·농업·상업이 오른다 (최대치까지)
@@ -1715,7 +1715,7 @@ function runExplore(g, viaPeace = false) {
   }
   addLog(g, viaPeace ? `🎲 ${city.name}에서 ${viaPeace}에 힘쓰던 중: ${text}` : `${city.name} 탐색: ${text}`);
   if (warExp) gainStatExp(g, 'war', warExp); // 도적과 싸움 (2026-11-08)
-  if (!viaPeace) addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 공적이 붙는다
+  if (!viaPeace) addMerit(g, RULES.merit.explore); // 수련을 뺀 모든 명령에는 명성이 붙는다
   return '';
 }
 
@@ -1772,14 +1772,14 @@ function runSpy(g, o) {
   S.intel[g.faction] = S.intel[g.faction] || {};
   S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
   addRecord(g, 'plotOk');
-  addMerit(g, RULES.merit.plotOk); // 첩보 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
+  addMerit(g, RULES.merit.plotOk); // 첩보 성공 명성 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   addLog(g, `첩보 성공! ${c.name}: 농업 ${cs.agri} · 상업 ${cs.comm} · 방어 ${cs.wall} · 치안 ${cs.peace} · 군량 ${fmt(cs.food)}\n(${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`);
   gainStatExp(g, 'int', PLOT.spyExp);
   return '';
 }
 
 // ----- 계략 (지력) -----
-// 이웃한 다른 세력 성에 쓴다. 지력이 높을수록 잘 되고, 대성공이면 효과 2배. 성공하면 지력 경험치와 공적
+// 이웃한 다른 세력 성에 쓴다. 지력이 높을수록 잘 되고, 대성공이면 효과 2배. 성공하면 지력 경험치와 명성
 const PLOT_NAME = { destroy: '파괴', rumor: '유언' };
 // 계략 효과 배수: [최소, 최대] 사이 무작위 (2026-11-04 시즌 5, 유언은 치안·농업·상업을 따로 굴린다)
 const plotRoll = ([lo, hi]) => lo + Math.random() * (hi - lo);
@@ -1795,7 +1795,7 @@ function runPlot(g, kind, o) {
   const int = effStats(g).int, r = rollPlot(int, (gTrait(g).plot || 0) - (capitalOn() && c.grade >= 4 ? RULES.capital.plotResist : 0)); // 책사 +8%p, 수도는 -10%p (2026-11-16, 시즌 8부터)
   addRecord(g, 'plotTry');
   if (r !== 'fail') addRecord(g, 'plotOk');
-  addMerit(g, RULES.merit.plot); // 계략은 시도만 해도 공적 10, 성공하면 20 더 (2026-10-28)
+  addMerit(g, RULES.merit.plot); // 계략은 시도만 해도 명성 10, 성공하면 20 더 (2026-10-28)
   if (r === 'fail') {
     addLog(g, `${name} → ${c.name}: 실패… 들킬 뻔해 서둘러 물러났다.`);
     if (PLOT.failExp) gainStatExp(g, 'int', PLOT.failExp); // 실패해도 지력 경험치 (시즌 7부터)
@@ -1821,13 +1821,13 @@ function runPlot(g, kind, o) {
       : `⚠ 누군가 ${c.name}에 ${crit ? '아주 ' : ''}흉흉한 소문을 퍼뜨렸다! ${what.join(' · ')}`;
     allGenerals().filter(x => x.city === c.id && x.faction === c.faction).forEach(x => addLog(x, warn));
   }
-  addMerit(g, RULES.merit.plotOk); // 성공 공적 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
+  addMerit(g, RULES.merit.plotOk); // 성공 명성 +10 (시도 10과 합쳐 20, 2026-11-02 +20에서)
   gainStatExp(g, 'int', r === 'crit' ? PLOT.critExp : PLOT.exp);
   return '';
 }
 
 // ----- 수련 -----
-// 고른 능력치의 경험치를 집중해서 쌓는다. 공적은 붙지 않는다
+// 고른 능력치의 경험치를 집중해서 쌓는다. 명성은 붙지 않는다
 function runTrain(g, o) {
   const st = STATS.find(s => s.key === o.stat);
   if (!st) return '없는 능력치';
@@ -1865,7 +1865,7 @@ function runSiege(g, o) {
 
 // ----- 상점 (내 금, 예약 없이 바로) -----
 // 명마·명검·서적은 여러 번 살 수 있다. 살 때마다 그 물건 값이 오른다 (shopPrice).
-// 명령이 아니라서 턴을 쓰지 않고 공적도 없다. 틀리면 이유를 돌려준다
+// 명령이 아니라서 턴을 쓰지 않고 명성도 없다. 틀리면 이유를 돌려준다
 // 보물 팔기 (2026-11-08): 마음에 안 드는 보물을 상인에게 판다. 가점 × sellPer 금. 보물은 세상으로 돌아가 다시 탐색에서 나온다 (다른 장수에게 주는 기능은 다중 계정 몰아주기 때문에 만들지 않음)
 // 통솔 보물을 팔아 병력 최대치가 줄어도 지금 병력은 그대로 둔다 (최대치를 넘는 동안은 징병만 막힘)
 function sellTreasure(g, name) {
@@ -1912,7 +1912,7 @@ function buyItem(g, item) {
 }
 
 // ----- 갈취 (개인 특성 이게 일상이야, 2026-10-28) -----
-// 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 공적·경험치 없음
+// 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 명성·경험치 없음
 // 갈취로 받는 금의 범위: 무력 × 2~5배 (2026-10-31). [최소, 최대]
 const levyRange = g => { const L = gTrait(g).levy, w = effStats(g).war; return [w * L.warMin, w * L.warMax]; };
 const levyLeft = g => { const L = gTrait(g).levy; return L && g.levyTurn ? Math.max(0, g.levyTurn + L.cooldown - S.turn) : 0; };
@@ -1971,7 +1971,7 @@ function runTransport(g, o) {
   return '';
 }
 
-// ----- 보급 (2026-11-16 기획자, 시즌 8부터): 대도독만. 지금 있는 성과 상관없이 우리 성 A에서 B로 군량을 옮긴다 (A·B는 우리 땅으로 moveRange칸 안). 양·공적은 수송과 같다
+// ----- 보급 (2026-11-16 기획자, 시즌 8부터): 대도독만. 지금 있는 성과 상관없이 우리 성 A에서 B로 군량을 옮긴다 (A·B는 우리 땅으로 moveRange칸 안). 양·명성은 수송과 같다
 function runSupply(g, o) {
   if (seasonNow() < RULES.commander.supplyFromSeason) return '아직 쓸 수 없는 명령';
   if (commanderOf(g.faction) !== g) return '대도독만 보급할 수 있음';
@@ -1994,10 +1994,10 @@ function runSupply(g, o) {
 }
 
 // ----- 재야 전용 (2026-11-16, 시즌 8부터) -----
-// 의뢰: 머무는 성에서 일을 맡아 금 100~300 + 지닌 공적 × 0.05 (최대 +100) (공적은 얻지 않음)
+// 의뢰: 머무는 성에서 일을 맡아 금 100~300 + 지닌 명성 × 0.05 (최대 +100) (명성은 얻지 않음)
 function runQuest(g) {
   if (!isRonin(g)) return '재야만 쓰는 명령';
-  const city = cityById(g.city), R = RULES.ronin, bonus = Math.min(R.questMeritMax, Math.floor((g.merit || 0) * R.questMerit)), got = earnGold(g, randInt(R.quest[0], R.quest[1]) + bonus); // 공적 × 0.05 (최대 +100, 2026-11-18 기획자)
+  const city = cityById(g.city), R = RULES.ronin, bonus = Math.min(R.questMeritMax, Math.floor((g.merit || 0) * R.questMerit)), got = earnGold(g, randInt(R.quest[0], R.quest[1]) + bonus); // 명성 × 0.05 (최대 +100, 2026-11-18 기획자)
   addLog(g, got > 0 ? `📜 ${city.name}에서 의뢰를 맡아 해결했다. 금 +${fmt(got)}` : `📜 ${city.name}에서 의뢰를 해결했지만, 금을 더 지닐 수 없었다.`);
   return '';
 }
@@ -2013,24 +2013,24 @@ function runEnlist(g) {
 }
 
 // ----- 하야 (예약 없이 바로) -----
-// 세력을 떠나 재야가 된다. 병사는 세력의 것이라 흩어지고, 공적·금·능력치는 그대로 (멸망했을 때와 같다).
+// 세력을 떠나 재야가 된다. 병사는 세력의 것이라 흩어지고, 명성·금·능력치는 그대로 (멸망했을 때와 같다).
 // 남은 예약은 모두 지워지고, 다음에 들어오면 세력 선택부터 다시 한다. 떠난 세력에는 RULES.rejoinWait턴 동안 못 들어간다
-function runResign(g, kicked = false) { // kicked: 관리자 추방 (공적은 깎지 않는다)
+function runResign(g, kicked = false) { // kicked: 관리자 추방 (명성은 깎지 않는다)
   if (!g.faction) return '세력에 소속되어 있지 않아요.';
   const f = factionById(g.faction), city = cityById(g.city);
   const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
-  const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 공적 -15% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
+  const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 명성 -15% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
   if (cut > 0) g.merit -= cut;
   Object.assign(g, { faction: null, city: roninOn() ? g.city : null, troops: 0, unitType: null }); // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
   g.leftFaction = { id: f.id, until: S.turn + RULES.rejoinWait, ...(!kicked && seasonNow() >= RULES.rejoinAllFrom ? { all: true } : {}) }; // 떠난 세력에는 한동안 다시 못 들어간다. 시즌 8부터 스스로 하야하면 모든 세력에 (해고·추방은 떠난 세력만)
   clearOrders(g);
-  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 공적 -${fmt(cut)} (${fmt(g.merit)})` : ''}`);
+  addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 명성 -${fmt(cut)} (${fmt(g.merit)})` : ''}`);
   return '';
 }
 
 // ----- 증축 (2026-11-08) -----
 // 내정(기술 빼고 켜진 것: 농업·상업·방어·치안)이 모두 최대치의 RULES.expand.ready(90%) 이상인 우리 세력 소성·중성을 한 단계 올린다.
-// 금은 명령한 장수 혼자 전액. 공적은 한 턴 최대(meritTurnMax)를 넘어도 그대로 더한다. 성을 빼앗겨도 등급은 그대로 (시즌이 끝나면 지도와 함께 사라짐)
+// 금은 명령한 장수 혼자 전액. 명성은 한 턴 최대(meritTurnMax)를 넘어도 그대로 더한다. 성을 빼앗겨도 등급은 그대로 (시즌이 끝나면 지도와 함께 사라짐)
 // 등급은 지도에 있으므로 세계의 지도(S.map)를 고치고 S.mapAt을 바꿔 화면이 새 지도를 받아 가게 한다
 const expandKeys = () => Object.keys(DOMESTIC).filter(cmdOn);
 const expandShort = (c, cs) => expandKeys().filter(k => cs[k] < Math.ceil(devMax(c.grade, k) * RULES.expand.ready)); // 아직 90%가 안 된 내정
@@ -2055,11 +2055,11 @@ function runExpand(g) {
   const oldCap = from === 3 ? capitalOf(g.faction) : null; // 천도: 지금 수도 (돈을 확인한 뒤에 정한다)
   g.gold -= cost; addRecord(g, 'goldSpent', cost); // 쓴 금 (2026-11-08)
   setMapGrade(c, from + 1); // 예전 시즌처럼 세계에 지도가 없으면 지금 지도를 넣어 둔다
-  // 수도 보상 (2026-11-17 기획자): 세력마다 처음 세우는 수도만 공적·경험치를 다 주고, 그 뒤(천도·함락 뒤 다시 세우기)는 절반. S.capitalBuilt[세력]에 기억
+  // 수도 보상 (2026-11-17 기획자): 세력마다 처음 세우는 수도만 명성·경험치를 다 주고, 그 뒤(천도·함락 뒤 다시 세우기)는 절반. S.capitalBuilt[세력]에 기억
   const rw = from === 3 && (S.capitalBuilt || {})[g.faction] ? RULES.capital.moveReward : 1;
   if (from === 3) (S.capitalBuilt = S.capitalBuilt || {})[g.faction] = true;
   const gotMerit = Math.round(merit * rw);
-  g.merit += gotMerit; // 한 턴 최대 공적(100)의 예외
+  g.merit += gotMerit; // 한 턴 최대 명성(100)의 예외
   const exp = Math.round(RULES.expand.exp[from] * rw);
   for (const st of STATS) gainStatExp(g, st.key, exp); // 통솔·무력·지력 경험치 각각 (세력·개인 경험치 보너스가 붙는다)
   addRecord(g, 'expand');
@@ -2073,7 +2073,7 @@ function runExpand(g) {
     addLog(g, `👑 천도! 수도를 ${oldCap.name}에서 ${josa(c.name, '으로')} 옮겼다. ${josa(oldCap.name, '은는')} 대도시가 되었다`);
     logAll(`👑 ${factionById(g.faction).name} 세력이 수도를 ${oldCap.name}에서 ${josa(c.name, '으로')} 옮겼다! (천도)`);
   }
-  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 공적 +${fmt(gotMerit)} · 모든 능력 경험치 +${exp}`);
+  addLog(g, `🏗 ${c.name} 증축! ${name[from]} → ${name[from + 1]} · 내 금 -${fmt(cost)} · 명성 +${fmt(gotMerit)} · 모든 능력 경험치 +${exp}`);
   logAll(`🏗 ${g.name}${josa(g.name, '이가').slice(-1)} ${josa(c.name, '을를')} ${josa(name[from + 1], '으로')} 증축했다!`);
   return '';
 }
