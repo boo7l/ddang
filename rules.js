@@ -285,7 +285,7 @@ const draftGain = (st, merit = 0) => { const [lo, hi] = draftBase(st); return ra
 // 출진 군량 (2026-11-06: 세력 특성 군량 소비도 적용. fid = 출진하는 세력)
 const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)));
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
-const troopsMax = g => { const st = effStats(g); return (statV1() ? Math.round(statAvg(st) * RULES.statV1.troopsPerAvg) : st.lea * RULES.troopsPerLea) + (gTrait(g).troopsBonus || 0) + (cmdPerk(g) ? RULES.commander.perkTroops : 0); };
+const troopsMax = g => { const st = effStats(g); return Math.round(((statV1() ? statAvg(st) * RULES.statV1.troopsPerAvg : st.lea * RULES.troopsPerLea) + (gTrait(g).troopsBonus || 0) + (cmdPerk(g) ? RULES.commander.perkTroops : 0)) / 100) * 100; }; // 2026-11-25 기획자: 병력 상한은 늘 십의 자리에서 반올림 (5,667 → 5,700)
 // 대도독 혜택이 켜진 장수 (2026-11-23, 시즌 9부터). isCommander는 engine.js에 있다 (전투 시뮬레이터처럼 없으면 false)
 const cmdPerk = g => seasonNow() >= RULES.commander.perkFromSeason && typeof isCommander === 'function' && typeof S !== 'undefined' && !!S && isCommander(g); // 시즌 9부터 평균 × 100 (V1). // 개인 특성 마성의 장수 +1,000 (2026-11-08)
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
