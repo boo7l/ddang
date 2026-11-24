@@ -961,13 +961,19 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
   return out;
 }
 
+// 시즌 도중 성 등급 바꾸기 (증축·수도 함락·천도): 세계 지도(S.map)에 처음 등급(grade0)을 남겨 둔다.
+// '이전 시나리오 유지'로 다음 시즌이 S.map을 이어 쓸 때 그 등급으로 되돌린다 (2026-11-24: 시즌 9가 시즌 8 증축 등급을 물려받은 문제)
+function setMapGrade(city, grade) {
+  if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG));
+  const mc = S.map && S.map.cities.find(x => x.id === city.id);
+  if (mc) { if (mc.grade0 == null) mc.grade0 = mc.grade; mc.grade = grade; }
+  city.grade = grade; S.mapAt = Date.now();
+}
+
 // 수도를 잃었다 (함락·도적): 대도시로 격하, 대도시 최대치를 넘는 값은 깎고, 잃은 세력의 남은 성 모두 치안 -lossPeace. 깎은 치안을 돌려준다
 function capitalLost(to, oldFaction) {
   const cs = S.cities[to.id];
-  if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG));
-  const mc = S.map && S.map.cities.find(x => x.id === to.id);
-  if (mc) mc.grade = 3;
-  to.grade = 3; S.mapAt = Date.now();
+  setMapGrade(to, 3);
   for (const k of ['agri', 'comm', 'wall', 'peace']) cs[k] = Math.min(cs[k], devMax(3, k));
   cs.food = Math.min(cs.food, foodMax(3));
   const lp = RULES.capital.lossPeace;
@@ -2017,11 +2023,7 @@ function runExpand(g) {
   if (g.gold < cost) return `내 금 부족 (필요 ${fmt(cost)}, 있음 ${fmt(g.gold)})`;
   const oldCap = from === 3 ? capitalOf(g.faction) : null; // 천도: 지금 수도 (돈을 확인한 뒤에 정한다)
   g.gold -= cost; addRecord(g, 'goldSpent', cost); // 쓴 금 (2026-11-08)
-  if (!S.map && typeof MAP_ORIG !== 'undefined') S.map = JSON.parse(JSON.stringify(MAP_ORIG)); // 예전 시즌처럼 세계에 지도가 없으면 지금 지도를 넣어 둔다
-  const mc = S.map && S.map.cities.find(x => x.id === c.id);
-  if (mc) mc.grade = from + 1;
-  c.grade = from + 1;
-  S.mapAt = Date.now();
+  setMapGrade(c, from + 1); // 예전 시즌처럼 세계에 지도가 없으면 지금 지도를 넣어 둔다
   // 수도 보상 (2026-11-17 기획자): 세력마다 처음 세우는 수도만 공적·경험치를 다 주고, 그 뒤(천도·함락 뒤 다시 세우기)는 절반. S.capitalBuilt[세력]에 기억
   const rw = from === 3 && (S.capitalBuilt || {})[g.faction] ? RULES.capital.moveReward : 1;
   if (from === 3) (S.capitalBuilt = S.capitalBuilt || {})[g.faction] = true;
@@ -2032,9 +2034,8 @@ function runExpand(g) {
   addRecord(g, 'expand');
   const name = ['', '소성', '중성', '대도시', '수도'];
   if (oldCap && oldCap.id !== c.id) { // 천도 (2026-11-17 기획자): 옛 수도는 대도시로. 대도시 최대치를 넘는 값은 수도 함락 때처럼 깎는다 (치안 벌칙은 없음)
-    const om = S.map && S.map.cities.find(x => x.id === oldCap.id), os = S.cities[oldCap.id];
-    if (om) om.grade = 3;
-    oldCap.grade = 3;
+    const os = S.cities[oldCap.id];
+    setMapGrade(oldCap, 3);
     for (const k of ['agri', 'comm', 'wall', 'peace']) os[k] = Math.min(os[k], devMax(3, k));
     os.food = Math.min(os.food, foodMax(3));
     if (os.guard) os.guard = Math.min(os.guard, RULES.guardMax[3]);
