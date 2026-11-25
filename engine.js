@@ -704,8 +704,8 @@ function earnGold(g, n) {
 
 // 명성: 수련을 뺀 명령마다 쌓이는 점수. 순위를 매기는 데 쓴다
 // 한 턴에 얻는 명성은 장수마다 최대 RULES.meritTurnMax (2026-10-28: 이벤트가 겹쳐도 100까지). 실제로 더한 양을 돌려준다
-function addMerit(g, n) {
-  if (isRonin(g)) return 0; // 재야는 명성을 얻지 않는다 (2026-11-16)
+function addMerit(g, n, roninOk = false) {
+  if (isRonin(g) && !roninOk) return 0; // 재야는 명성을 얻지 않는다 (2026-11-16). 의뢰만 예외 (roninOk, 2026-11-25 시즌 9부터)
   if (g.meritTurn !== S.turn) { g.meritTurn = S.turn; g.meritThisTurn = 0; }
   const got = Math.max(0, Math.min(n, RULES.meritTurnMax - g.meritThisTurn));
   g.meritThisTurn += got;
@@ -2037,11 +2037,13 @@ function runSupply(g, o) {
 }
 
 // ----- 재야 전용 (2026-11-16, 시즌 8부터) -----
-// 의뢰: 머무는 성에서 일을 맡아 금 100~300 + 지닌 명성 × 0.05 (최대 +100) (명성은 얻지 않음)
+// 의뢰: 머무는 성에서 일을 맡아 금을 받는다. 시즌 8: 100~300 + 지닌 명성 × 0.05 (최대 +100), 명성 없음. 시즌 9부터 (2026-11-25 기획자): 100~200 + 명성 +5, 명성 보너스 없음
 function runQuest(g) {
   if (!isRonin(g)) return '재야만 쓰는 명령';
-  const city = cityById(g.city), R = RULES.ronin, bonus = Math.min(R.questMeritMax, Math.floor((g.merit || 0) * R.questMerit)), got = earnGold(g, randInt(R.quest[0], R.quest[1]) + bonus); // 명성 × 0.05 (최대 +100, 2026-11-18 기획자)
-  addLog(g, got > 0 ? `📜 ${city.name}에서 의뢰를 맡아 해결했다. 금 +${fmt(got)}` : `📜 ${city.name}에서 의뢰를 해결했지만, 금을 더 지닐 수 없었다.`);
+  const city = cityById(g.city), R = RULES.ronin, bonus = R.questMeritOn ? Math.min(R.questMeritMax, Math.floor((g.merit || 0) * R.questMerit)) : 0, got = earnGold(g, randInt(R.quest[0], R.quest[1]) + bonus); // 명성 × 0.05 (최대 +100, 2026-11-18 기획자, 시즌 8만)
+  const fame = R.questFame ? addMerit(g, R.questFame, true) : 0; // 의뢰 명성 (시즌 9부터)
+  const fameTxt = fame ? ` · 명성 +${fame}` : '';
+  addLog(g, got > 0 ? `📜 ${city.name}에서 의뢰를 맡아 해결했다. 금 +${fmt(got)}${fameTxt}` : `📜 ${city.name}에서 의뢰를 해결했지만, 금을 더 지닐 수 없었다.${fameTxt}`);
   return '';
 }
 // 임관: 지금 머무는 성의 세력에 들어간다 (하야 대기·임관 상한은 그대로)

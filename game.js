@@ -2115,7 +2115,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125202213&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125211103&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2125,7 +2125,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125202213&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125211103&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2135,7 +2135,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125202213&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125211103&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2565,7 +2565,7 @@ function meritTableDialog(back = null, backName = '도움말') {
     row('계략 성공', '+' + M.plotOk, `시도와 합쳐 +${M.plot + M.plotOk}`),
     seasonNow() >= RULES.s9cmd.fromSeason ? '' : row('탐색', '+' + M.explore),
   ];
-  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, '재야는 이것 말고는 명성을 얻지 않아요')); }
+  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (RULES.ronin.questFame) gain.push(row('재야 의뢰', `+${RULES.ronin.questFame}`)); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, RULES.ronin.questFame ? '재야는 의뢰와 이것 말고는 명성을 얻지 않아요' : '재야는 이것 말고는 명성을 얻지 않아요')); } // 의뢰 명성 (2026-11-25, 시즌 9부터)
   const lose = [
     row('스스로 하야', `-${Math.round(RULES.resignMeritCut * 100)}%`, '대도독에게 해고되면 없음'),
   ];
@@ -3250,7 +3250,7 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
     <p class="dim small">임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>
     <div class="cmds cg-etc">
-      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) + btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}
+      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) + btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}${RULES.ronin.questFame ? ` · 명성 +${RULES.ronin.questFame}` : ''}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}
     </div>
     <div class="qBtnsM">${qBtns}</div>
 ` : `
