@@ -1425,6 +1425,11 @@ body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBt
 .helpSearch input { width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; }
 .helpHits { list-style: none; margin: 4px 0; padding: 0; }
 .helpIdxBody { height: min(440px, 58vh); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; } /* 검색해도 창 높이가 그대로 (2026-11-25 기획자) */
+/* 도움말 창 전체를 화면 높이에 맞추고, 가운데 칸만 늘었다 줄었다 (2026-11-25 모바일에서 아래 단추가 잘림) */
+#modalBox.helpBox { height: min(700px, calc(100vh - 32px)); height: min(700px, calc(100dvh - 32px)); display: flex; flex-direction: column; overflow: hidden; }
+#modalBox.helpBox > h2, #modalBox.helpBox > p, #modalBox.helpBox > .modalBtns { flex: none; }
+#modalBox.helpBox .helpIdxBody, #modalBox.helpBox .helpBody { flex: 1 1 auto; min-height: 0; height: auto; max-height: none; }
+@media (max-width: 700px) { #modalBox.helpBox .helpChips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; } #modalBox.helpBox .helpChips button { flex: none; } }
 .helpHits li { padding: 5px 2px; border-bottom: 1px dotted var(--gold-dark); }
 .helpCrumb { margin: 0 0 4px; color: var(--dim); }
 .helpChips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }

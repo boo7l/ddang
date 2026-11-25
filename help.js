@@ -310,7 +310,7 @@ function helpShow(target = -1, opt = {}) {
     if (opt.openSub && subId) { const d = box.querySelector(`details.helpMore[data-sub="${subId}"]`); if (d) d.open = true; } // 검색어가 자세히 안에만 있으면 펼쳐서 보여 준다
     if (opt.scroll != null && body) body.scrollTop = opt.scroll; else if (subId) jump(subId);
   });
-  $('#modalBox').classList.add('wideBox');
+  $('#modalBox').classList.add('wideBox', 'helpBox');
 }
 // 관련 항목·표 링크 (본문과 검색 결과에서 함께 쓴다). 표에서 돌아오면 떠날 때의 자리 그대로
 function helpBindLinks(box) {
@@ -364,5 +364,5 @@ function helpIndex2(topics, opt = {}) {
     if (helpQuery) run();
     if (opt.scroll != null && idxBody) idxBody.scrollTop = opt.scroll;
   });
-  $('#modalBox').classList.add('wideBox');
+  $('#modalBox').classList.add('wideBox', 'helpBox');
 }
