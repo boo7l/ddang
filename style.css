@@ -1419,8 +1419,8 @@ body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBt
 .helpIndex2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .helpIndex2 .hiT { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
 .helpIndex2 .hiB { font-size: 14px; color: var(--dim); }
-.helpStart { margin: 4px 0 8px; }
-.helpStart button { width: 100%; padding: 8px 12px; text-align: left; }
+.helpStart { margin: 4px 0 8px; text-align: center; }
+.helpStart button { width: min(100%, 420px); padding: 8px 12px; text-align: center; } /* 가운데, 조금 좁게 (2026-11-25 기획자) */
 .helpSearch { margin: 4px 0 6px; }
 .helpSearch input { width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; }
 .helpHits { list-style: none; margin: 4px 0; padding: 0; }
