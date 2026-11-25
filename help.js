@@ -313,6 +313,7 @@ function helpIndex2(topics) {
     </div></div>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog2(+b.dataset.page); });
+    helpBindLinks(box, () => ''); // 빠른 시작 가이드 단추 (2026-11-25: 연결이 빠져 있었다)
     const q = box.querySelector('#helpQ'), res = box.querySelector('#helpResults'), cats = box.querySelector('#helpCats');
     const run = () => { // 입력칸은 다시 그리지 않고 결과만 바꾼다 (한글 입력이 깨지지 않게)
       helpQuery = q.value;
