@@ -1397,6 +1397,15 @@ function moveDialog() {
 
 // 재야 임관 (2026-11-16, 시즌 8부터): 지금 머무는 성의 세력에 들어간다. 2026-11-22 기획자: 예약 없이 확인하면 바로 (턴을 쓰지 않는다). 하야 대기·임관 상한은 서버가 본다
 // 약탈 (2026-11-25 기획자, 시즌 9부터): 그 턴에 머물 성을 턴다. 확인 창만
+// 약탈 추정치 (2026-11-25 기획자): 지금 보이는 그 성 상업·농업으로 금·군량 범위. 군량은 그 성 군량·내 개인 군량 빈자리까지. 성 수치를 모르면 그렇다고
+function raidGuess(p, at) {
+  const R = RULES.raid, cs = S.cities[at.id] || {}, lo = 1 - R.spread, hi = 1 + R.spread;
+  if (cs.comm == null || cs.agri == null) return '<span class="dim">예상: 이 성의 상업·농업을 몰라서 계산할 수 없어요. (머무는 성이나 첩보한 성만 보여요)</span>';
+  const room = Math.max(0, RULES.roninArmy.foodMax - (p.food || 0)), cap = v => Math.min(v, room, cs.food != null ? cs.food : Infinity);
+  const g0 = Math.round(cs.comm * R.gold * lo), g1 = Math.round(cs.comm * R.gold * hi), f0 = cap(Math.round(cs.agri * R.food * lo)), f1 = cap(Math.round(cs.agri * R.food * hi));
+  const room0 = f1 < Math.round(cs.agri * R.food * hi) ? ' <span class="dim">(개인 군량 빈자리·성 군량까지만)</span>' : '';
+  return `예상: <b class="hi">금 ${fmt(g0)}~${fmt(g1)}</b> · <b class="hi">군량 ${fmt(f0)}~${fmt(f1)}</b>${room0}<br><span class="dim">지금 성 수치 기준이라 그 턴에는 달라질 수 있어요.</span>`;
+}
 function raidDialog() {
   const p = me(), at = cityAtSlot(p, slot), R = RULES.raid, f = at.faction && factionById(at.faction);
   const last = (S.raidAt || {})[at.id], wait = last != null ? Math.max(0, R.cityWait - (S.turn + 1 + slot - last)) : 0;
@@ -1406,6 +1415,7 @@ function raidDialog() {
     <ul class="small">
       <li>시도할 때마다 <b class="bad">명성 -${R.merit}</b></li>
       <li>얻는 것: 금 ≈ 그 성 상업 × ${R.gold}, 군량 ≈ 농업 × ${R.food}${R.fullTroops > 0 ? ` (병력 ${fmt(R.fullTroops)}명보다 적으면 그만큼 줄어요)` : ''}</li>
+      <li>${raidGuess(p, at)}</li>
       <li>${f ? `지키는 부대가 있으면 ${Math.round(R.fightChance * 100)}% 확률로 ${R.rounds}합을 싸워요. 전멸하면 실패예요.` : '공백지는 싸우지 않아요.'}</li>
       <li>같은 성은 ${R.cityWait}턴에 한 번만 털 수 있어요.</li>
     </ul>
@@ -2386,7 +2396,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220350&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220442&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2396,7 +2406,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125220350&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125220442&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2406,7 +2416,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220350&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220442&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
