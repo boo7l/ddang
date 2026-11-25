@@ -623,7 +623,7 @@ function fightRounds(att, def, wall, left, field = false) {
   // 벽력거: 이번 출진에서 처음 맞붙는 수비 부대에게, 합을 시작하기 전에 선제 사격 (반격 없음, 합 수에 들지 않음)
   if (!field && att.siege && att.siege.벽력거 && !att.struck && def.troops > 0) {
     att.struck = true;
-    const bx = [], dLoss = bondSave(def, Math.min(def.troops, Math.ceil(attackPower(att, def) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(att) * luck())), att, bx);
+    const bx = [], dLoss = bondSave(def, Math.min(def.troops, Math.ceil(attackPower(att, def) / (1 + unitFx(att, 'dmgUp')) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(att) * luck()) /* 노병 +10%는 보통 합에만 (2026-11-25 기획자) */), att, bx);
     def.troops -= dLoss;
     lines.push(`💥 벽력거 선제 사격! ${def.name} -${dLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
     siegeWear(att, '벽력거', lines); // 내구도 -1 (시즌 9부터)
@@ -632,7 +632,7 @@ function fightRounds(att, def, wall, left, field = false) {
   const dRef = def.ref, nowTurn = typeof S !== 'undefined' && S ? S.turn || 0 : 0;
   if (!field && seasonNow() >= SIEGE_EFFECT.defStrikeFrom && def.siege && def.siege.벽력거 && dRef && dRef.defStruck !== nowTurn && def.troops > 0 && att.troops > 0) {
     dRef.defStruck = nowTurn;
-    const bx = [], aLoss = bondSave(att, Math.min(att.troops, Math.ceil(defensePower(def, wall, att) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(def) * luck())), def, bx);
+    const bx = [], aLoss = bondSave(att, Math.min(att.troops, Math.ceil(defensePower(def, wall, att) / (1 + unitFx(def, 'dmgUp')) * RULES.roundRate * SIEGE_EFFECT.firstStrike * siegeMul(def) * luck()) /* 노병 +10%는 보통 합에만 */), def, bx);
     att.troops -= aLoss;
     lines.push(`💥 ${def.name}의 벽력거 선제 사격! ${att.name} -${aLoss.toLocaleString('ko-KR')} (반격 없음)`, ...bx);
     siegeWear(def, '벽력거', lines); // 내구도 -1 (시즌 9부터)
