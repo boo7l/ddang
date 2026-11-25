@@ -193,8 +193,8 @@ const RULES = {
   roninArmy: { fromSeason: 9, draftRate: 0.6 /* 2026-11-25 기획자: 75% → 60% (치안 부담 없는 대신) */, startFood: 500, foodMax: 3000, foodBase: 500, foodPerLea: 5 }, // startFood: 하야(해고·추방 포함)·멸망으로 재야가 되면 개인 군량 500 (2026-11-25 기획자) // 재야 모병·개인 군량 (2026-11-24 기획자, 시즌 9부터): 1티어만, 징병의 75%, 성 치안 안 깎음 · 개인 군량 최대 3,000, 반기(수확 달) 500 + 통솔 × 5, 군량 구매도 개인 창고로 · 임관하면 병력 유지·개인 군량 증발, 하야하면 병력 해산(그대로)
   // 약탈 (2026-11-25 기획자, 시즌 9부터, 재야만): 머무는 성에서 금·군량을 빼앗는다. 영토는 그대로. 같은 성은 cityWait턴에 한 번. 시도할 때마다 명성 -merit
   // 세력 성에 지키는 쪽(방어 모드 장수 중 병력 최다, 없으면 수비대)이 있으면 fightChance 확률로 성벽 없이 rounds합. 전멸하면 실패
-  // 성공: 금 = 상업 × gold, 군량 = 농업 × food (±spread, 병력 fullTroops 미만이면 비례해서 줄어듦, 군량은 그 성 군량에서·개인 군량 최대치까지). 성 농업·상업 -dmg, 치안 -peace
-  raid: { fromSeason: 9, minTroops: 1000, cityWait: 5, fightChance: 0.4, rounds: 3, gold: 1.5, food: 1.0, spread: 0.2, fullTroops: 3000, dmg: [0.03, 0.05], peace: [3, 5], merit: 15 },
+  // 성공: 금 = 상업 × gold, 군량 = 농업 × food (±spread, fullTroops가 0보다 크면 병력이 그보다 적을 때 비례해서 줄어듦 — 2026-11-25부터 0 = 보정 없음, 군량은 그 성 군량에서·개인 군량 최대치까지). 성 농업·상업 -dmg, 치안 -peace
+  raid: { fromSeason: 9, minTroops: 1000, cityWait: 5, fightChance: 0.4, rounds: 3, gold: 1.4, food: 1.4 /* 2026-11-25 기획자: 금 1.5·군량 1.0 → 둘 다 1.4, 병력 보정 없앰 */, spread: 0.2, fullTroops: 0, dmg: [0.03, 0.05], peace: [3, 5], merit: 15 },
   // 거병 (2026-11-25 기획자, 시즌 9부터, 재야만): 공백지·도적군 성 안에서 새 세력을 세운다. 명성 minMerit 이상 · 병력 minTroops 이상 · 금 gold (시도할 때 냄, 지면 잃음)
   // 도적군 성은 도적군과 성벽 없이 싸워 이겨야 한다. 이름 1~nameMax글자 (겹치면 안 됨), 거병한 장수가 대도독 (명성·인원 조건 없음), lockTurns턴 동안 하야·반납·위임 불가
   // 새 세력은 protect턴 동안 공격받지도, 공격하지도 못한다. 한 시즌에 성공한 거병 max번까지. 거병 명성 +merit. 하야 대기(leftFaction)가 끝나야 한다

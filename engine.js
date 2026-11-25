@@ -2139,7 +2139,7 @@ function runRaid(g, o, mark) {
     if (owner) for (const x of membersOf(owner.id)) if (!d || x !== d.ref) addLog(x, `🏴 재야 ${josa(g.name, '이가')} ${josa(c.name, '을를')} 약탈하려다 물리쳐졌다.`);
     return '';
   }
-  const rnd = () => 1 + (Math.random() * 2 - 1) * R.spread, scale = Math.min(1, g.troops / R.fullTroops);
+  const rnd = () => 1 + (Math.random() * 2 - 1) * R.spread, scale = R.fullTroops > 0 ? Math.min(1, g.troops / R.fullTroops) : 1; // 병력 보정 (2026-11-25 없앰: fullTroops 0)
   const gold = earnGold(g, Math.max(0, Math.round(cs.comm * R.gold * rnd() * scale)));
   const room = Math.max(0, RULES.roninArmy.foodMax - (g.food || 0));
   const food = Math.max(0, Math.min(cs.food || 0, room, Math.round(cs.agri * R.food * rnd() * scale)));
