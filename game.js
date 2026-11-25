@@ -1799,7 +1799,7 @@ function helpDialog2(page = -1) {
   if (page < 0 || !pages[page]) {
     openModal(`
     <h2>땅국지 도움말 <span class="dim small">· 새 버전 (관리자 확인용)</span></h2>
-    <div class="helpIndex">${pages.map(([t], i) => { const m = t.match(/^(S+)s+(.*)$/); return `<button data-page="${i}"><span class="hiIc">${m ? m[1] : ''}</span><span class="hiT">${m ? m[2] : t}</span></button>`; }).join('')}</div>
+    <div class="helpIndex">${pages.map(([t], i) => { const m = t.match(/^(\S+)\s+(.*)$/); return `<button data-page="${i}"><span class="hiIc">${m ? m[1] : ''}</span><span class="hiT">${m ? m[2] : t}</span></button>`; }).join('')}</div>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
       box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog2(+b.dataset.page); });
     });
@@ -1815,7 +1815,7 @@ function helpDialog2(page = -1) {
       <button id="helpList">☰ 목록으로</button>
     </div>`, box => {
     $('#helpList').onclick = () => helpDialog2(-1);
-    box.querySelectorAll('#helpExplore, #helpExplore2').forEach(ex => { ex.onclick = () => exploreOddsDialog(page); });
+    box.querySelectorAll('#helpExplore, #helpExplore2').forEach(ex => { ex.onclick = () => exploreOddsDialog(() => helpDialog2(page)); });
     const mt = box.querySelector('#helpMeritTable');
     if (mt) mt.onclick = () => meritTableDialog(() => helpDialog2(page), '도움말');
     const to = box.querySelector('#helpTraitOdds');
@@ -1845,7 +1845,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
   const rows = list => list.filter(e => e.weight > 0).sort((a, b) => b.weight - a.weight).map(e => `<tr><th>${name[e.key]}</th><td class="num">${e.weight}%</td><td>${text[e.key](e)}</td></tr>`).join('');
   // 일반 / 재야 탭 (2026-11-19 기획자). 재야 표는 시즌 8부터 (재야가 생긴 시즌)
   const roninOk = typeof RONIN_EXPLORE !== 'undefined' && (!S || seasonNow() >= RULES.ronin.fromSeason);
-  const tabs = [{ k: 'normal', label: '일반', list: EXPLORE, head: `금 ${RULES.myGoldCost.explore} · 명성 +${RULES.merit.explore}` }];
+  const tabs = [{ k: 'normal', label: '일반', list: EXPLORE, head: seasonNow() >= RULES.s9cmd.fromSeason ? `내정할 때 ${Math.round(RULES.s9cmd.domExplore * 100)}% 확률로 일어나는 일이에요.` : `금 ${RULES.myGoldCost.explore} · 명성 +${RULES.merit.explore}` }]; // 2026-11-25: 시즌 9는 탐색 명령 대신 내정 이벤트
   if (roninOk) tabs.push({ k: 'ronin', label: '재야', list: RONIN_EXPLORE, head: `금 ${RULES.myGoldCost.explore}` });
   const start = roninOk && S && S.generals && isRonin(me()) ? 'ronin' : 'normal'; // 재야인 장수는 재야 탭부터 (2026-11-19 기획자 확인)
   openModal(`
@@ -2386,7 +2386,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125214820&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125215017&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2396,7 +2396,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125214820&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125215017&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2406,7 +2406,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125214820&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125215017&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2814,7 +2814,7 @@ function meritTableDialog(back = null, backName = '도움말') {
   const B = RULES.bandit, C = RULES.commander, F = RULES.fullDev;
   const gain = [
     sec('⚔ 전투'),
-    row('성 함락 (공격)', '+' + M.win, '함락하면 금 +' + fmt(RULES.battleReward) + '도'),
+    row('성 함락 (공격)', '+' + M.win, '함락하면 금 +' + fmt(RULES.battleReward) + '도' + (seasonNow() >= RULES.recaptureGold.fromSeason ? ` (${RULES.recaptureGold.turns}턴 안에 주인이 바뀐 성이면 금 절반)` : '')),
     row('공백지 점령', '+' + M.blank),
     row('출진했지만 함락 못 함', '+' + M.lose),
     row('적 병력 피해', '+1', `없앤 병력 ${fmt(RULES.meritPerKill)}명당 (공격·수비 모두)`),
@@ -2829,22 +2829,25 @@ function meritTableDialog(back = null, backName = '도움말') {
     row('군량 수송 · 보급', '+' + M.transport, '보급관 특성은 +' + (M.transport + GENERAL_TRAITS.logistic.transportMerit)),
     row('군량 구매', '+1', `낸 금 ${fmt(RULES.meritBuyGold)}당 (최소 1)`),
     row('병기 제작', '+' + M.siege),
+    seasonNow() >= 9 ? row('승급 (정예 병종)', '+' + RULES.tier2.upMerit) : '', // 2026-11-25 표 검수
     row('이동', '+' + M.move),
     row('증축', Object.keys(ex).filter(k => k < 3 || capitalOn()).map(k => '+' + ex[k]).join(' / '), Object.keys(ex).filter(k => k < 3 || capitalOn()).map(k => gName[k]).join(' / ')),
     sec('🕵️ 계략 · 탐색'),
     row('계략 시도 (첩보 · 파괴 · 유언)', '+' + M.plot),
     row('계략 성공', '+' + M.plotOk, `시도와 합쳐 +${M.plot + M.plotOk}`),
-    seasonNow() >= RULES.s9cmd.fromSeason ? '' : row('탐색', '+' + M.explore),
+    seasonNow() >= RULES.s9cmd.fromSeason ? row('첩자 색출', '+' + RULES.s9cmd.counterSpyMerit, '최대치 치안 내정에서') : row('탐색', '+' + M.explore),
+    seasonNow() >= RULES.rise.fromSeason ? row('거병', '+' + RULES.rise.merit, '재야가 새 세력을 세우면') : '',
   ];
-  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (RULES.ronin.questFame) gain.push(row('재야 의뢰', `+${RULES.ronin.questFame}`)); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, RULES.ronin.questFame ? '재야는 의뢰와 이것 말고는 명성을 얻지 않아요' : '재야는 이것 말고는 명성을 얻지 않아요')); } // 의뢰 명성 (2026-11-25, 시즌 9부터)
+  if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (RULES.ronin.questFame) gain.push(row('재야 의뢰', `+${RULES.ronin.questFame}`)); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, RULES.ronin.questFame ? '재야는 의뢰·주민 돕기·거병 말고는 명성을 얻지 않아요' : '재야는 이것 말고는 명성을 얻지 않아요')); } // 의뢰 명성 (2026-11-25, 시즌 9부터)
   const lose = [
     row('스스로 하야', `-${Math.round(RULES.resignMeritCut * 100)}%`, '대도독에게 해고되면 없음'),
   ];
   if (RULES.fallenMeritLoss > 0) lose.push(row('세력 멸망', `-${Math.round(RULES.fallenMeritLoss * 100)}%`));
   if (seasonNow() >= B.fromSeason) lose.push(row('도적에게 성을 잃음', `-${B.merit}`, `그 세력 장수 모두 · 대도독 -${B.meritCmd}`));
+  if (seasonNow() >= RULES.raid.fromSeason) lose.push(row('약탈 (재야)', `-${RULES.raid.merit}`, '시도할 때마다')); // 2026-11-25
   if (commanderOn()) lose.push(row('동맹 파기', `-${C.allyBreakMerit}`, `파기한 세력 장수 모두 · 대도독 -${C.allyBreakMeritCmd}`));
   openModal(`<h2>📋 명성표</h2>
-    <p class="dim">한 턴에 얻는 명성은 최대 ${RULES.meritTurnMax}이에요. (정복 보상은 예외)</p>
+    <p class="dim">한 턴에 얻는 명성은 최대 ${RULES.meritTurnMax}이에요. (정복·증축 보상은 예외)</p>
     <div class="oddsScroll"><table class="oddsTable meritTable">
       <tr><th>얻는 경우</th><th class="num">명성</th><th>참고</th></tr>${gain.join('')}
       <tr><td colspan="3" class="mtSec mtLose">잃는 경우</td></tr>${lose.join('')}
