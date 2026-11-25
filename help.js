@@ -76,7 +76,7 @@ function helpTopics() {
         '<b>군량</b>은 성마다 따로 있어요. 그 성에 머무는 우리 세력 장수들의 병사가 함께 먹어요.',
         `<b>재야</b>는 성 군량 대신 <b>개인 군량</b>을 써요. ${link('ronin.army', '재야 모병')}`]), related: [] },
       { id: 'gold', title: '금 수입', keys: ['금 수입', '수입', '상업'], body: `<p>${R.goldMonths.join('·')}월에 들어와요. 내가 있는 성의 상업과 우리 세력 평균 상업을 ${pct(R.goldFloor.own)}:${pct(R.goldFloor.avg)}로 섞어서 정해요.</p>`
-        + ul([`명성 ${fmt(Math.round(0.01 / R.meritIncome))}마다 +1%·세력 성 하나마다 +${Math.round(R.goldFloor.perCity * 1000) / 10}% (최대 +${pct(R.goldFloor.cityMax)}%)`, `대도독 +${pct(C.perkGold)}%·수도가 있는 세력 +${pct(CP.gold)}%`, `치안이 낮으면 줄고(${link('city.peace', '치안')}), 한 성에 장수가 정원보다 많으면 줄어요(${link('city.size', '성 크기')}).`, `최대 ${fmt(R.playerGoldMax)}까지 가질 수 있어요.`]),
+        + ul([`명성 ${fmt(Math.round(0.01 / R.meritIncome))}마다 +1%·세력 성 하나마다 +${Math.round(R.goldFloor.perCity * 1000) / 10}% (최대 +${pct(R.goldFloor.cityMax)}%)`, `대도독 +${pct(C.perkGold)}%·수도가 있는 세력 +${pct(CP.gold)}%`, `치안이 낮으면 줄고(${link('city.peace', '치안')}), 한 성에 장수가 정원보다 많으면 줄어요(${link('city.size', '성 크기')}).`, `최대 ${fmt(R.playerGoldMax)}까지 가질 수 있어요.`, '<b>재야는 정기 금 수입이 없어요.</b> 의뢰·탐색·약탈로 직접 벌어요.']),
         detail: R.lateGold ? `<p><b>중도 참가 지원금</b>: 시즌 도중에 이번 시즌 첫 장수를 만들면, 시즌이 시작한 뒤 ${R.lateGold.perTurns}턴마다 금 ${R.lateGold.gold}씩 쳐서 받고 시작해요 (최대 ${fmt(R.lateGold.max)}).</p>` : '', related: [] },
       { id: 'spend', title: '금 쓰는 곳', keys: ['지출', '비용'], body: table(['쓰는 곳', '금'], [
         ['징병', `${R.myGoldCost.draft} (정예 병종 ${fmt(T2.gold)})`], ['승급', `1,000명당 ${T2.upPer1000}`],
@@ -153,7 +153,7 @@ function helpTopics() {
           '<b>연노</b>는 방어 모드로 성을 지킬 때만, <b>정란·충차</b>는 공격할 때만 효과가 나요. 야전에서는 병기가 효과가 없어요.',
           `탐색 이벤트의 <b>기술자</b>를 만나면 병기 내구도를 ${SIEGE_EFFECT.durFix[0]}~${SIEGE_EFFECT.durFix[1]} 되찾거나 강화(부서질 때 1번 버팀)해요. 병기가 없으면 하나를 얻어요.`]), related: ['battle.march'] },
     ] },
-    { id: 'battle', icon: '⚔', title: '전투', blurb: '방어·출진·공성·점령', subs: [
+    { id: 'battle', icon: '⚔', title: '전투', blurb: '방어·이동·출진·공성', subs: [
       { id: 'flow', title: '전투 흐름', keys: ['전투', '흐름', '합'], body: `<ol><li><b>출진</b>으로 이웃 성을 공격해요.</li><li>같은 턴에 서로 출진했다면 들판에서 <b>야전</b>부터.</li><li>성에서는 수비대·방어 모드 장수와 최대 <b>${R.roundsMax}합</b>을 싸워요.</li><li>수비 부대를 다 쓰러뜨리면 <b>성벽</b>을 공격해요.</li><li>방어가 0이 되면 <b>점령</b>이에요.</li></ol>
         <p>병력이 모자라면 합 안에 수비 부대를 다 못 쓰러뜨리고 돌아오고, 그 사이 잃은 병력은 돌아오지 않아요.</p>`, related: [] },
       { id: 'defense', title: '수비와 방어 모드', keys: ['방어 모드', '수비', '방어'], body: ul([
@@ -162,6 +162,10 @@ function helpTopics() {
         `성을 지키는 부대는 방어가 높을수록 보통 합에서 받는 피해가 줄어요 (방어 500이면 -${pct(wallCut(500))}%, 1,000이면 -${pct(wallCut(1000))}%).`,
         '<b>성이 떨어지면</b> 그 성 장수는 이웃 우리 성으로 물러나요.']),
         detail: ul([`방어를 끈 채 물러나면 병력 -${pct(R.defenseOffLoss.min)}~${pct(R.defenseOffLoss.max)}%.`, `이웃에 우리 성이 없으면(고립) 가장 가까운 우리 성으로 가며 병력 -${pct(R.isolatedLoss)}%.`, '방어 효과는 단기접전·책략·돌격·벽력거에는 통하지 않아요.']), related: ['army.siege'] },
+      { id: 'move', title: '이동', keys: ['이동', '옮기기'], body: ul([
+        `우리 땅으로 이어진 ${R.moveRange}칸 안의 <b>우리 성</b>으로 옮겨요. 금·군량 없이 1턴을 쓰고 명성 +${R.merit.move}.`,
+        '적 성이나 공백지를 지나서는 갈 수 없어요. 병력은 그대로 데려가요.']),
+        detail: ul(['옮겨 간 성에 방어 모드 장수가 이미 가득이면 내 방어 모드는 꺼져요.', '특성에 따라 더 멀리 가거나, 우리 땅이 끊겨도 갈 수 있어요.', `재야는 누구 땅이든 ${RN.moveRange}칸까지 이동해요.`]), related: ['battle.march', 'ronin.basic'] },
       { id: 'march', title: '출진', keys: ['출진', '공격', '먼 길', '쿨타임'], body: ul([
         `이웃 성을 공격해요. 금 = 병력 1,000명당 ${R.attackGold.per1000}, 군량 = 병력의 ${pct(R.marchFoodRate)}% (출발한 성에서).`,
         `출진하면 ${R.attackCooldown}턴 뒤에 다시 출진할 수 있어요 (예약 칸도 막혀요).`,
@@ -218,7 +222,7 @@ function helpTopics() {
     ] },
     { id: 'ronin', icon: '🏴', title: '재야 생활', blurb: '의뢰·모병·약탈·거병', subs: [
       { id: 'basic', title: '재야의 기본', keys: ['재야', '재야 채팅'], body: `<p>재야는 세력에 들지 않고 혼자 살아가는 <b>독립된 플레이</b>예요. 하야·해고·멸망하면 그 성에 재야로 남아요.</p>`
-        + ul([`누구 땅이든 ${RN.moveRange}칸까지 이동해요.`, '재야끼리는 <b>재야 채팅</b>을 써요.', '재야 명령은 따로 있어요: 이동·탐색·의뢰·모병·군량 구매·약탈·거병·임관.']), related: ['ronin.join'] },
+        + ul([`누구 땅이든 ${RN.moveRange}칸까지 이동해요.`, '<b>정기 금 수입이 없어요.</b> 의뢰·탐색·약탈로 직접 벌어요.', '재야끼리는 <b>재야 채팅</b>을 써요.', '재야 명령은 따로 있어요: 이동·탐색·의뢰·모병·군량 구매·약탈·거병·임관.']), related: ['ronin.join'] },
       { id: 'quest', title: '탐색과 의뢰', keys: ['재야 탐색', '의뢰', '현인', '주민 돕기'], body: ul([
         `<b>탐색</b>: 금 ${R.myGoldCost.explore}. 금·현인(경험치)·주민 돕기(명성)·장비·특성 주머니·보물을 찾거나 도적을 만나요. ${tbl('explore-ronin', '재야 확률표')}`,
         `<b>의뢰</b>: 머무는 성에서 일을 맡아 ${quest}를 받아요. 금을 쓰지 않고 버는 명령이에요.`]), related: [] },
