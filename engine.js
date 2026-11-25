@@ -26,7 +26,7 @@ const transportMaxOf = g => (gTrait(g).transportNoCap ? Infinity : RULES.transpo
 // 세력 특성: 지도 파일에 적힌 것(trait)이 먼저, 없으면 rules.js FACTION_TRAITS에서 이름으로 (2026-11-06)
 const traitOf = fid => {
   const f = fid && factionById(fid);
-  if (!f) return {};
+  if (!f || f.extra) return {}; // 거병한 세력은 특성 없음 (2026-11-25)
   const t = f.trait && cleanTrait(f.trait);
   if (t) return { name: t.name, desc: traitDesc(t.fx), ...t.fx };
   if (typeof MAP !== 'undefined' && MAP && MAP.nameTraits === false) return {}; // 지도에서 '규칙 파일 특성'을 끈 경우 (2026-11-11 영웅집결: 특성 없이)
@@ -94,6 +94,35 @@ const commanderOn = () => seasonNow() >= RULES.commander.fromSeason;
 const commanderOf = fid => { const id = fid && (S.commanders || {})[fid], g = id && S.generals[id]; return g && g.faction === fid ? g : null; };
 const isCommander = g => !!(g && g.faction && commanderOf(g.faction) === g);
 const membersOf = fid => allGenerals().filter(g => g.faction === fid);
+// ===== 거병 (2026-11-25 기획자, 시즌 9부터, RULES.rise) =====
+// S.extraFactions = [{ id, name, color, by(거병한 장수 id), at(턴), protectUntil, lockUntil }]: 시즌 도중 생긴 세력. 지도 세력 목록(MAP.factions)에 extra로 덧붙인다
+// S.riseCount: 이번 시즌 성공한 거병 수
+function applyExtraFactions() {
+  if (typeof MAP === 'undefined' || !MAP || !MAP.factions) return;
+  MAP.factions = MAP.factions.filter(f => !f.extra); // 화면은 지도를 계속 쓰므로 지난 세계의 거병 세력을 먼저 뺀다
+  for (const x of (S && S.extraFactions) || []) MAP.factions.push({ id: x.id, name: x.name, color: x.color, extra: true });
+}
+const riseRec = fid => ((S && S.extraFactions) || []).find(x => x.id === fid) || null;
+const riseProtected = fid => { const r = fid && riseRec(fid); return r && S.turn < r.protectUntil ? r.protectUntil - S.turn : 0; }; // 남은 보호 턴
+const riseFounder = g => { const r = g && g.faction && riseRec(g.faction); return !!(r && r.by === g.id); };
+const riseLocked = g => { const r = riseFounder(g) && riseRec(g.faction); return r && S.turn < r.lockUntil ? r.lockUntil - S.turn : 0; }; // 남은 잠금 턴
+// 새 세력 이름이 안 되는 이유 ('' = 된다): 1~nameMax글자 한글·영문·숫자, 지금 있는 세력(도적군 포함)과 겹치면 안 된다
+function riseNameWhy(name) {
+  const n = String(name || '').trim(), R = RULES.rise;
+  if (!n || [...n].length > R.nameMax) return `세력 이름은 1~${R.nameMax}글자로 지어 주세요.`;
+  if (!/^[가-힣A-Za-z0-9]+$/.test(n)) return '세력 이름은 한글·영문·숫자만 쓸 수 있어요.';
+  if (n === BANDIT.name || MAP.factions.some(f => f.name === n)) return '이미 있는 세력 이름이에요.';
+  return '';
+}
+// 거병한 세력에 장수가 하나도 안 남으면 세력이 사라지고 성은 공백지가 된다 (2026-11-25 기획자)
+function riseVacate(fid) {
+  if (!riseRec(fid) || membersOf(fid).length) return;
+  const cities = citiesOfFaction(fid);
+  if (!cities.length) return;
+  const name = factionById(fid).name;
+  for (const c of cities) { S.cities[c.id].guard = 0; setOwner(c, null); }
+  logAll(`🏳 ${name} 세력에 남은 장수가 없어 흩어졌다. ${cities.map(c => c.name).join('·')}${josa(cities[cities.length - 1].name, '은는').slice(-1)} 공백지가 되었다.`);
+}
 // 동맹 (2026-11-13, 3단계): S.alliances = [{ a, b, since, end, turns, breaker? }]. end 턴이 되면 풀린다 (그 턴부터 서로 칠 수 있다)
 const allyRec = (a, b) => (S.alliances || []).find(x => ((x.a === a && x.b === b) || (x.a === b && x.b === a)) && S.turn < x.end);
 // 초반 훈장 숨김 (2026-11-22, 시즌 9부터): 임관 제한 기간(joinCap.turns턴) 동안
@@ -111,6 +140,7 @@ function commanderBlock(g, hand = false) {
   const R = RULES.commander;
   if (!commanderOn()) return `대도독은 시즌 ${R.fromSeason}부터 있어요.`;
   if (!g || !g.faction) return '세력에 소속해야 해요.';
+  if (riseFounder(g)) return ''; // 거병한 장수는 명성·인원 조건 없이 (2026-11-25)
   const n = membersOf(g.faction).length;
   if (n < R.minMembers) return `세력 장수가 ${R.minMembers}명 이상이어야 해요. (지금 ${n}명)`;
   if ((g.merit || 0) < R.minMerit) return `명성이 ${fmt(R.minMerit)} 이상이어야 해요. (지금 ${fmt(g.merit || 0)})`;
@@ -184,6 +214,7 @@ function destroyReward(fid, gone) {
 }
 // 성의 주인. 처음엔 지도 파일대로, 점령하면 S.owners에 기록해서 지도에 덮어쓴다
 function applyOwners() {
+  applyExtraFactions();
   for (const c of MAP.cities) if (c.id in S.owners) c.faction = S.owners[c.id];
 }
 // 주고받기 (2026-11-22, 시즌 9부터): 이번 함락 바로 전에 주인이 바뀐 지 RULES.recaptureGold.turns 턴 안이면 true
@@ -410,7 +441,7 @@ const meritRanking = () => allGenerals()
 // 기능 스위치가 꺼진 명령인지
 const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', explore: 'explore', shop: 'shop', buy: 'shop' };
 // 시즌 9부터 없어진 명령 (2026-11-23): 수련은 모두, 탐색은 재야만 남김. g가 없으면 일반 장수로 본다
-const cmdGone = (cmd, g) => seasonNow() >= RULES.s9cmd.fromSeason && (cmd === 'train' || (cmd === 'explore' && !isRonin(g)));
+const cmdGone = (cmd, g) => (cmd === 'raid' && seasonNow() < RULES.raid.fromSeason) || (cmd === 'rise' && seasonNow() < RULES.rise.fromSeason) || (seasonNow() >= RULES.s9cmd.fromSeason && (cmd === 'train' || (cmd === 'explore' && !isRonin(g)))); // 약탈·거병은 시즌 9부터 (2026-11-25)
 const cmdOn = (cmd, g) => (!FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]]) && !cmdGone(cmd, g);
 // 뽑을 수 있는 특성 (시즌마다 off로 빠지는 것 제외, 2026-11-23)
 const traitIds = () => Object.keys(GENERAL_TRAITS).filter(k => !GENERAL_TRAITS[k].off);
@@ -619,7 +650,7 @@ function runOrders(mark) {
     const { g, order } = todo[turnIdx];
     if (S.unified || !(g.faction || isRonin(g))) continue; // 통일됐거나, 이번 턴에 앞서 세력을 잃었다 (재야는 재야 명령만, 아래)
     if (isRonin(g) && !RULES.ronin.cmds.includes(order.cmd)) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야는 쓸 수 없는 명령 → 대기`); continue; }
-    if (g.faction && (order.cmd === 'quest' || order.cmd === 'enlist')) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야만 쓰는 명령 → 대기`); continue; }
+    if (g.faction && ['quest', 'enlist', 'raid', 'rise'].includes(order.cmd)) { addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: 재야만 쓰는 명령 → 대기`); continue; }
     if (fieldDone.has(g.id)) continue; // 야전에서 이미 싸워 이번 턴 출진이 끝났다
     const fail = COMMANDS[order.cmd] && cmdOn(order.cmd, g) ? COMMANDS[order.cmd].run(g, order, mark) : '지금은 쓸 수 없는 명령';
     if (fail) addLog(g, `[${fmtClock(mark)}] ${orderLabel(order)} 실패: ${fail} → 대기`);
@@ -655,13 +686,14 @@ function setOrder(g, i, order) {
   if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd, g))) return '쓸 수 없는 명령이에요.'; // 2026-11-25: g를 넘겨야 재야 탐색(시즌 9)이 막히지 않는다
   if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
   if (order && order.cmd === 'attack') { const why = attackBlocked(g, i); if (why) return why; }
+  if (order && order.cmd === 'attack') { const to = cityById(order.to), pt = to && riseProtected(to.faction), pm = riseProtected(g.faction); if (pm) return `우리 세력은 거병 보호 중이라 ${pm}턴 동안 출진할 수 없어요.`; if (pt) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 ${pt}턴 동안 공격할 수 없어요.`; } // 거병 보호 (2026-11-25)
   g.queue[i] = order ? { ...order, orderedAt: now() } : null;
   return '';
 }
 function clearOrders(g) { g.queue = Array(RULES.queueSize).fill(null); }
 // 비어 있는 칸을 모두 같은 명령으로 채운다 (예: 12칸 모두 농업). 하야는 되풀이할 수 없다
 function fillOrders(g, order) {
-  if (!order || order.cmd === 'expand') return '채울 수 없는 명령이에요.'; // 증축은 한 번만 (2026-11-08)
+  if (!order || order.cmd === 'expand' || order.cmd === 'rise') return '채울 수 없는 명령이에요.'; // 증축은 한 번만 (2026-11-08) · 거병도 (2026-11-25)
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
     if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 갈취는 쿨타임이 끝난 칸에만 채운다
@@ -1236,7 +1268,9 @@ function runAttack(g, o, mark) {
     addMerit(g, RULES.merit.move);
     return '';
   }
-  if (allied(g.faction, to.faction)) return `${factionById(to.faction).name} 세력과 동맹 중이라 출진하지 않음`; // 동맹 (2026-11-13): 금·군량을 쓰기 전에 막는다
+  if (allied(g.faction, to.faction)) return `${factionById(to.faction).name} 세력과 동맹 중이라 출진하지 않음`;
+  if (riseProtected(g.faction)) return `우리 세력은 거병 보호 중이라 출진할 수 없음`; // 거병 보호 (2026-11-25): 양쪽 다
+  if (riseProtected(to.faction)) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 공격할 수 없음`; // 동맹 (2026-11-13): 금·군량을 쓰기 전에 막는다
   if (g.troops <= 0) return '병력이 없음';
   const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
@@ -1265,7 +1299,7 @@ const fieldOn = () => (S.season || 1) >= RULES.fieldFromSeason;
 // x가 o(출진) 명령을 지금 실행할 수 있는지 (금·군량은 쓰지 않고 보기만 한다). 못 나가는 장수는 야전 상대가 아니다
 function canMarch(x, o) {
   const from = x.city && cityById(x.city), to = cityById(o.to);
-  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || allied(x.faction, to.faction) || x.troops <= 0) return false; // 동맹 상대에게는 출진하지 않으니 야전도 없다
+  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || allied(x.faction, to.faction) || riseProtected(x.faction) || riseProtected(to.faction) || x.troops <= 0) return false; // 동맹 상대에게는 출진하지 않으니 야전도 없다
   if (x.attackTurn && x.attackTurn + RULES.attackCooldown - S.turn > 0) return false;
   const mm = marchMult(from, to);
   return S.cities[from.id].food >= marchFood(x.troops, x.faction) * mm && x.gold >= attackGoldOf(x.troops) * mm;
@@ -2046,6 +2080,142 @@ function runQuest(g) {
   addLog(g, got > 0 ? `📜 ${city.name}에서 의뢰를 맡아 해결했다. 금 +${fmt(got)}${fameTxt}` : `📜 ${city.name}에서 의뢰를 해결했지만, 금을 더 지닐 수 없었다.${fameTxt}`);
   return '';
 }
+// 재야 부대와 성을 지키는 한 부대의 싸움 (약탈·거병, 2026-11-25): 성벽 없이 rounds합. 지킨 쪽 병력·경험치·기록을 되돌려 적는다. 보고서 줄을 lines에
+function roninFight(g, att, d, cs, rounds, lines) {
+  const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : d.type && matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다…` : '';
+  lines.push(`▶ ${d.name}(${d.type ? d.type + ' ' : ''}${fmt(d.troops)})과 맞붙었다${edge}`);
+  const r = fightRounds(att, d, 0, rounds);
+  lines.push(...r.lines);
+  g.troops = att.troops;
+  if (att.duelWins) gainStatExp(g, 'war', RULES.duel.exp * att.duelWins);
+  if (att.schemes) gainStatExp(g, 'int', RULES.scheme.statExp * att.schemes);
+  if (att.charges) gainStatExp(g, 'war', RULES.charge.statExp * att.charges);
+  addTechRecord(g, att);
+  addRecord(g, 'battles');
+  if (d.guard) cs.guard = d.troops;
+  if (d.ref) {
+    d.ref.troops = d.troops;
+    if (d.duelWins) gainStatExp(d.ref, 'war', RULES.duel.exp * d.duelWins);
+    if (d.schemes) gainStatExp(d.ref, 'int', RULES.scheme.statExp * d.schemes);
+    if (d.charges) gainStatExp(d.ref, 'war', RULES.charge.statExp * d.charges);
+    addTechRecord(d.ref, d);
+    addRecord(d.ref, 'battles');
+  }
+  siegeRolled = new Set();
+  if (d.troops <= 0) { lines.push(`${d.name} 부대 전멸!`); if (d.ref) { addRecord(d.ref, 'losses'); siegeLoseRoll(d.ref, lines); } }
+  if (g.troops <= 0) { lines.push(`${g.name}의 부대가 전멸했다…`); addRecord(g, 'losses'); siegeLoseRoll(g, lines); }
+  return r;
+}
+// 약탈 (2026-11-25 기획자, 시즌 9부터, RULES.raid): 재야가 머무는 성에서 금·군량을 빼앗는다. 성 주인은 그대로
+function runRaid(g, o, mark) {
+  const R = RULES.raid;
+  if (!isRonin(g)) return '재야만 쓰는 명령';
+  if (seasonNow() < R.fromSeason) return `약탈은 시즌 ${R.fromSeason}부터`;
+  const c = cityById(g.city), cs = S.cities[c.id];
+  if (g.troops < R.minTroops) return `병력이 ${fmt(R.minTroops)}명 이상이어야 함 (지금 ${fmt(g.troops)})`;
+  S.raidAt = S.raidAt || {};
+  const last = S.raidAt[c.id];
+  if (last != null && S.turn - last < R.cityWait) return `${josa(c.name, '은는')} 얼마 전 약탈당해 ${R.cityWait - (S.turn - last)}턴 뒤에 다시 털 수 있음`;
+  S.raidAt[c.id] = S.turn;
+  const cut = Math.min(g.merit || 0, R.merit); // 시도할 때마다 명성 -15 (0 밑으로 안 감)
+  g.merit = (g.merit || 0) - cut;
+  const lines = [`🏴 ${c.name} 약탈 (${fmtClock(mark)}): ${g.name}(${g.unitType} ${fmt(g.troops)})의 무리가 ${josa(c.name, '을를')} 덮쳤다!${cut ? ` 명성 -${cut} (${fmt(g.merit)})` : ''}`];
+  gainStatExp(g, UNIT_TYPES[g.unitType].stat, RULES.statExp.battle); // 출진처럼 병종 능력치 경험치
+  // 지키는 쪽: 방어 모드 장수 중 병력 최다, 없으면 수비대 (도적군 성은 도적군)
+  let d = null;
+  if (c.faction) { const defs = defendersOf(c); d = defs.find(x => x.ref) || defs.find(x => x.guard) || null; }
+  const owner = c.faction && c.faction !== BANDIT.id ? factionById(c.faction) : null;
+  let fought = false;
+  if (d && Math.random() < R.fightChance) {
+    fought = true;
+    if (d.guard && c.faction === BANDIT.id) d.name = '도적군';
+    lines.push(`${josa(d.name, '이가')} 막아섰다!`);
+    roninFight(g, unitOf(g), d, cs, R.rounds, lines);
+    if (d.ref) addLog(d.ref, lines.slice(1).join('\n') + (g.troops > 0 ? `\n${g.name}의 무리를 막지 못했다.` : `\n${g.name}의 무리를 물리쳤다!`));
+  }
+  if (g.troops <= 0) {
+    lines.push('약탈에 실패했다.');
+    addLog(g, lines.join('\n'));
+    if (owner) for (const x of membersOf(owner.id)) if (!d || x !== d.ref) addLog(x, `🏴 재야 ${josa(g.name, '이가')} ${josa(c.name, '을를')} 약탈하려다 물리쳐졌다.`);
+    return '';
+  }
+  const rnd = () => 1 + (Math.random() * 2 - 1) * R.spread, scale = Math.min(1, g.troops / R.fullTroops);
+  const gold = earnGold(g, Math.max(0, Math.round(cs.comm * R.gold * rnd() * scale)));
+  const room = Math.max(0, RULES.roninArmy.foodMax - (g.food || 0));
+  const food = Math.max(0, Math.min(cs.food || 0, room, Math.round(cs.agri * R.food * rnd() * scale)));
+  cs.food -= food; g.food = (g.food || 0) + food;
+  const hit = k => { const v = Math.round(cs[k] * (R.dmg[0] + Math.random() * (R.dmg[1] - R.dmg[0]))); cs[k] -= v; return v; };
+  const da = hit('agri'), dc = hit('comm'), dp = Math.min(cs.peace, randInt(R.peace[0], R.peace[1]));
+  cs.peace -= dp;
+  addRecord(g, 'raids');
+  lines.push(`금 +${fmt(gold)} · 개인 군량 +${fmt(food)} (${fmt(g.food)}/${fmt(RULES.roninArmy.foodMax)})${scale < 1 ? ` · 병력이 ${fmt(R.fullTroops)}명보다 적어 ${Math.round(scale * 100)}%만` : ''}`);
+  lines.push(`${c.name} 농업 -${da} · 상업 -${dc} · 치안 -${dp}`);
+  addLog(g, lines.join('\n'));
+  if (owner) for (const x of membersOf(owner.id)) addLog(x, `🏴 재야 ${josa(g.name, '이가')} 우리 ${josa(c.name, '을를')} 약탈했다!${fought ? '' : ' (막는 부대가 없었다)'} 군량 -${fmt(food)} · 농업 -${da} · 상업 -${dc} · 치안 -${dp}`);
+  return '';
+}
+// 거병 (2026-11-25 기획자, 시즌 9부터, RULES.rise): 재야가 머무는 공백지·도적군 성에서 새 세력을 세우고 대도독이 된다
+function runRise(g, o, mark) {
+  const R = RULES.rise;
+  if (!isRonin(g)) return '재야만 쓰는 명령';
+  if (seasonNow() < R.fromSeason) return `거병은 시즌 ${R.fromSeason}부터`;
+  if ((S.riseCount || 0) >= R.max) return `이번 시즌 거병이 모두 끝남 (${R.max}/${R.max})`;
+  const c = cityById(g.city), cs = S.cities[c.id];
+  if (c.faction && c.faction !== BANDIT.id) return '공백지나 도적군 성에서만 거병할 수 있음';
+  if ((g.merit || 0) < R.minMerit) return `명성이 ${fmt(R.minMerit)} 이상이어야 함 (지금 ${fmt(g.merit || 0)})`;
+  if (g.troops < R.minTroops) return `병력이 ${fmt(R.minTroops)}명 이상이어야 함 (지금 ${fmt(g.troops)})`;
+  if (g.leftFaction && g.leftFaction.until > S.turn) return `세력을 떠난 지 얼마 안 돼서 ${g.leftFaction.until - S.turn}턴 뒤부터 거병할 수 있음`;
+  const name = String(o.name || '').trim(), bad = riseNameWhy(name);
+  if (bad) return bad;
+  const why = pay(g, 'rise', R.gold); // 시도할 때 낸다 (지면 잃는다)
+  if (why) return why;
+  const lines = [`🚩 ${c.name} 거병 (${fmtClock(mark)}): ${g.name}(${g.unitType} ${fmt(g.troops)})이 「${name}」의 깃발을 올렸다!`];
+  let fought = false;
+  if (c.faction === BANDIT.id) { // 도적군과 성벽 없이 싸운다. 다 쓰러뜨려야 성을 얻는다
+    fought = true;
+    const att = unitOf(g);
+    for (const d of defendersOf(c)) {
+      if (g.troops <= 0) break;
+      if (d.guard) d.name = '도적군';
+      roninFight(g, att, d, cs, RULES.roundsMax, lines);
+      if (d.troops > 0) break;
+    }
+    if (g.troops <= 0 || cs.guard > 0) {
+      lines.push(g.troops > 0 ? `${RULES.roundsMax}합 안에 도적군을 다 쓰러뜨리지 못해 물러났다. 거병 실패… (금 ${fmt(R.gold)}은 잃었다)` : `거병 실패… (금 ${fmt(R.gold)}은 잃었다)`);
+      gainStatExp(g, UNIT_TYPES[g.unitType] ? UNIT_TYPES[g.unitType].stat : 'lea', RULES.statExp.battle);
+      addLog(g, lines.join('\n'));
+      return '';
+    }
+    lines.push('도적군을 몰아냈다!');
+  }
+  // 새 세력
+  const used = new Set(MAP.factions.map(f => f.color));
+  const color = R.colors.find(x => !used.has(x)) || R.colors[(S.riseCount || 0) % R.colors.length];
+  const fid = 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+  (S.extraFactions = S.extraFactions || []).push({ id: fid, name, color, by: g.id, at: S.turn, protectUntil: S.turn + R.protect + 1, lockUntil: S.turn + R.lockTurns + 1 });
+  S.riseCount = (S.riseCount || 0) + 1;
+  applyExtraFactions();
+  // 장수부터 새 세력에 넣고 (setOwner의 통일 판정 등이 장수를 보므로) 성을 차지한다
+  g.faction = fid;
+  g.joins = (g.joins || 0) + 1;
+  if (g.joins === 1) g.firstJoin = Date.now();
+  delete g.fallen; delete g.food; delete g.leftFaction;
+  g.city = c.id;
+  cs.guard = 0; delete cs.guardType;
+  setOwner(c, fid);
+  (S.commanders = S.commanders || {})[fid] = g.id;
+  (S.cmdEver = S.cmdEver || {})[fid] = true;
+  g.seenAt = now();
+  const m = addMerit(g, R.merit);
+  gainStatExp(g, fought && UNIT_TYPES[g.unitType] ? UNIT_TYPES[g.unitType].stat : 'lea', RULES.statExp.battle);
+  gainStatExp(g, 'lea', RULES.statExp.capture);
+  addRecord(g, 'rises');
+  lines.push(`${josa(c.name, '을를')} 근거지로 「${name}」 세력을 세우고 대도독이 되었다! 명성 +${m}`);
+  lines.push(`${R.protect}턴 동안은 공격받지도, 공격하지도 못한다 · ${R.lockTurns}턴 동안은 하야·대도독 반납·위임을 할 수 없다`);
+  addLog(g, lines.join('\n'));
+  logAll(`🚩 ${josa(g.name, '이가')} ${c.name}에서 거병했다! 새 세력 「${name}」이 일어났다. (이번 시즌 거병 ${S.riseCount}/${R.max})`);
+  return '';
+}
 // 임관: 지금 머무는 성의 세력에 들어간다 (하야 대기·임관 상한은 그대로)
 function runEnlist(g) {
   if (!isRonin(g)) return '재야만 쓰는 명령';
@@ -2071,6 +2241,7 @@ function runResign(g, kicked = false) { // kicked: 관리자 추방 (명성은 �
   clearOrders(g);
   const food0 = roninArmyOn() && g.city ? RULES.roninArmy.startFood : 0; // 재야 기본 군량 (2026-11-25 기획자)
   if (food0) g.food = Math.min(RULES.roninArmy.foodMax, food0);
+  riseVacate(f.id); // 거병한 세력이 비면 흩어진다 (2026-11-25)
   addLog(g, `${g.name}, ${city.name}에서 ${f.name} 세력을 떠나 재야로 돌아갔다.${left}${cut > 0 ? ` 명성 -${fmt(cut)} (${fmt(g.merit)})` : ''}`); // 개인 군량은 기록에 안 씀 (2026-11-25 기획자)
   return '';
 }
@@ -2147,6 +2318,8 @@ const COMMANDS = {
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
   quest: { label: () => '의뢰', run: runQuest }, // 재야 (2026-11-16)
   enlist: { label: () => '임관', run: runEnlist }, // 재야: 머무는 성의 세력에 (2026-11-16)
+  raid: { label: () => '약탈', run: runRaid }, // 재야 (2026-11-25, 시즌 9부터)
+  rise: { label: o => `거병 (${o.name || '?'})`, run: runRise }, // 재야 (2026-11-25, 시즌 9부터)
   supply: { label: o => `보급 ${cityName(o.from)} → ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runSupply }, // 대도독 (2026-11-16, 시즌 8부터)
   expand: { label: () => '증축', run: runExpand }, // 2026-11-08
 };

@@ -1396,6 +1396,53 @@ function moveDialog() {
 }
 
 // 재야 임관 (2026-11-16, 시즌 8부터): 지금 머무는 성의 세력에 들어간다. 2026-11-22 기획자: 예약 없이 확인하면 바로 (턴을 쓰지 않는다). 하야 대기·임관 상한은 서버가 본다
+// 약탈 (2026-11-25 기획자, 시즌 9부터): 그 턴에 머물 성을 턴다. 확인 창만
+function raidDialog() {
+  const p = me(), at = cityAtSlot(p, slot), R = RULES.raid, f = at.faction && factionById(at.faction);
+  const last = (S.raidAt || {})[at.id], wait = last != null ? Math.max(0, R.cityWait - (S.turn + 1 + slot - last)) : 0;
+  const short = p.troops < R.minTroops;
+  openModal(`<h2>🏴 약탈 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
+    <p><b class="hi">${esc(at.name)}</b> ${f ? `<span class="swatch" style="background:${f.color}"></span>${esc(f.name)}` : '<span class="dim">공백지</span>'}에서 금과 군량을 빼앗습니다.</p>
+    <ul class="small">
+      <li>시도할 때마다 <b class="bad">명성 -${R.merit}</b></li>
+      <li>얻는 것: 금 ≈ 그 성 상업 × ${R.gold}, 군량 ≈ 농업 × ${R.food} (병력 ${fmt(R.fullTroops)}명보다 적으면 그만큼 줄어요)</li>
+      <li>${f ? `지키는 부대가 있으면 ${Math.round(R.fightChance * 100)}% 확률로 ${R.rounds}합을 싸워요. 전멸하면 실패예요.` : '공백지는 싸우지 않아요.'}</li>
+      <li>같은 성은 ${R.cityWait}턴에 한 번만 털 수 있어요.</li>
+    </ul>
+    ${short ? `<p class="bad">병력이 ${fmt(R.minTroops)}명 이상이어야 해요. (지금 ${fmt(p.troops)})</p>` : ''}
+    ${wait ? `<p class="bad">${esc(at.name)}은(는) 얼마 전 약탈당해 이 칸에서는 털 수 없어요. (${wait}턴 뒤부터)</p>` : ''}
+    <div class="modalBtns"><button data-close>취소</button><button id="rdOk" class="main"${short || wait ? ' disabled' : ''}>예약</button></div>`, box => {
+    box.querySelector('#rdOk').onclick = () => { closeModal(); reserve({ cmd: 'raid' }); };
+  });
+}
+// 거병 (2026-11-25 기획자, 시즌 9부터): 그 턴에 머물 공백지·도적군 성에서 새 세력. 이름을 짓고 조건을 보여 준다
+function riseDialog() {
+  const p = me(), at = cityAtSlot(p, slot), R = RULES.rise, left = R.max - (S.riseCount || 0);
+  const okCity = !at.faction || at.faction === BANDIT.id, wait = p.leftFaction && p.leftFaction.until > S.turn ? p.leftFaction.until - S.turn : 0;
+  const req = [[okCity, `공백지나 도적군 성 (${esc(at.name)}: ${!at.faction ? '공백지' : at.faction === BANDIT.id ? '도적군 성 · 싸워서 이겨야 해요' : esc(factionById(at.faction).name) + ' 세력 성'})`],
+    [(p.merit || 0) >= R.minMerit, `명성 ${fmt(R.minMerit)} 이상 (지금 ${fmt(p.merit || 0)})`],
+    [p.troops >= R.minTroops, `병력 ${fmt(R.minTroops)}명 이상 (지금 ${fmt(p.troops)})`],
+    [p.gold >= R.gold, `금 ${fmt(R.gold)} (지금 ${fmt(p.gold)}) · 시도할 때 내고, 지면 잃어요`],
+    [!wait, wait ? `하야 대기 ${wait}턴 남음` : '하야 대기 없음'],
+    [left > 0, `이번 시즌 남은 거병 ${Math.max(0, left)}/${R.max}`]];
+  const can = req.every(([ok]) => ok);
+  openModal(`<h2>🚩 거병 <span class="dim small">· ${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 턴에 예약</span></h2>
+    <p>새 세력을 세우고 대도독이 됩니다.</p>
+    <p class="small">${req.map(([ok, t]) => `<span class="${ok ? '' : 'dim'}">${ok ? '✔' : '✘'} ${t}</span>`).join('<br>')}</p>
+    <p>세력 이름 <input id="riseName" maxlength="${R.nameMax}" placeholder="1~${R.nameMax}글자" autocomplete="off" style="width:8em"> <span class="bad small" id="riseWhy"></span></p>
+    <ul class="small dim">
+      <li>거병하면 명성 +${R.merit}, 그 성이 첫 근거지가 돼요.</li>
+      <li>${R.protect}턴 동안은 공격받지도, 공격하지도 못해요.</li>
+      <li>${R.lockTurns}턴 동안은 하야·대도독 반납·위임을 할 수 없어요.</li>
+    </ul>
+    <div class="modalBtns"><button data-close>취소</button><button id="riseOk" class="main"${can ? '' : ' disabled'}>예약</button></div>`, box => {
+    box.querySelector('#riseOk').onclick = () => {
+      const name = box.querySelector('#riseName').value.trim(), why = riseNameWhy(name);
+      if (why) { box.querySelector('#riseWhy').textContent = why; return; }
+      closeModal(); reserve({ cmd: 'rise', name });
+    };
+  });
+}
 function enlistDialog() {
   const p = me(), at = cityById(p.city), f = at && at.faction && factionById(at.faction);
   if (!f || f.bandit) { alert(`${at ? at.name : '이곳'}은(는) 임관할 세력이 없는 땅이에요. 세력의 성으로 이동한 뒤 임관하세요.`); return; }
@@ -2115,7 +2162,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125211250&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125213125&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2125,7 +2172,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125211250&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125213125&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2135,7 +2182,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125211250&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125213125&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3250,7 +3297,7 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
     <p class="dim small">임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>
     <div class="cmds cg-etc">
-      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) + btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}
+      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) + btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}${btn('raid', '약탈', `명성 -${RULES.raid.merit}`)}${btn('rise', '거병', `금 ${fmt(RULES.rise.gold)}`)}
     </div>
     <div class="qBtnsM">${qBtns}</div>
 ` : `
@@ -3271,7 +3318,7 @@ function renderCommands() {
     <div class="cmds cg-etc">${etc}</div>` : ''}
     <div class="qBtnsM">${qBtns}</div>
 `;
-  const dialogs = { enlist: enlistDialog, expand: expandConfirm, adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { raid: raidDialog, rise: riseDialog, enlist: enlistDialog, expand: expandConfirm, adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
     draftLock = e.target.checked;
     try { localStorage.setItem(DRAFT_LOCK_KEY, draftLock ? '1' : '0'); } catch (err) { /* 이번만 */ }
