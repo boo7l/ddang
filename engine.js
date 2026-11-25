@@ -103,6 +103,9 @@ function applyExtraFactions() {
   for (const x of (S && S.extraFactions) || []) MAP.factions.push({ id: x.id, name: x.name, color: x.color, extra: true });
 }
 const riseRec = fid => ((S && S.extraFactions) || []).find(x => x.id === fid) || null;
+// 시즌 시작 보호 (2026-11-26, RULES.openProtect): turn(그 명령이 실행되는 턴)에 fid 세력 성이 보호 중인지. 공백지·도적군은 아님
+const openProtected = (fid, turn = S.turn) => { const R = RULES.openProtect; return fid && fid !== BANDIT.id && seasonNow() >= R.fromSeason && turn <= R.turns; };
+const openProtectText = () => `시즌 시작 보호 기간이라 ${dateText(RULES.openProtect.turns + 1)}부터 다른 세력 성을 공격할 수 있어요.`;
 const riseProtected = fid => { const r = fid && riseRec(fid); return r && S.turn < r.protectUntil ? r.protectUntil - S.turn : 0; }; // 남은 보호 턴
 const riseFounder = g => { const r = g && g.faction && riseRec(g.faction); return !!(r && r.by === g.id); };
 const riseLocked = g => { const r = riseFounder(g) && riseRec(g.faction); return r && S.turn < r.lockUntil ? r.lockUntil - S.turn : 0; }; // 남은 잠금 턴
@@ -686,7 +689,7 @@ function setOrder(g, i, order) {
   if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd, g))) return '쓸 수 없는 명령이에요.'; // 2026-11-25: g를 넘겨야 재야 탐색(시즌 9)이 막히지 않는다
   if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
   if (order && order.cmd === 'attack') { const why = attackBlocked(g, i); if (why) return why; }
-  if (order && order.cmd === 'attack') { const to = cityById(order.to), pt = to && riseProtected(to.faction), pm = riseProtected(g.faction); if (pm) return `우리 세력은 거병 보호 중이라 ${pm}턴 동안 출진할 수 없어요.`; if (pt) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 ${pt}턴 동안 공격할 수 없어요.`; } // 거병 보호 (2026-11-25)
+  if (order && order.cmd === 'attack') { const to = cityById(order.to), pt = to && riseProtected(to.faction), pm = riseProtected(g.faction); if (pm) return `우리 세력은 거병 보호 중이라 ${pm}턴 동안 출진할 수 없어요.`; if (pt) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 ${pt}턴 동안 공격할 수 없어요.`; if (to && to.faction !== g.faction && openProtected(to.faction, S.turn + 1 + i)) return openProtectText(); } // 거병 보호 (2026-11-25) · 시즌 시작 보호 (2026-11-26, 이 칸이 실행되는 턴 기준)
   g.queue[i] = order ? { ...order, orderedAt: now() } : null;
   return '';
 }
@@ -1270,6 +1273,7 @@ function runAttack(g, o, mark) {
   }
   if (allied(g.faction, to.faction)) return `${factionById(to.faction).name} 세력과 동맹 중이라 출진하지 않음`;
   if (riseProtected(g.faction)) return `우리 세력은 거병 보호 중이라 출진할 수 없음`; // 거병 보호 (2026-11-25): 양쪽 다
+  if (openProtected(to.faction)) return `시즌 시작 보호 기간이라 다른 세력 성은 공격할 수 없음`; // 2026-11-26 (RULES.openProtect)
   if (riseProtected(to.faction)) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 공격할 수 없음`; // 동맹 (2026-11-13): 금·군량을 쓰기 전에 막는다
   if (g.troops <= 0) return '병력이 없음';
   const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
@@ -1299,7 +1303,7 @@ const fieldOn = () => (S.season || 1) >= RULES.fieldFromSeason;
 // x가 o(출진) 명령을 지금 실행할 수 있는지 (금·군량은 쓰지 않고 보기만 한다). 못 나가는 장수는 야전 상대가 아니다
 function canMarch(x, o) {
   const from = x.city && cityById(x.city), to = cityById(o.to);
-  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || allied(x.faction, to.faction) || riseProtected(x.faction) || riseProtected(to.faction) || x.troops <= 0) return false; // 동맹 상대에게는 출진하지 않으니 야전도 없다
+  if (!from || !to || !neighborsOf(MAP, from).includes(to) || to.faction === x.faction || allied(x.faction, to.faction) || riseProtected(x.faction) || riseProtected(to.faction) || openProtected(to.faction) || x.troops <= 0) return false; // 동맹 상대에게는 출진하지 않으니 야전도 없다
   if (x.attackTurn && x.attackTurn + RULES.attackCooldown - S.turn > 0) return false;
   const mm = marchMult(from, to);
   return S.cities[from.id].food >= marchFood(x.troops, x.faction) * mm && x.gold >= attackGoldOf(x.troops) * mm;

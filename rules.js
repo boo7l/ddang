@@ -198,6 +198,8 @@ const RULES = {
   // 거병 (2026-11-25 기획자, 시즌 9부터, 재야만): 공백지·도적군 성 안에서 새 세력을 세운다. 명성 minMerit 이상 · 병력 minTroops 이상 · 금 gold (시도할 때 냄, 지면 잃음)
   // 도적군 성은 도적군과 성벽 없이 싸워 이겨야 한다. 이름 1~nameMax글자 (겹치면 안 됨), 거병한 장수가 대도독 (명성·인원 조건 없음), lockTurns턴 동안 하야·반납·위임 불가
   // 새 세력은 protect턴 동안 공격받지도, 공격하지도 못한다. 한 시즌에 성공한 거병 max번까지. 거병 명성 +merit. 하야 대기(leftFaction)가 끝나야 한다
+  // 시즌 시작 보호 (2026-11-26 기획자, 시즌 9부터): 첫 turns턴(1년) 동안 다른 세력 성은 공격할 수 없다. 공백지·도적군 성은 된다. 계략·첩보는 그대로
+  openProtect: { fromSeason: 9, turns: 12 },
   rise: { fromSeason: 9, minMerit: 500, minTroops: 3000, gold: 1000, max: 5, lockTurns: 24, protect: 5, merit: 30, nameMax: 4, colors: ['#8e44ad', '#d35400', '#16a085', '#b8860b', '#c71585', '#2e8b57', '#4682b4', '#7f6a4a', '#a0522d', '#5d6d7e'] },
   tier2: { gold: 500, gradeMin: 3, upPer1000: 250, upMerit: 5, upExp: 10, food: 1.5 }, // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 징병 금 500 · 대도시 이상 · 승급 1,000명당 250 (명성 5 · 경험치 10, 이탈 없음) · 매달 군량 1.5배
   anySideFrom: 9, // 책략·돌격: 시즌 9부터 상대보다 낮아도 쓴다 (pickSkill, 2026-11-24 기획자)
