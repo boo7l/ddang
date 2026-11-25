@@ -1423,12 +1423,13 @@ body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBt
 .helpStart button { width: 100%; padding: 8px 12px; text-align: left; }
 .helpSearch { margin: 4px 0 6px; }
 .helpSearch input { width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; }
-.helpHits { list-style: none; margin: 4px 0; padding: 0; max-height: min(340px, 50vh); overflow-y: auto; }
+.helpHits { list-style: none; margin: 4px 0; padding: 0; }
+.helpIdxBody { height: min(440px, 58vh); overflow-y: auto; padding-right: 6px; scrollbar-width: thin; } /* 검색해도 창 높이가 그대로 (2026-11-25 기획자) */
 .helpHits li { padding: 5px 2px; border-bottom: 1px dotted var(--gold-dark); }
 .helpCrumb { margin: 0 0 4px; color: var(--dim); }
 .helpChips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
 .helpChips button { padding: 2px 6px; }
-#modalBox .helpBody { max-height: min(420px, 58vh); }
+#modalBox .helpBody { height: min(420px, 58vh); max-height: none; } /* 대분류 화면도 높이 고정 */
 .helpSec { padding: 2px 0 8px; border-bottom: 1px dotted var(--gold-dark); }
 .helpSec:last-child { border-bottom: none; }
 .helpSec h4 { margin: 8px 0 4px; color: var(--title); font-weight: normal; font-size: 16px; }

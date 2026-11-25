@@ -306,11 +306,11 @@ function helpIndex2(topics) {
   openModal(`
     <h2>땅국지 도움말${typeof IS_ADMIN !== 'undefined' && IS_ADMIN ? ' <span class="dim small">· 새 버전 (관리자 확인용)</span>' : ''}</h2>
     <p class="helpSearch"><input id="helpQ" type="search" placeholder="도움말 검색 (예: 연노, 정예, 약탈)" autocomplete="off" value="${esc(helpQuery)}"></p>
-    <div id="helpResults"></div>
+    <div class="helpIdxBody"><div id="helpResults"></div>
     <div id="helpCats">
       <p class="helpStart"><button class="main" data-goto="start">🎯 처음 오셨나요? 빠른 시작 가이드 ›</button></p>
       <div class="helpIndex helpIndex2">${topics.map((c, i) => c.id === 'start' ? '' : `<button data-page="${i}"><span class="hiIc">${c.icon}</span><span class="hiT">${c.title}<small class="hiB">${c.blurb}</small></span></button>`).join('')}</div>
-    </div>
+    </div></div>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
     box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog2(+b.dataset.page); });
     const q = box.querySelector('#helpQ'), res = box.querySelector('#helpResults'), cats = box.querySelector('#helpCats');
