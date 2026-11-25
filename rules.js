@@ -380,7 +380,7 @@ const UNIT_TYPES = {
   // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 대도시 이상 성에서만 징병·승급. 상성은 1티어와 같은 계통 (beats는 계통 이름)
   중보병: { stat: 'lea', beats: '궁병', base: '보병', from: 9, dmgCut: 0.10, desc: '받는 피해 -10%' },
   중기병: { stat: 'war', beats: '보병', base: '기병', from: 9, dmgUp: 0.10, desc: '주는 피해 +10%' },
-  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, scheme: 0.02, schemeDmg: 0.2, desc: '책략 발동 +2%p · 책략 피해 +20%' },
+  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, scheme: 0.03, schemeDmg: 0.3, desc: '책략 발동 +3%p · 책략 피해 +30%' }, // 2026-11-25 기획자: +2%p·+20% → +3%p·+30% (시즌 9 시작 전)
 };
 const roninArmyOn = () => seasonNow() >= RULES.roninArmy.fromSeason;
 const unitFam = t => (UNIT_TYPES[t] && UNIT_TYPES[t].base) || t; // 병종 계통 (중보병 → 보병)
