@@ -1415,3 +1415,27 @@ body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBt
 #legend .joinFull { font-size: 12px; margin-left: -4px; flex: none; } /* 임관 제한에 걸린 세력: 좁은 두 칸 목록이라 🚫만 (2026-11-20, 글자는 줄바꿈돼서) */
 #legendTrait .joinFull { color: var(--bad); }
 #legend li { white-space: nowrap; }
+/* ===== 새 도움말 (help.js, 2026-11-25) ===== */
+.helpIndex2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.helpIndex2 .hiT { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
+.helpIndex2 .hiB { font-size: 14px; color: var(--dim); }
+.helpStart { margin: 4px 0 8px; }
+.helpStart button { width: 100%; padding: 8px 12px; text-align: left; }
+.helpSearch { margin: 4px 0 6px; }
+.helpSearch input { width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; }
+.helpHits { list-style: none; margin: 4px 0; padding: 0; max-height: min(340px, 50vh); overflow-y: auto; }
+.helpHits li { padding: 5px 2px; border-bottom: 1px dotted var(--gold-dark); }
+.helpCrumb { margin: 0 0 4px; color: var(--dim); }
+.helpChips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.helpChips button { padding: 2px 6px; }
+#modalBox .helpBody { max-height: min(420px, 58vh); }
+.helpSec { padding: 2px 0 8px; border-bottom: 1px dotted var(--gold-dark); }
+.helpSec:last-child { border-bottom: none; }
+.helpSec h4 { margin: 8px 0 4px; color: var(--title); font-weight: normal; font-size: 16px; }
+.helpSec p, .helpSec ul, .helpSec ol { margin: 4px 0; }
+.helpTable { margin: 4px 0 6px; }
+.helpTable td { word-break: keep-all; }
+.helpMore { margin: 4px 0; }
+.helpMore summary { cursor: pointer; color: var(--label); }
+.helpRel { color: var(--dim); font-size: 14px; }
+@media (max-width: 700px) { .helpIndex2 { grid-template-columns: 1fr; } .helpTable { font-size: 14px; } }
