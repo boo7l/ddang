@@ -2386,7 +2386,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220225&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220350&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2396,7 +2396,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125220225&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125220350&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2406,7 +2406,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220225&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220350&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3559,7 +3559,7 @@ function renderCommands() {
   $('#commands').querySelectorAll('button[data-cmd]').forEach(b => {
     const k = b.dataset.cmd;
     b.onclick = () => (dialogs[k] ? dialogs[k]() : reserve({ cmd: k }));
-    const sk = keyOf(EXTRA_CMDS.includes(k) ? 'extra' : k); if (sk) b.title = `단축키 ${sk}`; // PC 단축키 (☰ ⌨ 단축키에서 바꾼다)
+    const sk = keyOf(isRonin(me()) ? 'r_' + k : EXTRA_CMDS.includes(k) ? 'extra' : k); if (sk) b.title = `단축키 ${sk}`; // PC 단축키 (☰ ⌨ 단축키에서 바꾼다)
     keyHint(b, sk);
   });
   for (const [c, id] of [['qFill', 'fill'], ['qClearAll', 'clearAll'], ['qClear', 'clear']]) document.querySelectorAll('.' + c).forEach(b => keyHint(b, keyOf(id))); // 예약표 단추도
@@ -4101,8 +4101,14 @@ const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['draft', '징병', 'KeyA', '군사'], ['attack', '출진', 'KeyS', '군사'], ['move', '이동', 'KeyD', '군사'], ['siege', '병기', 'KeyF', '군사'],
   ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyU', '계략'],
   ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyV', '기타'], ['expand', '증축', 'KeyB', '기타'], ['extra', '추가 명령', 'KeyN', '기타'], // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
+  ['r_move', '이동', 'KeyQ', '재야'], ['r_draft', '모병', 'KeyW', '재야'], ['r_buyFood', '군량 구매', 'KeyE', '재야'], ['r_explore', '탐색', 'KeyR', '재야'], // 재야 전용 (2026-11-25 기획자: QWERASDF)
+  ['r_quest', '의뢰', 'KeyA', '재야'], ['r_enlist', '임관', 'KeyS', '재야'], ['r_raid', '약탈', 'KeyD', '재야'], ['r_rise', '거병', 'KeyF', '재야'],
   ['home', '내 성 보기', 'Space', '기타 화면'], ['chat', '채팅 입력', 'Slash', '기타 화면'], ['letter', '외교 서신', 'Quote', '기타 화면'], ['music', '음악 켜기·끄기', 'KeyM', '기타 화면'], // 2026-11-22 기획자
 ];
+const KEY_GROUP = Object.fromEntries(KEY_ACTIONS.map(a => [a[0], a[3]]));
+const KEY_SHARED = ['예약표', '기타 화면'];
+const keySide = id => (KEY_SHARED.includes(KEY_GROUP[id]) ? 'both' : KEY_GROUP[id] === '재야' ? 'ronin' : 'faction'); // 2026-11-25
+const keysClash = (a, b) => { const x = keySide(a), y = keySide(b); return x === 'both' || y === 'both' || x === y; };
 const EXTRA_CMDS = ['levy']; // '추가 명령' 키가 누르는 특성 명령 (이게 일상이야 → 갈취)
 let KEYMAP = {}; // 동작 → 키
 function loadKeys() {
@@ -4168,7 +4174,7 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); e.stopPropagation();
     if (e.code !== 'Escape') {
       const code = e.code === 'Backspace' ? '' : e.code;
-      if (code) for (const id in keyDraft.map) if (keyDraft.map[id] === code) keyDraft.map[id] = '';
+      if (code) for (const id in keyDraft.map) if (keyDraft.map[id] === code && id !== keyWait && keysClash(id, keyWait)) keyDraft.map[id] = ''; // 재야 키와 세력 명령 키는 겹쳐도 된다 (2026-11-25)
       keyDraft.map[keyWait] = code; // 초안만 (확인을 눌러야 저장)
     }
     keyWait = null; keysDialog();
@@ -4191,7 +4197,8 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (!$('#modal').hidden || !S || !me() || $('#game').hidden || !$('#adminPage').hidden) return;
-  const id = Object.keys(KEYMAP).find(k => KEYMAP[k] && KEYMAP[k] === e.code);
+  const ronin = isRonin(me()), side = k => keySide(k) === 'both' || keySide(k) === (ronin ? 'ronin' : 'faction');
+  let id = Object.keys(KEYMAP).find(k => KEYMAP[k] && KEYMAP[k] === e.code && side(k));
   if (!id) return;
   e.preventDefault();
   const last = RULES.queueSize - 1;
@@ -4202,6 +4209,7 @@ document.addEventListener('keydown', e => {
   if (id === 'chat') { const i = $('#chatInput'); if (i) i.focus(); return; }
   if (id === 'music') { bgmSet(!BGM.on); return; } // ☰ ♪ 음악과 같다
   if (id === 'letter') { const b = document.querySelector('#chat .letterBtn'); if (b) b.click(); return; }
+  if (id.startsWith('r_')) id = id.slice(2); // 재야 동작 → 그 명령 단추
   const b = id === 'extra' ? EXTRA_CMDS.map(c => document.querySelector(`#commands button[data-cmd="${c}"]`)).find(Boolean) : document.querySelector(`#commands button[data-cmd="${id}"]`);
   if (b && !b.disabled && b.onclick) b.click();
 });
