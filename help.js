@@ -253,16 +253,25 @@ const helpPlain = html => String(html || '').replace(/<[^>]+>/g, ' ').replace(/&
 const helpNorm = s => String(s || '').toLowerCase().replace(/\s+/g, '');
 let helpQuery = ''; // 목록 화면 검색어 (돌아왔을 때 그대로)
 
+// ----- 화면 -----
+// 이동 기록 (2026-11-25 피드백): 관련 항목·검색 결과·목록 단추로 옮겨 가면 지금 자리(대분류·스크롤·펼친 자세히)를 쌓아 두고, ◀ 이전으로 되돌린다
+// 도움말 단추로 새로 열면 기록을 비운다. 표(명성표·확률표)에서 돌아올 때도 그 자리 그대로
+let helpHist = [], helpNow = null; // helpNow(): 지금 화면의 자리 { target, scroll, open }
+
 // target: -1/없음 = 목록, 숫자 = 대분류 번호, 'army' = 대분류, 'army.siege' = 소항목
-function helpDialog2(target = -1) {
+function helpDialog2(target = -1) { helpHist = []; helpShow(target); }
+function helpGo(target, opt = {}) { if (helpNow) helpHist.push(helpNow()); helpShow(target, opt); } // 기록을 남기고 옮겨 간다
+function helpBack() { const s = helpHist.pop(); if (s) helpShow(s.target, s); }
+// opt: { scroll: 본문 스크롤 위치, open: 펼쳐 둘 소항목 id들, openSub: target 소항목의 자세히를 펼침 }
+function helpShow(target = -1, opt = {}) {
   const topics = helpTopics();
   const catOf = id => topics.find(c => c.id === id);
-  if (target === -1 || target == null || (typeof target === 'number' && !topics[target]) || (typeof target === 'string' && !catOf(target.split('.')[0]))) return helpIndex2(topics);
+  if (target === -1 || target == null || (typeof target === 'number' && !topics[target]) || (typeof target === 'string' && !catOf(target.split('.')[0]))) return helpIndex2(topics, opt);
   const cat = typeof target === 'number' ? topics[target] : catOf(target.split('.')[0]);
   const subId = typeof target === 'string' ? target.split('.')[1] : null;
   const subs = cat.subs.map(s => `<section class="helpSec" id="hs-${cat.id}-${s.id}">
       <h4>${s.title}</h4>${s.body}
-      ${s.detail ? `<details class="helpMore"><summary>자세히</summary>${s.detail}</details>` : ''}
+      ${s.detail ? `<details class="helpMore" data-sub="${s.id}"><summary>자세히</summary>${s.detail}</details>` : ''}
       ${s.related && s.related.length ? `<p class="helpRel">관련: ${s.related.map(r => { const [c, x] = r.split('.'), cc = catOf(c), ss = cc && cc.subs.find(y => y.id === x); return ss ? `<button class="link" data-goto="${r}">${ss.title}</button>` : ''; }).filter(Boolean).join('·')}</p>` : ''}
     </section>`).join('');
   openModal(`
@@ -272,37 +281,33 @@ function helpDialog2(target = -1) {
     <div class="help helpScroll helpBody">${subs}</div>
     <div class="modalBtns helpNav">
       <button data-close class="main">닫기</button>
-      <button id="helpList">☰ 목록으로</button>
+      <span class="helpNavR">${helpHist.length ? '<button id="helpPrev">◀ 이전</button> ' : ''}<button id="helpList">☰ 목록으로</button></span>
     </div>`, box => {
-    box.querySelector('#helpList').onclick = () => helpDialog2(-1);
-    box.querySelector('#helpHome').onclick = () => helpDialog2(-1);
     const body = box.querySelector('.helpBody');
+    helpNow = () => ({ target: cat.id, scroll: body ? body.scrollTop : 0, open: [...box.querySelectorAll('details.helpMore[open]')].map(d => d.dataset.sub) });
+    box.querySelector('#helpList').onclick = () => helpGo(-1);
+    box.querySelector('#helpHome').onclick = () => helpGo(-1);
+    if (box.querySelector('#helpPrev')) box.querySelector('#helpPrev').onclick = helpBack;
     const jump = id => { const el = box.querySelector(`#hs-${cat.id}-${id}`); if (el && body) body.scrollTop = el.offsetTop - body.offsetTop; };
     box.querySelectorAll('[data-jump]').forEach(b => { b.onclick = () => jump(b.dataset.jump); });
-    helpBindLinks(box, () => `${cat.id}.${helpCurrentSub(box, cat) || ''}`);
-    if (subId) jump(subId);
+    helpBindLinks(box);
+    for (const id of opt.open || []) { const d = box.querySelector(`details.helpMore[data-sub="${id}"]`); if (d) d.open = true; }
+    if (opt.openSub && subId) { const d = box.querySelector(`details.helpMore[data-sub="${subId}"]`); if (d) d.open = true; } // 검색어가 자세히 안에만 있으면 펼쳐서 보여 준다
+    if (opt.scroll != null && body) body.scrollTop = opt.scroll; else if (subId) jump(subId);
   });
   $('#modalBox').classList.add('wideBox');
 }
-// 지금 보고 있는 소항목 (표에서 돌아올 때 그 자리로)
-function helpCurrentSub(box, cat) {
-  const body = box.querySelector('.helpBody');
-  if (!body) return '';
-  let cur = cat.subs[0] && cat.subs[0].id;
-  for (const s of cat.subs) { const el = box.querySelector(`#hs-${cat.id}-${s.id}`); if (el && el.offsetTop - body.offsetTop <= body.scrollTop + 4) cur = s.id; }
-  return cur;
-}
-// 관련 항목·표 링크 (본문과 검색 결과에서 함께 쓴다). back(): 표에서 돌아올 자리
-function helpBindLinks(box, back) {
-  box.querySelectorAll('[data-goto]').forEach(b => { b.onclick = () => helpDialog2(b.dataset.goto); });
+// 관련 항목·표 링크 (본문과 검색 결과에서 함께 쓴다). 표에서 돌아오면 떠날 때의 자리 그대로
+function helpBindLinks(box) {
+  box.querySelectorAll('[data-goto]').forEach(b => { b.onclick = () => helpGo(b.dataset.goto, { openSub: b.dataset.open === '1' }); });
   box.querySelectorAll('[data-table]').forEach(b => { b.onclick = () => {
-    const at = back(), ret = () => helpDialog2(at || -1), k = b.dataset.table;
+    const at = helpNow ? helpNow() : { target: -1 }, ret = () => helpShow(at.target, at), k = b.dataset.table;
     if (k === 'merit') meritTableDialog(ret, '도움말');
     else if (k === 'trait') traitOddsDialog(ret, '도움말');
     else exploreOddsDialog(ret, '도움말로', k === 'explore-ronin' ? 'ronin' : 'normal');
   }; });
 }
-function helpIndex2(topics) {
+function helpIndex2(topics, opt = {}) {
   openModal(`
     <h2>땅국지 도움말${typeof IS_ADMIN !== 'undefined' && IS_ADMIN ? ' <span class="dim small">· 새 버전 (관리자 확인용)</span>' : ''}</h2>
     <p class="helpSearch"><input id="helpQ" type="search" placeholder="도움말 검색 (예: 연노, 정예, 약탈)" autocomplete="off" value="${esc(helpQuery)}"></p>
@@ -311,9 +316,12 @@ function helpIndex2(topics) {
       <p class="helpStart"><button class="main" data-goto="start">🎯 처음 오셨나요? 빠른 시작 가이드 ›</button></p>
       <div class="helpIndex helpIndex2">${topics.map((c, i) => c.id === 'start' ? '' : `<button data-page="${i}"><span class="hiIc">${c.icon}</span><span class="hiT">${c.title}<small class="hiB">${c.blurb}</small></span></button>`).join('')}</div>
     </div></div>
-    <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
-    box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpDialog2(+b.dataset.page); });
-    helpBindLinks(box, () => ''); // 빠른 시작 가이드 단추 (2026-11-25: 연결이 빠져 있었다)
+    <div class="modalBtns${helpHist.length ? ' helpNav' : ''}"><button data-close class="main">닫기</button>${helpHist.length ? '<button id="helpPrev">◀ 이전</button>' : ''}</div>`, box => {
+    const idxBody = box.querySelector('.helpIdxBody');
+    helpNow = () => ({ target: -1, scroll: idxBody ? idxBody.scrollTop : 0 });
+    if (box.querySelector('#helpPrev')) box.querySelector('#helpPrev').onclick = helpBack;
+    box.querySelectorAll('[data-page]').forEach(b => { b.onclick = () => helpGo(+b.dataset.page); });
+    helpBindLinks(box); // 빠른 시작 가이드 단추
     const q = box.querySelector('#helpQ'), res = box.querySelector('#helpResults'), cats = box.querySelector('#helpCats');
     const run = () => { // 입력칸은 다시 그리지 않고 결과만 바꾼다 (한글 입력이 깨지지 않게)
       helpQuery = q.value;
@@ -322,21 +330,24 @@ function helpIndex2(topics) {
       if (!n) { res.innerHTML = ''; return; }
       const hits = [];
       for (const c of topics) for (const s of c.subs) {
-        const title = helpNorm(s.title), keys = (s.keys || []).map(helpNorm), text = helpPlain(s.body + ' ' + (s.detail || ''));
-        const score = title.includes(n) ? 3 : keys.some(k => k.includes(n)) ? 2 : helpNorm(text).includes(n) ? 1 : 0;
+        const title = helpNorm(s.title), keys = (s.keys || []).map(helpNorm), main = helpPlain(s.body), more = helpPlain(s.detail || ''), text = main + ' ' + more;
+        const inMain = title.includes(n) || keys.some(k => k.includes(n)) || helpNorm(main).includes(n);
+        const inMore = !inMain && helpNorm(more).includes(n); // 자세히 안에만 있으면 눌렀을 때 펼친다 (2026-11-25 피드백)
+        const score = title.includes(n) ? 3 : keys.some(k => k.includes(n)) ? 2 : inMain || inMore ? 1 : 0;
         if (!score) continue;
         const i = text.replace(/\s+/g, '').toLowerCase().indexOf(n); // 글 속 위치를 대략 찾아 앞뒤를 조금 보여 준다
         let snip = text.slice(0, 60);
         if (i >= 0) { let k = 0, pos = 0; for (; pos < text.length && k < i; pos++) if (!/\s/.test(text[pos])) k++; snip = (pos > 20 ? '…' : '') + text.slice(Math.max(0, pos - 20), pos + 50); }
-        hits.push({ score, c, s, snip });
+        hits.push({ score, c, s, snip, inMore });
       }
       hits.sort((a, b) => b.score - a.score);
-      res.innerHTML = hits.length ? `<ul class="helpHits">${hits.slice(0, 20).map(h => `<li><button class="link" data-goto="${h.c.id}.${h.s.id}">${h.c.icon} ${esc(h.c.title)} › <b>${esc(h.s.title)}</b></button><br><span class="dim small">${esc(h.snip)}…</span></li>`).join('')}</ul>`
+      res.innerHTML = hits.length ? `<ul class="helpHits">${hits.slice(0, 20).map(h => `<li><button class="link" data-goto="${h.c.id}.${h.s.id}"${h.inMore ? ' data-open="1"' : ''}>${h.c.icon} ${esc(h.c.title)} › <b>${esc(h.s.title)}</b>${h.inMore ? ' <span class="dim small">(자세히)</span>' : ''}</button><br><span class="dim small">${esc(h.snip)}…</span></li>`).join('')}</ul>`
         : '<p class="dim">찾는 내용이 없어요. 다른 말로 찾아보세요.</p>';
-      helpBindLinks(res, () => '');
+      helpBindLinks(res);
     };
     q.addEventListener('input', run);
     if (helpQuery) run();
+    if (opt.scroll != null && idxBody) idxBody.scrollTop = opt.scroll;
   });
   $('#modalBox').classList.add('wideBox');
 }
