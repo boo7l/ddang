@@ -147,10 +147,13 @@ function helpTopics() {
         + table(['능력치', '기본 병종', '정예 병종', '정예 효과'], base.map(b => { const e = elite.find(t => UNIT_TYPES[t].base === b); return [sn(UNIT_TYPES[b].stat), b, e || '—', e ? UNIT_TYPES[e].desc : '—']; }))
         + table(['', '기본 병종', '정예 병종'], [['징병 금', fmt(R.myGoldCost.draft), fmt(T2.gold)], ['군량', '100명당 ' + pct(R.foodPerTroops), `${T2.food}배`], ['모으는 곳', '어디서나', `${gName[T2.gradeMin]} 이상 성`]])
         + '<p>정예 병종은 상위 호환이 아니라, 돈과 군량을 더 쓰는 대신 특기가 붙은 병종이에요.</p>',
-        detail: ul([ // 2026-11-25 전투 코드(rules.js attackPower·defensePower·fightRounds)와 대조
-          '<b>한 합에서 받는 피해 -10%</b>(중보병): 서로 맞붙는 보통 합(공성·수비·야전·약탈 교전)에서 받는 병력 피해에만 붙어요. 단기접전·책략·돌격·벽력거 사격, 성벽을 공격할 때 잃는 병력, 도적·포위·굶주림으로 잃는 병력에는 붙지 않아요.',
-          '<b>한 합에서 주는 피해 +10%</b>(노병): 보통 합에서 주는 병력 피해에만 붙어요. 단기접전·책략·돌격·벽력거 사격, 성벽(방어) 깎기에는 붙지 않아요.',
-          '<b>돌격 발동·피해</b>(중기병)는 돌격에만 붙어요. 무력이 돌격 조건에 못 미치면 효과가 없어요.']), related: ['battle.skill'] },
+        // 정예 효과의 적용 범위 (2026-11-25 전투 코드 rules.js attackPower·defensePower·fightRounds와 대조). 이름·수치는 UNIT_TYPES에서 읽는다 (효과 종류 dmgCut·dmgUp·charge·scheme로 문장을 고른다)
+        detail: ul(elite.map(t => { const u = UNIT_TYPES[t], head = `<b>${u.desc}</b>(${t})`;
+          if (u.dmgCut) return `${head}: 서로 맞붙는 보통 합(공성·수비·야전·약탈 교전)에서 받는 병력 피해에만 붙어요. 단기접전·책략·돌격·벽력거 사격, 성벽을 공격할 때 잃는 병력, 도적·포위·굶주림으로 잃는 병력에는 붙지 않아요.`;
+          if (u.dmgUp) return `${head}: 보통 합에서 주는 병력 피해에만 붙어요. 단기접전·책략·돌격·벽력거 사격, 성벽(방어) 깎기에는 붙지 않아요.`;
+          if (u.charge || u.chargeDmg) return `${head}: 돌격에만 붙어요. 무력이 돌격 조건(${R.charge.minWar})에 못 미치면 효과가 없어요.`;
+          if (u.scheme || u.schemeDmg) return `${head}: 책략에만 붙어요. 지력이 책략 조건(${R.scheme.minInt})에 못 미치면 효과가 없어요.`;
+          return ''; })), related: ['battle.skill'] },
       { id: 'upgrade', title: '승급', keys: ['승급', '정예'], body: `<p>징병 창의 <b>정예</b> 탭에서 해요. 지금 기본 병종 병력을 흩어지지 않고 같은 계열 정예 병종으로 바꿔요 (보병 → 중보병). ${gName[T2.gradeMin]} 이상 성에서만, 1,000명당 금 ${T2.upPer1000}. 1턴을 써요.</p>`, related: [] },
       { id: 'siege', title: '병기', keys: ['병기', '충차', '정란', '연노', '벽력거', '내구도'], body: `<p>병기는 부대에 하나 갖추는 장비예요. 공격·수비 목적에 맞게 골라요.</p>`
         + table(['병기', '쓰는 때', '금', '효과'], sieges.map(t => [`<b>${t}</b>`, useText(SIEGE[t].use), siegePriceText(t), SIEGE[t].desc]))
