@@ -379,8 +379,8 @@ const UNIT_TYPES = {
   궁병: { stat: 'int', beats: '기병' },
   // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 대도시 이상 성에서만 징병·승급. 상성은 1티어와 같은 계통 (beats는 계통 이름)
   중보병: { stat: 'lea', beats: '궁병', base: '보병', from: 9, dmgCut: 0.10, desc: '받는 피해 -10%' },
-  중기병: { stat: 'war', beats: '보병', base: '기병', from: 9, dmgUp: 0.10, desc: '주는 피해 +10%' },
-  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, scheme: 0.03, schemeDmg: 0.3, desc: '책략 발동 +3%p · 책략 피해 +30%' }, // 2026-11-25 기획자: +2%p·+20% → +3%p·+30% (시즌 9 시작 전)
+  중기병: { stat: 'war', beats: '보병', base: '기병', from: 9, charge: 0.03, chargeDmg: 0.4, desc: '돌격 발동 +3%p · 돌격 피해 +40%' }, // 2026-11-25 기획자: 주는 피해 +10% → 돌격 (노병과 맞바꿈, +3%p·+40%)
+  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, dmgUp: 0.10, desc: '주는 피해 +10%' }, // 2026-11-25 기획자: 책략 버프 → 주는 피해 +10% (중기병과 맞바꿈). 그 전 같은 날 책략 +3%p·+30% // 2026-11-25 기획자: +2%p·+20% → +3%p·+30% (시즌 9 시작 전)
 };
 const roninArmyOn = () => seasonNow() >= RULES.roninArmy.fromSeason;
 const unitFam = t => (UNIT_TYPES[t] && UNIT_TYPES[t].base) || t; // 병종 계통 (중보병 → 보병)
@@ -539,7 +539,7 @@ const attackPower = (a, d) => {
   return unitPower(a) * (d ? matchupOf(a, d) : 1) * (a.siege && a.siege.정란 ? 1 + SIEGE_EFFECT.towerAttack * siegeMul(a) : 1)
     * warBonus(a)
     * (1 + (t.attack || 0)) * (unitFam(a.type) === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
-    * (1 + unitFx(a, 'dmgUp')) // 중기병: 주는 피해 +10% (2026-11-24)
+    * (1 + unitFx(a, 'dmgUp')) // 노병: 주는 피해 +10% (2026-11-25, 처음엔 중기병)
     * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
 };
 // 수비 전투력 (성 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다: wallCut)
@@ -558,7 +558,7 @@ const defensePower = (d, wall, a) => {
   const t = traitOf(d.faction);
   return unitPower(d) * (a ? matchupOf(d, a) : 1) * (1 + (t.defense || 0)) * warBonus(d) // 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다 (wallCut)
     * (unitFam(d.type) === '기병' ? (1 + (t.cavalry || 0)) * (1 + (t.cavalryDefense || 0)) : 1) * unitTypeBonus(t, d.type)
-    * (1 + unitFx(d, 'dmgUp')) // 중기병: 주는 피해 +10% (2026-11-24)
+    * (1 + unitFx(d, 'dmgUp')) // 노병: 주는 피해 +10% (2026-11-25, 처음엔 중기병)
     * (d.siege && d.siege.연노 && seasonNow() >= SIEGE.연노.from ? 1 + SIEGE_EFFECT.crossbowDefense * siegeMul(d) : 1) // 연노 (2026-11-24, 시즌 9부터)
     * (1 + (gTrait(d).defense || 0) + (gTrait(d).power || 0)); // 개인 특성: 뼈에게 닿기를 (철벽은 2026-11-07부터 받는 피해 감소: dmgCut)
 };
@@ -681,11 +681,11 @@ function fightRounds(att, def, wall, left, field = false) {
     // 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 무력이 기준 이상이고 상대보다 높은 쪽이, 합마다 (무력 ÷ 20)% 확률로 (2026-11-03 시즌 5 ÷ 15에서) 보통 교전 대신 일방적으로 친다.
     // 피해 = (60~90) × 10 × ((무력 차이 + 5) ÷ 10)^0.6 (2026-11-04 시즌 5: 차이에 +5). 출진 한 번(5합)에 최대 1번 (책략과 따로 센다)
     const G = RULES.charge;
-    const chg = !att.charged && pickSkill(att, def, 'war', G.minWar, u => u.stats.war * G.chancePerWar);
+    const chg = !att.charged && pickSkill(att, def, 'war', G.minWar, u => u.stats.war * G.chancePerWar + unitFx(u, 'charge')); // 중기병: 돌격 발동 +3%p (2026-11-25)
     if (chg) {
       att.charged = true;
       const [me, foe, gap] = chg;
-      const loss = Math.min(foe.troops, Math.round((G.base[0] + Math.random() * (G.base[1] - G.base[0])) * G.ref * Math.pow((gap + G.gapAdd) / G.ref, G.exp) * troopScale(me, G) * (1 - (gTrait(foe).calm || 0)))); // 침착: 돌격 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
+      const loss = Math.min(foe.troops, Math.round((G.base[0] + Math.random() * (G.base[1] - G.base[0])) * G.ref * Math.pow((gap + G.gapAdd) / G.ref, G.exp) * troopScale(me, G) * (1 + unitFx(me, 'chargeDmg')) * (1 - (gTrait(foe).calm || 0)))); // 침착: 돌격 피해 감소 · 쓰는 쪽 병력 배율 (2026-11-07)
       const bx = [], kept = bondSave(foe, loss, me, bx);
       foe.troops -= kept;
       me.charges = (me.charges || 0) + 1;
