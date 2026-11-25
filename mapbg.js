@@ -125,6 +125,12 @@ const KOR = {
     { w: 0.08, pts: [[1.8, 9.75], [1.3, 9.6], [0.9, 9.85]] },                                                          // 영산강
   ],
 };
+// 새 한국 지도 (2026-11-25, data/map_kor(2).json: 가로 9칸, 동해 끝 칸에 울릉, 통영 자리가 거제): 바뀐 곳만 덮어쓴다
+const KOR2 = { ...KOR,
+  south: [[0, 12], [1.85, 12], [1.95, 12.92], [3.05, 12.92], [3.15, 11.7], [3.9, 12], [4.0, 11.02], [4.98, 11.02], [5.05, 11.04], [9, 11.04]], // 거제 칸(4,11)은 바다로 비우고 섬을 따로
+  islands: [[2, 13.5, 1.25, 0.47], [8.5, 3.48, 0.34, 0.32], [8.9, 3.86, 0.05, 0.05], [4.52, 11.5, 0.42, 0.36], [0.35, 2.45, 0.16, 0.12], [0.3, 6.6, 0.12, 0.1], [0.75, 9.5, 0.14, 0.1], [0.35, 12.5, 0.2, 0.13], [1.1, 12.45, 0.14, 0.1], [3.55, 12.5, 0.2, 0.14], [5.35, 11.65, 0.24, 0.15]], // 제주·울릉도(울릉 칸)·독도·거제도·서해와 남해의 섬
+};
+let KOR_NOW = KOR; // 지금 그리는 한국 지도 모양 (paintKorBg가 정한다)
 const lerpLine = (line, t) => {
   for (let i = 1; i < line.length; i++) if (t <= line[i][0]) {
     const [a, x0] = line[i - 1], [b, x1] = line[i];
@@ -133,6 +139,7 @@ const lerpLine = (line, t) => {
   return line[line.length - 1][1];
 };
 function korLand(u, v) {
+  const KOR = KOR_NOW;
   if (KOR.islands.some(([a, b, rx, ry]) => ((u - a) / rx) ** 2 + ((v - b) / ry) ** 2 < 1)) return true;
   return u > lerpLine(KOR.west, v) && u < lerpLine(KOR.east, v) && v < lerpLine(KOR.south, u);
 }
@@ -145,6 +152,7 @@ function korMountain(u, v) {
   return 0;
 }
 function paintKorBg(kind, w, h) {
+  KOR_NOW = MAP.cities.some(c => c.name === '울릉') ? KOR2 : KOR; // 울릉이 있는 새 지도면 새 모양
   const pal = PALETTES[kind];
   const cv = document.createElement('canvas');
   cv.width = w; cv.height = h;
