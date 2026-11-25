@@ -1649,13 +1649,13 @@ function helpDialog2(page = -1) {
         `🎲 내정을 하면 ${pct(RULES.s9cmd.domExplore)}% 확률로 <button class="link" id="helpExplore"><b>탐색 이벤트</b></button>가 함께 일어나요.`,
       ])}
       ${sub('🛡 치안', [
-        `${RULES.peaceOk} 아래면 금 수입·징병이 줄고, ${RULES.peaceLow} 아래면 징병할 수 없어요.`,
+        `${RULES.peaceOk} 아래면 금 수입·수확·징병이 줄고, ${RULES.peaceLow} 아래면 징병할 수 없어요.`,
         `징병하면 모은 병사 ${RULES.draftPeacePerS7}명당 치안이 1 떨어져요.`,
         `치안이 최대치일 때 치안 내정을 하면, 이 성에 적 첩보가 걸려 있을 때 ${pct(RULES.s9cmd.counterSpy)}% 확률로 <b>첩자 색출</b>: 적의 정보망을 끊어요.`,
       ])}
       ${sub('🏗 증축 · 수도', [
         `농업·상업·방어·치안이 모두 최대치의 ${pct(RULES.expand.ready)}% 이상인 우리 성을 한 단계 키워요. 금 소성 ${fmt(RULES.expand.cost[1])} · 중성 ${fmt(RULES.expand.cost[2])} · 대도시 ${fmt(RULES.expand.cost[3])}.`,
-        `대도시를 키우면 <b>수도</b>가 돼요 (세력당 하나). 수도가 있는 세력은 금 수입 +${pct(CP.gold)}% · 수확 +${pct(CP.food)}% · 수도에서 징병 +${pct(CP.draft)}%, 수도는 적 계략 성공률 -${pct(CP.plotResist)}%p예요.`,
+        `대도시를 키우면 <b>수도</b>가 돼요. 세력당 하나라서, 이미 수도가 있으면 수도를 옮겨요(천도). 수도가 있는 세력은 금 수입 +${pct(CP.gold)}% · 수확 +${pct(CP.food)}% · 수도에서 징병 +${pct(CP.draft)}%, 수도는 적 계략 성공률 -${pct(CP.plotResist)}%p예요.`,
         `수도를 빼앗기면 대도시로 내려가고 우리 모든 성 치안이 -${CP.lossPeace}이에요.`,
       ])}
       ${sub('👥 성 정원', [
@@ -1720,7 +1720,7 @@ function helpDialog2(page = -1) {
     ['⚔ 전투', scroll(`
       ${sub('🏇 출진', [
         `이웃 성을 공격해요. 금 = 병력 1,000명당 ${RULES.attackGold.per1000}, 군량 = 병력의 ${pct(RULES.marchFoodRate)}%. 출진하면 ${RULES.attackCooldown}턴 뒤에 다시 출진할 수 있어요.`,
-        `<b>먼 길</b>(지도의 점선)로 공격하면 금·군량이 ×${RULES.farMarch.mult}예요.`,
+        `<b>먼 길</b>(출진 창에 "(먼 길)"이 붙은 성)로 공격하면 금·군량이 ×${RULES.farMarch.mult}예요.`,
         '공백지는 싸우지 않고 들어가요.',
       ])}
       ${sub('🏯 공성', [
@@ -2386,7 +2386,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125214411&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125214820&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2396,7 +2396,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125214411&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125214820&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2406,7 +2406,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125214411&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125214820&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
