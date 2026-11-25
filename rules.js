@@ -451,7 +451,8 @@ const TRAIT_FX = [
   { key: 'cavalryDraft', label: '기병 징병량', max: 0.5 },
   { key: 'draftPeace', label: '징병 치안 감소', max: 1 },
   { key: 'gold', label: '금 수입', max: 0.5 },
-  { key: 'food', label: '군량 소비', max: 0.5 }, // 매달 먹는 군량과 출진 군량 둘 다 (2026-11-06)
+  { key: 'food', label: '군량 소비', max: 0.5 },
+  { key: 'harvest', label: '군량 수확량', max: 0.5 }, // 2026-11-26 새 효과: 4·10월 수확 군량 (마한 오곡풍등) // 매달 먹는 군량과 출진 군량 둘 다 (2026-11-06)
   { key: 'comm', label: '상업 내정', max: 0.5 },
   { key: 'siege', label: '성벽 피해', max: 0.5 },
   { key: 'siegePrice', label: '병기 제작비', max: 0.5 },
