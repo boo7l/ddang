@@ -1600,7 +1600,7 @@ function helpDialog(page = -1) {
     </div>`, box => {
     $('#helpList').onclick = () => helpDialog(-1);
     const ex = box.querySelector('#helpExplore');
-    if (ex) ex.onclick = () => exploreOddsDialog(page);
+    if (ex) ex.onclick = () => exploreOddsDialog(page, '도움말로', 'normal');
     const mt = box.querySelector('#helpMeritTable');
     if (mt) mt.onclick = () => meritTableDialog(() => helpDialog(page), '도움말');
     const to = box.querySelector('#helpTraitOdds');
@@ -1825,7 +1825,7 @@ function helpDialog2(page = -1) {
       <button id="helpList">☰ 목록으로</button>
     </div>`, box => {
     $('#helpList').onclick = () => helpDialog2(-1);
-    box.querySelectorAll('#helpExplore, #helpExplore2').forEach(ex => { ex.onclick = () => exploreOddsDialog(() => helpDialog2(page)); });
+    box.querySelectorAll('#helpExplore, #helpExplore2').forEach(ex => { ex.onclick = () => exploreOddsDialog(() => helpDialog2(page), '도움말로', 'normal'); }); // 내정 탐색 이벤트 = 일반 탭 (2026-11-25)
     const mt = box.querySelector('#helpMeritTable');
     if (mt) mt.onclick = () => meritTableDialog(() => helpDialog2(page), '도움말');
     const to = box.querySelector('#helpTraitOdds');
@@ -1833,7 +1833,7 @@ function helpDialog2(page = -1) {
   });
   $('#modalBox').classList.add('wideBox');
 }
-function exploreOddsDialog(from, backName = '도움말로') {
+function exploreOddsDialog(from, backName = '도움말로', tab = null) { // tab: 처음 열 탭 ('normal' | 'ronin'). 없으면 재야면 재야 탭
   const range = o => `${fmt(o.min)}~${fmt(o.max)}`;
   const text = {
     gold: e => `금 +${range(e)}<br><span class="dim">그중 ${Math.round(e.jackpot.rate * 100)}%는 대박 +${range(e.jackpot)}</span>`,
@@ -1857,7 +1857,7 @@ function exploreOddsDialog(from, backName = '도움말로') {
   const roninOk = typeof RONIN_EXPLORE !== 'undefined' && (!S || seasonNow() >= RULES.ronin.fromSeason);
   const tabs = [{ k: 'normal', label: '일반', list: EXPLORE, head: seasonNow() >= RULES.s9cmd.fromSeason ? `내정할 때 ${Math.round(RULES.s9cmd.domExplore * 100)}% 확률로 일어나는 일이에요.` : `금 ${RULES.myGoldCost.explore} · 명성 +${RULES.merit.explore}` }]; // 2026-11-25: 시즌 9는 탐색 명령 대신 내정 이벤트
   if (roninOk) tabs.push({ k: 'ronin', label: '재야', list: RONIN_EXPLORE, head: `금 ${RULES.myGoldCost.explore}` });
-  const start = roninOk && S && S.generals && isRonin(me()) ? 'ronin' : 'normal'; // 재야인 장수는 재야 탭부터 (2026-11-19 기획자 확인)
+  const start = tab === 'normal' || !roninOk ? 'normal' : tab === 'ronin' || (S && S.generals && isRonin(me())) ? 'ronin' : 'normal'; // 재야인 장수는 재야 탭부터 (2026-11-19 기획자 확인)
   openModal(`
     <h2>탐색 확률표</h2>
     ${tabs.length > 1 ? `<div class="helpTabs">${tabs.map(t => `<button data-otab="${t.k}"${t.k === start ? ' class="on"' : ''}>${t.label}</button>`).join('')}</div>` : ''}
@@ -2396,7 +2396,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220924&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125221302&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2406,7 +2406,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125220924&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261125221302&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2416,7 +2416,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125220924&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261125221302&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
