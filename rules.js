@@ -378,9 +378,9 @@ const UNIT_TYPES = {
   기병: { stat: 'war', beats: '보병' },
   궁병: { stat: 'int', beats: '기병' },
   // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 대도시 이상 성에서만 징병·승급. 상성은 1티어와 같은 계통 (beats는 계통 이름)
-  중보병: { stat: 'lea', beats: '궁병', base: '보병', from: 9, dmgCut: 0.10, desc: '받는 피해 -10%' },
+  중보병: { stat: 'lea', beats: '궁병', base: '보병', from: 9, dmgCut: 0.10, desc: '한 합에서 받는 피해 -10%' },
   중기병: { stat: 'war', beats: '보병', base: '기병', from: 9, charge: 0.03, chargeDmg: 0.4, desc: '돌격 발동 +3%p · 돌격 피해 +40%' }, // 2026-11-25 기획자: 주는 피해 +10% → 돌격 (노병과 맞바꿈, +3%p·+40%)
-  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, dmgUp: 0.10, desc: '주는 피해 +10%' }, // 2026-11-25 기획자: 책략 버프 → 주는 피해 +10% (중기병과 맞바꿈). 그 전 같은 날 책략 +3%p·+30% // 2026-11-25 기획자: +2%p·+20% → +3%p·+30% (시즌 9 시작 전)
+  노병: { stat: 'int', beats: '기병', base: '궁병', from: 9, dmgUp: 0.10, desc: '한 합에서 주는 피해 +10%' }, // 2026-11-25 기획자: 책략 버프 → 주는 피해 +10% (중기병과 맞바꿈). 그 전 같은 날 책략 +3%p·+30% // 2026-11-25 기획자: +2%p·+20% → +3%p·+30% (시즌 9 시작 전)
 };
 const roninArmyOn = () => seasonNow() >= RULES.roninArmy.fromSeason;
 const unitFam = t => (UNIT_TYPES[t] && UNIT_TYPES[t].base) || t; // 병종 계통 (중보병 → 보병)

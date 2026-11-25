@@ -16,13 +16,16 @@ function helpTopics() {
   const units = unitTypesNow(), base = units.filter(t => !unitTier2(t)), elite = units.filter(unitTier2);
   const sieges = siegeTypes();
   const useText = u => (u === '공수' ? '공격·수비' : u === '공' ? '공격' : '수비');
+  // 병기 값 (2026-11-25 피드백): 기본 가격(SIEGE[t].price)을 먼저, 내 장수의 실제 구매가(siegePrice: 세력·장수 특성 할인)가 다르면 옆에 작게
+  const myG = typeof me === 'function' ? me() : null;
+  const siegePriceText = t => { const base = SIEGE[t].price, mine = myG ? siegePrice(myG, t) : base; return fmt(base) + (mine !== base ? ` <span class="dim small">(내 구매가 ${fmt(mine)})</span>` : ''); };
   const quest = `금 +${RN.quest[0]}~${RN.quest[1]}${RN.questFame ? `·명성 +${RN.questFame}` : ''}`;
   return [
     { id: 'start', icon: '🎯', title: '처음 시작하기', blurb: '목표·첫 행동·예약', subs: [
       { id: 'goal', title: '게임 목표', keys: ['천하통일', '목표'], body: `<p>장수 한 명을 키우며 여러 유저와 함께 하는 턴제 전략 게임이에요. 세력의 장수들이 힘을 모아 지도의 모든 성을 차지하면 <b>천하통일</b>로 시즌이 끝나요.</p>
         <p>세력에 들어가 통일을 돕는 길도 있고, 세력 밖의 <b>재야</b>로 독립해서 살아가는 길도 있어요.</p>`, related: ['faction.unify', 'ronin.basic'] },
       { id: 'create', title: '장수 만들기', keys: ['능력치', '주사위', '생성', '금낭'], body: `<p>이름·얼굴을 정하고 <b>통솔·무력·지력</b>을 굴려요 (한 항목 ${ROLL.min}~${ROLL.max}, 합 ${ROLL.total}). 그다음 장수 <b>특성</b>을 3장 중에서 하나 골라요.</p>
-        ${ul([`<b>통솔</b>이 높으면 병사를 빨리 모으고, <b>무력</b>이 높으면 싸움에 강하고, <b>지력</b>이 높으면 내정·계략에 강해요.`, '셋의 평균이 높을수록 거느릴 수 있는 병력이 많아요.'])}`, related: ['general.stats', 'general.trait'] },
+        ${ul(['<b>세 능력치 모두 전투에 쓰여요.</b> 통솔은 보병, 무력은 기병, 지력은 궁병 계열의 힘이에요. 주력 능력치에 맞는 병종을 고르세요.', '전투 밖에서는 통솔은 징병·치안, 무력은 축성, 지력은 농업·상업·계략에 쓰여요.', '셋의 평균이 높을수록 거느릴 수 있는 병력이 많아요.'])}`, related: ['general.stats', 'general.trait'] },
       { id: 'join', title: '세력 고르기와 재야', keys: ['임관', '세력 선택', '재야'], body: `<p>장수를 만들면 들어갈 <b>세력</b>을 골라 임관해요. 처음 ${R.joinCap.turns}턴 동안은 장수가 너무 많이 모인 세력은 고를 수 없어요.</p>
         <p>세력을 떠나면(하야) <b>재야</b>가 돼요. 재야는 세력 없이 의뢰·약탈·거병으로 살아가는 독립된 길이에요.</p>`, related: ['faction.join', 'ronin.basic'] },
       { id: 'turn', title: '턴과 명령 예약', keys: ['턴', '예약', '예약표', '시간', '밤'], body: `${ul([
@@ -38,10 +41,10 @@ function helpTopics() {
         '성을 누르면 성 정보가 나와요. 우리 성은 모두 보이고, 다른 세력 성은 <b>첩보</b>에 성공해야 내정·군량·장수가 보여요.'])}`, related: ['city.size', 'plot.spy'] },
     ] },
     { id: 'general', icon: '📊', title: '장수와 성장', blurb: '능력치·경험치·명성·특성', subs: [
-      { id: 'stats', title: '능력치', keys: ['통솔', '무력', '지력', '능력치'], body: table(['능력치', '쓰이는 곳'], [
-        ['<b>통솔</b>', '징병량·치안 내정·보병 계열 전투력'],
-        ['<b>무력</b>', `축성 내정·기병 계열 전투력·단기접전·돌격·<b>모든 병종</b> 전투력 보너스 (무력 10마다 +${Math.round(R.warPer1 * 10 * 1000) / 10}%)`],
-        ['<b>지력</b>', '농업·상업 내정·궁병 계열 전투력·계략·책략']])
+      { id: 'stats', title: '능력치', keys: ['통솔', '무력', '지력', '능력치'], body: '<p>세 능력치 모두 전투에 쓰여요. 병종마다 힘을 내는 능력치가 달라서, 주력 능력치에 맞는 병종을 고르면 돼요.</p>' + table(['능력치', '전투', '전투 밖'], [
+        ['<b>통솔</b>', '보병 계열 전투력', '징병·모병량, 치안 내정'],
+        ['<b>무력</b>', `기병 계열 전투력, 단기접전, 돌격, <b>모든 병종</b> 전투력 보너스 (무력 10마다 +${Math.round(R.warPer1 * 10 * 1000) / 10}%)`, '축성 내정'],
+        ['<b>지력</b>', '궁병 계열 전투력, 책략', '농업·상업 내정, 계략']])
         + `<p>장비·보물로 오른 값도 능력치에 들어가요. 능력치 최대는 ${R.statMax}이에요 (보물은 넘길 수 있어요).</p>`, related: ['army.units'] },
       { id: 'troops', title: '병력 상한과 징병량', keys: ['최대 병력', '병력 상한', '징병량'], body: `${ul([
         `<b>최대 병력</b> = 세 능력치 평균 × ${R.statV1.troopsPerAvg}.`,
@@ -80,7 +83,7 @@ function helpTopics() {
         detail: R.lateGold ? `<p><b>중도 참가 지원금</b>: 시즌 도중에 이번 시즌 첫 장수를 만들면, 시즌이 시작한 뒤 ${R.lateGold.perTurns}턴마다 금 ${R.lateGold.gold}씩 쳐서 받고 시작해요 (최대 ${fmt(R.lateGold.max)}).</p>` : '', related: [] },
       { id: 'spend', title: '금 쓰는 곳', keys: ['지출', '비용'], body: table(['쓰는 곳', '금'], [
         ['징병', `${R.myGoldCost.draft} (정예 병종 ${fmt(T2.gold)})`], ['승급', `1,000명당 ${T2.upPer1000}`],
-        ['출진', `병력 1,000명당 ${R.attackGold.per1000}`], ['병기', sieges.map(t => `${t} ${fmt(siegePrice(me() || {}, t))}`).join('·')],
+        ['출진', `병력 1,000명당 ${R.attackGold.per1000}`], ['병기', sieges.map(t => `${t} ${siegePriceText(t)}`).join('·')],
         ['계략 (파괴·유언·첩보)', `${R.myGoldCost.plot}`], ['증축', grades.slice(0, 3).map(k => `${gName[k]} ${fmt(R.expand.cost[k])}`).join('·')],
         ['군량 구매·상점', '고른 만큼'], ['재야: 탐색·모병·거병', `${R.myGoldCost.explore}·${R.myGoldCost.draft}·${fmt(RI.gold)}`]]), related: [] },
       { id: 'food', title: '군량 수확과 소비', keys: ['수확', '군량', '굶주림', '기아'], body: ul([
@@ -143,10 +146,15 @@ function helpTopics() {
       { id: 'units', title: '병종', keys: ['보병', '기병', '궁병', '중보병', '중기병', '노병', '정예', '상성'], body: `<p><b>기병 → 보병 → 궁병 → 기병</b> 순으로 상대에게 강해요 (상성 전투력 +${pct(R.matchupS7)}%). 정예 병종도 같은 계열의 상성을 그대로 받아요.</p>`
         + table(['능력치', '기본 병종', '정예 병종', '정예 효과'], base.map(b => { const e = elite.find(t => UNIT_TYPES[t].base === b); return [sn(UNIT_TYPES[b].stat), b, e || '—', e ? UNIT_TYPES[e].desc : '—']; }))
         + table(['', '기본 병종', '정예 병종'], [['징병 금', fmt(R.myGoldCost.draft), fmt(T2.gold)], ['군량', '100명당 ' + pct(R.foodPerTroops), `${T2.food}배`], ['모으는 곳', '어디서나', `${gName[T2.gradeMin]} 이상 성`]])
-        + '<p>정예 병종은 상위 호환이 아니라, 돈과 군량을 더 쓰는 대신 특기가 붙은 병종이에요.</p>', related: ['battle.skill'] },
+        + '<p>정예 병종은 상위 호환이 아니라, 돈과 군량을 더 쓰는 대신 특기가 붙은 병종이에요.</p>',
+        detail: ul([ // 2026-11-25 전투 코드(rules.js attackPower·defensePower·fightRounds)와 대조
+          '<b>한 합에서 받는 피해 -10%</b>(중보병): 서로 맞붙는 보통 합(공성·수비·야전·약탈 교전)에서 받는 병력 피해에만 붙어요. 단기접전·책략·돌격·벽력거 사격, 성벽을 공격할 때 잃는 병력, 도적·포위·굶주림으로 잃는 병력에는 붙지 않아요.',
+          '<b>한 합에서 주는 피해 +10%</b>(노병): 보통 합에서 주는 병력 피해에 붙고, <b>벽력거 사격</b> 피해에도 붙어요 (공격·수비 모두). 단기접전·책략·돌격과 성벽(방어) 깎기에는 붙지 않아요.',
+          '<b>돌격 발동·피해</b>(중기병)는 돌격에만 붙어요. 무력이 돌격 조건에 못 미치면 효과가 없어요.']), related: ['battle.skill'] },
       { id: 'upgrade', title: '승급', keys: ['승급', '정예'], body: `<p>징병 창의 <b>정예</b> 탭에서 해요. 지금 기본 병종 병력을 흩어지지 않고 같은 계열 정예 병종으로 바꿔요 (보병 → 중보병). ${gName[T2.gradeMin]} 이상 성에서만, 1,000명당 금 ${T2.upPer1000}. 1턴을 써요.</p>`, related: [] },
       { id: 'siege', title: '병기', keys: ['병기', '충차', '정란', '연노', '벽력거', '내구도'], body: `<p>병기는 부대에 하나 갖추는 장비예요. 공격·수비 목적에 맞게 골라요.</p>`
-        + table(['병기', '쓰는 때', '금', '효과'], sieges.map(t => [`<b>${t}</b>`, useText(SIEGE[t].use), fmt(siegePrice(me() || {}, t)), SIEGE[t].desc]))
+        + table(['병기', '쓰는 때', '금', '효과'], sieges.map(t => [`<b>${t}</b>`, useText(SIEGE[t].use), siegePriceText(t), SIEGE[t].desc]))
+        + '<p class="dim small">세력·장수 특성에 따라 실제 구매 가격이 달라질 수 있어요.</p>'
         + ul([`<b>내구도 ${SIEGE_EFFECT.durMax}</b>: 효과가 나올 때마다 1씩 닳고 0이 되면 사라져요.`, '부대마다 하나만. 다른 병기를 만들면 갖고 있던 병기는 사라져요.', `부대가 전멸하거나 성이 점령당하면 ${pct(SIEGE_EFFECT.breakChance)}% 확률로 부서져요.`]),
         detail: ul(['내구도가 닳는 때: 충차 = 성벽 공격 1번·정란 = 수비 부대 하나와 싸운 1번·연노 = 공격 부대 하나와 싸운 1번·벽력거 = 사격 1번',
           '<b>벽력거</b>: 공격할 때는 출진 한 번에 처음 맞붙는 수비 부대에게, 수비할 때는 턴마다 처음 맞붙는 공격 부대에게 1번 쏴요. 양쪽 다 있으면 공격 쪽이 먼저 쏴요. 반격은 없어요.',
