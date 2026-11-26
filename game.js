@@ -2173,7 +2173,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126224528&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126225014&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2183,7 +2183,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126224528&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126225014&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2193,7 +2193,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126224528&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126225014&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3181,7 +3181,7 @@ function renderGeneral() {
         <tr><th>위치</th><td>${esc(city.name)}</td></tr>
         ${isRonin(p) && roninArmyOn() ? `<tr><th>군량</th><td>${fmt(p.food || 0)} <span class="dim">/ ${fmt(RULES.roninArmy.foodMax)} (개인)</span></td></tr>` : `<tr><th>군량</th><td>${S.cities[p.city].food === undefined ? '?' : fmt(S.cities[p.city].food)} <span class="dim">/ ${fmt(foodMax(city.grade))}</span></td></tr>`}<!-- 재야 개인 군량 (2026-11-24) -->
         <tr><th>병력</th><td>${p.unitType ? `${p.unitType} ` : ''}${fmt(p.troops)} <span class="dim">/ ${fmt(troopsMax(p))}</span></td></tr>
-        ${(() => { const m = catchUpMul(p); return m > 1 ? `<tr><th>📈</th><td>성장 보너스 경험치 ×${m}</td></tr>` : ''; })()}<!-- 성장 보너스 (2026-11-24, 시즌 9): 구간(%)은 보이지 않는다 -->
+        ${(() => { const m = catchUpMul(p); if (m <= 1) return ''; const tip = `명성 ${fmt(RULES.catchUp.minMerit)} 이상 장수 중 능력치 합이 낮은 편이라 경험치를 더 받아요 (매 턴 다시 계산)`; return `<tr><th><button class="link capIcon" data-cutip title="${tip}">📈</button></th><td>성장 보너스 ×${m}</td></tr>${cuTipOpen ? `<tr class="wide"><td colspan="2" class="dim capTip">📈 ${tip}</td></tr>` : ''}`; })()}<!-- 성장 보너스 (2026-11-24, 시즌 9): 구간(%)은 보이지 않는다 -->
         <tr><th>방어</th><td><button id="gDefense" class="mini${p.defense && p.troops > 0 ? ' on' : ''}"${p.troops > 0 ? '' : ' disabled title="병력이 없으면 켤 수 없어요"'}>${p.defense && p.troops > 0 ? '켜짐' : '꺼짐'}</button></td></tr>
         ${RULES.features.siege ? '' : '<!--'}<tr><th>병기</th><td>${Object.keys(SIEGE).filter(t => p.siege && p.siege[t]).map(t => t + siegeDurText(p) + (p.siegeFix ? '(강화)' : '')).join(' · ') || '<span class="dim">없음</span>'}</td></tr>${RULES.features.siege ? '' : '-->'}
         ${RULES.features.shop ? '' : '<!--'}<tr><th>장비</th><td>${Object.keys(SHOP).filter(t => gearCount(p, t)).map(t => `<span class="gear">${t} ${gearCount(p, t)}</span>`).join('') || '<span class="dim">없음</span>'} <button id="gShop" class="mini">상점</button></td></tr>${RULES.features.shop ? '' : '-->'}
@@ -3577,6 +3577,13 @@ function recentPlotTips(c) {
 }
 function recentCaptureIcon(c) { const tip = recentCaptureTip(c); return (tip ? ` <button class="link capIcon" data-captip title="${tip}">🔥</button>` : '') + recentPlotTips(c).map(t => ` <button class="link capIcon" data-captip title="${t.tip}">${t.ic}</button>`).join(''); }
 // 폰에서 아이콘을 누르면 설명을 이웃 아래 한 줄로 (이름 칸은 좁아서)
+// 성장 보너스 📈 설명 (2026-11-26 기획자): PC는 마우스를 올리면 툴팁, 폰은 누르면 아래 한 줄로 (🔥 아이콘과 같은 방식)
+let cuTipOpen = false;
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('[data-cutip]') || matchMedia('(hover: hover)').matches) return;
+  cuTipOpen = !cuTipOpen;
+  if (typeof renderGeneral === 'function') renderGeneral();
+});
 function recentCaptureRow(c) { if (!captureTipOpen) return ''; const tip = recentCaptureTip(c); return (tip ? `<tr class="wide"><td colspan="2" class="dim capTip">🔥 ${tip}</td></tr>` : '') + recentPlotTips(c).map(t => `<tr class="wide"><td colspan="2" class="dim capTip">${t.ic} ${t.tip}</td></tr>`).join(''); }
 document.addEventListener('pointerdown', e => { // 성 정보는 1초마다 다시 그려져서 누르는 순간 처리 (📍와 같은 방식)
   if (!e.target.closest('[data-captip]') || matchMedia('(hover: hover)').matches) return; // PC는 툴팁(title)으로
