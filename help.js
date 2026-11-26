@@ -216,7 +216,7 @@ function helpTopics() {
         `<b>임관 제한</b>: 처음 ${R.joinCap.turns}턴 동안은 전체 장수의 ${pct(R.joinCap.rate)}% 이상이 모인 세력에 새로 들어갈 수 없어요.`,
         `<b>하야</b>: 세력을 떠나 그 성에 재야로 남아요. <b>명성 -${pct(R.resignMeritCut)}%, 병력은 흩어지고</b>, ${R.rejoinWait}턴 동안 어느 세력에도 임관할 수 없어요.`,
         `<b>해고</b>: 대도독이 ${C.fireOffline / HOUR}시간 넘게 접속하지 않은 장수를 재야로 보내요. 명성은 그대로, 다시 들어가는 대기는 없어요.`]),
-        detail: `<p>임관 제한은 세력에 든 장수가 모두 ${R.joinCap.minTotal}명 이상일 때부터 적용되고, 성이 남은 세력이 2개 이하가 되면 없어요.</p>`, related: ['ronin.basic'] },
+        detail: `<p>임관 제한은 세력에 든 장수가 모두 ${R.joinCap.minTotal}명 이상일 때부터 적용되고, 성이 남은 세력이 ${R.joinCap.offAt}개 이하가 되면 없어요.</p>`, related: ['ronin.basic'] },
       { id: 'commander', title: '대도독', keys: ['대도독', '공지', '방침', '보급', '위임', '반납'], body: ul([
         `세력마다 한 명. 명성 ${fmt(C.minMerit)} 이상, 세력 장수 ${C.minMembers}명 이상이면 <b>도독직 수락</b>으로 올라요 (세력의 첫 대도독은 세력 명성 1위만).`,
         `<b>혜택</b>: 병력 상한 +${fmt(C.perkTroops)}, 금 수입 +${pct(C.perkGold)}%.`,
