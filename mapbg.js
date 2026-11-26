@@ -83,16 +83,26 @@ function mountainness(u, v) {
 // 곧게 그리면 다른 성에 가려지는 길은 경유점을 거쳐 굽힌다 (2026-11-01). 지도 편집기가 저장해도 사라지지 않게 지도 파일이 아니라 여기에 둔다.
 // 열쇠: "성 이름-성 이름" (앞 성에서 뒤 성 쪽 순서), 값: 경유점 [가로, 세로] 칸 좌표
 const ROAD_BENDS = {
-  '전주-대전': [[3.35, 9.0]],
+  '전주-대전': { pts: [[3.35, 9.0]], ifBlocked: true }, // 2026-11-26 기획자: 굽힐 필요 없음 → 곧은 길이 다른 성 칸에 가릴 때만 돌아간다 (지금 두 대한민국 지도 모두 곧게)
   '건녕-교지': [[2.5, 10.4]],               // 곧게 그리면 영릉 칸에 가린다
   '회계-교지': [[6.8, 9.4], [5.5, 10.1]],     // 해안을 따라 내려가는 육로
 };
+// 두 성의 가운데를 곧게 이은 선이 다른 성 칸(가장자리 0.15칸은 빼고)을 지나는지
+function roadBlocked(p, q) {
+  for (let k = 1; k < 40; k++) {
+    const u = p.x + 0.5 + (q.x - p.x) * k / 40, v = p.y + 0.5 + (q.y - p.y) * k / 40;
+    if (MAP.cities.some(c => c !== p && c !== q && u > c.x + 0.15 && u < c.x + 0.85 && v > c.y + 0.15 && v < c.y + 0.85)) return true;
+  }
+  return false;
+}
 function paintRoads(g, pal, cell, isWater) {
   const cityOf = id => MAP.cities.find(o => o.id === id);
   const toDot = (u, v) => [Math.floor(u * cell / P), Math.floor(v * cell / P)];
   const center = c => toDot(c.x + 0.5, c.y + 0.5);
   const paths = (MAP.links || []).map(([a, b]) => [cityOf(a), cityOf(b)]).filter(([p, q]) => p && q).map(([p, q]) => {
-    const bend = ROAD_BENDS[p.name + '-' + q.name] || (ROAD_BENDS[q.name + '-' + p.name] || []).slice().reverse();
+    // 경유점: 배열이면 늘, { pts, ifBlocked }면 곧은 길이 다른 성 칸을 지날 때만 (2026-11-26)
+    const raw = (o, rev) => { if (!o) return null; const pts = Array.isArray(o) ? o : o.pts, list = rev ? pts.slice().reverse() : pts; return !Array.isArray(o) && o.ifBlocked && !roadBlocked(p, q) ? [] : list; };
+    const bend = raw(ROAD_BENDS[p.name + '-' + q.name]) || raw(ROAD_BENDS[q.name + '-' + p.name], true) || [];
     const pts = [center(p), ...(bend || []).map(([u, v]) => toDot(u, v)), center(q)], dots = [];
     for (let i = 1; i < pts.length; i++) {
       const [s, e] = [pts[i - 1], pts[i]], n = Math.max(Math.abs(e[0] - s[0]), Math.abs(e[1] - s[1]));
