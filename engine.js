@@ -2181,8 +2181,11 @@ function runRise(g, o, mark) {
   if (g.leftFaction && g.leftFaction.until > S.turn) return `세력을 떠난 지 얼마 안 돼서 ${g.leftFaction.until - S.turn}턴 뒤부터 거병할 수 있음`;
   const name = String(o.name || '').trim(), bad = riseNameWhy(name);
   if (bad) return bad;
+  const food = riseFoodOf(g.troops); // 군량: 병력 × foodRate, 재야 개인 군량에서 (2026-11-27 기획자)
+  if ((g.food || 0) < food) return `군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(g.food || 0)})`;
   const why = pay(g, 'rise', R.gold); // 시도할 때 낸다 (지면 잃는다)
   if (why) return why;
+  g.food = (g.food || 0) - food; // 이기든 지든 사라진다
   const lines = [`🚩 ${c.name} 거병 (${fmtClock(mark)}): ${g.name}(${g.unitType} ${fmt(g.troops)})이 「${name}」의 깃발을 올렸다!`];
   let fought = false;
   if (c.faction === BANDIT.id) { // 도적군과 성벽 없이 싸운다. 다 쓰러뜨려야 성을 얻는다
@@ -2195,7 +2198,7 @@ function runRise(g, o, mark) {
       if (d.troops > 0) break;
     }
     if (g.troops <= 0 || cs.guard > 0) {
-      lines.push(g.troops > 0 ? `${RULES.roundsMax}합 안에 도적군을 다 쓰러뜨리지 못해 물러났다. 거병 실패… (금 ${fmt(R.gold)}은 잃었다)` : `거병 실패… (금 ${fmt(R.gold)}은 잃었다)`);
+      lines.push(g.troops > 0 ? `${RULES.roundsMax}합 안에 도적군을 다 쓰러뜨리지 못해 물러났다. 거병 실패… (금 ${fmt(R.gold)} · 군량 ${fmt(food)}은 잃었다)` : `거병 실패… (금 ${fmt(R.gold)} · 군량 ${fmt(food)}은 잃었다)`);
       gainStatExp(g, UNIT_TYPES[g.unitType] ? UNIT_TYPES[g.unitType].stat : 'lea', RULES.statExp.battle);
       addLog(g, lines.join('\n'));
       return '';
