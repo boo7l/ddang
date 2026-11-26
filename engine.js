@@ -1699,12 +1699,12 @@ function runExplore(g, viaPeace = false) {
     }
     case 'spy': { // 적 첩자 포획 (2026-11-07): 길을 따라 가장 가까운 적 성 중 하나의 정보가 우리 세력에 보인다
       const near = nearestEnemyCities(g.city, g.faction);
-      if (!g.faction || !near.length) { text = '수상한 자를 붙잡았지만, 아무것도 알아내지 못했다.'; break; }
+      if (!g.faction || !near.length) { text = '적의 밀서를 손에 넣었지만, 쓸 만한 내용이 없었다.'; break; }
       const c = near[randInt(0, near.length - 1)], ccs = S.cities[c.id], until = (spiedUntil(g.faction, c) || S.turn) + RULES.spyTurns; // 이미 보이는 성이면 남은 기간에 더한다 (2026-11-08: 2턴 남았으면 7턴)
       S.intel = S.intel || {};
       S.intel[g.faction] = S.intel[g.faction] || {};
       S.intel[g.faction][c.id] = Math.max(S.intel[g.faction][c.id] || 0, until);
-      text = `★ 수상한 자를 붙잡아 캐물었다! ${c.name}에서 보낸 첩자였다. ${c.name}: 농업 ${ccs.agri} · 상업 ${ccs.comm} · 방어 ${ccs.wall} · 치안 ${ccs.peace} · 군량 ${fmt(ccs.food)}
+      text = `★ 적의 밀서를 손에 넣었다! ${c.name}의 사정이 적혀 있었다. ${c.name}: 농업 ${ccs.agri} · 상업 ${ccs.comm} · 방어 ${ccs.wall} · 치안 ${ccs.peace} · 군량 ${fmt(ccs.food)}
 (${dateText(until)} 전까지 우리 세력 모두 성 정보에서 볼 수 있다)`;
       break;
     }
