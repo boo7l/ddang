@@ -1993,6 +1993,7 @@ function runLevy(g) {
   const [lo, hi] = levyRange(g), got = earnGold(g, randInt(lo, hi)), drop = ansan ? 0 : Math.min(cs.peace, L.peace);
   cs.peace -= drop;
   g.levyTurn = S.turn;
+  gainStatExp(g, 'war', L.warExp || 0); // 2026-11-26 기획자: 갈취하면 무력 경험치 +20 (설명에는 따로 쓰지 않는다)
   addLog(g, `${josa(city.name, '은는')} 이게 일상이야.. 백성에게서 금을 거두었다. 내 금 +${fmt(got)} · ${ansan ? '왜인지 치안이 줄지 않았다!' : `치안 -${drop} (${cs.peace})`}`);
   return '';
 }
@@ -2125,7 +2126,6 @@ function runRaid(g, o, mark) {
   g.merit = (g.merit || 0) - cut;
   const lines = [`🏴 ${c.name} 약탈 (${fmtClock(mark)}): ${g.name}(${g.unitType} ${fmt(g.troops)})의 무리가 ${josa(c.name, '을를')} 덮쳤다!${cut ? ` 명성 -${cut} (${fmt(g.merit)})` : ''}`];
   gainStatExp(g, UNIT_TYPES[g.unitType].stat, RULES.statExp.battle); // 출진처럼 병종 능력치 경험치
-  gainStatExp(g, 'war', RULES.raid.warExp); // 2026-11-26 기획자: 약탈은 무력 경험치도 (설명에는 따로 쓰지 않는다)
   // 지키는 쪽: 방어 모드 장수 중 병력 최다, 없으면 수비대 (도적군 성은 도적군)
   let d = null;
   if (c.faction) { const defs = defendersOf(c); d = defs.find(x => x.ref) || defs.find(x => x.guard) || null; }
