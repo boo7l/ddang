@@ -148,7 +148,7 @@ const RULES = {
   joinCap: { rate: 0.3, turns: 60, minTotal: 5, offAt: 3 }, // 2026-11-26 기획자: 40% → 30%, 성 있는 세력이 offAt개 이하면 끔 (2 → 3). 선두 한두 세력의 성장 속도만 늦추는 목적
   medalHideFromSeason: 99, // 2026-11-23 기획자: 보류 (시스템 바뀔 때 한꺼번에 정할 수도 있음, 다시 켜려면 9). 2026-11-22 기획자: 시즌 9부터 초반(임관 제한과 같은 joinCap.turns턴까지) 다른 사람 훈장을 숨긴다. 훈장 보고 세력 고르기 막기. 내 훈장·관리자는 그대로 // 2026-11-20 기획자: S8 도중 50% → 40%, 10명부터 → 5명부터
   // 대도독 (2026-11-13, 시즌 7부터, 기획서 "대도독 · 동맹"): 세력마다 한 명. 자격이 되는 장수가 직접 수락해야 오른다
-  commander: { perkFromSeason: 9, perkTroops: 1000, perkGold: 0.05, resignWait: 6, /* 2026-11-23 기획자 (시즌 9부터): 대도독 혜택 = 병력 상한 +1,000 · 금 수입 +5%. 직접 반납하면 resignWait턴 동안 다시 못 맡음 (위임은 제외) */ fromSeason: 7, supplyFromSeason: 8 /* 보급 (2026-11-16 기획자): 대도독만, 어디에 있든 우리 성 A → B 군량 (A·B는 우리 땅 2칸 안), 수송과 같은 양·명성, 한 턴 쓰는 명령 */, minMerit: 500, minMembers: 5, offline: 12 * 60 * 60 * 1000, handWait: 60 * 60 * 1000, seenEvery: 10 * 60 * 1000, noticeLen: 80, allyMin: 12, allyMax: 48 /* 2026-11-16 기획자: 36 → 48 */, allyMax2: 2, allyEnemyFromSeason: 9 /* 2026-11-22 기획자: 시즌 9부터 동맹을 맺어도 양쪽 모두 적대 세력(동맹 아닌 살아 있는 세력)이 하나 이상 남아야 한다 */, allyBreakTurns: 5, allyBreakMerit: 30, allyBreakMeritCmd: 50 /* 2026-11-15 기획자: 80 → 50 (2026-11-19 잠깐 80으로 했다가 50 유지로 되돌림) */, fireOffline: 18 * HOUR /* 2026-11-16 기획자: 24 → 18시간 */ }, // 동맹 (2026-11-13): 기간 12~36턴, 세력당 2개, 파기하면 5턴 뒤 풀림 + 파기한 세력 장수 명성 -30 · 대도독 -80(포함, 2026-11-13 100 → 80) // noticeLen: 공지 글자 수 // offline: 이만큼(실제 시간) 접속이 없으면 자리를 잃는다. handWait: 넘겨받을 장수가 수락할 시간. seenEvery: 마지막 접속 시각을 적는 간격
+  commander: { policyFx: { from: 9, delay: 3, def: 0.03, atk: 0.03 }, /* 2026-11-27 기획자 (시즌 9부터): 방침 효과 = 🛡 방어할 성 수비 쪽 받는 피해 -3% · 🗡 공격 목표로 출진(야전 포함) 공격력 +3%. 방침을 바꾸면 3턴 뒤에 켜진다. 대도독이 없으면 방침도 사라진다 */ perkFromSeason: 9, perkTroops: 1000, perkGold: 0.05, resignWait: 6, /* 2026-11-23 기획자 (시즌 9부터): 대도독 혜택 = 병력 상한 +1,000 · 금 수입 +5%. 직접 반납하면 resignWait턴 동안 다시 못 맡음 (위임은 제외) */ fromSeason: 7, supplyFromSeason: 8 /* 보급 (2026-11-16 기획자): 대도독만, 어디에 있든 우리 성 A → B 군량 (A·B는 우리 땅 2칸 안), 수송과 같은 양·명성, 한 턴 쓰는 명령 */, minMerit: 500, minMembers: 5, offline: 12 * 60 * 60 * 1000, handWait: 60 * 60 * 1000, seenEvery: 10 * 60 * 1000, noticeLen: 80, allyMin: 12, allyMax: 48 /* 2026-11-16 기획자: 36 → 48 */, allyMax2: 2, allyEnemyFromSeason: 9 /* 2026-11-22 기획자: 시즌 9부터 동맹을 맺어도 양쪽 모두 적대 세력(동맹 아닌 살아 있는 세력)이 하나 이상 남아야 한다 */, allyBreakTurns: 5, allyBreakMerit: 30, allyBreakMeritCmd: 50 /* 2026-11-15 기획자: 80 → 50 (2026-11-19 잠깐 80으로 했다가 50 유지로 되돌림) */, fireOffline: 18 * HOUR /* 2026-11-16 기획자: 24 → 18시간 */ }, // 동맹 (2026-11-13): 기간 12~36턴, 세력당 2개, 파기하면 5턴 뒤 풀림 + 파기한 세력 장수 명성 -30 · 대도독 -80(포함, 2026-11-13 100 → 80) // noticeLen: 공지 글자 수 // offline: 이만큼(실제 시간) 접속이 없으면 자리를 잃는다. handWait: 넘겨받을 장수가 수락할 시간. seenEvery: 마지막 접속 시각을 적는 간격
   get meritIncome() { return seasonNow() >= 9 ? 0.00004 : seasonNow() >= 7 ? 0.00005 : 0.0001; }, // 2026-11-22 기획자: 시즌 9부터 명성 250마다 1%. // 2026-11-12 시즌 7부터 명성 200마다 1% (기획자). 명성 보너스: 명성 100마다 수입 1% 더 (1,000이면 10%. 2026-10-25 0.0001 → 0.0002, 2026-10-31 다시 0.0001)
   foodPerAgri: 3.5,         // 임시: 수확 군량 = 그 성의 농업 × 3.5 (× 치안 보정. 2026-10-25 3 → 3.5, 2026-10-26 기본 500을 더한 만큼 3.3으로, 2026-11-02 3.5)
   foodBase: 500,            // 수확마다 성마다 기본으로 더 들어오는 군량: 수확 = (농업 × 3.5 + 500) × 치안 보정 (2026-10-25, 농업 낮은 성 보완)
@@ -543,6 +543,7 @@ const attackPower = (a, d) => {
     * warBonus(a)
     * (1 + (t.attack || 0)) * (unitFam(a.type) === '기병' ? 1 + (t.cavalry || 0) : 1) * unitTypeBonus(t, a.type)
     * (1 + unitFx(a, 'dmgUp')) // 노병: 주는 피해 +10% (2026-11-25, 처음엔 중기병)
+    * (1 + (a.polAtk || 0)) // 대도독 방침 🗡 공격 목표 +3% (2026-11-27, 야전 포함)
     * (1 + (gTrait(a).attack || 0) + (gTrait(a).power || 0)); // 개인 특성: 용맹, 뼈에게 닿기를
 };
 // 수비 전투력 (성 방어도는 2026-11-06부터 여기 대신 받는 피해를 줄인다: wallCut)
@@ -696,7 +697,7 @@ function fightRounds(att, def, wall, left, field = false) {
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
-    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck() * (1 - unitFx(def, 'dmgCut'))) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0) + unitFx(def, 'dmgCut')))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
+    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck() * (1 - unitFx(def, 'dmgCut'))) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0) + unitFx(def, 'dmgCut') + (def.polDef || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
     const hitAtt = Math.ceil((field ? fieldPower(def, att) : defensePower(def, wall, att)) * RULES.roundRate * luck() * (1 - unitFx(att, 'dmgCut'))); // 중보병: 받는 피해 -10% (2026-11-24)
     const bx = []; // 유대: 양쪽이 동시에 맞으니, 각자 버틸지 본 뒤에 깎는다 (상대 유대 피해는 그 뒤에 남은 병력에서)
     const dLoss = bondSave(def, Math.min(def.troops, hitDef), att, bx);

@@ -1069,7 +1069,7 @@ function attackDialog() {
     }
     return `<label class="opt"><input type="radio" name="tgt" value="${c.id}">
       <span class="swatch" style="background:${f ? f.color : 'var(--empty)'}"></span>
-      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}${marchMult(from, c) > 1 ? ' <span class="bad small">(먼 길)</span>' : ''}
+      <b>${esc(c.name)}</b> <span class="dim">${f ? esc(f.name) : '공백지'}</span>${allyTag(c)}${policyAtkTag(c)}${marchMult(from, c) > 1 ? ' <span class="bad small">(먼 길)</span>' : ''}
       <span class="r">${defs.length ? defenseText(c, defs, ', ') : c.faction ? `방어부대 없음 · 방어 ${seen ? fmt(wall) : '?'}` : '방어부대 없음'} · <span class="g-${cls}">${guess}</span></span></label>`;
   }).join('');
   pickDialog('출진', `<p>${esc(from.name)}에서 병력 전부를 이끌고 바로 옆 성을 칩니다. 그 턴에 바로 전투가 벌어지고, 지키는 부대가 없거나 모두 물리치면 성벽(방어)을 공격해요. 방어가 0이 되면 점령해요.</p>
@@ -2173,7 +2173,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127003029&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127004120&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2183,7 +2183,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127003029&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127004120&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2193,7 +2193,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127003029&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127004120&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3025,9 +3025,9 @@ function policyDialog() {
   const opt = (list, sel) => '<option value="">없음</option>' + list.map(c => `<option value="${esc(c.id)}"${c.id === sel ? ' selected' : ''}>${esc(c.name)}${c.faction ? '' : ' (공백지)'}</option>`).join('');
   const own = MAP.cities.filter(c => c.faction === p.faction), other = MAP.cities.filter(c => c.faction !== p.faction).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   openModal(`<h2>🧭 방침</h2>
-    <p class="dim small">우리 세력 지도에만 표시돼요. 안내일 뿐 강제는 없어요.</p>
-    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select> <button type="button" class="mini" data-pmap="def">지도</button>${cur.def ? ' <button class="mini" data-pclear="def">해제</button>' : ''}</p>
-    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select> <button type="button" class="mini" data-pmap="atk">지도</button>${cur.atk ? ' <button class="mini" data-pclear="atk">해제</button>' : ''}</p>
+    <p class="dim small">우리 세력 지도에만 표시돼요. ${policyFxOn() ? `🛡 방어할 성은 수비 쪽 받는 피해 -${Math.round(RULES.commander.policyFx.def * 100)}%, 🗡 공격 목표로 출진하면 공격력 +${Math.round(RULES.commander.policyFx.atk * 100)}% (야전 포함). 바꾸면 ${RULES.commander.policyFx.delay}턴 뒤에 켜져요. 대도독이 없어지면 방침도 사라져요.` : '안내일 뿐 강제는 없어요.'}</p>
+    <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select> <button type="button" class="mini" data-pmap="def">지도</button>${cur.def ? ' <button class="mini" data-pclear="def">해제</button>' : ''}${policyFxText('def', cur) ? ` <span class="dim small">${policyFxText('def', cur)}</span>` : ''}</p>
+    <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select> <button type="button" class="mini" data-pmap="atk">지도</button>${cur.atk ? ' <button class="mini" data-pclear="atk">해제</button>' : ''}${policyFxText('atk', cur) ? ` <span class="dim small">${policyFxText('atk', cur)}</span>` : ''}</p>
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
     box.querySelector('#pSave').onclick = async () => { const def = box.querySelector('#pDef').value, atk = box.querySelector('#pAtk').value; closeModal(); await call('policySet', { def, atk }); render(); renderAll(); };
     // 지도로 고르기 (2026-11-19 기획자): 방어할 성 · 공격 목표 각각 [지도] → 고를 수 있는 성만 밝게, 누르면 목록에 들어간다 (저장은 따로)
@@ -3078,6 +3078,9 @@ function gameConfirm(title, html, okText, onOk, onNo = null, danger = false) {
 }
 // 지도 방침 표시 (2026-11-13): 우리 세력 방침만 (서버도 우리 것만 보낸다)
 const policyMark = c => { const pol = S && me() && (S.policy || {})[me().faction]; return !pol ? '' : c.id === pol.def ? '🛡' : c.id === pol.atk ? '🗡' : ''; };
+// 방침 효과 글 (2026-11-27, 시즌 9부터): '받는 피해 -3%' + 켜지기 전이면 '(n턴 뒤)'. 효과가 없는 시즌이면 ''
+const policyFxText = (key, pol) => { if (!policyFxOn() || !pol || !pol[key]) return ''; const P = RULES.commander.policyFx, left = (pol[key + 'On'] || 0) - S.turn; return `${key === 'def' ? '받는 피해 -' : '공격력 +'}${Math.round(P[key] * 100)}%${left > 0 ? ` (${left}턴 뒤 켜짐)` : ''}`; };
+const policyAtkTag = c => { const pol = S && me() && (S.policy || {})[me().faction]; return pol && pol.atk === c.id && policyFxOn() ? ` <span class="small">🗡 ${policyFxText('atk', pol)}</span>` : ''; }; // 출진 창
 // 💤 해고 창 (2026-11-13 기획자: 대도독 칸에서): 세력 장수를 오래 접속 안 한 순으로. fireOffline(18시간, 2026-11-16 24에서) 넘은 장수만 [해고]
 function fireDialog() {
   const p = me(), R = RULES.commander;
@@ -3626,7 +3629,7 @@ function cityDetailRows(c) {
     rows.push(`<tr class="wide"><th>장수</th><td>${list.length + ronins.length ? `<button class="link" data-cm>${list.length}명${ronins.length ? ` · 재야 ${ronins.length}` : ''} ${open ? '▲' : '▼'}</button>` : '<span class="dim">없음</span>'}${capText}${open ? `<div class="cityMembers">${list.map(g =>
       `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>${flagOf(g.id)}`).concat(ronins.map(g => `<button class="link${g.id === MY_ID ? ' mine' : ''}" data-gid="${esc(g.id)}">${esc(g.name)}</button><span class="dim">(재야)</span>`)).join(' · ')}</div>` : ''}</td></tr>`); // 토글 바로 아랫줄에, 장수 이름끼리는 줄바꿈 없이 이어서 (2026-11-09 기획자)
   }
-  { const mk = policyMark(c); if (mk) rows.push(`<tr class="wide"><th>방침</th><td>${mk} ${mk === '🛡' ? '방어할 성' : '공격 목표'}</td></tr>`); } // 2026-11-13
+  { const mk = policyMark(c); if (mk) { const fx = policyFxText(mk === '🛡' ? 'def' : 'atk', (S.policy || {})[me().faction]); rows.push(`<tr class="wide"><th>방침</th><td>${mk} ${mk === '🛡' ? '방어할 성' : '공격 목표'}${fx ? ` <span class="dim">· ${fx}</span>` : ''}</td></tr>`); } } // 2026-11-13
   if (cs.spied) rows.push(`<tr class="wide"><td colspan="2" class="dim">첩보 정보 · ${dateText(cs.spied)} 전까지</td></tr>`);
   if (seeAll() && S.intelAll && S.intelAll[c.id]) rows.push(...Object.entries(S.intelAll[c.id]).sort((x, y) => y[1] - x[1]).map(([fid, u]) => `<tr class="wide"><td colspan="2" class="dim">🔍 ${esc((factionById(fid) || {}).name || fid)} 첩보 · ${dateText(u)} 전까지</td></tr>`)); // 관리자: 모든 세력의 첩보 성공 (2026-11-22 기획자)
   return `<tr class="gap"><td colspan="2"></td></tr>${rows.join('')}`;

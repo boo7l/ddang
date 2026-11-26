@@ -94,6 +94,10 @@ const logAll = text => allGenerals().forEach(g => addLog(g, text, true)); // 전
 // S.cmdHand: 세력 id → { from, to, until } 넘기는 중 (받는 장수가 until(게임 시각 ms)까지 수락해야 넘어간다)
 const commanderOn = () => seasonNow() >= RULES.commander.fromSeason;
 const commanderOf = fid => { const id = fid && (S.commanders || {})[fid], g = id && S.generals[id]; return g && g.faction === fid ? g : null; };
+// 대도독 방침 효과 (2026-11-27 기획자, 시즌 9부터): fid 세력의 방침 key('def'|'atk')가 cityId이고, 바꾼 지 delay턴이 지났고, 대도독이 있으면 효과 비율
+const policyFxOn = () => commanderOn() && seasonNow() >= RULES.commander.policyFx.from;
+const polNote = (u, key) => (u[key] ? ` · ${key === 'polAtk' ? `🗡 ${u.name} 방침 공격력 +` : `🛡 ${u.name} 방침 받는 피해 -`}${Math.round(u[key] * 100)}%` : ''); // 전투 기록 (2026-11-27)
+const policyFx = (fid, key, cityId) => { const P = RULES.commander.policyFx, pol = fid && S.policy && S.policy[fid]; return policyFxOn() && pol && pol[key] === cityId && S.turn >= (pol[key + 'On'] || 0) && commanderOf(fid) ? P[key] : 0; };
 const isCommander = g => !!(g && g.faction && commanderOf(g.faction) === g);
 const membersOf = fid => allGenerals().filter(g => g.faction === fid);
 // ===== 거병 (2026-11-25 기획자, 시즌 9부터, RULES.rise) =====
@@ -1352,8 +1356,9 @@ function runField(g, att, from, to, mark) {
     sides.push(st);
     n++;
     const a = cur.u, d = st.u;
+    a.polAtk = policyFx(cur.g.faction, 'atk', cur.to.id); d.polAtk = policyFx(foe.faction, 'atk', cur.from.id); // 방침 🗡 (2026-11-27)
     const edge = matchupOf(a, d) > 1 ? ` · ${a.type}이 ${d.type}에 강하다!` : matchupOf(d, a) > 1 ? ` · ${d.type}이 ${a.type}에 강하다!` : '';
-    lines.push(`▶ ${n}차 야전: ${tag(a)} 대 ${tag(d)}, 들판에서 맞붙었다 (성벽 없음)${edge}`);
+    lines.push(`▶ ${n}차 야전: ${tag(a)} 대 ${tag(d)}, 들판에서 맞붙었다 (성벽 없음)${edge}${polNote(a, 'polAtk')}${polNote(d, 'polAtk')}`);
     const before = PER_SORTIE.map(k => !!a[k]);
     const r = fightRounds(a, d, 0, Math.min(cur.left, st.left), true);
     PER_SORTIE.forEach((k, i) => { if (a[k] && !before[i]) d[k] = true; }); // 이 맞대결에서 일어났으면 상대 쪽 출진에서도 쓴 것
@@ -1451,10 +1456,12 @@ function siegeAttack(g, att, from, to, mark, f) {
     d: s7 ? `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name}군 ${g.name}(${att.type} ${fmt(t0)}) 부대가 ${from.name}에서 쳐들어왔다!`
       : `⚔ ${to.name} 공방전 (${fmtClock(mark)}): ${myF.name} 세력 ${g.name}(${att.type} ${fmt(t0)}) 부대가 쳐들어왔다!`,
   });
+  att.polAtk = policyFx(g.faction, 'atk', to.id); // 방침 🗡 공격 목표 (2026-11-27)
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
+    d.polDef = policyFx(oldFaction, 'def', to.id); // 방침 🛡 방어할 성 (2026-11-27)
     const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다!` : '';
-    lines.push(`▶ ${d.name}(${d.type ? d.type + ' ' : ''}${fmt(d.troops)})과 맞붙었다${edge}`);
+    lines.push(`▶ ${d.name}(${d.type ? d.type + ' ' : ''}${fmt(d.troops)})과 맞붙었다${edge}${polNote(att, 'polAtk')}${polNote(d, 'polDef')}`);
     const r = fightRounds(att, d, cs.wall, left);
     cs.wall -= r.pierced; // 개인 특성 관통맨: 합 중에 깎은 방어. 0이 돼도 수비 부대를 쓰러뜨려야 점령한다
     pierced += r.pierced;
