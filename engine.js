@@ -55,7 +55,8 @@ const catchUpMul = g => {
 };
 const traitExp = (g, key, amount) => { const t = traitOf(g.faction), m = gTrait(g).exp || {}, tr = treasuresOf(g).reduce((a, n) => a + (TREASURES[n].exp || 0), 0); return Math.round(amount * (1 + (t.exp || 0) + (key === 'int' ? t.expInt || 0 : 0) + (m[key] || 0) + tr) * catchUpMul(g)); }; // 개인 특성 차돌애호가 · 보물 옥새 경험치 (2026-11-14)
 // 이동 거리: 보통 2칸, 개인 특성 뼈에게 닿기를은 4칸 (군량 수송은 그대로 2칸)
-const moveRangeOf = g => Math.max(1, (gTrait(g).moveRange || RULES.moveRange) + (traitOf(g.faction).move || 0)); // 세력 특성 이동 거리 (2026-11-06)
+const moveRangeOf = g => Math.max(1, (gTrait(g).moveRange || RULES.moveRange) + (traitOf(g.faction).move || 0) + trMove(g)); // 보물 적토마 +1 (2026-11-26)
+const roninMoveOf = g => RULES.ronin.moveRange + trMove(g); // 재야 이동 칸 수 (적토마 +1, 2026-11-26) // 세력 특성 이동 거리 (2026-11-06)
 // 시각은 언제나 한국 시간으로 적는다 (서버는 다른 나라 시간일 수 있다)
 const kst = t => new Date(t + 9 * HOUR);
 const fmtTime = t => { const d = kst(t); return `${d.getUTCMonth() + 1}/${d.getUTCDate()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`; };
@@ -1577,7 +1578,7 @@ function runMove(g, o) {
   if (!to) return '없는 성';
   if (to.id === from.id) return `이미 ${to.name}에 있음`;
   if (isRonin(g)) { // 재야 이동: 누구 땅이든 2칸 (2026-11-16)
-    if (!roninReach(from.id, RULES.ronin.moveRange).includes(to)) return `${from.name}에서 ${to.name}까지 ${RULES.ronin.moveRange}칸이 넘음`;
+    if (!roninReach(from.id, roninMoveOf(g)).includes(to)) return `${from.name}에서 ${to.name}까지 ${roninMoveOf(g)}칸이 넘음`;
     g.city = to.id;
     addLog(g, `${from.name}에서 ${josa(to.name, '으로')} 떠돌아 왔다.`);
     return '';

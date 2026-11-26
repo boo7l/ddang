@@ -1384,8 +1384,8 @@ async function deleteGeneralDialog() {
 function moveDialog() {
   const from = cityAtSlot(me(), slot);
   if (isRonin(me())) { // 재야 이동 (2026-11-16, 시즌 8부터): 누구 땅이든 2칸
-    const opts = roninReach(from.id, RULES.ronin.moveRange).map(c => { const f = c.faction && factionById(c.faction); return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${isFarRoad(from, c) ? ' <span class="dim">(먼 길)</span>' : ''} <span class="r">${f ? `<span class="swatch" style="background:${f.color}"></span>${esc(f.name)}` : '<span class="dim">빈 땅</span>'}</span></label>`; }).join('');
-    pickDialog('이동', `<p>재야는 누구 땅이든 ${RULES.ronin.moveRange}칸까지 떠돌 수 있어요. 임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>`, opts, '예약', v => reserve({ cmd: 'move', to: v }), '', 'narrow');
+    const opts = roninReach(from.id, roninMoveOf(me())).map(c => { const f = c.faction && factionById(c.faction); return `<label class="opt"><input type="radio" name="tgt" value="${c.id}"><b>${esc(c.name)}</b>${isFarRoad(from, c) ? ' <span class="dim">(먼 길)</span>' : ''} <span class="r">${f ? `<span class="swatch" style="background:${f.color}"></span>${esc(f.name)}` : '<span class="dim">빈 땅</span>'}</span></label>`; }).join('');
+    pickDialog('이동', `<p>재야는 누구 땅이든 ${roninMoveOf(me())}칸까지 떠돌 수 있어요. 임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>`, opts, '예약', v => reserve({ cmd: 'move', to: v }), '', 'narrow');
     return;
   }
   const opts = linkedOwnCities(from.id, me().faction, moveRangeOf(me()), !!gTrait(me()).freePath).map(c =>
@@ -2173,7 +2173,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126215702&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126223010&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2183,7 +2183,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126215702&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126223010&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2193,7 +2193,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126215702&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126223010&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2527,7 +2527,7 @@ function treasureFoundDialog() {
   treasureShown = f.name + f.until;
   const nu = TREASURES[f.name], old = treasuresOf(g)[0], ot = old && TREASURES[old], es = effStats(g);
   // 바꾸면 능력치가 얼마나 바뀌는지: '통솔 -1, 무력 +3, 지력 +3' (새 보물 가점 − 원래 보물 가점, 안 바뀌는 능력치는 뺀다. 2026-11-14 기획자)
-  const after = STATS.map(st => [st.name, (trKeys(f.name).includes(st.key) ? nu.bonus : 0) - (ot && trKeys(old).includes(st.key) ? ot.bonus : 0)]).filter(x => x[1]).map(([n, d]) => `<span class="nw">${n} ${d > 0 ? '+' : ''}${d}</span>`).join(', ') || '그대로';
+  const after = STATS.map(st => [st.name, (trKeys(f.name).includes(st.key) ? nu.bonus : 0) - (ot && trKeys(old).includes(st.key) ? ot.bonus : 0)]).filter(x => x[1]).concat((() => { const d = (nu.stat === 'move' ? nu.bonus : 0) - (ot && ot.stat === 'move' ? ot.bonus : 0); return d ? [['이동', d]] : []; })()).map(([n, d]) => `<span class="nw">${n} ${d > 0 ? '+' : ''}${d}${n === '이동' ? '칸' : ''}</span>`).join(', ') || '그대로';
   const gold = trSell(f.name), got = Math.max(0, Math.min(gold, RULES.playerGoldMax - g.gold)); // 새 보물을 팔 때
   const oGold = ot ? trSell(old) : 0, oGot = Math.max(0, Math.min(oGold, RULES.playerGoldMax - g.gold)); // 원래 보물을 팔고 바꿀 때 (2026-11-14)
   openModal(`

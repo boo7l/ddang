@@ -760,6 +760,7 @@ const TREASURES = {
   손자병법서: { stat: 'lea', bonus: 7 }, 병법이십사편: { stat: 'lea', bonus: 6 }, 맹덕신서: { stat: 'lea', bonus: 5 }, 육도: { stat: 'lea', bonus: 4 }, 삼략: { stat: 'lea', bonus: 3 },
   청룡언월도: { stat: 'war', bonus: 7 }, 방천화극: { stat: 'war', bonus: 6 }, 장팔사모: { stat: 'war', bonus: 5 }, 청공검: { stat: 'war', bonus: 4 }, 의천검: { stat: 'war', bonus: 3 },
   옥새: { stat: 'all', bonus: 3, exp: 0.30, weight: 5, sell: 5400, from: 7 }, // 2026-11-14 기획자 (시즌 7부터): 통솔·무력·지력 모두 +3 + 모든 능력 경험치 +30%. 무게 5 (가장 드묾), 팔면 5,400 (가점 9 × 600)
+  적토마: { stat: 'move', bonus: 1, weight: 5, sell: 4200, from: 9 }, // 2026-11-26 기획자 (시즌 9부터): 첫 특수 보물. 이동 명령 거리 +1칸 (재야 이동 포함, 뼈에게 닿기를과 겹침). 수송·보급·출진엔 없음. 무게 5 (옥새와 같음)
   둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 도덕경: { stat: 'int', bonus: 4 }, 남화경: { stat: 'int', bonus: 3 }, // 2026-11-13 시즌 7: 노자 → 도덕경, 장자 → 남화경 (TREASURE_RENAME)
 };
 const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.02, takeRate: 0.03, sellPer: 600, foundTurns: 5,
@@ -767,11 +768,12 @@ const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, lose
 const TREASURE_RENAME = { 노자: '도덕경', 장자: '남화경' }; // 옛 이름으로 가진 보물은 새 이름으로 읽는다
 const treasuresOf = g => (g.treasures || []).map(n => TREASURE_RENAME[n] || n).filter(n => TREASURES[n]);
 // 보물 하나가 올려 주는 능력치들 (옥새는 셋 다, 2026-11-14)
-const trKeys = n => TREASURES[n].stat === 'all' ? STATS.map(x => x.key) : [TREASURES[n].stat];
+const trKeys = n => TREASURES[n].stat === 'all' ? STATS.map(x => x.key) : TREASURES[n].stat === 'move' ? [] : [TREASURES[n].stat]; // 적토마(move)는 능력치를 올리지 않는다
+const trMove = g => treasuresOf(g).reduce((a, n) => a + (TREASURES[n].stat === 'move' ? TREASURES[n].bonus : 0), 0); // 보물로 늘어난 이동 칸 수 (적토마, 2026-11-26)
 // 효과 글: '통솔 +7' · '모든 능력 +3 · 경험치 +30%'. short면 '통+7' · '모두+3'
-const trLabel = (n, short) => { const t = TREASURES[n]; if (t.stat === 'all') return short ? `모두+${t.bonus}` : `모든 능력 +${t.bonus}${t.exp ? ` · 경험치 +${Math.round(t.exp * 100)}%` : ''}`; const nm = STATS.find(x => x.key === t.stat).name; return short ? `${nm[0]}+${t.bonus}` : `${nm} +${t.bonus}`; };
+const trLabel = (n, short) => { const t = TREASURES[n]; if (t.stat === 'move') return short ? `이동+${t.bonus}` : `이동 +${t.bonus}칸 (이동 명령만)`; if (t.stat === 'all') return short ? `모두+${t.bonus}` : `모든 능력 +${t.bonus}${t.exp ? ` · 경험치 +${Math.round(t.exp * 100)}%` : ''}`; const nm = STATS.find(x => x.key === t.stat).name; return short ? `${nm[0]}+${t.bonus}` : `${nm} +${t.bonus}`; };
 // 지금 능력치 글: '지금 95' · '지금 통솔 80 · 무력 90 · 지력 70'
-const trNow = (g, n) => { const s = effStats(g), k = trKeys(n); return k.length > 1 ? `지금 ${k.map(x => `${STATS.find(y => y.key === x).name} ${s[x]}`).join(' · ')}` : `지금 ${s[k[0]]}`; };
+const trNow = (g, n) => { const s = effStats(g), k = trKeys(n); if (!k.length) return typeof moveRangeOf === 'function' ? `지금 이동 ${isRonin(g) ? roninMoveOf(g) : moveRangeOf(g)}칸` : ''; return k.length > 1 ? `지금 ${k.map(x => `${STATS.find(y => y.key === x).name} ${s[x]}`).join(' · ')}` : `지금 ${s[k[0]]}`; };
 const trWeight = n => TREASURES[n].weight || TREASURE_RULES.pickWeight[TREASURES[n].bonus]; // 뽑힐 무게
 const trSell = n => TREASURES[n].sell || TREASURES[n].bonus * TREASURE_RULES.sellPer; // 팔 때 금
 const trOpen = n => !TREASURES[n].from || seasonNow() >= TREASURES[n].from; // 이번 시즌에 나오는 보물인가
