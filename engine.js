@@ -2111,6 +2111,7 @@ function roninFight(g, att, d, cs, rounds, lines) {
   return r;
 }
 // 약탈 (2026-11-25 기획자, 시즌 9부터, RULES.raid): 재야가 머무는 성에서 금·군량을 빼앗는다. 성 주인은 그대로
+const RAID_NO_PEACE = c => MAP.scenario === '대한민국' && c.name === '안산'; // 숨은 이스터에그 (2026-11-26)
 function runRaid(g, o, mark) {
   const R = RULES.raid;
   if (!isRonin(g)) return '재야만 쓰는 명령';
@@ -2149,7 +2150,7 @@ function runRaid(g, o, mark) {
   const food = Math.max(0, Math.min(cs.food || 0, room, Math.round(cs.agri * R.food * rnd() * scale)));
   cs.food -= food; g.food = (g.food || 0) + food;
   const hit = k => { const v = Math.round(cs[k] * (R.dmg[0] + Math.random() * (R.dmg[1] - R.dmg[0]))); cs[k] -= v; return v; };
-  const da = hit('agri'), dc = hit('comm'), dp = Math.min(cs.peace, randInt(R.peace[0], R.peace[1]));
+  const da = hit('agri'), dc = hit('comm'), dp = RAID_NO_PEACE(c) ? 0 : Math.min(cs.peace, randInt(R.peace[0], R.peace[1])); // 이스터에그 (2026-11-26 기획자): 대한민국 시나리오 안산은 약탈해도 치안이 줄지 않는다. 도움말·패치노트에 쓰지 않는다
   cs.peace -= dp;
   addRecord(g, 'raids');
   lines.push(`금 +${fmt(gold)} · 개인 군량 +${fmt(food)} (${fmt(g.food)}/${fmt(RULES.roninArmy.foodMax)})${scale < 1 ? ` · 병력이 ${fmt(R.fullTroops)}명보다 적어 ${Math.round(scale * 100)}%만` : ''}`);
