@@ -1560,7 +1560,7 @@ function helpDialog(page = -1) {
       <p class="helpSub">🧭 방침</p><ul>
       <li>방어할 성과 공격 목표를 하나씩 정하면 우리 세력 지도에 🛡 · 🗡로 표시돼요. 강제는 없어요.</li>${policyFxOn() ? `
       <li>🛡 방어할 성: 지키는 쪽이 받는 피해 -${Math.round(R.policyFx.def * 100)}% · 🗡 공격 목표: 그 성으로 출진하면 공격력 +${Math.round(R.policyFx.atk * 100)}% (야전 포함)</li>
-      <li>지도 표시는 바로 나오고, 효과는 바꾼 뒤 ${R.policyFx.delay}턴이 지나야 켜져요. 대도독이 없어지면 방침도 사라져요.</li>` : ''}</ul>
+      <li>효과는 바꾼 뒤 ${R.policyFx.delay}턴이 지나야 켜져요. 대도독이 없어지면 방침도 사라져요.</li>` : ''}</ul>
       <p class="helpSub">🤝 동맹</p><ul>
       <li>양쪽 세력 모두 대도독이 있어야 해요. 기간을 ${R.allyMin}~${R.allyMax}턴 중에 정해 제안하고, 상대 대도독이 ${R.handWait / (60 * MIN)}시간 안에 수락하면 맺어져요.</li>
       <li>동맹 중에는 서로 <b>출진 · 파괴 · 유언</b>을 할 수 없어요. 예약은 되지만 실행할 때 막히고, 금 · 군량은 들지 않아요. 첩보는 돼요.</li>
@@ -2175,7 +2175,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127004945&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127005016&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2185,7 +2185,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127004945&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127005016&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2195,7 +2195,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127004945&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127005016&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3027,7 +3027,7 @@ function policyDialog() {
   const opt = (list, sel) => '<option value="">없음</option>' + list.map(c => `<option value="${esc(c.id)}"${c.id === sel ? ' selected' : ''}>${esc(c.name)}${c.faction ? '' : ' (공백지)'}</option>`).join('');
   const own = MAP.cities.filter(c => c.faction === p.faction), other = MAP.cities.filter(c => c.faction !== p.faction).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   openModal(`<h2>🧭 방침</h2>
-    <p class="dim small">우리 세력 지도에만 표시돼요. ${policyFxOn() ? `🛡 방어할 성은 수비 쪽 받는 피해 -${Math.round(RULES.commander.policyFx.def * 100)}%, 🗡 공격 목표로 출진하면 공격력 +${Math.round(RULES.commander.policyFx.atk * 100)}% (야전 포함). 지도 표시는 바로 나오고, 효과는 바꾼 뒤 ${RULES.commander.policyFx.delay}턴이 지나야 켜져요. 대도독이 없어지면 방침도 사라져요.` : '안내일 뿐 강제는 없어요.'}</p>
+    <p class="dim small">우리 세력 지도에만 표시돼요. ${policyFxOn() ? `🛡 방어할 성은 수비 쪽 받는 피해 -${Math.round(RULES.commander.policyFx.def * 100)}%, 🗡 공격 목표로 출진하면 공격력 +${Math.round(RULES.commander.policyFx.atk * 100)}% (야전 포함). 효과는 바꾼 뒤 ${RULES.commander.policyFx.delay}턴이 지나야 켜져요. 대도독이 없어지면 방침도 사라져요.` : '안내일 뿐 강제는 없어요.'}</p>
     <p>🛡 방어할 성 <select id="pDef">${opt(own, cur.def)}</select> <button type="button" class="mini" data-pmap="def">지도</button>${cur.def ? ' <button class="mini" data-pclear="def">해제</button>' : ''}${policyFxText('def', cur) ? ` <span class="dim small">${policyFxText('def', cur)}</span>` : ''}</p>
     <p>🗡 공격 목표 <select id="pAtk">${opt(other, cur.atk)}</select> <button type="button" class="mini" data-pmap="atk">지도</button>${cur.atk ? ' <button class="mini" data-pclear="atk">해제</button>' : ''}${policyFxText('atk', cur) ? ` <span class="dim small">${policyFxText('atk', cur)}</span>` : ''}</p>
     <div class="modalBtns"><button id="pSave" class="main">저장</button><button data-close>닫기</button></div>`, box => {
