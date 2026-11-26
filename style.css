@@ -366,7 +366,7 @@ button.pick.on .grade, button.pick:hover .grade { color: #8a1e0a; text-shadow: n
 .opt:hover { border-color: var(--gold); }
 .opt:has(input:checked) { border-color: var(--title); background: #5e1a10; }
 .opt input { accent-color: var(--title); margin: 0; }
-.opt .r { margin-left: auto; font-size: 14px; }
+.opt .r { margin-left: auto; font-size: 14px; text-align: right; } /* 두 줄 설명도 오른쪽 맞춤 (2026-11-27 기획자) */
 .opt.siegeOpt .r { font-size: 16px; }
 .siegeUses { display: inline-flex; gap: 2px; margin: 0 -4px; } /* 병기 제작 창: 이름과 비용 사이 공(빨강)·수(파랑) 표시 (2026-11-25) */
 .siegeUse { font-size: 12px; line-height: 1; padding: 2px 3px; border-radius: 3px; color: #fff; }
@@ -928,7 +928,7 @@ details.fold > summary:hover h2 { color: var(--title); }
 
   .opt { flex-wrap: wrap; }
   .opt > b, .opt > .dim { white-space: nowrap; }
-  .opt .r { margin-left: 0; flex-basis: 100%; padding-left: 26px; } /* 고르는 칸: 성 이름 줄 아래에 설명 */
+  .opt .r { margin-left: 0; flex-basis: 100%; padding-left: 26px; text-align: left; } /* 고르는 칸: 성 이름 줄 아래에 설명 */
   .opt .r.foodR { margin-left: auto; flex-basis: auto; padding-left: 0; white-space: nowrap; } /* 이동·군량 수송의 군량은 성 이름 줄 오른쪽에 그대로 (2026-11-13 기획자: 두 줄로 늘릴 필요 없음). 너무 길면 저절로 다음 줄 */
   #whoName, #who .wideOnly { display: none; } /* 제목줄 단추를 한 줄에 */
   .hdrRight button { padding: 2px 6px; }
