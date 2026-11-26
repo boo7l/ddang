@@ -760,7 +760,7 @@ const TREASURES = {
   손자병법서: { stat: 'lea', bonus: 7 }, 병법이십사편: { stat: 'lea', bonus: 6 }, 맹덕신서: { stat: 'lea', bonus: 5 }, 육도: { stat: 'lea', bonus: 4 }, 삼략: { stat: 'lea', bonus: 3 },
   청룡언월도: { stat: 'war', bonus: 7 }, 방천화극: { stat: 'war', bonus: 6 }, 장팔사모: { stat: 'war', bonus: 5 }, 청공검: { stat: 'war', bonus: 4 }, 의천검: { stat: 'war', bonus: 3 },
   옥새: { stat: 'all', bonus: 3, exp: 0.30, weight: 5, sell: 5400, from: 7 }, // 2026-11-14 기획자 (시즌 7부터): 통솔·무력·지력 모두 +3 + 모든 능력 경험치 +30%. 무게 5 (가장 드묾), 팔면 5,400 (가점 9 × 600)
-  적토마: { stat: 'move', bonus: 1, weight: 5, sell: 4200, from: 9 }, // 2026-11-26 기획자 (시즌 9부터): 첫 특수 보물. 이동 명령 거리 +1칸 (재야 이동 포함, 뼈에게 닿기를과 겹침). 수송·보급·출진엔 없음. 무게 5 (옥새와 같음)
+  적토마: { stat: 'move', bonus: 1, weight: 20, sell: 4200, from: 9 }, // 2026-11-26 기획자 (시즌 9부터): 첫 특수 보물. 이동 명령 거리 +1칸 (재야 이동 포함, 뼈에게 닿기를과 겹침). 수송·보급·출진엔 없음. 무게 20 (같은 날 5 → 20, +5 보물과 같은 급)
   둔갑천서: { stat: 'int', bonus: 7 }, 태평요술서: { stat: 'int', bonus: 6 }, 주역: { stat: 'int', bonus: 5 }, 도덕경: { stat: 'int', bonus: 4 }, 남화경: { stat: 'int', bonus: 3 }, // 2026-11-13 시즌 7: 노자 → 도덕경, 장자 → 남화경 (TREASURE_RENAME)
 };
 const TREASURE_RULES = { pickWeight: { 3: 30, 4: 25, 5: 20, 6: 15, 7: 10 }, loseRate: 0.02, takeRate: 0.03, sellPer: 600, foundTurns: 5,
