@@ -1920,10 +1920,10 @@ const noteGroupsHtml = groups => groups.map(gr => gr.dev ? `<div class="notePape
 // i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
 function noteDialog(i) {
   const n = PATCH_NOTES[i], older = PATCH_NOTES[i + 1], newer = PATCH_NOTES[i - 1];
-  const short = x => x.title.replace(' 주요 업데이트', '');
+  const short = x => x.title.replace(' 주요 업데이트', '').replace(' 대규모 개편 안내', '');
   openModal(`
     <h2>📜 ${n.title} <span class="dim small">(${n.date})</span></h2>
-    <div class="help notesPop">${noteGroupsHtml(n.groups)}</div>
+    <div class="help notesPop">${n.intro ? `<div class="notePaper noteIntro">${n.intro}</div>` : ''}${noteGroupsHtml(n.groups)}</div>
     <div class="notePager">
       <button id="noteOlder"${older ? '' : ' disabled'}>◀ ${older ? short(older) : ''}</button>
       <span class="dim">${PATCH_NOTES.length - i} / ${PATCH_NOTES.length}</span>
@@ -1933,6 +1933,7 @@ function noteDialog(i) {
     box.querySelector('#noteOlder').onclick = () => noteDialog(i + 1);
     box.querySelector('#noteNewer').onclick = () => noteDialog(i - 1);
     box.querySelectorAll('[data-odds="explore"]').forEach(b => { b.onclick = () => exploreOddsDialog(() => noteDialog(i), '패치노트로'); }); // 패치노트 안의 '확률표' 링크 (2026-11-07)
+    box.querySelectorAll('[data-help]').forEach(b => { b.onclick = () => { closeModal(); helpDialog2(b.dataset.help || -1); }; }); // 안내문 속 도움말 바로가기 (2026-11-26, 시즌 9 개편 안내)
     box.querySelectorAll('[data-odds="trait"]').forEach(b => { b.onclick = () => traitOddsDialog(() => noteDialog(i), '패치노트'); }); // 특성 확률표 링크 (2026-11-08)
   });
   $('#modalBox').classList.add('wideBox');
@@ -2172,7 +2173,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126214118&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126215508&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2182,7 +2183,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126214118&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126215508&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2192,7 +2193,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126214118&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126215508&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
