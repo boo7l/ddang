@@ -34,7 +34,8 @@ const traitOf = fid => {
 };
 // 특성이 붙은 경험치: 조조는 모두 +10%, 유표는 지력 +15%
 // 성장 보너스 (2026-11-24 기획자, 시즌 9부터, RULES.catchUp): 명성 100 이상 장수끼리 능력치 합 하위 구간이면 경험치 배율. 턴마다 한 번 계산
-const statSum = g => { const s = effStats(g); return (s.lea || 0) + (s.war || 0) + (s.int || 0); };
+// 비교는 기본 능력치로 (2026-11-26 기획자: 장비·보물을 넣으면 상점에서 사면 보너스가 줄어드는 문제)
+const statSum = g => { const s = g.stats || {}; return (s.lea || 0) + (s.war || 0) + (s.int || 0); };
 let catchUpMemo = null;
 const catchUpMul = g => {
   const C = RULES.catchUp;

@@ -58,7 +58,7 @@ function helpTopics() {
           ['계략 (파괴·유언·첩보)', `지력 +${PLOT.exp} (실패해도 +${PLOT.failExp})`],
           ['단기접전 승리·돌격·책략', `무력 +${R.duel.exp}·무력 +${R.charge.statExp}·지력 +${R.scheme.statExp}`],
           ['승급·증축', `병종 능력치 +${T2.upExp}·세 능력치 모두 +${R.expand.exp[1]}~${R.expand.exp[3]}`]]),
-        detail: `<p><b>성장 보너스</b>: 시즌 ${CU.afterTurn}턴이 지나면, 명성 ${CU.minMerit} 이상 장수끼리 능력치 합(장비·보물 포함)을 비교해서 낮은 쪽이 경험치를 더 받아요.</p>`
+        detail: `<p><b>성장 보너스</b>: 시즌 ${CU.afterTurn}턴이 지나면, 명성 ${CU.minMerit} 이상 장수끼리 능력치 합(장비·보물 제외)을 비교해서 낮은 쪽이 경험치를 더 받아요.</p>`
           + table(['능력치 합 순위', '경험치'], CU.tiers.map(([p, m], i) => [`하위 ${i ? pct(CU.tiers[i - 1][0]) + '~' : ''}${pct(p)}%`, `×${m}`])), related: [] },
       { id: 'fame', title: '명성', keys: ['명성', '공적', '명성표'], body: `<p>장수의 활동과 업적을 나타내는 점수예요. 명령을 하거나 싸우면 쌓이고, 하야·약탈 같은 일로 줄어요. ${tbl('merit', '명성표')}</p>`
         + ul([`금 수입이 늘어요 (명성 ${fmt(Math.round(0.01 / R.meritIncome))}마다 +1%).`, `징병량이 늘어요 (명성 ${fmt(Math.round(1 / R.draftPerMerit))}마다 +1명).`, `대도독은 명성 ${fmt(C.minMerit)}, 거병은 명성 ${fmt(RI.minMerit)} 이상이어야 해요.`, `한 턴에 얻는 명성은 최대 ${R.meritTurnMax}이에요 (정복·증축 보상은 예외).`]), related: ['general.medal'] },
