@@ -221,7 +221,7 @@ function helpTopics() {
         `세력마다 한 명. 명성 ${fmt(C.minMerit)} 이상, 세력 장수 ${C.minMembers}명 이상이면 <b>도독직 수락</b>으로 올라요 (세력의 첫 대도독은 세력 명성 1위만).`,
         `<b>혜택</b>: 병력 상한 +${fmt(C.perkTroops)}, 금 수입 +${pct(C.perkGold)}%.`,
         `<b>권한</b>: 📌 공지·🧭 방침(지도에 🛡·🗡 표시)·🤝 동맹·🚚 보급·🚪 해고·위임·반납. 다른 장수에게 명령을 내리지는 못해요.`,
-        `<b>방침 효과</b>: 🛡 방어할 성은 지키는 쪽이 받는 피해 -${pct(C.policyFx.def)}%, 🗡 공격 목표로 출진하면 공격력 +${pct(C.policyFx.atk)}% (야전 포함). 바꾸면 ${C.policyFx.delay}턴 뒤에 켜지고, 대도독이 없어지면 방침도 사라져요.`]),
+        `<b>방침 효과</b>: 🛡 방어할 성은 지키는 쪽이 받는 피해 -${pct(C.policyFx.def)}%, 🗡 공격 목표로 출진하면 공격력 +${pct(C.policyFx.atk)}% (야전 포함). 지도 표시는 바로 나오고 효과는 바꾼 뒤 ${C.policyFx.delay}턴이 지나야 켜져요. 대도독이 없어지면 방침도 사라져요.`]),
         detail: ul([`위임: 명성 ${fmt(C.minMerit)} 이상인 같은 세력 장수에게. 받는 장수가 ${C.handWait / HOUR}시간 안에 수락해야 넘어가요.`, `직접 반납하면 ${C.resignWait}턴 동안 다시 못 맡아요 (위임은 괜찮아요).`, `${C.offline / HOUR}시간 넘게 접속하지 않거나, 명성·인원 조건이 깨지면 자리를 잃어요.`, '보급: 어디에 있든 우리 성 A에서 B로 군량을 옮겨요 (A·B는 우리 땅으로 이어진 가까운 성). 한 턴을 써요.']), related: ['faction.ally'] },
       { id: 'ally', title: '동맹', keys: ['동맹', '파기', '외교'], body: ul([
         `양쪽 대도독이 맺어요. 기간 ${C.allyMin}~${C.allyMax}턴, 세력당 ${C.allyMax2}개까지.`,
