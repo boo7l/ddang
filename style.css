@@ -1422,6 +1422,7 @@ body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBt
 .helpIndex2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .helpIndex2 .hiT { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
 .helpIndex2 .hiB { font-size: 14px; color: var(--dim); }
+.helpIndex2 button:hover .hiB, .helpIndex2 button:focus-visible .hiB { color: var(--panel-dark); opacity: .8; } /* 마우스를 올리면 바탕이 금색이라 회색 설명이 안 보였다 (2026-11-26) */
 .helpStart { margin: 4px 0 8px; text-align: center; }
 .helpStart button { width: min(100%, 420px); padding: 8px 12px; text-align: center; } /* 가운데, 조금 좁게 (2026-11-25 기획자) */
 .helpSearch { margin: 4px 0 6px; }
