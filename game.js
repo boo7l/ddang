@@ -1116,9 +1116,9 @@ function draftDialog() {
     const ropts = unitTypesNow().filter(t => !unitTier2(t)).map(t => { const u = UNIT_TYPES[t]; return `<label class="opt"><input type="radio" name="tgt" value="${t}"${t === cur ? ' checked' : ''}>
       <b>${t}</b> <span class="dim">${sn(u.stat)} ${effStats(p)[u.stat]}</span><span class="r dim">${u.beats}에 강함</span></label>`; }).join('');
     pickDialog('모병', `<p>${esc(from.name)}에서 의병 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. (징병의 ${Math.round(R.draftRate * 100)}% · 성 치안은 깎지 않아요)</p>
-      ${p.troops > 0 ? `<p>현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))} · 다른 병종을 모으면 지금 병력은 흩어져요.</p>` : ''}
+      ${p.troops > 0 ? `<p>현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))} · 다른 병종을 모으면 지금 병력은 해산해요.</p>` : ''}
       <p class="dim">병사는 개인 군량을 먹어요 (지금 ${fmt(p.food || 0)}/${fmt(R.foodMax)}). 임관하면 병력은 그대로, 개인 군량은 사라져요.</p>`,
-      ropts, '예약', t => { if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false; reserve({ cmd: 'draft', unit: t }); }, '', '', costLine('금', RULES.myGoldCost.draft, p.gold));
+      ropts, '예약', t => { if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 해산해요. 예약할까요?`)) return false; reserve({ cmd: 'draft', unit: t }); }, '', '', costLine('금', RULES.myGoldCost.draft, p.gold));
     return;
   }
   const lockUnit = draftLockUnit(p, slot);
@@ -1149,14 +1149,14 @@ function draftDialog() {
   const opts = hasElite ? `<div data-dtab="base"${startElite ? ' hidden' : ''}>${baseOpts}</div><div data-dtab="elite"${startElite ? '' : ' hidden'}><p class="dim small">정예 병종은 대도시 이상 성에서만 모으고 승급할 수 있어요 · 금 ${fmt(T2.gold)} · 군량 ${T2.food}배</p>${eliteOpts}</div>` : baseOpts;
   const tabsHtml = hasElite ? `<div class="helpTabs" id="draftTabs"><button type="button" data-dt="base"${startElite ? '' : ' class="on"'}>기본</button><button type="button" data-dt="elite"${startElite ? ' class="on"' : ''}>정예</button></div>` : '';
   pickDialog('징병', `<p>${esc(from.name)}에서 병사 <b class="hi">${fmt(lo)}~${fmt(hi)}</b>명을 모읍니다. 병종마다 전투력에 쓰는 능력치가 달라요.</p>
-    ${p.troops > 0 ? `<p id="draftHave">현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))}</p>` : ""}    <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 흩어져요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>${tabsHtml}`,
+    ${p.troops > 0 ? `<p id="draftHave">현재 <b class="hi">${p.unitType} ${fmt(p.troops)}</b>/${fmt(troopsMax(p))}</p>` : ""}    <p class="dim" id="draftNow">${p.troops > 0 ? `다른 병종을 모으면 지금 병력은 모두 해산해요.` : '병사가 없어요. 병종을 골라 새로 모아요.'}</p>${tabsHtml}`,
   opts, '예약', (t, box) => {
     if (box.querySelector('#draftGuard').checked) { // 수비대장 징병 (2026-11-04)
       draftReserve(GUARD_UNIT); // 2026-11-14: 수비대는 병종 없음
       return;
     }
     if (t.startsWith('up:')) { reserve({ cmd: 'draft', unit: t.slice(3), upgrade: true }); return; } // 승급 (2026-11-24)
-    if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 흩어져요. 예약할까요?`)) return false;
+    if (p.troops > 0 && cur && t !== cur && !confirm(`${t}을 모으면 그때 있는 ${cur} 병력은 모두 해산해요. 예약할까요?`)) return false;
     draftReserve(t);
   }, `<label class="guardSw"><input type="checkbox" id="draftGuard"${gFull ? ' disabled' : ''}> 🛡 <b>수비대 징병</b> <span class="dim">· 징병한 병사를 내 병력 대신 ${esc(from.name)} 수비대에 넣어요. 수비대장은 모든 능력치가 ${RULES.guardStat}이에요.</span>${gFull ? `<br><span class="bad">방어 모드 장수가 ${RULES.defenseMax}명 꽉 차 있어서 지금은 수비대 징병을 할 수 없어요.</span>` : ''}<br><span class="dim">(지금 ${fmt(gNow)} / ${fmt(gMax)} · 수비대는 병종이 없어요)</span></label>
     <p class="dim small">치안이 ${RULES.peaceLow} 미만인 성에서는 징병할 수 없어요.</p>`, '', `<span id="draftCost">${costLine('금', unitTier2(cur) && bigCity ? T2.gold : RULES.myGoldCost.draft, p.gold)}</span>`);
@@ -1361,7 +1361,7 @@ async function resignDialog() {
   const p = me(), f = factionById(p.faction);
   if (!confirm(`지금 바로 ${f.name} 세력을 떠나 재야가 될까요?
 
-- 거느린 병사는 모두 흩어져요.
+- 거느린 병사는 모두 해산해요.
 - 예약해 둔 명령은 모두 지워져요.
 ${RULES.resignMeritCut ? `- 명성이 ${Math.round(RULES.resignMeritCut * 100)}% 줄어요. (지금 ${fmt(p.merit)} → ${fmt(p.merit - Math.floor(p.merit * RULES.resignMeritCut))})
 - 금·능력치는 그대로예요.` : '- 명성·금·능력치는 그대로예요.'}
@@ -1491,7 +1491,7 @@ function helpDialog(page = -1) {
       <li>행동하면 그 능력치의 <b>경험치</b>가 쌓이고, 다 차면 1 올라요. (내정 → 그 내정의 능력치, 출진 → 병종의 능력치${seasonNow() >= RULES.s9cmd.fromSeason ? '' : ', <b>수련</b> → 고른 능력치'})</li>
       <li><b>상점</b>(장수 창의 단추)에서 명마(통솔)·명검(무력)·서적(지력)를 사면 하나에 +${SHOP.명검.bonus}. 예약 없이 바로 사지고, 여러 번 살 수 있지만 살 때마다 비싸져요.</li></ul>`],
     ['⚔ 싸우는 법', `<ol>
-      <li><b>징병</b>으로 병사를 모아요. 병종은 <b>기병 → 보병 → 궁병 → 기병</b> 순으로 상대에게 강해요 (전투력 +${Math.round((seasonNow() >= 7 ? RULES.matchupS7 : RULES.matchup) * 100)}%). 다른 병종을 모으면 있던 병력은 흩어지니 조심해요.</li>
+      <li><b>징병</b>으로 병사를 모아요. 병종은 <b>기병 → 보병 → 궁병 → 기병</b> 순으로 상대에게 강해요 (전투력 +${Math.round((seasonNow() >= 7 ? RULES.matchupS7 : RULES.matchup) * 100)}%). 다른 병종을 모으면 있던 병력은 해산하니 조심해요.</li>
       <li>적 성을 누르면 수비대와 장수 수비가 있는지만 보여요. 병력은 <b>첩보</b>에 성공해야 알 수 있어요.</li>
       <li>출진하면 최대 <b>${RULES.roundsMax}합</b>까지 싸워요. 수비 부대를 모두 쓰러뜨리면 이어서 <b>성벽</b>을 공격해요. <b>방어가 0이 되면 점령</b>해요. 지키는 장수가 없는 성도 성벽은 깎아야 해요.</li>
       <li>상대의 방어가 강하다면 <b>계략</b>(파괴·유언)으로 적 성의 방어·치안을 깎아 두면 좋아요.</li>
@@ -1567,7 +1567,7 @@ function helpDialog(page = -1) {
       <li>기간이 끝나서 풀리면 벌칙은 없어요.</li></ul>
       <p class="helpSub">🚪 해고</p><ul>
       <li>${R.fireOffline / HOUR}시간 넘게 접속하지 않은 세력 장수를 해고할 수 있어요.</li>
-      <li>해고된 장수는 재야가 되고 거느리던 병력은 흩어져요.</li></ul>
+      <li>해고된 장수는 재야가 되고 거느리던 병력은 해산해요.</li></ul>
     </div>`)(RULES.commander)]] : []),
     // 작은 팁 (2026-11-10): 제목 상자만 보이고, 누르면 펼쳐지고 다시 누르면 접힌다 (details)
     ['💡 작은 팁', `<div class="tipBoxes">
@@ -2173,7 +2173,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127001128&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127001400&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2183,7 +2183,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127001128&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127001400&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2193,7 +2193,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127001128&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127001400&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2722,7 +2722,7 @@ function fallenDialog() {
   const key = `${MY_ID}|${S.season || 1}|${f.turn}|${f.faction}`;
   try { if (localStorage.getItem('fallenSeen') === key) return; localStorage.setItem('fallenSeen', key); } catch (e) { /* 저장 못 하는 브라우저는 이번 접속에만 한 번 */ }
   openModal(`<h2>⚔ ${esc(f.faction)} 세력 멸망</h2>
-    <p>${dateText(f.turn)}, 마지막 성 <b>${esc(f.city)}</b>${f.by ? `${josa(f.city, '이가').slice(-1)} <b>${esc(f.by)}</b> 세력에게 함락되어` : `${josa(f.city, '을를').slice(-1)} 잃어`}${esc(f.faction)} 세력이 멸망했어요.${f.meritLost ? ` 명성이 ${fmt(f.meritLost)} 줄었어요.` : ''}${f.troopsLost ? ` 거느리던 병사 ${fmt(f.troopsLost)}명은 흩어졌어요.` : ''}</p>
+    <p>${dateText(f.turn)}, 마지막 성 <b>${esc(f.city)}</b>${f.by ? `${josa(f.city, '이가').slice(-1)} <b>${esc(f.by)}</b> 세력에게 함락되어` : `${josa(f.city, '을를').slice(-1)} 잃어`}${esc(f.faction)} 세력이 멸망했어요.${f.meritLost ? ` 명성이 ${fmt(f.meritLost)} 줄었어요.` : ''}${f.troopsLost ? ` 거느리던 병사 ${fmt(f.troopsLost)}명은 해산했어요.` : ''}</p>
     ${isRonin(me()) ? `<p>${esc(cityById(me().city).name)}에 재야로 남았어요. 들어갈 세력의 성으로 가서 [임관]하세요.</p>
     <div class="modalBtns"><button data-close class="main">확인</button></div>` : `<p>새 세력을 골라 다시 천하를 노려 보세요.</p>
     <div class="modalBtns"><button data-close class="main">세력 고르기</button></div>`}`); // 시즌 8부터 재야 (2026-11-16)
@@ -3083,14 +3083,14 @@ function fireDialog() {
   const p = me(), R = RULES.commander;
   const list = membersOf(p.faction).filter(fireable).sort((a, b) => a.seenAt - b.seenAt); // fireOffline 넘은 장수만 (2026-11-13 기획자)
   openModal(`<h2>🚪 해고</h2>
-    <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 흩어져요. (명성은 그대로)</p>
+    <p class="dim small">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수만 해고할 수 있어요. 해고되면 재야가 되고 거느리던 병력은 해산해요. (명성은 그대로)</p>
     ${list.length ? `<div class="adminScroll"><table class="stats rank members"><tr><th>장수</th><th>마지막 접속</th><th></th></tr>${list.map(g => `<tr><td>${esc(g.name)}</td><td>${agoText(g.seenAt)} 💤</td><td><button class="mini danger" data-fire="${esc(g.id)}">해고</button></td></tr>`).join('')}</table></div>`
       : `<p class="dim">${R.fireOffline / HOUR}시간 넘게 접속하지 않은 장수가 없어요.</p>`}
     <div class="modalBtns"><button data-close>닫기</button></div>`, box => {
     box.onclick = async e => {
       const b = e.target.closest('[data-fire]'); if (!b) return;
       const g = S.generals[b.dataset.fire];
-      if (!g || !confirm(`${g.name}을(를) 해고할까요?\n재야가 되고 거느리던 병력은 흩어져요. 명성은 그대로예요.`)) return;
+      if (!g || !confirm(`${g.name}을(를) 해고할까요?\n재야가 되고 거느리던 병력은 해산해요. 명성은 그대로예요.`)) return;
       if (await call('cmdFire', { to: g.id })) { renderAll(); fireDialog(); }
     };
   });
@@ -3748,7 +3748,7 @@ function playerDialog(id, backTab = 'users', backF = null) { // 2026-11-08: 옆 
       const text = prompt(`${g.name}에게 보낼 경고 (100자까지, 그 장수의 기록에 남아요)`, '비매너 행위로 경고합니다.');
       if (text && text.trim() && await call('adminWarn', { id, text })) again();
     };
-    $('#pKick').onclick = () => act('adminKick', {}, `${g.name}을(를) 세력에서 쫓아낼까요?\n하야처럼 병력은 흩어지고, 그 세력에는 한동안 다시 못 들어가요.`);
+    $('#pKick').onclick = () => act('adminKick', {}, `${g.name}을(를) 세력에서 쫓아낼까요?\n하야처럼 병력은 해산하고, 그 세력에는 한동안 다시 못 들어가요.`);
     box.querySelectorAll('[data-mute]').forEach(b => { b.onclick = () => act('adminMute', { hours: +b.dataset.mute }, +b.dataset.mute ? `${g.name}의 채팅을 ${b.textContent} 동안 막을까요?` : '채팅 금지를 풀까요?'); });
     box.querySelectorAll('[data-ban]').forEach(b => { b.onclick = async () => {
       const days = +b.dataset.ban;

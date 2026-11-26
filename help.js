@@ -141,7 +141,7 @@ function helpTopics() {
     { id: 'army', icon: '🪖', title: '병종과 병기', blurb: '징병·정예·승급·병기', subs: [
       { id: 'draft', title: '징병', keys: ['징병', '병종 변경', '해산'], body: ul([
         `금 ${R.myGoldCost.draft}으로 병사를 모아요. 모이는 수는 ${link('general.troops', '징병량')}을 봐요.`,
-        '<b>다른 병종을 모으면 지금 병력은 모두 흩어져요.</b>',
+        '<b>다른 병종을 모으면 지금 병력은 모두 해산해요.</b>',
         `치안 ${R.peaceLow} 아래인 성에서는 징병할 수 없어요.`]), related: ['city.guard'] },
       { id: 'units', title: '병종', keys: ['보병', '기병', '궁병', '중보병', '중기병', '노병', '정예', '상성'], body: `<p><b>기병 → 보병 → 궁병 → 기병</b> 순으로 상대에게 강해요 (상성 전투력 +${pct(R.matchupS7)}%). 정예 병종도 같은 계열의 상성을 그대로 받아요.</p>`
         + table(['능력치', '기본 병종', '정예 병종', '정예 효과'], base.map(b => { const e = elite.find(t => UNIT_TYPES[t].base === b); return [sn(UNIT_TYPES[b].stat), b, e || '—', e ? UNIT_TYPES[e].desc : '—']; }))
@@ -154,7 +154,7 @@ function helpTopics() {
           if (u.charge || u.chargeDmg) return `${head}: 돌격에만 붙어요. 무력이 돌격 조건(${R.charge.minWar})에 못 미치면 효과가 없어요.`;
           if (u.scheme || u.schemeDmg) return `${head}: 책략에만 붙어요. 지력이 책략 조건(${R.scheme.minInt})에 못 미치면 효과가 없어요.`;
           return ''; })), related: ['battle.skill'] },
-      { id: 'upgrade', title: '승급', keys: ['승급', '정예'], body: `<p>징병 창의 <b>정예</b> 탭에서 해요. 지금 기본 병종 병력을 흩어지지 않고 같은 계열 정예 병종으로 바꿔요 (보병 → 중보병). ${gName[T2.gradeMin]} 이상 성에서만, 1,000명당 금 ${T2.upPer1000}. 1턴을 써요.</p>`, related: [] },
+      { id: 'upgrade', title: '승급', keys: ['승급', '정예'], body: `<p>징병 창의 <b>정예</b> 탭에서 해요. 지금 기본 병종 병력을 해산하지 않고 같은 계열 정예 병종으로 바꿔요 (보병 → 중보병). ${gName[T2.gradeMin]} 이상 성에서만, 1,000명당 금 ${T2.upPer1000}. 1턴을 써요.</p>`, related: [] },
       { id: 'siege', title: '병기', keys: ['병기', '충차', '정란', '연노', '벽력거', '내구도'], body: `<p>병기는 부대에 하나 갖추는 장비예요. 공격·수비 목적에 맞게 골라요.</p>`
         + table(['병기', '쓰는 때', '금', '효과'], sieges.map(t => [`<b>${t}</b>`, useText(SIEGE[t].use), siegePriceText(t), SIEGE[t].desc]))
         + '<p class="dim small">세력·장수 특성에 따라 실제 구매 가격이 달라질 수 있어요.</p>'
@@ -214,7 +214,7 @@ function helpTopics() {
     { id: 'faction', icon: '🚩', title: '세력과 외교', blurb: '임관·대도독·동맹·통일', subs: [
       { id: 'join', title: '임관·하야·해고', keys: ['임관', '하야', '해고', '임관 제한'], body: ul([
         `<b>임관 제한</b>: 처음 ${R.joinCap.turns}턴 동안은 전체 장수의 ${pct(R.joinCap.rate)}% 이상이 모인 세력에 새로 들어갈 수 없어요.`,
-        `<b>하야</b>: 세력을 떠나 그 성에 재야로 남아요. <b>명성 -${pct(R.resignMeritCut)}%, 병력은 흩어지고</b>, ${R.rejoinWait}턴 동안 어느 세력에도 임관할 수 없어요.`,
+        `<b>하야</b>: 세력을 떠나 그 성에 재야로 남아요. <b>명성 -${pct(R.resignMeritCut)}%, 병력은 해산하고</b>, ${R.rejoinWait}턴 동안 어느 세력에도 임관할 수 없어요.`,
         `<b>해고</b>: 대도독이 ${C.fireOffline / HOUR}시간 넘게 접속하지 않은 장수를 재야로 보내요. 명성은 그대로, 다시 들어가는 대기는 없어요.`]),
         detail: `<p>임관 제한은 세력에 든 장수가 모두 ${R.joinCap.minTotal}명 이상일 때부터 적용되고, 성이 남은 세력이 ${R.joinCap.offAt}개 이하가 되면 없어요.</p>`, related: ['ronin.basic'] },
       { id: 'commander', title: '대도독', keys: ['대도독', '공지', '방침', '보급', '위임', '반납'], body: ul([
@@ -228,7 +228,7 @@ function helpTopics() {
         '동맹을 맺어도 양쪽 모두 적대 세력이 하나 이상 남아 있어야 해요.',
         `<b>파기</b>하면 ${C.allyBreakTurns}턴 뒤에 풀리고, 파기한 세력 장수 모두 명성 -${C.allyBreakMerit} (대도독 -${C.allyBreakMeritCmd}). 기간이 끝나 풀리면 벌칙은 없어요.`]), related: [] },
       { id: 'unify', title: '멸망과 천하통일', keys: ['멸망', '천하통일', '통일', '정복'], body: ul([
-        '세력의 마지막 성이 떨어지면 <b>멸망</b>이에요. 그 세력 장수는 병력이 흩어지고 재야가 돼요.',
+        '세력의 마지막 성이 떨어지면 <b>멸망</b>이에요. 그 세력 장수는 병력이 해산하고 재야가 돼요.',
         '멸망시킨 세력의 장수 모두 명성·금·경험치 보상을 받아요. 망한 세력 장수가 많을수록 크고, 우리 세력 인원이 많을수록 줄어요.',
         '세력이 하나만 남으면 <b>천하통일</b>로 시즌이 끝나요. 남은 도적군 성은 저절로 흡수돼요.']), related: ['general.medal'] },
     ] },

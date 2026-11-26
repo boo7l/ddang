@@ -827,7 +827,7 @@ function runDraft(g, o) {
   if (why) return why;
   // 다른 병종을 모으면 있던 병력은 모두 흩어지고 새 부대가 된다
   let note = '';
-  if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
+  if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 해산했다`; g.troops = 0; }
   const t = traitOf(g.faction);
   const raw = Math.floor(draftGain(effStats(g), g.merit) * rate * (1 + (t.draft || 0) + (unitFam(type) === '기병' ? t.cavalryDraft || 0 : 0) + (gTrait(g).draft || 0) + (capitalOn() && city.grade >= 4 ? RULES.capital.draft : 0))); // 수도에서 징병 +5% (2026-11-16, 시즌 8부터)
   const gain = Math.min(raw, troopsMax(g) - g.troops); // 원소·인망: 더 모인다, 고구려: 기병만
@@ -856,7 +856,7 @@ function runRoninDraft(g, type) {
   const why = pay(g, 'draft');
   if (why) return why;
   let note = '';
-  if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다`; g.troops = 0; }
+  if (g.troops > 0 && g.unitType !== type) { note = ` · 있던 ${g.unitType} ${fmt(g.troops)}명은 해산했다`; g.troops = 0; }
   const gain = Math.min(Math.floor(draftGain(effStats(g), g.merit) * R.draftRate * (1 + (gTrait(g).draft || 0))), troopsMax(g) - g.troops);
   g.unitType = type;
   g.troops += gain;
@@ -1034,7 +1034,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const meritLost = Math.ceil(g.merit * RULES.fallenMeritLoss); // 멸망 벌칙: 명성 손실 (2026-10-31)
       g.merit -= meritLost;
       const troopsLost = g.troops > 0 ? g.troops : 0; // 2026-11-19 기획자: 멸망해도 하야처럼 병사는 흩어진다 (방어를 끈 장수가 병력을 들고 재야가 되던 것 막음)
-      if (troopsLost) addLog(g, `거느리던 ${g.unitType} ${fmt(troopsLost)}명은 흩어졌다.`);
+      if (troopsLost) addLog(g, `거느리던 ${g.unitType} ${fmt(troopsLost)}명은 해산했다.`);
       g.troops = 0; g.unitType = null;
       const heir = soleFaction();
       if (heir) { absorbInto(g, heir, c); continue; } // 남은 세력이 하나뿐이면 재야 대신 그 세력으로 (2026-11-18 기획자)
@@ -2240,7 +2240,7 @@ function runEnlist(g) {
 function runResign(g, kicked = false) { // kicked: 관리자 추방 (명성은 깎지 않는다)
   if (!g.faction) return '세력에 소속되어 있지 않아요.';
   const f = factionById(g.faction), city = cityById(g.city);
-  const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 흩어졌다.` : '';
+  const left = g.troops > 0 ? ` 거느리던 ${g.unitType} ${fmt(g.troops)}명은 해산했다.` : '';
   const cut = kicked ? 0 : Math.floor((g.merit || 0) * RULES.resignMeritCut); // 시즌 7부터 하야 명성 -15% (멸망으로 재야가 될 때는 이 함수를 거치지 않는다)
   if (cut > 0) g.merit -= cut;
   Object.assign(g, { faction: null, city: roninOn() ? g.city : null, troops: 0, unitType: null }); // 시즌 8부터 재야로 그 성에 남는다 (2026-11-16)
