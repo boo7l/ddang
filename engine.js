@@ -1453,7 +1453,7 @@ function siegeAttack(g, att, from, to, mark, f) {
   });
   for (const d of defs) {
     if (left <= 0 || att.troops <= 0) break;
-    const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다…` : '';
+    const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다!` : '';
     lines.push(`▶ ${d.name}(${d.type ? d.type + ' ' : ''}${fmt(d.troops)})과 맞붙었다${edge}`);
     const r = fightRounds(att, d, cs.wall, left);
     cs.wall -= r.pierced; // 개인 특성 관통맨: 합 중에 깎은 방어. 0이 돼도 수비 부대를 쓰러뜨려야 점령한다
@@ -2089,7 +2089,7 @@ function runQuest(g) {
 }
 // 재야 부대와 성을 지키는 한 부대의 싸움 (약탈·거병, 2026-11-25): 성벽 없이 rounds합. 지킨 쪽 병력·경험치·기록을 되돌려 적는다. 보고서 줄을 lines에
 function roninFight(g, att, d, cs, rounds, lines) {
-  const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : d.type && matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다…` : '';
+  const edge = matchupOf(att, d) > 1 ? ` · ${att.type}이 ${d.type}에 강하다!` : d.type && matchupOf(d, att) > 1 ? ` · ${d.type}이 ${att.type}에 강하다!` : '';
   lines.push(`▶ ${d.name}(${d.type ? d.type + ' ' : ''}${fmt(d.troops)})과 맞붙었다${edge}`);
   const r = fightRounds(att, d, 0, rounds);
   lines.push(...r.lines);
