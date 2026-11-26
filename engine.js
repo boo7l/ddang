@@ -126,7 +126,7 @@ function riseVacate(fid) {
   if (!cities.length) return;
   const name = factionById(fid).name;
   for (const c of cities) { S.cities[c.id].guard = 0; setOwner(c, null); }
-  logAll(`🏳 ${name} 세력에 남은 장수가 없어 흩어졌다. ${cities.map(c => c.name).join('·')}${josa(cities[cities.length - 1].name, '은는').slice(-1)} 공백지가 되었다.`);
+  logAll(`🏳 ${name} 세력에 남은 장수가 없어 사라졌다. ${cities.map(c => c.name).join('·')}${josa(cities[cities.length - 1].name, '은는').slice(-1)} 공백지가 되었다.`);
 }
 // 동맹 (2026-11-13, 3단계): S.alliances = [{ a, b, since, end, turns, breaker? }]. end 턴이 되면 풀린다 (그 턴부터 서로 칠 수 있다)
 const allyRec = (a, b) => (S.alliances || []).find(x => ((x.a === a && x.b === b) || (x.a === b && x.b === a)) && S.turn < x.end);
