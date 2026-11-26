@@ -1133,7 +1133,7 @@ function draftDialog() {
     const weak = Object.keys(UNIT_TYPES).find(k => !UNIT_TYPES[k].base && UNIT_TYPES[k].beats === unitFam(t));
     return `<label class="opt${off ? ' dim' : ''}"><input type="radio" name="tgt" value="${t}"${t === cur && !off ? ' checked' : ''}${off ? ' disabled data-off="1"' : ''}>
       <b>${t}</b> <span class="dim">${statName(u.stat)} ${effStats(p)[u.stat]}</span>
-      <span class="r dim">${t2 ? (off ? '대도시 이상 성에서만' : u.desc) + '<br>' : ''}${u.beats}에 강함 · ${weak}에 약함</span></label>`;
+      <span class="r dim">${t2 ? u.desc + '<br>' : ''}${u.beats}에 강함 · ${weak}에 약함</span></label>`;
   };
   // 기본 병종 · 정예 병종 탭 (2026-11-24 기획자: 정예는 따로, 창 안에서 전환)
   const baseOpts = unitTypesNow().filter(t => !unitTier2(t)).map(optOf).join('');
@@ -1143,7 +1143,7 @@ function draftDialog() {
     const off = !bigCity;
     return `<label class="opt${off ? ' dim' : ''}"><input type="radio" name="tgt" value="up:${up}"${off ? ' disabled data-off="1"' : ''}>
       <b>⬆ 승급</b> <span class="dim">${cur} → ${up} · 금 ${fmt(upgradeCost(p.troops))}</span>
-      <span class="r dim">${off ? '대도시 이상 성에서만' : `병력 ${fmt(p.troops)}명 그대로<br>1,000명당 ${T2.upPer1000}`}</span></label>`;
+      <span class="r dim">병력 ${fmt(p.troops)}명 그대로<br>1,000명당 ${T2.upPer1000}</span></label>`;
   })();
   const hasElite = !!eliteOpts, startElite = hasElite && unitTier2(cur);
   const opts = hasElite ? `<div data-dtab="base"${startElite ? ' hidden' : ''}>${baseOpts}</div><div data-dtab="elite"${startElite ? '' : ' hidden'}><p class="dim small">정예 병종은 대도시 이상 성에서만 모으고 승급할 수 있어요 · 금 ${fmt(T2.gold)} · 군량 ${T2.food}배</p>${eliteOpts}</div>` : baseOpts;
@@ -2173,7 +2173,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126225752&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127001128&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2183,7 +2183,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126225752&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127001128&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2193,7 +2193,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126225752&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127001128&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
