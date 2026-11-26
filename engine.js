@@ -2210,8 +2210,8 @@ function runRise(g, o, mark) {
   (S.commanders = S.commanders || {})[fid] = g.id;
   (S.cmdEver = S.cmdEver || {})[fid] = true;
   g.seenAt = now();
-  const m = addMerit(g, R.merit);
-  gainStatExp(g, fought && UNIT_TYPES[g.unitType] ? UNIT_TYPES[g.unitType].stat : 'lea', RULES.statExp.battle);
+  const m = addMerit(g, fought ? R.merit : R.meritEmpty); // 2026-11-26: 도적군을 이기고 50 · 공백지 20
+  if (fought && UNIT_TYPES[g.unitType]) gainStatExp(g, UNIT_TYPES[g.unitType].stat, RULES.statExp.battle); // 전투 경험치는 싸웠을 때만 (2026-11-26, 그 전엔 공백지도 통솔 +20)
   gainStatExp(g, 'lea', RULES.statExp.capture);
   addRecord(g, 'rises');
   lines.push(`${josa(c.name, '을를')} 근거지로 「${name}」 세력을 세우고 대도독이 되었다! 명성 +${m}`);

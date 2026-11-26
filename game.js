@@ -1441,7 +1441,7 @@ function riseDialog() {
     <p class="small">${req.map(([ok, t]) => `<span class="${ok ? '' : 'dim'}">${ok ? '✔' : '✘'} ${t}</span>`).join('<br>')}</p>
     <p>세력 이름 <input id="riseName" maxlength="${R.nameMax}" placeholder="1~${R.nameMax}글자" autocomplete="off" style="width:8em"> <span class="bad small" id="riseWhy"></span></p>
     <ul class="small dim">
-      <li>거병하면 명성 +${R.merit}, 그 성이 첫 근거지가 돼요.</li>
+      <li>거병하면 명성 +${R.merit} (공백지는 +${R.meritEmpty}), 그 성이 첫 근거지가 돼요.</li>
       <li>${R.protect}턴 동안은 공격받지도, 공격하지도 못해요.</li>
       <li>${R.lockTurns}턴 동안은 하야·대도독 반납·위임을 할 수 없어요.</li>
     </ul>
@@ -2172,7 +2172,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126205440&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126210839&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2182,7 +2182,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126205440&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261126210839&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2192,7 +2192,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126205440&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261126210839&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2622,7 +2622,7 @@ function meritTableDialog(back = null, backName = '도움말') {
     row('계략 시도 (첩보 · 파괴 · 유언)', '+' + M.plot),
     row('계략 성공', '+' + M.plotOk, `시도와 합쳐 +${M.plot + M.plotOk}`),
     seasonNow() >= RULES.s9cmd.fromSeason ? row('첩자 색출', '+' + RULES.s9cmd.counterSpyMerit, '최대치 치안 내정에서') : row('탐색', '+' + M.explore),
-    seasonNow() >= RULES.rise.fromSeason ? row('거병', '+' + RULES.rise.merit, '재야가 새 세력을 세우면') : '',
+    seasonNow() >= RULES.rise.fromSeason ? row('거병', '+' + RULES.rise.merit + ' / +' + RULES.rise.meritEmpty, '재야가 새 세력을 세우면 (도적군 성 / 공백지)') : '',
   ];
   if (roninOn()) { const h = RONIN_EXPLORE.find(e => e.key === 'help'); if (RULES.ronin.questFame) gain.push(row('재야 의뢰', `+${RULES.ronin.questFame}`)); if (h) gain.push(row('재야 탐색: 주민 돕기', `+${h.min}~${h.max}`, RULES.ronin.questFame ? '재야는 의뢰·주민 돕기·거병 말고는 명성을 얻지 않아요' : '재야는 이것 말고는 명성을 얻지 않아요')); } // 의뢰 명성 (2026-11-25, 시즌 9부터)
   const lose = [
