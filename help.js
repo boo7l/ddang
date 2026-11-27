@@ -104,7 +104,7 @@ function helpTopics() {
         ['축성', sn(DOMESTIC.wall.stat), '방어 증가 (지킬 때 피해 감소)', `수비대 +(${sn('war')} × ${R.fullDev.reward.wall[1]})`],
         ['치안', sn(DOMESTIC.peace.stat), '수입·징병 회복, 도적 예방', '첩자 색출 기회']])
         + ul([`금 없이 1턴을 써요. 명성 +${R.merit.domestic} (최대치에서 하면 +${R.fullDev.merit}).`, `농업·상업·방어가 그 성의 처음 값보다 낮으면 효과가 ×${R.recoverBuff.mult}예요 (성 정보에 하늘색).`]), related: ['city.event', 'city.peace'] },
-      { id: 'event', title: '탐색 이벤트', keys: ['탐색', '탐색 이벤트', '확률표', '의병', '잔치'], body: `<p>세력 장수가 내정을 하면 ${pct(R.s9cmd.domExplore)}% 확률로 <b>탐색 이벤트</b>가 함께 일어나요. 금·군량·의병·장비·마을 잔치·첩자 포획·특성 주머니·기술자·보물을 얻거나, 가끔 도적을 만나요. ${tbl('explore-normal', '확률표')}</p>
+      { id: 'event', title: '탐색 이벤트', keys: ['탐색', '탐색 이벤트', '확률표', '의병', '잔치'], body: `<p>세력 장수가 내정을 하면 ${pct(R.s9cmd.domExplore)}% 확률로 <b>탐색 이벤트</b>가 함께 일어나요. 금·군량·의병·장비·마을 잔치·밀서 입수·특성 주머니·기술자·보물·현인의 가르침(경험치)을 얻거나, 가끔 도적을 만나요. ${tbl('explore-normal', '확률표')}</p>
         <p>재야는 <b>탐색</b> 명령으로 따로 찾아요. ${link('ronin.quest', '재야 탐색')}</p>`, related: [] },
       { id: 'peace', title: '치안', keys: ['치안', '첩자 색출', '징병 불가'], body: ul([
         `치안 ${R.peaceOk} 아래: 금 수입·수확 -${pct(1 - peaceIncome(R.peaceLow))}%, 징병 -${pct(1 - peaceDraft(R.peaceLow))}%.`,
@@ -237,7 +237,7 @@ function helpTopics() {
       { id: 'basic', title: '재야의 기본', keys: ['재야', '재야 채팅'], body: `<p>재야는 세력에 들지 않고 혼자 살아가는 <b>독립된 플레이</b>예요. 하야·해고·멸망하면 그 성에 재야로 남아요.</p>`
         + ul([`누구 땅이든 ${RN.moveRange}칸까지 이동해요.`, '<b>정기 금 수입이 없어요.</b> 의뢰·탐색·약탈로 직접 벌어요.', '재야끼리는 <b>재야 채팅</b>을 써요.', '재야 명령은 따로 있어요: 이동·탐색·의뢰·모병·군량 구매·약탈·거병·임관.']), related: ['ronin.join'] },
       { id: 'quest', title: '탐색과 의뢰', keys: ['재야 탐색', '의뢰', '현인', '주민 돕기'], body: ul([
-        `<b>탐색</b>: 금 ${R.myGoldCost.explore}. 금·현인(경험치)·주민 돕기(명성)·장비·특성 주머니·보물을 찾거나 도적을 만나요. ${tbl('explore-ronin', '재야 확률표')}`,
+        `<b>탐색</b>: 금 ${R.myGoldCost.explore}. 금·현인(경험치)·주민 돕기(명성)·의병·장비·특성 주머니·보물을 찾거나 도적을 만나요. ${tbl('explore-ronin', '재야 확률표')}`,
         `<b>의뢰</b>: 머무는 성에서 일을 맡아 ${quest}를 받아요. 금을 쓰지 않고 버는 명령이에요.`]), related: [] },
       { id: 'army', title: '모병과 개인 군량', keys: ['모병', '개인 군량', '재야 군량'], body: ul([
         `<b>모병</b>: 금 ${R.myGoldCost.draft}, 세력 장수 징병의 ${pct(RAr.draftRate)}%만 모여요. 기본 병종만, 성 치안은 깎지 않아요.`,

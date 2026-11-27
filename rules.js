@@ -745,17 +745,18 @@ function rollPlot(int, bonus = 0) { // bonus: 개인 특성 책사 +5%p (최대�
 const EXPLORE = [ // 2026-11-14 기획자 시즌 7 표: 군량 15 · 금 15 · 허탕 10 · 의병 10 · 장비 10 · 잔치 10 · 도적 8 · 첩자 8 · 주머니 6 · 기술자 6(새로) · 보물 2 (시즌마다 달라지는 값은 get weight). 2026-11-08 기획자: 금 18 → 15 · 특성 주머니 5 → 8 (레어 아님). 2026-11-07 시즌 6 기획자 표: 금 18 · 군량 18 · 의병 10 · 잔치 10 · 첩자 8(새로) · 보물 3(새로) · 달인 삭제 (합 100 = %)
   { key: 'none', get weight() { return seasonNow() >= 9 ? 0 : 10; } }, // 2026-11-23 기획자 (docs/탐색표_시즌9.xlsx): 시즌 9부터 허탕 없음 (내정 10%에서만 나오므로) // 2026-10-27 15 → 10 (2026-10-31 같은 날 8로 내렸다가 되돌림)
   // jackpot: 발견했을 때 그중 이 확률로 대박 (2026-10-31 금·군량·의병 양을 올림)
-  { key: 'gold', weight: 15, min: 300, max: 600, jackpot: { rate: 0.2, min: 1000, max: 1500 } }, // 2026-11-08: 300~500 → 300~600 (패치노트 없음). 2026-11-07 시즌 6: 200~500 → 300~500
-  { key: 'food', get weight() { return seasonNow() >= 7 ? 15 : 18; }, min: 1000, max: 2500, jackpot: { rate: 0.2, min: 3000, max: 5000 } }, // 2026-11-07 시즌 6: 500~1,000 → 1,000~2,500, 대박 2,000~4,000 → 3,000~5,000
-  { key: 'troops', get weight() { return seasonNow() >= 9 ? 12 : seasonNow() >= 8 ? 11 : 10; }, min: 1500, max: 3000 }, // 2026-11-19 기획자: 시즌 8부터 10 → 11 (주머니에서 옮김). // 2026-11-08: 1,000~3,000 → 1,500~3,000 (패치노트 없음). 의병 합류 (지금 병종으로, 병사가 없으면 보병)
-  { key: 'item', get weight() { return seasonNow() >= 9 ? 12 : 10; } }, // 장비 발견: 상점 장비 하나를 얻는다 (2026-10-31)
-  { key: 'feast', get weight() { return seasonNow() >= 9 ? 12 : 10; }, peace: 10, min: 30, max: 50 }, // 마을 잔치 (2026-10-31): 그 성 치안 +10, 농업·상업 각각 +30~50 (최대치까지)
+  { key: 'gold', get weight() { return seasonNow() >= 9 ? 13 : 15; }, min: 300, max: 600, jackpot: { rate: 0.2, min: 1000, max: 1500 } }, // 2026-11-08: 300~500 → 300~600 (패치노트 없음). 2026-11-07 시즌 6: 200~500 → 300~500
+  { key: 'food', get weight() { return seasonNow() >= 9 ? 13 : seasonNow() >= 7 ? 15 : 18; }, min: 1000, max: 2500, jackpot: { rate: 0.2, min: 3000, max: 5000 } }, // 2026-11-07 시즌 6: 500~1,000 → 1,000~2,500, 대박 2,000~4,000 → 3,000~5,000
+  { key: 'troops', get weight() { return seasonNow() >= 9 ? 10 : seasonNow() >= 8 ? 11 : 10; }, min: 1500, max: 3000 }, // 2026-11-19 기획자: 시즌 8부터 10 → 11 (주머니에서 옮김). // 2026-11-08: 1,000~3,000 → 1,500~3,000 (패치노트 없음). 의병 합류 (지금 병종으로, 병사가 없으면 보병)
+  { key: 'item', weight: 10 /* 2026-11-27 기획자 시즌 9 표: 12 → 10 */ }, // 장비 발견: 상점 장비 하나를 얻는다 (2026-10-31)
+  { key: 'feast', weight: 10 /* 2026-11-27 기획자 시즌 9 표: 12 → 10 */, peace: 10, min: 30, max: 50 }, // 마을 잔치 (2026-10-31): 그 성 치안 +10, 농업·상업 각각 +30~50 (최대치까지)
   { key: 'bandit', get weight() { return seasonNow() >= 9 ? 10 : 8; }, minRate: 0.05, maxRate: 0.10, goldMinRate: 0.15, goldMaxRate: 0.20, warExp: 20 }, // warExp: 병사로 싸웠을 때 무력 경험치 (2026-11-08). 병력 5~10% 또는 금 15~20% (2026-10-31 10 → 8%)
   { key: 'spy', weight: 8 },                           // 적 첩자 포획 (2026-11-07): 가장 가까운 적 성 중 하나의 정보가 우리 세력에 spyTurns턴 보인다
   { key: 'pouch', get weight() { return seasonNow() >= 9 ? 6 : seasonNow() >= 8 ? 5 : seasonNow() >= 7 ? 6 : 8; } }, // 2026-11-19 기획자: 시즌 8부터 6 → 5 (SSR이 너무 많음, 1은 의병 합류로). // 2026-11-14 기획자: 시즌 7부터 8 → 6. 특성 주머니 발견 (2026-10-28, 2026-10-31 2 → 5%, 2026-11-08 8%로 올리고 레어에서 뺌: ★ 없음). 3장 중 하나로 바꾸거나 지금 특성 유지. 다시 뽑기 1번
   // 기술자 (2026-11-14 기획자, 시즌 7부터 6%): 병기가 있으면 보수 (부대 전멸로 부서질 때 1번 버팀, 겹치지 않음, 새 병기를 만들면 사라짐). 없으면 병기 하나를 받는다 (보수 없이)
   { key: 'engineer', get weight() { return seasonNow() >= 7 ? 6 : 0; }, get give() { return seasonNow() >= 9 ? { 충차: 30, 연노: 30, 정란: 30, 벽력거: 10 } : { 충차: 40, 정란: 40, 벽력거: 20 }; } }, // 2026-11-24 기획자: 시즌 9 연노 포함 30·30·30·10
-  { key: 'treasure', get weight() { return seasonNow() >= 9 ? 4 : seasonNow() >= 7 ? 2 : 3; } }, // 2026-11-23 시즌 9: 4 (탐색이 내정 10%로 줄어서) // 2026-11-14 기획자: 시즌 7부터 3 → 2. 레어: 보물 발견 (2026-11-07). 주인 없는 보물이 없으면 장비 발견으로 바뀐다
+  { key: 'treasure', get weight() { return seasonNow() >= 9 ? 4 : seasonNow() >= 7 ? 2 : 3; } },
+  { key: 'sage', get weight() { return seasonNow() >= 9 ? 10 : 0; }, min: 40, max: 60 }, // 2026-11-27 기획자 (docs/탐색표_시즌9.xlsx): 시즌 9 일반 장수도 현인 10 (금·군량·의병·장비·잔치 2씩 줄임) // 2026-11-23 시즌 9: 4 (탐색이 내정 10%로 줄어서) // 2026-11-14 기획자: 시즌 7부터 3 → 2. 레어: 보물 발견 (2026-11-07). 주인 없는 보물이 없으면 장비 발견으로 바뀐다
 ];
 
 // 보물 (2026-11-07 시즌 6, 기획자 목록): 세상에 하나씩, 한 장수는 1개까지 (이미 있으면 탐색은 장비 발견, 빼앗을 땐 사라짐). 능력치 최대치(120)를 넘길 수 있다.
@@ -788,14 +789,15 @@ const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 // 재야 탐색표 (2026-11-19 기획자, docs/탐색표_재야.xlsx, 같은 날 확률 수정 18·18·18·18·10·8·7·3): 군량·잔치·첩자·의병·기술자 대신 현인·주민 돕기. 합 100
 // sage: 현인의 가르침 = 무작위 능력치 경험치 min~max (수련 횟수에 안 셈). help: 주민 돕기 = 명성 min~max (5~25) (재야의 유일한 명성)
 const RONIN_EXPLORE = [
-  { key: 'none', weight: 18 },
-  { key: 'gold', weight: 18, min: 300, max: 600, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
-  { key: 'sage', weight: 18, min: 40, max: 60 },
-  { key: 'help', weight: 19, min: 5, max: 25 }, // 명성 5~25 (2026-11-19 기획자, 10~30에서). 2026-11-19 기획자: 18 → 19 (주머니에서 옮김)
+  { key: 'none', get weight() { return seasonNow() >= 9 ? 15 : 18; } }, // 2026-11-27 기획자 시즌 9 표: 허탕 15 · 금 10 · 현인 20 · 주민 20 · 장비 10 · 도적 10 · 주머니 6 · 보물 4 · 의병 5(새로)
+  { key: 'gold', get weight() { return seasonNow() >= 9 ? 10 : 18; }, min: 300, max: 600, jackpot: { rate: 0.2, min: 1000, max: 1500 } },
+  { key: 'sage', get weight() { return seasonNow() >= 9 ? 20 : 18; }, min: 40, max: 60 },
+  { key: 'help', get weight() { return seasonNow() >= 9 ? 20 : 19; }, min: 5, max: 25 }, // 명성 5~25 (2026-11-19 기획자, 10~30에서). 2026-11-19 기획자: 18 → 19 (주머니에서 옮김)
   { key: 'item', weight: 10 },
-  { key: 'bandit', weight: 8, goldMinRate: 0.10, goldMaxRate: 0.15 },
+  { key: 'bandit', get weight() { return seasonNow() >= 9 ? 10 : 8; }, goldMinRate: 0.10, goldMaxRate: 0.15 },
   { key: 'pouch', weight: 6 }, // 2026-11-19 기획자: 7 → 6 (SSR이 너무 많음)
-  { key: 'treasure', weight: 3 },
+  { key: 'treasure', get weight() { return seasonNow() >= 9 ? 4 : 3; } },
+  { key: 'troops', get weight() { return seasonNow() >= 9 ? 5 : 0; }, min: 1500, max: 3000, ronin: true }, // 재야 의병 합류 (시즌 9, 재야 모병이 생겨서): 1티어로, 넘치면 돌려보냄 (수비대 없음)
 ];
 function rollExplore(list = EXPLORE) {
   let r = Math.random() * list.reduce((s, e) => s + e.weight, 0);
