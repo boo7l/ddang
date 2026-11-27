@@ -1449,3 +1449,17 @@ body.tourTabMode #tourBtn, body.tourTabMode #tourMy, body.tourTabMode #refreshBt
 .helpMore summary { cursor: pointer; color: var(--label); }
 .helpRel { color: var(--dim); font-size: 14px; }
 @media (max-width: 700px) { .helpIndex2 { grid-template-columns: 1fr; } .helpTable { font-size: 14px; } }
+
+/* 도움말 항목을 패치노트처럼 노란 종이 칸으로 (2026-11-27 기획자, 되돌리려면 이 블록과 help.js의 'notePaper' 하나를 지우면 됨) */
+.helpSec.notePaper { padding: 0 12px 8px; margin: 0 0 12px; border-bottom: 1px solid #7a5426; }
+.helpSec.notePaper:last-child { border-bottom: 1px solid #7a5426; margin-bottom: 4px; }
+#modalBox .helpSec.notePaper h4 { display: inline-block; margin: 0 0 6px -12px; padding: 3px 12px; background: #8c2a10; color: #fbefd0; box-shadow: 1px 1px 0 rgba(0, 0, 0, .35); }
+.helpSec.notePaper .dim, .helpSec.notePaper .helpRel { color: #6b5536; }
+.helpSec.notePaper .hi { color: #8a1c10; }
+.helpSec.notePaper .oddsTable tr { border-bottom: 1px dotted #a07a46; }
+.helpSec.notePaper .oddsTable th { color: #8a1c10; }
+.helpSec.notePaper .oddsTable td.dim { color: #5a4630; }
+.helpSec.notePaper .helpMore summary { color: #8a1c10; }
+.helpSec.notePaper .helpMore[open] { padding: 2px 8px 4px; background: rgba(255, 250, 235, .45); border: 1px dashed #a07a46; }
+.helpSec.notePaper button.link { color: #1d4f8a; }
+.helpSec.notePaper button.link:hover { color: #c8281e; }

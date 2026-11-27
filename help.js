@@ -288,7 +288,7 @@ function helpShow(target = -1, opt = {}) {
   if (target === -1 || target == null || (typeof target === 'number' && !topics[target]) || (typeof target === 'string' && !catOf(target.split('.')[0]))) return helpIndex2(topics, opt);
   const cat = typeof target === 'number' ? topics[target] : catOf(target.split('.')[0]);
   const subId = typeof target === 'string' ? target.split('.')[1] : null;
-  const subs = cat.subs.map(s => `<section class="helpSec" id="hs-${cat.id}-${s.id}">
+  const subs = cat.subs.map(s => `<section class="helpSec notePaper" id="hs-${cat.id}-${s.id}">
       <h4>${s.title}</h4>${s.body}
       ${s.detail ? `<details class="helpMore" data-sub="${s.id}"><summary>자세히</summary>${s.detail}</details>` : ''}
       ${s.related && s.related.length ? `<p class="helpRel">관련: ${s.related.map(r => { const [c, x] = r.split('.'), cc = catOf(c), ss = cc && cc.subs.find(y => y.id === x); return ss ? `<button class="link" data-goto="${r}">${ss.title}</button>` : ''; }).filter(Boolean).join('·')}</p>` : ''}
