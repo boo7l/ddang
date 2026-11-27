@@ -200,7 +200,7 @@ const RULES = {
   // 새 세력은 protect턴 동안 공격받지도, 공격하지도 못한다. 한 시즌에 성공한 거병 max번까지. 거병 명성 +merit. 하야 대기(leftFaction)가 끝나야 한다
   // 시즌 시작 보호 (2026-11-26 기획자, 시즌 9부터): 첫 turns턴(1년) 동안 다른 세력 성은 공격할 수 없다. 공백지·도적군 성은 된다. 계략·첩보는 그대로
   openProtect: { fromSeason: 9, turns: 12 },
-  rise: { fromSeason: 9, minMerit: 500, minTroops: 3000, gold: 500, foodRate: 0.05, /* 2026-11-27 기획자: 금 1,000 → 500, 군량 병력 × 0.05 (개인 군량, 출진 0.1의 절반) */ max: 5, lockTurns: 24, protect: 6 /* 2026-11-27 기획자: 5 → 6 (공격받지도, 하지도 못함) */, merit: 50, meritEmpty: 20, /* 2026-11-26 기획자: 명성 30 → 도적군 성을 이기고 거병 50 · 공백지 거병 20 */ nameMax: 4, colors: ['#8e44ad', '#d35400', '#16a085', '#b8860b', '#c71585', '#2e8b57', '#4682b4', '#7f6a4a', '#a0522d', '#5d6d7e'] },
+  rise: { fromSeason: 9, minMerit: 500, minTroops: 3000, gold: 500, foodRate: 0.1, /* 2026-11-27 기획자: 금 1,000 → 500, 군량 병력 × 0.05 (개인 군량) → 같은 날 × 0.1 (출진과 같게) */ max: 5, lockTurns: 24, protect: 6 /* 2026-11-27 기획자: 5 → 6 (공격받지도, 하지도 못함) */, merit: 50, meritEmpty: 20, /* 2026-11-26 기획자: 명성 30 → 도적군 성을 이기고 거병 50 · 공백지 거병 20 */ nameMax: 4, colors: ['#8e44ad', '#d35400', '#16a085', '#b8860b', '#c71585', '#2e8b57', '#4682b4', '#7f6a4a', '#a0522d', '#5d6d7e'] },
   tier2: { gold: 500, gradeMin: 3, upPer1000: 250, upMerit: 5, upExp: 10, food: 1.3 /* 2026-11-26 기획자: 군량 1.5 → 1.3배 */ }, // 2티어 병종 (2026-11-24 기획자, 시즌 9부터): 징병 금 500 · 대도시 이상 · 승급 1,000명당 250 (명성 5 · 경험치 10, 이탈 없음) · 매달 군량 1.5배
   anySideFrom: 9, // 책략·돌격: 시즌 9부터 상대보다 낮아도 쓴다 (pickSkill, 2026-11-24 기획자)
   charge: { minWar: 70, chancePerWar: 1 / 2000, base: [60, 90], ref: 10, exp: 0.6, gapAdd: 5, troopRef: 5000, troopExp: 0.3, statExp: 30 }, // 2026-11-07 시즌 6: 피해 × min(1, (쓰는 쪽 병력 ÷ 5,000)^0.3) (작은 부대 싸움 운빨 줄이기). // 2026-11-03 시즌 5 발동 확률 능력치 ÷ 1500 → ÷ 2000, 경험치 40 → 30. 돌격 (2026-11-03 시즌 5): 책략의 무력 버전. 같은 수식에 지력 대신 무력. 무력 경험치 40, 명성 20. 침착이면 피해 -50%
@@ -293,7 +293,7 @@ const draftBase = st => {
 const draftGain = (st, merit = 0) => { const [lo, hi] = draftBase(st); return randInt(lo, hi) + Math.floor(merit * RULES.draftPerMerit); };
 // 출진에 필요한 군량
 // 출진 군량 (2026-11-06: 세력 특성 군량 소비도 적용. fid = 출진하는 세력)
-const riseFoodOf = troops => Math.ceil((troops || 0) * RULES.rise.foodRate); // 거병 군량 (2026-11-27 기획자): 병력 × 0.05, 재야 개인 군량에서
+const riseFoodOf = troops => Math.ceil((troops || 0) * RULES.rise.foodRate); // 거병 군량 (2026-11-27 기획자): 병력 × foodRate(0.1), 재야 개인 군량에서
 const leaFoodCut = g => (g && statV1() ? Math.min(0.9, (effStats(g).lea || 0) * RULES.statV1.leaMarchFood) : 0); // 통솔로 줄어드는 출진 군량 비율 (2026-11-27, 시즌 9부터)
 const marchFood = (troops, fid, g) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)) * (1 - leaFoodCut(g))); // g: 출진하는 장수 (통솔 절약)
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
