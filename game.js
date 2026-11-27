@@ -4,7 +4,8 @@
 // 게임 계산은 engine.js, 규칙과 숫자는 rules.js, 지도 그리기는 map.js에 있다. 여기는 화면이다.
 let MY_ID = null;     // 내 계정 id (서버 계정)
 const RANK_PUBLIC = false; // 🏆 명성 순위 단추 (2026-11-24 기획자: 시즌 도중 순위는 일단 숨김, 관리자만). true로 바꾸면 모두에게 다시 보인다
-const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
+const AI_PUBLIC = false; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자. 2026-11-27 기획자: 다시 숨김, 말할 때 true + 서버 index.ts AI.public도 true). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
+const HELP_PUBLIC = false; // 📜 도움말 단추 공개 (2026-11-27 기획자: 다시 숨김, 말할 때 true로). false면 관리자만
 const PREP_HIDE = false; // 2026-11-27 기획자: 준비 중에도 도움말·제갈량 공개 (true로 바꾸면 다시 관리자만)
 let IS_ADMIN = false;
 const TOUR_TAB = new URLSearchParams(location.search).has('tour');
@@ -725,7 +726,7 @@ let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
 // 시즌 준비 중 (문 닫힘, 2026-11-24 기획자): 관리자가 아니면 도움말·공명의 조언을 숨긴다. 다음 시즌 규칙이 미리 보이지 않게 (상단 메뉴는 첫 화면에도 보인다)
 function syncPrepBtns() {
   const locked = PREP_HIDE && !!preparing && !IS_ADMIN;
-  $('#helpBtn').hidden = locked;
+  $('#helpBtn').hidden = locked || (!HELP_PUBLIC && !IS_ADMIN);
   $('#rankBtn').hidden = !RANK_PUBLIC && !IS_ADMIN;
   $('#aiBtn').hidden = locked || !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
 }
@@ -1691,9 +1692,11 @@ const AGREE_KEY = 'ddang-agreed'; // 한 번 동의했으면 다음엔 체크가
 
 // 첫 화면 패치노트 (patchnotes.js). 단추는 하나, 팝업에서 좌우로 넘겨 지난 업데이트를 본다 (2026-10-31, 그 전엔 업데이트마다 단추)
 let NOTE_NEW = false; // 패치노트 NEW 표시 (서버 status의 noteNew)
+// 숨긴 패치노트 (hidden: true, 2026-11-27): 관리자만 본다. 공개하려면 patchnotes/sN.js에서 hidden 줄을 지운다
+const shownNotes = () => (typeof PATCH_NOTES === 'undefined' ? [] : PATCH_NOTES.filter(n => !n.hidden || IS_ADMIN));
 function renderNotes() {
   const box = $('#notes');
-  if (typeof PATCH_NOTES === 'undefined' || !PATCH_NOTES.length) { box.innerHTML = ''; return; }
+  if (!shownNotes().length) { box.innerHTML = ''; return; }
   // 빨간 NEW: 관리 페이지의 'NEW 표시' 체크가 켜져 있는 동안 보인다 (2026-11-11, 그 전엔 patchnotes.js의 isNew). 서버 status가 알려 준다
   box.innerHTML = `<div class="titleBtns"><button class="noteBtn">📜 패치노트${NOTE_NEW ? ' <span class="newMark">NEW</span>' : ''}</button><button class="boardBtn">💬 게시판</button></div>`;
   box.querySelector('.noteBtn').onclick = () => noteDialog(0);
@@ -1923,14 +1926,14 @@ const noteGroupsHtml = groups => groups.map(gr => gr.dev ? `<div class="notePape
   : `<div class="notePaper"><p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => (t && t.dev ? `<li class="devLi">${devNoteHtml(t.dev)}</li>` : `<li>${t}</li>`)).join('')}</ul></div>`).join('');
 // i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
 function noteDialog(i, scroll = 0) { // scroll: 도움말에서 돌아올 때 읽던 자리 (2026-11-27)
-  const n = PATCH_NOTES[i], older = PATCH_NOTES[i + 1], newer = PATCH_NOTES[i - 1];
+  const NL = shownNotes(), n = NL[i], older = NL[i + 1], newer = NL[i - 1];
   const short = x => x.title.replace(' 주요 업데이트', '').replace(' 대규모 개편 안내', '');
   openModal(`
-    <h2>📜 ${n.title} <span class="dim small">(${n.date})</span></h2>
+    <h2>📜 ${n.title} <span class="dim small">(${n.date})${n.hidden ? ' · 숨김 (관리자만)' : ''}</span></h2>
     <div class="help notesPop">${noteGroupsHtml(n.groups.slice(0, n.introAt || 0))}${n.intro ? `<div class="notePaper noteIntro">${n.intro}</div>` : ''}${noteGroupsHtml(n.groups.slice(n.introAt || 0))}</div>
     <div class="notePager">
       <button id="noteOlder"${older ? '' : ' disabled'}>◀ ${older ? short(older) : ''}</button>
-      <span class="dim">${PATCH_NOTES.length - i} / ${PATCH_NOTES.length}</span>
+      <span class="dim">${NL.length - i} / ${NL.length}</span>
       <button id="noteNewer"${newer ? '' : ' disabled'}>${newer ? short(newer) : ''} ▶</button>
     </div>
     <div class="modalBtns"><button data-close class="main">닫기</button></div>`, box => {
@@ -2178,7 +2181,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127222757&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127235026&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2188,7 +2191,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127222757&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127235026&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2198,7 +2201,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127222757&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127235026&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
