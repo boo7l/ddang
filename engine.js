@@ -149,9 +149,9 @@ function commanderBlock(g, hand = false) {
   const R = RULES.commander;
   if (!commanderOn()) return `대도독은 시즌 ${R.fromSeason}부터 있어요.`;
   if (!g || !g.faction) return '세력에 소속해야 해요.';
-  if (riseFounder(g)) return ''; // 거병한 장수는 명성·인원 조건 없이 (2026-11-25)
   const n = membersOf(g.faction).length;
-  if (n < R.minMembers) return `세력 장수가 ${R.minMembers}명 이상이어야 해요. (지금 ${n}명)`;
+  if (n < R.minMembers && !riseRec(g.faction)) // 거병한 세력은 장수 수 조건 없음, 명성 조건은 그대로 (2026-11-27 기획자, 그 전엔 거병한 장수만 둘 다 면제)
+    return `세력 장수가 ${R.minMembers}명 이상이어야 해요. (지금 ${n}명)`;
   if ((g.merit || 0) < R.minMerit) return `명성이 ${fmt(R.minMerit)} 이상이어야 해요. (지금 ${fmt(g.merit || 0)})`;
   if (!hand && !(S.cmdEver || {})[g.faction] && membersOf(g.faction).some(o => o.merit > g.merit)) return '세력의 첫 대도독은 명성 1위여야 해요.';
   return '';
@@ -2217,6 +2217,7 @@ function runRise(g, o, mark) {
   g.joins = (g.joins || 0) + 1;
   if (g.joins === 1) g.firstJoin = Date.now();
   delete g.fallen; delete g.food; delete g.leftFaction;
+  clearOrders(g); // 남은 재야 예약은 지운다 (임관과 같게, 2026-11-27 기획자)
   g.city = c.id;
   cs.guard = 0; delete cs.guardType;
   setOwner(c, fid);

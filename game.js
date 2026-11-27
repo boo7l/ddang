@@ -2176,7 +2176,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127203327&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127211430&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2186,7 +2186,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127203327&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127211430&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2196,7 +2196,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127203327&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127211430&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -2948,7 +2948,7 @@ function renderCommander() {
   } else if (!c) {
     // 조건을 모두 보여 준다 (2026-11-13 기획자): 맞으면 ✔, 아니면 ✘ + 지금 값
     const mates = membersOf(p.faction), rank = mates.filter(o => o.merit > p.merit).length + 1;
-    const req = [[mates.length >= R.minMembers, `세력 장수 ${R.minMembers}명 이상 (지금 ${mates.length}명)`],
+    const req = [...(riseRec(p.faction) ? [] : [[mates.length >= R.minMembers, `세력 장수 ${R.minMembers}명 이상 (지금 ${mates.length}명)`]]), // 거병한 세력은 장수 수 조건 없음 (2026-11-27)
       [(p.merit || 0) >= R.minMerit, `명성 ${fmt(R.minMerit)} 이상 (지금 ${fmt(p.merit || 0)})`],
       ...(!(S.cmdEver || {})[p.faction] ? [[rank === 1, `첫 대도독은 세력 명성 1위 (지금 ${rank}위)`]] : [])];
     body += `<p class="small">${req.map(([ok, t]) => `<span class="${ok ? '' : 'dim'}">${ok ? '✔' : '✘'} ${t}</span>`).join('<br>')}</p>`;
