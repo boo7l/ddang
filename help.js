@@ -47,7 +47,7 @@ function helpTopics() {
         ['<b>지력</b>', '궁병 계열 전투력, 책략', '농업·상업 내정, 계략']])
         + `<p>장비·보물로 오른 값도 능력치에 들어가요. 능력치 최대는 ${R.statMax}이에요 (보물은 넘길 수 있어요).</p>`, related: ['army.units'] },
       { id: 'troops', title: '병력 상한과 징병량', keys: ['최대 병력', '병력 상한', '징병량'], body: `${ul([
-        `<b>최대 병력</b> = 세 능력치 평균 × ${R.statV1.troopsPerAvg} + 명성 × ${R.statV1.meritTroops} (명성으로 느는 몫은 최대 ${fmt(R.statV1.meritTroopsMax)}).`,
+        `<b>최대 병력</b> = 세 능력치 평균 × ${R.statV1.troopsPerAvg} - ${fmt(-R.statV1.troopsBase)} + 명성 × ${R.statV1.meritTroops} (명성으로 느는 몫은 최대 ${fmt(R.statV1.meritTroopsMax)}).`,
         `<b>징병 1번</b>에 ${fmt(R.statV1.draftBase)} + 통솔 × ${R.statV1.draftPer.min}~${R.statV1.draftPer.max}명이 모이고 (무력·지력은 상관없어요), 명성 ${fmt(Math.round(1 / R.draftPerMerit))}마다 1명이 더 와요.`])}`, related: ['army.draft'] },
       { id: 'exp', title: '경험치와 성장', keys: ['경험치', '성장', '레벨업', '수련'], body: `<p>행동하면 관련 능력치의 <b>경험치</b>가 쌓이고, 다 차면 그 능력치가 1 올라요. 필요한 경험치는 ${R.expNeedBase} + 지금 능력치 × ${R.expNeedPer}예요.</p>`
         + table(['행동', '경험치'], [

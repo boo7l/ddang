@@ -103,7 +103,7 @@ const RULES = {
   draftPerMerit: 0.1,       // 징병에 명성 × 0.1명이 더 모인다 (2026-10-25)
   draftPeacePer: 350,       // 징병하면 그 성의 치안이 모은 병사 350명당 1 떨어진다 (2026-10-25 200 → 250, 2026-10-26 "치안이 너무 잘 깎인다" 의견으로 300, 2026-11-11 시즌 6 도중 350: 기획자가 공지)
   draftPeacePerS7: 350,     // 시즌 7부터 350명당 1 (2026-11-09 기획자, 징병 치안 감소 완화. 시즌 7 패치노트에 넣음). draftPeaceOf()
-  statV1: { fromSeason: 9, troopsPerAvg: 100, meritTroops: 1, meritTroopsMax: 3000 /* 2026-11-27 기획자: 최대 병력 + 명성 × 1 (최대 +3,000), 수련 폐지로 느려진 병력 성장 보완 */, draftBase: 800, draftPer: { min: 14, max: 16 } }, // 능력치 개편 V1 (2026-11-23 적용): 시즌 9부터 상한 평균 × 100. 징병 2026-11-26 기획자: (평균 + 통솔) × 12~14 → 800 + 통솔 × 14~16 (저점 보장 + 통솔 영향 조금 더)
+  statV1: { fromSeason: 9, troopsPerAvg: 110, troopsBase: -200 /* 2026-11-27 기획자: 평균 × 100 → 평균 × 110 - 200 */, meritTroops: 1, meritTroopsMax: 3000 /* 2026-11-27 기획자: 최대 병력 + 명성 × 1 (최대 +3,000), 수련 폐지로 느려진 병력 성장 보완 */, draftBase: 800, draftPer: { min: 14, max: 16 } }, // 능력치 개편 V1 (2026-11-23 적용): 시즌 9부터 상한 평균 × 100. 징병 2026-11-26 기획자: (평균 + 통솔) × 12~14 → 800 + 통솔 × 14~16 (저점 보장 + 통솔 영향 조금 더)
   troopsPerLea: 100,        // 장수 한 명의 최대 병력 = 통솔 × 100
 
   // 군량은 성마다 따로 쌓인다. 상한은 성 규모(1 소성, 2 중성, 3 대도시)마다 다르다 (임시값)
@@ -281,7 +281,7 @@ const draftPeaceOf = season => ((season || 1) >= 7 ? RULES.draftPeacePerS7 : RUL
 // 징병 1회로 늘어나는 병력: 통솔 × 10~20 (무작위)
 // 징병 1회 = 통솔 × 15~25 (무작위) + 명성 × 0.1
 // 능력치 개편 V1 (2026-11-17 초안, 2026-11-23 기획자 적용, 시즌 9부터. docs/balance/stat-rework.md):
-// 병력 상한 = 세 능력치 평균 × 100, 징병 1회 = 800 + 통솔 × 14~16 + 명성 × 0.1 (2026-11-26, 그 전 (평균 + 통솔) × 12~14). 통솔은 "많이"가 아니라 "빨리 채우는" 능력치
+// 병력 상한 = 세 능력치 평균 × 110 - 200 (2026-11-27, 그 전 × 100), 징병 1회 = 800 + 통솔 × 14~16 + 명성 × 0.1 (2026-11-26, 그 전 (평균 + 통솔) × 12~14). 통솔은 "많이"가 아니라 "빨리 채우는" 능력치
 const statV1 = () => seasonNow() >= RULES.statV1.fromSeason;
 const statAvg = st => ((st.lea || 0) + (st.war || 0) + (st.int || 0)) / 3;
 // 명성 보너스 빼고 징병 1회 기본 범위 [최소, 최대]. st = 능력치(effStats). 예전처럼 숫자(통솔)만 줘도 된다
@@ -297,7 +297,7 @@ const riseFoodOf = troops => Math.ceil((troops || 0) * RULES.rise.foodRate); // 
 const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)));
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
 const meritTroopsOf = g => Math.min(RULES.statV1.meritTroopsMax, Math.max(0, Math.floor((g.merit || 0) * RULES.statV1.meritTroops))); // 명성으로 늘어난 최대 병력 (2026-11-27, 시즌 9부터)
-const troopsMax = g => { const st = effStats(g); return Math.round(((statV1() ? statAvg(st) * RULES.statV1.troopsPerAvg + meritTroopsOf(g) : st.lea * RULES.troopsPerLea) + (gTrait(g).troopsBonus || 0) + (cmdPerk(g) ? RULES.commander.perkTroops : 0)) / 100) * 100; }; // 2026-11-25 기획자: 병력 상한은 늘 십의 자리에서 반올림 (5,667 → 5,700)
+const troopsMax = g => { const st = effStats(g); return Math.round(((statV1() ? statAvg(st) * RULES.statV1.troopsPerAvg + RULES.statV1.troopsBase + meritTroopsOf(g) : st.lea * RULES.troopsPerLea) + (gTrait(g).troopsBonus || 0) + (cmdPerk(g) ? RULES.commander.perkTroops : 0)) / 100) * 100; }; // 2026-11-25 기획자: 병력 상한은 늘 십의 자리에서 반올림 (5,667 → 5,700)
 // 대도독 혜택이 켜진 장수 (2026-11-23, 시즌 9부터). isCommander는 engine.js에 있다 (전투 시뮬레이터처럼 없으면 false)
 const cmdPerk = g => seasonNow() >= RULES.commander.perkFromSeason && typeof isCommander === 'function' && typeof S !== 'undefined' && !!S && isCommander(g); // 시즌 9부터 평균 × 100 (V1). // 개인 특성 마성의 장수 +1,000 (2026-11-08)
 // 함락된 성은 농업·상업·치안이 조금 깎인다. 깎인 양을 돌려준다 (방어는 성벽 공격으로 이미 0)
