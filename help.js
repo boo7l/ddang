@@ -90,7 +90,7 @@ function helpTopics() {
         `${R.harvestMonths.join('·')}월에 그 성 <b>농업</b>에 따라 수확해요 (치안이 낮으면 줄어요). 성 크기마다 쌓을 수 있는 양이 있어요.`,
         `병사는 머무는 성의 군량을 매달 먹어요: 100명당 ${pct(R.foodPerTroops)}, 정예 병종은 ${T2.food}배.`,
         `<b>모자라면</b> 그달 병력의 ${pct(R.starveLoss)}%가 흩어져요.`,
-        `출진할 때 병력의 ${pct(R.marchFoodRate)}%만큼 출발한 성의 군량을 써요.`]),
+        `출진할 때 병력의 ${pct(R.marchFoodRate)}%만큼 출발한 성의 군량을 써요. 통솔 10마다 ${Math.round(R.statV1.leaMarchFood * 1000)}%씩 덜 써요.`]),
         detail: table(['성 크기', '군량 최대'], grades.map(k => [gName[k], fmt(R.foodMax[k])])), related: [] },
       { id: 'buy', title: '군량 구매와 수송', keys: ['군량 구매', '시세', '수송', '보급'], body: ul([
         `<b>군량 구매</b>: 금으로 머무는 성의 군량을 사요. 시세(금 1당 군량 ${R.foodBuy.min}~${R.foodBuy.max})는 매달 바뀌어요. 한 번에 금 ${fmt(R.foodBuy.goldMax)}까지.`,

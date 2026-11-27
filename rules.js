@@ -103,7 +103,7 @@ const RULES = {
   draftPerMerit: 0.1,       // 징병에 명성 × 0.1명이 더 모인다 (2026-10-25)
   draftPeacePer: 350,       // 징병하면 그 성의 치안이 모은 병사 350명당 1 떨어진다 (2026-10-25 200 → 250, 2026-10-26 "치안이 너무 잘 깎인다" 의견으로 300, 2026-11-11 시즌 6 도중 350: 기획자가 공지)
   draftPeacePerS7: 350,     // 시즌 7부터 350명당 1 (2026-11-09 기획자, 징병 치안 감소 완화. 시즌 7 패치노트에 넣음). draftPeaceOf()
-  statV1: { fromSeason: 9, troopsPerAvg: 120, troopsBase: -800 /* 2026-11-27 기획자: 평균 × 120 - 800 (합 170 시작 = 6,000). 평균 × 100 → × 110 - 200 → 지금 */, meritTroops: 0 /* 2026-11-27 기획자: 명성 몫 뺌 (1이었음, 켜려면 1) */, meritTroopsMax: 3000 /* 2026-11-27 기획자: 최대 병력 + 명성 × 1 (최대 +3,000), 수련 폐지로 느려진 병력 성장 보완 */, draftBase: 150, draftPer: { min: 24, max: 26 } /* 2026-11-27 기획자: 800 + 통솔 × 14~16 → 150 + 통솔 × 24~26 (균형형 상한까지 약 4번, 통솔 위주 3번 초중반) */ }, // 능력치 개편 V1 (2026-11-23 적용): 시즌 9부터 상한 평균 × 100. 징병 2026-11-26 기획자: (평균 + 통솔) × 12~14 → 800 + 통솔 × 14~16 (저점 보장 + 통솔 영향 조금 더)
+  statV1: { fromSeason: 9, troopsPerAvg: 120, troopsBase: -800 /* 2026-11-27 기획자: 평균 × 120 - 800 (합 170 시작 = 6,000). 평균 × 100 → × 110 - 200 → 지금 */, meritTroops: 0 /* 2026-11-27 기획자: 명성 몫 뺌 (1이었음, 켜려면 1) */, meritTroopsMax: 3000 /* 2026-11-27 기획자: 최대 병력 + 명성 × 1 (최대 +3,000), 수련 폐지로 느려진 병력 성장 보완 */, draftBase: 150, draftPer: { min: 24, max: 26 }, leaMarchFood: 0.002 /* 2026-11-27 기획자: 출진 군량 통솔 10마다 -2% (통솔 100이면 -20%) */ /* 2026-11-27 기획자: 800 + 통솔 × 14~16 → 150 + 통솔 × 24~26 (균형형 상한까지 약 4번, 통솔 위주 3번 초중반) */ }, // 능력치 개편 V1 (2026-11-23 적용): 시즌 9부터 상한 평균 × 100. 징병 2026-11-26 기획자: (평균 + 통솔) × 12~14 → 800 + 통솔 × 14~16 (저점 보장 + 통솔 영향 조금 더)
   troopsPerLea: 100,        // 장수 한 명의 최대 병력 = 통솔 × 100
 
   // 군량은 성마다 따로 쌓인다. 상한은 성 규모(1 소성, 2 중성, 3 대도시)마다 다르다 (임시값)
@@ -294,7 +294,8 @@ const draftGain = (st, merit = 0) => { const [lo, hi] = draftBase(st); return ra
 // 출진에 필요한 군량
 // 출진 군량 (2026-11-06: 세력 특성 군량 소비도 적용. fid = 출진하는 세력)
 const riseFoodOf = troops => Math.ceil((troops || 0) * RULES.rise.foodRate); // 거병 군량 (2026-11-27 기획자): 병력 × 0.05, 재야 개인 군량에서
-const marchFood = (troops, fid) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)));
+const leaFoodCut = g => (g && statV1() ? Math.min(0.9, (effStats(g).lea || 0) * RULES.statV1.leaMarchFood) : 0); // 통솔로 줄어드는 출진 군량 비율 (2026-11-27, 시즌 9부터)
+const marchFood = (troops, fid, g) => Math.ceil(troops * RULES.marchFoodRate * Math.max(0, 1 + ((fid && traitOf(fid).food) || 0)) * (1 - leaFoodCut(g))); // g: 출진하는 장수 (통솔 절약)
 // 장수 한 명이 거느릴 수 있는 최대 병력 (통솔)
 const meritTroopsOf = g => Math.min(RULES.statV1.meritTroopsMax, Math.max(0, Math.floor((g.merit || 0) * RULES.statV1.meritTroops))); // 명성으로 늘어난 최대 병력 (2026-11-27, 시즌 9부터)
 const troopsMax = g => { const st = effStats(g); return Math.round(((statV1() ? statAvg(st) * RULES.statV1.troopsPerAvg + RULES.statV1.troopsBase + meritTroopsOf(g) : st.lea * RULES.troopsPerLea) + (gTrait(g).troopsBonus || 0) + (cmdPerk(g) ? RULES.commander.perkTroops : 0)) / 100) * 100; }; // 2026-11-25 기획자: 병력 상한은 늘 십의 자리에서 반올림 (5,667 → 5,700)
