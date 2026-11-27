@@ -5,6 +5,7 @@
 let MY_ID = null;     // 내 계정 id (서버 계정)
 const RANK_PUBLIC = false; // 🏆 명성 순위 단추 (2026-11-24 기획자: 시즌 도중 순위는 일단 숨김, 관리자만). true로 바꾸면 모두에게 다시 보인다
 const AI_PUBLIC = true; // 🪶 제갈량에게 묻기 공개 (2026-11-19 기획자). 화면 맨 처음에 읽히도록 여기 둔다 (아래 메뉴 코드에서 씀)
+const PREP_HIDE = false; // 2026-11-27 기획자: 준비 중에도 도움말·제갈량 공개 (true로 바꾸면 다시 관리자만)
 let IS_ADMIN = false;
 const TOUR_TAB = new URLSearchParams(location.search).has('tour');
 const ADMIN_TAB = new URLSearchParams(location.search).has('admin'); // 관리 탭 (2026-11-19 기획자): index.html?admin 으로 열면 관리 페이지부터 // 대회 탭 (2026-11-19): index.html?tour 로 열면 대회만 보인다 // 개발자 도구를 쓸 수 있는 계정인지 (서버가 알려 준다)
@@ -723,7 +724,7 @@ function rankDialog() {
 let preparing = 0; // 준비 중인 시즌 번호 (0 = 열려 있음)
 // 시즌 준비 중 (문 닫힘, 2026-11-24 기획자): 관리자가 아니면 도움말·공명의 조언을 숨긴다. 다음 시즌 규칙이 미리 보이지 않게 (상단 메뉴는 첫 화면에도 보인다)
 function syncPrepBtns() {
-  const locked = !!preparing && !IS_ADMIN;
+  const locked = PREP_HIDE && !!preparing && !IS_ADMIN;
   $('#helpBtn').hidden = locked;
   $('#rankBtn').hidden = !RANK_PUBLIC && !IS_ADMIN;
   $('#aiBtn').hidden = locked || !((AI_PUBLIC && ME && ME.nickname) || IS_ADMIN); // 제갈량에게 묻기 (2026-11-19)
@@ -2177,7 +2178,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127213347&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127213651&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2187,7 +2188,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127213347&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127213651&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2197,7 +2198,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127213347&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127213651&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
