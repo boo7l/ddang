@@ -699,7 +699,7 @@ function fightRounds(att, def, wall, left, field = false) {
       continue;
     }
     // 보통 합: 양쪽이 동시에 상대 병력을 줄인다
-    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck() * (1 - unitFx(def, 'dmgCut'))) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0) + unitFx(def, 'dmgCut') + (def.polDef || 0)))); // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
+    const hitDef = field ? Math.ceil(fieldPower(att, def) * RULES.roundRate * luck() * (1 - unitFx(def, 'dmgCut'))) : Math.ceil(attackPower(att, def) * RULES.roundRate * luck() * (1 - Math.min(0.9, (taunted ? 0 : wallCut(wall)) + (gTrait(def).dmgCut || 0) + unitFx(def, 'dmgCut'))) * (1 - (def.polDef || 0))); // 대도독 방침 🛡 받는 피해 -3%는 합산 감소율과 따로 곱한다 (2026-11-27 기획자, 공격 방침과 같은 방식) // 55도발 성공 시 방어도 효과 없음 (2026-11-07) // 성 방어도만큼 수비 쪽 피해 감소 (2026-11-06) + 개인 특성 철벽 (2026-11-07)
     const hitAtt = Math.ceil((field ? fieldPower(def, att) : defensePower(def, wall, att)) * RULES.roundRate * luck() * (1 - unitFx(att, 'dmgCut'))); // 중보병: 받는 피해 -10% (2026-11-24)
     const bx = []; // 유대: 양쪽이 동시에 맞으니, 각자 버틸지 본 뒤에 깎는다 (상대 유대 피해는 그 뒤에 남은 병력에서)
     const dLoss = bondSave(def, Math.min(def.troops, hitDef), att, bx);
