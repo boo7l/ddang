@@ -172,7 +172,7 @@ function helpTopics() {
         '수비대와 방어 모드 장수가 <b>병력 많은 순서</b>로 막아요. 수비 장수가 쓰러지면 방어를 끈 장수 중 병력 많은 장수가 자동으로 켜져요.',
         `성을 지키는 부대는 방어가 높을수록 보통 합에서 받는 피해가 줄어요 (방어 500이면 -${pct(wallCut(500))}%, 1,000이면 -${pct(wallCut(1000))}%).`,
         '<b>성이 떨어지면</b> 그 성 장수는 이웃 우리 성으로 물러나요.']),
-        detail: ul([`${R.defenseOffLoss.all ? '성이 떨어질 때 병력이 남아 있으면' : '방어를 끈 채 물러나면'} 병력 -${pct(R.defenseOffLoss.min)}~${pct(R.defenseOffLoss.max)}%.`, `이웃에 우리 성이 없으면(고립) 가장 가까운 우리 성으로 가며 병력 -${pct(R.isolatedLoss)}%.`, '방어 효과는 단기접전·책략·돌격·벽력거에는 통하지 않아요.']), related: ['army.siege'] },
+        detail: ul([`방어를 끈 채 물러나면 병력 -${pct(R.defenseOffLoss.min)}~${pct(R.defenseOffLoss.max)}%.`, `이웃에 우리 성이 없으면(고립) 가장 가까운 우리 성으로 가며 병력 -${pct(R.isolatedLoss)}%.`, '방어 효과는 단기접전·책략·돌격·벽력거에는 통하지 않아요.']), related: ['army.siege'] },
       { id: 'move', title: '이동', keys: ['이동', '옮기기'], body: ul([
         `우리 땅으로 이어진 ${R.moveRange}칸 안의 <b>우리 성</b>으로 옮겨요. 금·군량 없이 1턴을 쓰고 명성 +${R.merit.move}.`,
         '적 성이나 공백지를 지나서는 갈 수 없어요. 병력은 그대로 데려가요.']),

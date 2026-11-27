@@ -1052,7 +1052,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const lost = Math.min(g.troops, Math.ceil(g.troops * RULES.isolatedLoss * Math.max(0, 1 + (traitOf(g.faction).retreatLoss || 0)))); // 세력 특성 (2026-11-06)
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} 포위를 뚫고 ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
-    } else if ((!g.defense || RULES.defenseOffLoss.all) && g.troops > 0) { // 시즌 9부터 방어와 상관없이 (2026-11-27) // 방어를 끈 장수도 물러나며 병력을 조금 잃는다 (2026-11-03 시즌 5)
+    } else if (!g.defense && g.troops > 0) { // 방어를 끈 장수도 물러나며 병력을 조금 잃는다 (2026-11-03 시즌 5)
       const k = RULES.defenseOffLoss, lost = Math.min(g.troops, Math.ceil(g.troops * (k.min + Math.random() * (k.max - k.min)) * Math.max(0, 1 + (traitOf(g.faction).retreatLoss || 0)))); // 세력 특성 (2026-11-06)
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
