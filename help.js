@@ -276,9 +276,11 @@ let helpQuery = ''; // 목록 화면 검색어 (돌아왔을 때 그대로)
 let helpHist = [], helpNow = null; // helpNow(): 지금 화면의 자리 { target, scroll, open }
 
 // target: -1/없음 = 목록, 숫자 = 대분류 번호, 'army' = 대분류, 'army.siege' = 소항목
-function helpDialog2(target = -1) { helpHist = []; helpShow(target); }
+// from: 다른 창에서 열었을 때 돌아갈 곳 { back: 함수, label: '패치노트' } (2026-11-27 기획자: 패치노트 링크로 열면 ◀ 패치노트로 돌아가게)
+function helpDialog2(target = -1, from = null) { helpHist = from ? [from] : []; helpShow(target); }
 function helpGo(target, opt = {}) { if (helpNow) helpHist.push(helpNow()); helpShow(target, opt); } // 기록을 남기고 옮겨 간다
-function helpBack() { const s = helpHist.pop(); if (s) helpShow(s.target, s); }
+function helpBack() { const s = helpHist.pop(); if (s && s.back) s.back(); else if (s) helpShow(s.target, s); }
+const helpPrevBtn = () => { const s = helpHist[helpHist.length - 1]; return s ? `<button id="helpPrev">◀ ${s.back ? esc(s.label || '돌아가기') : '이전'}</button>` : ''; }; // 바로 앞이 다른 창이면 그 이름으로
 // opt: { scroll: 본문 스크롤 위치, open: 펼쳐 둘 소항목 id들, openSub: target 소항목의 자세히를 펼침 }
 function helpShow(target = -1, opt = {}) {
   const topics = helpTopics();
@@ -298,7 +300,7 @@ function helpShow(target = -1, opt = {}) {
     <div class="help helpScroll helpBody">${subs}</div>
     <div class="modalBtns helpNav">
       <button data-close class="main">닫기</button>
-      <span class="helpNavR">${helpHist.length ? '<button id="helpPrev">◀ 이전</button> ' : ''}<button id="helpList">☰ 목록으로</button></span>
+      <span class="helpNavR">${helpPrevBtn()}${helpHist.length ? ' ' : ''}<button id="helpList">☰ 목록으로</button></span>
     </div>`, box => {
     const body = box.querySelector('.helpBody');
     helpNow = () => ({ target: cat.id, scroll: body ? body.scrollTop : 0, open: [...box.querySelectorAll('details.helpMore[open]')].map(d => d.dataset.sub) });
@@ -326,14 +328,14 @@ function helpBindLinks(box) {
 }
 function helpIndex2(topics, opt = {}) {
   openModal(`
-    <h2>땅국지 도움말${typeof IS_ADMIN !== 'undefined' && IS_ADMIN ? ' <span class="dim small">· 새 버전 (관리자 확인용)</span>' : ''}</h2>
+    <h2>땅국지 도움말</h2>
     <p class="helpSearch"><input id="helpQ" type="search" placeholder="도움말 검색 (예: 연노, 정예, 약탈)" autocomplete="off" value="${esc(helpQuery)}"></p>
     <div class="helpIdxBody"><div id="helpResults"></div>
     <div id="helpCats">
       <p class="helpStart"><button class="main" data-goto="start">🎯 처음 오셨나요? 빠른 시작 가이드 ›</button></p>
       <div class="helpIndex helpIndex2">${topics.map((c, i) => c.id === 'start' ? '' : `<button data-page="${i}"><span class="hiIc">${c.icon}</span><span class="hiT">${c.title}<small class="hiB">${c.blurb}</small></span></button>`).join('')}</div>
     </div></div>
-    <div class="modalBtns${helpHist.length ? ' helpNav' : ''}"><button data-close class="main">닫기</button>${helpHist.length ? '<button id="helpPrev">◀ 이전</button>' : ''}</div>`, box => {
+    <div class="modalBtns${helpHist.length ? ' helpNav' : ''}"><button data-close class="main">닫기</button>${helpPrevBtn()}</div>`, box => {
     const idxBody = box.querySelector('.helpIdxBody');
     helpNow = () => ({ target: -1, scroll: idxBody ? idxBody.scrollTop : 0 });
     if (box.querySelector('#helpPrev')) box.querySelector('#helpPrev').onclick = helpBack;

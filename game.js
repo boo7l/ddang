@@ -1921,7 +1921,7 @@ const devNoteHtml = t => `<div class="devNote">${t}</div>`; // 머리글 없이 
 const noteGroupsHtml = groups => groups.map(gr => gr.dev ? `<div class="notePaper devPaper">${devNoteHtml(gr.dev)}</div>`
   : `<div class="notePaper"><p class="noteHead">${gr.head}</p><ul>${gr.items.map(t => (t && t.dev ? `<li class="devLi">${devNoteHtml(t.dev)}</li>` : `<li>${t}</li>`)).join('')}</ul></div>`).join('');
 // i: PATCH_NOTES 순서 (0이 최신). ◀ 더 옛날, ▶ 더 최신
-function noteDialog(i) {
+function noteDialog(i, scroll = 0) { // scroll: 도움말에서 돌아올 때 읽던 자리 (2026-11-27)
   const n = PATCH_NOTES[i], older = PATCH_NOTES[i + 1], newer = PATCH_NOTES[i - 1];
   const short = x => x.title.replace(' 주요 업데이트', '').replace(' 대규모 개편 안내', '');
   openModal(`
@@ -1936,7 +1936,8 @@ function noteDialog(i) {
     box.querySelector('#noteOlder').onclick = () => noteDialog(i + 1);
     box.querySelector('#noteNewer').onclick = () => noteDialog(i - 1);
     box.querySelectorAll('[data-odds="explore"]').forEach(b => { b.onclick = () => exploreOddsDialog(() => noteDialog(i), '패치노트로'); }); // 패치노트 안의 '확률표' 링크 (2026-11-07)
-    box.querySelectorAll('[data-help]').forEach(b => { b.onclick = () => { closeModal(); helpDialog2(b.dataset.help || -1); }; }); // 안내문 속 도움말 바로가기 (2026-11-26, 시즌 9 개편 안내)
+    const pop = box.querySelector('.notesPop'); if (pop && scroll) pop.scrollTop = scroll;
+    box.querySelectorAll('[data-help]').forEach(b => { b.onclick = () => { const at = pop ? pop.scrollTop : 0; closeModal(); helpDialog2(b.dataset.help || -1, { back: () => noteDialog(i, at), label: '패치노트로' }); }; }); // 안내문 속 도움말 바로가기 (2026-11-26, 시즌 9 개편 안내). 2026-11-27: 도움말에서 ◀ 패치노트로 돌아온다
     box.querySelectorAll('[data-odds="trait"]').forEach(b => { b.onclick = () => traitOddsDialog(() => noteDialog(i), '패치노트'); }); // 특성 확률표 링크 (2026-11-08)
   });
   $('#modalBox').classList.add('wideBox');
@@ -2176,7 +2177,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127212042&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127212324&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2186,7 +2187,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127212042&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261127212324&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2196,7 +2197,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127212042&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261127212324&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
