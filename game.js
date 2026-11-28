@@ -1336,7 +1336,7 @@ function giftDialog() {
   const p = me(), R = RULES.gift, at = cityAtSlot(p, slot);
   const cool = giftBlocked(p, slot);
   if (cool) { alert(cool); return; }
-  const mine = treasuresOf(p)[0];
+  const mine = treasuresOf(p)[0], regift = mine ? giftRegiftLeft(p, mine, S.turn + 1 + slot) : 0; // 증여로 받은 보물은 12턴 동안 다시 못 줌
   const opts = allGenerals().filter(x => x.id !== p.id && x.faction === p.faction && x.city === at.id).sort((a, b) => (b.merit || 0) - (a.merit || 0)).map(x => {
     const no = giftTargetWhy(p, x, at.id);
     return `<label class="opt"${no ? ' style="opacity:.5"' : ''}><input type="radio" name="tgt" value="${x.id}"${no ? ' disabled' : ''}><b>${esc(x.name)}</b> <span class="dim">명성 ${fmt(x.merit || 0)}${treasuresOf(x).length ? ' · 보물 있음' : ''}</span>${no ? ` <span class="dim small">(${esc(no)})</span>` : ''}</label>`;
@@ -1344,7 +1344,7 @@ function giftDialog() {
   const extra = `
     <p class="sub">줄 것</p>
     <p class="picks"><label class="opt"><input type="radio" name="gk" value="gold" checked> 금</label>
-      <label class="opt"><input type="radio" name="gk" value="treasure"${mine ? '' : ' disabled'}> 보물 ${mine ? `「${esc(mine)}」 <span class="dim">(수수료 금 ${fmt(giftTreasureFee(mine))})</span>` : '<span class="dim">(가진 보물 없음)</span>'}</label></p>
+      <label class="opt"><input type="radio" name="gk" value="treasure"${mine && !regift ? '' : ' disabled'}> 보물 ${mine ? `「${esc(mine)}」 <span class="dim">(${regift ? `증여로 받은 보물이라 ${regift}턴 뒤에 줄 수 있어요` : `수수료 금 ${fmt(giftTreasureFee(mine))}`})</span>` : '<span class="dim">(가진 보물 없음)</span>'}</label></p>
     <p class="sub">금 <span class="dim">(1~${fmt(R.goldMax)} · 받는 장수는 ${Math.round((1 - R.fee) * 100)}%를 받아요)</span></p>
     <p><input type="number" id="gAmount" min="1" max="${R.goldMax}" step="1" value="${Math.min(R.goldMax, 1000)}" style="width:110px">
       ${[500, 1000, R.goldMax].map(n => `<button type="button" class="mini" data-gamt="${n}">${fmt(n)}</button>`).join(' ')} <span id="gEst" class="dim"></span></p>`;
@@ -2219,7 +2219,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183158&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183300&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2229,7 +2229,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128183158&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128183300&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2239,7 +2239,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183158&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183300&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }

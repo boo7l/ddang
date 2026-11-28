@@ -2023,6 +2023,8 @@ function runLevy(g) {
 // 모든 증여는 gift_log 표에 남긴다 (다중 계정 감시, api.js recordGift → index.ts)
 const giftLeft = g => (g.giftTurn ? Math.max(0, g.giftTurn + RULES.gift.cooldown - S.turn) : 0);
 const giftTreasureFee = n => Math.round(trSell(n) * RULES.gift.fee);
+// 증여로 받은 보물을 다시 줄 수 있게 되기까지 남은 턴 (turn: 실행될 턴, 2026-11-28 treasureRegift)
+const giftRegiftLeft = (g, name, turn = S.turn) => (g.giftGot && g.giftGot.name === name ? Math.max(0, g.giftGot.turn + RULES.gift.treasureRegift - turn) : 0);
 // t가 g에게서 받을 수 있는지 (명령 창 목록과 실행에 함께 쓴다). 안 되면 이유
 function giftTargetWhy(g, t, cityId = g.city) {
   const R = RULES.gift;
@@ -2043,12 +2045,15 @@ function runGift(g, o) {
   if (o.type === 'treasure') {
     const name = o.item;
     if (!TREASURES[name] || !treasuresOf(g).includes(name)) return '가지고 있지 않은 보물';
+    if (giftRegiftLeft(g, name)) return `증여로 받은 보물은 ${RULES.gift.treasureRegift}턴 동안 다시 줄 수 없음 (${giftRegiftLeft(g, name)}턴 남음)`;
     if (treasuresOf(t).length || t.treasureFound) return `${josa(t.name, '은는')} 이미 보물이 있음`;
     const fee = giftTreasureFee(name);
     if (g.gold < fee) return `수수료 금 ${fmt(fee)}이 모자람`;
     g.gold -= fee;
     g.treasures = treasuresOf(g).filter(n => n !== name);
     t.treasures = [name];
+    t.giftGot = { name, turn: S.turn }; // 다시 증여 제한 (treasureRegift)
+    if (g.giftGot && g.giftGot.name === name) delete g.giftGot;
     addLog(g, `🎁 ${t.name}에게 보물 「${name}」${josa(name, '을를').slice(-1)} 주었다. 수수료 금 -${fmt(fee)} (${fmt(g.gold)})`);
     addLog(t, `🎁 ${g.name}에게서 보물 「${name}」${josa(name, '을를').slice(-1)} 받았다! ${trLabel(name)}`);
     if (typeof recordGift === 'function') recordGift({ ...base, kind: 'treasure', item: name, amount: trSell(name), received: 0, fee });
