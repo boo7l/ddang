@@ -464,6 +464,10 @@ const isFarRoad = (a, b) => (typeof MAP !== 'undefined' && MAP && Array.isArray(
   : (RULES.farRoads || []).includes(a.name + '-' + b.name) || (RULES.farRoads || []).includes(b.name + '-' + a.name));
 // 먼 길 원정 배율 (2026-11-14, 시즌 7부터): from → to가 먼 길이면 출진 금·군량 × RULES.farMarch.mult
 const marchMult = (from, to) => (from && to && seasonNow() >= RULES.farMarch.from && isFarRoad(from, to) ? RULES.farMarch.mult : 1);
+// 먼 길 2턴 출진 (2026-11-28 기획자, 시즌 9부터 RULES.farMarch.twoTurnFrom): 1턴에 출발(금·군량을 내고 다음 칸은 '행군' 칸으로 잠김), 2턴에 도착해 전투.
+// 행군 중(g.march)에는 원래 성에 있지만 수비에 끼지 않는다. 출진 쿨타임은 전투한 턴부터 센다
+const farTwoTurn = (from, to) => !!(from && to && seasonNow() >= (RULES.farMarch.twoTurnFrom || 99) && isFarRoad(from, to));
+const onMarch = g => !!(g && g.march && g.march.turn >= S.turn - 1); // 출발한 턴 ~ 도착하는 턴까지 (도착하면 지운다. 끊긴 행군은 다음 턴에 저절로 끝)
 // anyPath (2026-11-03 시즌 5, 뼈에게 닿기를): 남의 성·공백지를 지나도 된다. 도착하는 곳은 여전히 아군 성
 function linkedOwnCities(fromId, fid, maxSteps = Infinity, anyPath = false) {
   const seen = new Set([fromId]), limited = maxSteps !== Infinity;
@@ -691,31 +695,53 @@ function giftBlocked(g, i) {
   return '';
 }
 // 출진을 i번 칸에 넣을 수 없는 이유. 출진은 attackCooldown턴에 한 번 (2026-10-31, 예약 때 막아서 실패로 턴을 버리지 않게)
-function attackBlocked(g, i) {
-  const cd = RULES.attackCooldown;
-  if (g.attackTurn && g.attackTurn + cd > S.turn + 1 + i) return `출진은 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.attackTurn + cd).month}월 칸부터 가능)`;
-  if (g.queue.some((o, j) => j !== i && o && o.cmd === 'attack' && Math.abs(i - j) < cd)) return `출진은 ${cd}턴에 한 번이라, 앞뒤 ${cd - 1}칸 안에 출진이 있으면 넣을 수 없어요.`;
+// to를 주면 먼 길 2턴 출진(시즌 9)인지 보고, 전투하는 칸(다음 칸)을 기준으로 잰다 (2026-11-28 기획자: 1칸 먼 길 출발 · 2칸 전투면 다음 출진은 4칸부터)
+function attackBlocked(g, i, to) {
+  const cd = RULES.attackCooldown, tc = to && cityById(to);
+  const bi = tc && farTwoTurn(cityAtSlot(g, i), tc) ? i + 1 : i; // 이 출진이 싸우는 칸
+  if (g.attackTurn && g.attackTurn + cd > S.turn + 1 + bi) return `출진은 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.attackTurn + cd - (bi - i)).month}월 칸부터 가능)`;
+  const mine = g.queue[i] && g.queue[i].cmd === 'attack' && g.queue[i].far2 ? i + 1 : -1; // 이 칸에 있던 먼 길 출진의 행군 칸 (바꾸면 함께 사라진다)
+  const fightAt = (o, j) => (o.cmd === 'farArrive' ? j : o.far2 ? j + 1 : j); // 예약된 출진이 싸우는 칸
+  if (g.queue.some((o, j) => j !== i && j !== mine && o && (o.cmd === 'attack' || o.cmd === 'farArrive') && Math.abs(bi - fightAt(o, j)) < cd)) return `출진은 ${cd}턴에 한 번이라, 앞뒤 ${cd - 1}칸 안에 전투가 있으면 넣을 수 없어요.${bi > i ? ' (먼 길은 다음 칸에서 싸워요)' : ''}`;
   return '';
+}
+// 앞 칸에 먼 길 출진이 없는 '행군' 칸은 지운다 (맨 앞 칸은 지금 행군 중이면 그대로)
+function fixFarLocks(g) {
+  g.queue.forEach((o, j) => {
+    if (!o || o.cmd !== 'farArrive') return;
+    const prev = j > 0 && g.queue[j - 1];
+    if (j === 0 ? !onMarch(g) : !(prev && prev.cmd === 'attack' && prev.far2 && prev.to === o.to)) g.queue[j] = null;
+  });
 }
 function setOrder(g, i, order) {
   if (!Number.isInteger(i) || i < 0 || i >= RULES.queueSize) return '없는 칸이에요.';
+  if (g.queue[i] && g.queue[i].cmd === 'farArrive') return '먼 길 행군 칸이라 바꿀 수 없어요.'; // 2026-11-28: 앞 칸의 먼 길 출진을 바꾸거나 지우면 함께 사라진다
+  if (order && order.cmd === 'farArrive') return '쓸 수 없는 명령이에요.'; // 행군 칸은 먼 길 출진이 스스로 만든다
   if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd, g))) return '쓸 수 없는 명령이에요.'; // 2026-11-25: g를 넘겨야 재야 탐색(시즌 9)이 막히지 않는다
   if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
   if (order && order.cmd === 'gift') { const why = giftBlocked(g, i); if (why) return why; } // 증여 쿨타임 (2026-11-28)
-  if (order && order.cmd === 'attack') { const why = attackBlocked(g, i); if (why) return why; }
+  if (order && order.cmd === 'attack') { const why = attackBlocked(g, i, order.to); if (why) return why; }
   if (order && order.cmd === 'attack') { const to = cityById(order.to), pt = to && riseProtected(to.faction), pm = riseProtected(g.faction); if (pm) return `우리 세력은 거병 보호 중이라 ${pm}턴 동안 출진할 수 없어요.`; if (pt) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 ${pt}턴 동안 공격할 수 없어요.`; if (to && to.faction !== g.faction && openProtected(to.faction, S.turn + 1 + i)) return openProtectText(); } // 거병 보호 (2026-11-25) · 시즌 시작 보호 (2026-11-26, 이 칸이 실행되는 턴 기준)
-  g.queue[i] = order ? { ...order, orderedAt: now() } : null;
+  const far2 = !!(order && order.cmd === 'attack' && farTwoTurn(cityAtSlot(g, i), cityById(order.to))); // 먼 길 2턴 출진 (시즌 9, 2026-11-28)
+  if (far2 && i + 1 >= RULES.queueSize) return '먼 길 출진은 2턴이 걸려서 마지막 칸에는 넣을 수 없어요.';
+  g.queue[i] = order ? { ...order, orderedAt: now(), ...(far2 ? { far2: true } : {}) } : null;
+  if (far2) g.queue[i + 1] = { cmd: 'farArrive', to: order.to, orderedAt: now() }; // 다음 칸은 행군 칸으로 잠근다 (그 칸에 있던 명령은 지워진다)
+  fixFarLocks(g);
   return '';
 }
-function clearOrders(g) { g.queue = Array(RULES.queueSize).fill(null); }
+// keepMarch: 지금 행군 중이면 맨 앞 행군 칸은 남긴다 (장수가 '모두 지우기'를 눌렀을 때. 세력이 바뀌거나 정지되면 다 지운다)
+function clearOrders(g, keepMarch) {
+  const keep = keepMarch && g.queue && g.queue[0] && g.queue[0].cmd === 'farArrive' && onMarch(g) ? g.queue[0] : null;
+  g.queue = Array(RULES.queueSize).fill(null);
+  if (keep) g.queue[0] = keep;
+}
 // 비어 있는 칸을 모두 같은 명령으로 채운다 (예: 12칸 모두 농업). 하야는 되풀이할 수 없다
 function fillOrders(g, order) {
   if (!order || order.cmd === 'expand' || order.cmd === 'rise' || order.cmd === 'gift') return '채울 수 없는 명령이에요.'; // 증여도 (2026-11-28) // 증축은 한 번만 (2026-11-08) · 거병도 (2026-11-25)
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
     if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 갈취는 쿨타임이 끝난 칸에만 채운다
-    if (order.cmd === 'attack' && attackBlocked(g, i)) continue; // 출진도 쿨타임이 끝난 칸에만 채운다
-    const why = setOrder(g, i, order);
+    if (order.cmd === 'attack' && attackBlocked(g, i, order.to)) continue; // 출진도 쿨타임이 끝난 칸에만 채운다    const why = setOrder(g, i, order);
     if (why) return why;
   }
   return '';
@@ -726,7 +752,7 @@ function cityAtSlot(g, i) {
   let id = g.city;
   for (let k = 0; k < i; k++) {
     const o = g.queue[k];
-    if (o && (o.cmd === 'move' || o.cmd === 'attack')) id = o.to;
+    if (o && (o.cmd === 'move' || o.cmd === 'attack' || o.cmd === 'farArrive')) id = o.to;
   }
   return cityById(id);
 }
@@ -935,7 +961,7 @@ function toggleDefense(g) {
 // ----- 수비 인원: 한 성에 방어 모드는 최대 5명 (2026-10-25) -----
 // fid 세력 장수 가운데 cityId 성에서 방어 모드를 켜고 병사가 있는 장수 (except는 빼고 센다)
 const defendingIn = (cityId, fid, except) =>
-  allGenerals().filter(x => x !== except && x.city === cityId && x.faction === fid && x.defense && x.troops > 0);
+  allGenerals().filter(x => x !== except && x.city === cityId && x.faction === fid && x.defense && x.troops > 0 && !onMarch(x)); // 먼 길 행군 중이면 수비에 안 낀다 (2026-11-28)
 // 새로 들어왔거나 병사가 처음 생긴 장수: 그 성 수비가 꽉 찼으면 방어 모드를 끈다
 function capDefense(g) {
   if (g.faction && g.defense && g.troops > 0 && defendingIn(g.city, g.faction, g).length >= RULES.defenseMax) g.defense = false;
@@ -955,7 +981,7 @@ function refillDefense(c, fallen) {
 function trimDefense() {
   const by = {};
   for (const g of allGenerals()) {
-    if (g.faction && g.city && g.defense && g.troops > 0) (by[g.city] = by[g.city] || []).push(g);
+    if (g.faction && g.city && g.defense && g.troops > 0 && !onMarch(g)) (by[g.city] = by[g.city] || []).push(g);
   }
   for (const list of Object.values(by)) {
     if (list.length > RULES.defenseMax) list.sort((a, b) => b.troops - a.troops).slice(RULES.defenseMax).forEach(g => { g.defense = false; });
@@ -978,7 +1004,7 @@ function defendersOf(c) {
       type: null, guard: true, faction: c.faction }); // 2026-11-14: 수비대는 병종 없음 (상성 없음) // 병종은 수비대장 징병으로 바뀐다 (2026-11-04)
   }
   for (const g of allGenerals()) {
-    if (g.city === c.id && g.faction === c.faction && g.defense && g.troops > 0) list.push(unitOf(g));
+    if (g.city === c.id && g.faction === c.faction && g.defense && g.troops > 0 && !onMarch(g)) list.push(unitOf(g)); // 먼 길 행군 중인 장수는 빼고 (2026-11-28)
   }
   return list.sort((a, b) => b.troops - a.troops);
 }
@@ -1060,7 +1086,7 @@ function retreatFrom(c, oldFaction, byFid, byGen) {
       const lost = Math.min(g.troops, Math.ceil(g.troops * RULES.isolatedLoss * Math.max(0, 1 + (traitOf(g.faction).retreatLoss || 0)))); // 세력 특성 (2026-11-06)
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} 포위를 뚫고 ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
-    } else if (!g.defense && g.troops > 0) { // 방어를 끈 장수도 물러나며 병력을 조금 잃는다 (2026-11-03 시즌 5)
+    } else if ((!g.defense || onMarch(g)) && g.troops > 0) { // 먼 길 행군 중이던 장수도 방어 끈 장수처럼 (2026-11-28) // 방어를 끈 장수도 물러나며 병력을 조금 잃는다 (2026-11-03 시즌 5)
       const k = RULES.defenseOffLoss, lost = Math.min(g.troops, Math.ceil(g.troops * (k.min + Math.random() * (k.max - k.min)) * Math.max(0, 1 + (traitOf(g.faction).retreatLoss || 0)))); // 세력 특성 (2026-11-06)
       g.troops -= lost;
       out.push(`${josa(g.name, '은는')} ${josa(to.name, '으로')} 물러났다. 병력 -${fmt(lost)} (${fmt(g.troops)})`);
@@ -1290,25 +1316,48 @@ function runAttack(g, o, mark) {
   if (openProtected(to.faction)) return `시즌 시작 보호 기간이라 다른 세력 성은 공격할 수 없음`; // 2026-11-26 (RULES.openProtect)
   if (riseProtected(to.faction)) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 공격할 수 없음`; // 동맹 (2026-11-13): 금·군량을 쓰기 전에 막는다
   if (g.troops <= 0) return '병력이 없음';
-  const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0;
+  const depart = !o.arrive && farTwoTurn(from, to); // 먼 길 2턴 출진의 출발 턴 (시즌 9, 2026-11-28): 비용만 내고 다음 턴에 싸운다
+  const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn - (depart ? 1 : 0) : 0; // 쿨타임은 전투하는 턴 기준
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
-  const mm = marchMult(from, to); // 먼 길 원정이면 × RULES.farMarch.mult (2026-11-14, 시즌 7)
-  const food = marchFood(g.troops, g.faction, g) * mm;
-  if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
-  const why = pay(g, 'attack', attackGoldOf(g.troops) * mm); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
-  if (why) return why;
-  home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
+  if (!o.arrive) { // 먼 길 도착 턴에는 출발할 때 이미 냈다
+    const mm = marchMult(from, to); // 먼 길 원정이면 × RULES.farMarch.mult (2026-11-14, 시즌 7)
+    const food = marchFood(g.troops, g.faction, g) * mm;
+    if (home.food < food) return `${from.name} 군량 부족 (필요 ${fmt(food)}, 있음 ${fmt(home.food)})`;
+    const why = pay(g, 'attack', attackGoldOf(g.troops) * mm); // 출진 금은 병력에 비례 (2026-11-03 시즌 5, 그 전엔 50. 군량이 모자라 못 나가면 들지 않는다)
+    if (why) return why;
+    home.food -= food; // 출진 군량은 바로 쓰여 사라진다 (이기든 지든 돌아오지 않음)
+  }
+  if (depart) return farDepart(g, o, from, to, mark);
   g.attackTurn = S.turn; // 출진 쿨타임 (2026-10-31)
   (turnAttackers[to.id] = turnAttackers[to.id] || []).push(g.id); // 이번 턴에 이 성을 친 장수 (함락되면 함께 들어간다)
   const att = unitOf(g);
   siegeRolled = new Set();
   treasureRolled = new Set(); // 출진 한 번(야전 + 공성)마다 보물 판정은 장수당 한 번
   // 야전 (시즌 7부터): 상대 성에서 우리 성으로 출진할 장수가 이번 턴에 아직 남아 있으면 들판에서 먼저 맞붙는다
-  if (to.faction && fieldOn()) {
+  if (to.faction && fieldOn() && !o.arrive) { // 먼 길 행군으로 도착한 부대는 야전 없이 바로 공성 (2026-11-28)
     const f = runField(g, att, from, to, mark);
     if (f) return f.cur ? siegeAttack(f.cur.g, f.cur.u, f.cur.from, f.cur.to, mark, f) : '';
   }
   return siegeAttack(g, att, from, to, mark, null);
+}
+
+// 먼 길 출발 (시즌 9, 2026-11-28 기획자): 금·군량은 냈다. 행군 상태로 두고 다음 칸(행군 칸)에서 도착해 싸운다. 상대 세력에는 진군 알림
+function farDepart(g, o, from, to, mark) {
+  g.march = { to: to.id, from: from.id, turn: S.turn };
+  if (!(g.queue[0] && g.queue[0].cmd === 'farArrive' && g.queue[0].to === to.id)) g.queue[0] = { cmd: 'farArrive', to: to.id, orderedAt: o.orderedAt || now() }; // 예약 때 먼 길이 아니었던 출진도 도착 칸을 만든다
+  addLog(g, `[${fmtClock(mark)}] 먼 길로 출진! ${g.unitType || ''} ${fmt(g.troops)}명이 ${josa(to.name, '으로')} 행군 중이다. 다음 턴에 도착해 싸운다.`);
+  const f = to.faction && factionById(to.faction);
+  if (f) for (const x of allGenerals()) if (x.faction === to.faction) addLog(x, `⚠ ${factionById(g.faction).name} 세력 ${g.name} 부대(${fmt(g.troops)}명)가 먼 길로 ${josa(to.name, '을를')} 향해 진군 중이다! 다음 턴에 도착한다.`);
+  return '';
+}
+// 먼 길 도착 (행군 칸): 출발한 성에 그대로 있으면 지금 출진과 똑같이 싸운다 (비용은 출발 때 냈다). 못 싸우면 원래 성에 남는다
+function runFarArrive(g, o, mark) {
+  const m = g.march;
+  delete g.march;
+  if (!m || m.to !== o.to || m.turn !== S.turn - 1) return '행군 중이 아님';
+  if (g.city !== m.from) return '출발한 성을 잃어 행군이 끊김';
+  const fail = runAttack(g, { cmd: 'attack', to: o.to, arrive: true }, mark);
+  return fail ? `${fail} (원래 성에 남음)` : '';
 }
 
 // ===== 야전 (맞출진, 2026-11-09 기획 · 시즌 7부터, 기획서 "야전 (맞출진)") =====
@@ -1328,6 +1377,7 @@ function nextFieldFoe(cur, fought) {
   for (let i = turnIdx + 1; i < turnTodo.length; i++) {
     const { g: x, order: o } = turnTodo[i];
     if (!o || o.cmd !== 'attack' || o.to !== cur.from.id || x.city !== cur.to.id || !x.faction || x.faction === cur.g.faction) continue;
+    if (farTwoTurn(cur.to, cur.from)) continue; // 먼 길 2턴 출진은 출발 턴이라 들판에서 만나지 않는다 (2026-11-28)
     if (fieldDone.has(x.id) || fought.has(x.id) || !canMarch(x, o)) continue;
     return x;
   }
@@ -2393,7 +2443,8 @@ const COMMANDS = {
   wall: { label: () => '축성', run: g => runDomestic(g, 'wall') },
   peace: { label: () => '치안', run: g => runDomestic(g, 'peace') },
   draft: { label: o => (o.who === 'guard' ? '징병 (수비)' : o.upgrade ? `승급 (${o.unit})` : `징병 (${o.unit})`), run: runDraft },
-  attack: { label: o => `출진 → ${cityName(o.to)}`, run: runAttack },
+  attack: { label: o => `출진 → ${cityName(o.to)}${o.far2 ? ' (먼 길 출발)' : ''}`, run: (g, o, mark) => { const r = runAttack(g, o, mark); if (!onMarch(g) && g.queue[0] && g.queue[0].cmd === 'farArrive') g.queue[0] = null; return r; } }, // 먼 길 출발을 못 했으면 행군 칸을 비운다 (2026-11-28)
+  farArrive: { label: o => `먼 길 행군 → ${cityName(o.to)} 도착`, run: runFarArrive }, // 먼 길 2턴 출진의 둘째 칸 (시즌 9, 2026-11-28). 장수가 직접 넣거나 바꿀 수 없다
   move: { label: o => `이동 → ${cityName(o.to)}`, run: runMove },
   destroy: { label: o => `파괴 → ${cityName(o.to)}`, run: (g, o) => runPlot(g, 'destroy', o) },
   rumor: { label: o => `유언 → ${cityName(o.to)}`, run: (g, o) => runPlot(g, 'rumor', o) },
