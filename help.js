@@ -22,7 +22,7 @@ function helpTopics() {
   const quest = `금 +${RN.quest[0]}~${RN.quest[1]}${RN.questFame ? `·명성 +${RN.questFame}` : ''}`;
   return [
     { id: 'start', icon: '🎯', title: '처음 시작하기', blurb: '목표·첫 행동·예약', subs: [
-      { id: 'goal', title: '게임 목표', keys: ['천하통일', '목표'], body: `<p>장수 한 명을 키우며 여러 유저와 함께 하는 턴제 전략 게임이에요. 세력의 장수들이 힘을 모아 지도의 모든 성을 차지하면 <b>천하통일</b>로 시즌이 끝나요.</p>
+      { id: 'goal', title: '게임 목표', keys: ['천하통일', '목표'], body: `<p>장수 한 명을 키우며 여러 유저와 함께 하는 턴제 전략 게임이에요. 다른 세력이 모두 멸망하고 우리 세력만 남으면 <b>천하통일</b>로 시즌이 끝나요. 공백지는 모두 차지하지 않아도 돼요.</p>
         <p>세력에 들어가 통일을 돕는 길도 있고, 세력 밖의 <b>재야</b>로 독립해서 살아가는 길도 있어요.</p>`, related: ['faction.unify', 'ronin.basic'] },
       { id: 'create', title: '장수 만들기', keys: ['능력치', '주사위', '생성', '금낭'], body: `<p>이름·얼굴을 정하고 <b>통솔·무력·지력</b>을 굴려요 (한 항목 ${ROLL.min}~${ROLL.max}, 합 ${ROLL.total}). 그다음 장수 <b>특성</b>을 3장 중에서 하나 골라요.</p>
         ${ul(['<b>세 능력치 모두 전투에 쓰여요.</b> 통솔은 보병, 무력은 기병, 지력은 궁병 계열의 힘이에요. 주력 능력치에 맞는 병종을 고르세요.', '전투 밖에서는 통솔은 징병·치안, 무력은 축성, 지력은 농업·상업·계략에 쓰여요.', '셋의 평균이 높을수록 거느릴 수 있는 병력이 많아요.'])}`, related: ['general.stats', 'general.trait'] },
@@ -34,6 +34,7 @@ function helpTopics() {
         '같은 턴의 명령은 <b>먼저 예약한 순서</b>대로 실행돼요.',
         '실행할 때 조건이 안 맞으면(금 부족 등) 그 턴은 <b>실패 → 대기</b>예요. 결과는 <b>기록</b> 창에서 봐요.'])}`, related: [] },
       { id: 'first', title: '첫 행동', keys: ['처음', '초보', '뭐부터'], body: `<p><b>세력 장수</b></p>${ul(['<b>내정</b>으로 머무는 성을 키워요. 금·군량 수입이 늘어요.', '<b>징병</b>으로 병사를 모아요.', '세력 상황을 보고 <b>방어 모드</b>로 성을 지키거나, <b>출진</b>으로 이웃 적 성을 공격해요.'])}
+        <p class="dim">처음에는 머무는 성의 농업·상업을 살펴보세요. 병력이 부족하면 징병으로 모으고, 싸울 준비가 됐다면 이웃 성의 수비 상황을 확인한 뒤 출진하세요.${R.openProtect && seasonNow() >= R.openProtect.fromSeason ? ` 시즌 시작 ${R.openProtect.turns}턴 동안은 다른 세력 성을 공격할 수 없으니 공백지와 도적군 성부터 노려 보세요.` : ''}</p>
         <p><b>재야 장수</b></p>${ul(['<b>의뢰</b>·<b>탐색</b>으로 금과 명성을 모아요.', '필요하면 <b>모병</b>으로 병사를 모아 약탈·거병을 노려요.'])}`, related: ['city.domestic', 'army.draft', 'battle.defense', 'ronin.quest'] },
       { id: 'map', title: '지도 보기', keys: ['지도', '성 정보', '공백지', '색'], body: `${ul([
         '성 칸의 색은 그 성의 세력이에요. 색이 없는 칸은 <b>공백지</b>(주인 없는 땅), 회색은 <b>도적군</b>이 차지한 성이에요.',
@@ -117,7 +118,8 @@ function helpTopics() {
         ['군량 최대', ...grades.map(k => fmt(R.foodMax[k]))],
         ['장수 정원', ...grades.map(k => R.crowdCap[k] + '명')],
         ['수비대 최대', ...grades.map(k => fmt(R.guardMax[k]))],
-        ['정예 병종', ...grades.map(k => (k >= T2.gradeMin ? '○' : '×'))]])
+        ['정예 병종', ...grades.map(k => (k >= T2.gradeMin ? '○' : '×'))],
+        ['만들 수 있는 병기', ...grades.map(k => sieges.filter(t => siegeGradeMin(t) <= k).join('·'))]]) // 2026-11-28 기획자 (GPT 피드백)
         + `<p><b>정원</b>: 한 성에 머무는 우리 장수가 정원을 넘으면 그 성 장수 모두의 금 수입 중 상업 몫이 줄어요.</p>`, related: ['city.expand'] },
       { id: 'expand', title: '증축과 수도', keys: ['증축', '수도', '천도'], body: ul([
         `농업·상업·방어·치안이 모두 최대치의 ${pct(R.expand.ready)}% 이상인 우리 성을 한 단계 키워요 (금 ${grades.slice(0, 3).map(k => `${gName[k]} ${fmt(R.expand.cost[k])}`).join('·')}). 명성과 세 능력치 경험치를 얻어요.`,
