@@ -2181,7 +2181,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128100327&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128101524&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2191,7 +2191,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128100327&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128101524&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2201,7 +2201,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128100327&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128101524&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3905,7 +3905,7 @@ const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['agri', '농업', 'KeyQ', '내정'], ['comm', '상업', 'KeyW', '내정'], ['wall', '축성', 'KeyE', '내정'], ['peace', '치안', 'KeyR', '내정'],
   ['draft', '징병', 'KeyA', '군사'], ['attack', '출진', 'KeyS', '군사'], ['move', '이동', 'KeyD', '군사'], ['siege', '병기', 'KeyF', '군사'],
   ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyU', '계략'],
-  ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyV', '기타'], ['expand', '증축', 'KeyB', '기타'], ['extra', '추가 명령', 'KeyN', '기타'], // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
+  ['explore', '탐색', '', '기타'], ['train', '수련', '', '기타'], ['buyFood', '군량 구매', 'KeyG', '기타'], ['transport', '군량 수송', 'KeyH', '기타'], ['expand', '증축', 'KeyJ', '기타'], ['extra', '추가 명령', 'KeyK', '기타'], // 2026-11-28 기획자: 기타 GHJK (시즌 9에 없어진 탐색·수련은 키 없음) // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
   ['r_move', '이동', 'KeyQ', '재야'], ['r_draft', '모병', 'KeyW', '재야'], ['r_explore', '탐색', 'KeyE', '재야'], ['r_quest', '의뢰', 'KeyR', '재야'], // 재야 전용 (2026-11-25 기획자: QWERASDF, 2026-11-28 단추 순서 바꿈)
   ['r_raid', '약탈', 'KeyA', '재야'], ['r_buyFood', '군량 구매', 'KeyS', '재야'], ['r_enlist', '임관', 'KeyD', '재야'], ['r_rise', '거병', 'KeyF', '재야'],
   ['home', '내 성 보기', 'Space', '기타 화면'], ['chat', '채팅 입력', 'Slash', '기타 화면'], ['letter', '외교 서신', 'Quote', '기타 화면'], ['music', '음악 켜기·끄기', 'KeyM', '기타 화면'], // 2026-11-22 기획자
@@ -3919,6 +3919,9 @@ let KEYMAP = {}; // 동작 → 키
 function loadKeys() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(KEYS_KEY) || '{}') || {}; } catch (e) { /* 기본값 */ }
+  // 2026-11-28 기타 키 GHJK로 바꿈: 저장된 값이 옛 기본값 그대로면 새 기본값을 쓴다 (직접 바꾼 키는 그대로)
+  const OLD_ETC = { explore: 'KeyG', train: 'KeyH', buyFood: 'KeyJ', transport: 'KeyV', expand: 'KeyB', extra: 'KeyN' };
+  for (const [id, old] of Object.entries(OLD_ETC)) if (saved[id] === old) delete saved[id];
   KEYMAP = Object.fromEntries(KEY_ACTIONS.map(([id, , def]) => [id, id in saved ? saved[id] : def]));
 }
 function saveKeys() { try { localStorage.setItem(KEYS_KEY, JSON.stringify(KEYMAP)); } catch (e) { /* 이번만 */ } }
