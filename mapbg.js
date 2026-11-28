@@ -95,11 +95,14 @@ function roadBlocked(p, q) {
   }
   return false;
 }
+// 먼 길(farRoads)만 점선 (2026-11-28 기획자): 땅이든 바다든 두 칸 그리고 두 칸 띄운다. 뱃길은 점선 대신 색(route)으로만 구분
 function paintRoads(g, pal, cell, isWater) {
+  const isFarRoad = (a, b) => (MAP.farRoads || []).some(([p, q]) => (p === a && q === b) || (p === b && q === a));
   const cityOf = id => MAP.cities.find(o => o.id === id);
   const toDot = (u, v) => [Math.floor(u * cell / P), Math.floor(v * cell / P)];
   const center = c => toDot(c.x + 0.5, c.y + 0.5);
   const paths = (MAP.links || []).map(([a, b]) => [cityOf(a), cityOf(b)]).filter(([p, q]) => p && q).map(([p, q]) => {
+    const far = isFarRoad(p.id, q.id);
     // 경유점: 배열이면 늘, { pts, ifBlocked }면 곧은 길이 다른 성 칸을 지날 때만 (2026-11-26)
     const raw = (o, rev) => { if (!o) return null; const pts = Array.isArray(o) ? o : o.pts, list = rev ? pts.slice().reverse() : pts; return !Array.isArray(o) && o.ifBlocked && !roadBlocked(p, q) ? [] : list; };
     const bend = raw(ROAD_BENDS[p.name + '-' + q.name]) || raw(ROAD_BENDS[q.name + '-' + p.name], true) || [];
@@ -108,14 +111,16 @@ function paintRoads(g, pal, cell, isWater) {
       const [s, e] = [pts[i - 1], pts[i]], n = Math.max(Math.abs(e[0] - s[0]), Math.abs(e[1] - s[1]));
       for (let k = i === 1 ? 0 : 1; k <= n; k++) dots.push([Math.round(s[0] + (e[0] - s[0]) * k / n), Math.round(s[1] + (e[1] - s[1]) * k / n)]);
     }
+    dots.far = far;
     return dots;
   });
+  const skip = (d, k) => d.far && k % 4 >= 2;
   const water = ([i, j]) => isWater((i + 0.5) * P / cell, (j + 0.5) * P / cell);
   g.fillStyle = pal.roadEdge; // 테두리를 먼저 다 그려서 길끼리 만나는 곳이 끊기지 않게
-  for (const dots of paths) for (const d of dots) if (!water(d)) g.fillRect((d[0] - 1) * P, (d[1] - 1) * P, P * 3, P * 3);
+  for (const dots of paths) { dots.forEach((d, k) => { if (!water(d) && !skip(dots, k)) g.fillRect((d[0] - 1) * P, (d[1] - 1) * P, P * 3, P * 3); }); }
   for (const dots of paths) dots.forEach((d, k) => {
     const sea = water(d);
-    if (sea && k % 3 === 2) return; // 뱃길은 두 칸 그리고 한 칸 띄운다
+    if (skip(dots, k)) return;
     g.fillStyle = sea ? pal.route : pal.road;
     g.fillRect(d[0] * P, d[1] * P, P, P);
   });
