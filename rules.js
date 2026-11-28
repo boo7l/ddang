@@ -852,11 +852,14 @@ function siegeWear(x, t, out) {
   out.push(`🔧 ${g.name}의 ${josa(t, '이가')} 다 닳아서 못 쓰게 되었다. (내구도 0)`);
 }
 const SIEGE = {
-  충차: { price: 1000, use: '공', desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
-  정란: { price: 2000, use: '공', desc: '공격 시 전투력 +15%' },
-  연노: { price: 2000, from: 9, use: '수', desc: '방어 시 전투력 +15%' }, // 수비 병기 (2026-11-24 기획자, 시즌 9부터): 정란을 뒤집은 것. 공격 부대 하나와 한 합이라도 싸우면 내구도 -1, 야전·공격엔 효과 없음
-  벽력거: { get price() { return seasonNow() >= 9 ? 3500 : 4000; }, get use() { return seasonNow() >= 9 ? '공수' : '공'; }, get desc() { return seasonNow() >= 9 ? '처음 맞붙는 적 부대에 선제 사격 (한 합 피해의 50%, 반격 없음)' : '수비 부대와 싸우기 전에 선제 사격 (한 합 피해의 50%, 반격 없음)'; } }, // 2026-11-22 시즌 9: 수비도 사격. 2026-11-25 기획자: 시즌 9부터 금 4,000 → 3,000 (내구도 6이 생겨서), 같은 날 3,500으로
+  충차: { price: 1000, grade: 1, use: '공', desc: '성벽 공격에서 깎는 방어 +40% (잃는 병력은 그대로)' },
+  정란: { price: 2000, grade: 2, use: '공', desc: '공격 시 전투력 +15%' },
+  연노: { price: 2000, grade: 2, from: 9, use: '수', desc: '방어 시 전투력 +15%' }, // 수비 병기 (2026-11-24 기획자, 시즌 9부터): 정란을 뒤집은 것. 공격 부대 하나와 한 합이라도 싸우면 내구도 -1, 야전·공격엔 효과 없음
+  벽력거: { grade: 3, get price() { return seasonNow() >= 9 ? 3000 : 4000; } /* 2026-11-28 기획자: 시즌 9 3,500 → 3,000 (대도시 이상에서만 만들게 되어서) */, get use() { return seasonNow() >= 9 ? '공수' : '공'; }, get desc() { return seasonNow() >= 9 ? '처음 맞붙는 적 부대에 선제 사격 (한 합 피해의 50%, 반격 없음)' : '수비 부대와 싸우기 전에 선제 사격 (한 합 피해의 50%, 반격 없음)'; } }, // 2026-11-22 시즌 9: 수비도 사격. 2026-11-25 기획자: 시즌 9부터 금 4,000 → 3,000 (내구도 6이 생겨서), 같은 날 3,500으로
 };
+// 병기를 만들 수 있는 성 크기 (2026-11-28 기획자, 시즌 9부터): 충차 소성 · 정란·연노 중성 · 벽력거 대도시 이상. 만들 때만 보고, 가진 병기는 어디서든 쓴다
+const SIEGE_GRADE_FROM = 9;
+const siegeGradeMin = t => (seasonNow() >= SIEGE_GRADE_FROM ? SIEGE[t].grade || 1 : 1);
 const siegeTypes = () => Object.keys(SIEGE).filter(t => !SIEGE[t].from || seasonNow() >= SIEGE[t].from); // 이번 시즌에 만들 수 있는 병기 (연노는 시즌 9부터)
 // 병기 만드는 값: 개인 특성 병기도 과학은 -20%
 const siegePrice = (g, type) => Math.round(SIEGE[type].price * (1 + (traitOf(g.faction).siegePrice || 0) + (gTrait(g).siegePrice || 0))); // 조선 신기전, 개인 특성 병기도 과학

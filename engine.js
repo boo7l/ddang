@@ -1926,6 +1926,7 @@ function runSiege(g, o) {
   if (!w || !siegeTypes().includes(o.type)) return '없는 병기';
   g.siege = g.siege || {};
   if (g.siege[o.type]) return `${josa(o.type, '은는')} 이미 가지고 있음`;
+  if (city.grade < siegeGradeMin(o.type)) return `${josa(o.type, '은는')} ${['', '소성', '중성', '대도시', '수도'][siegeGradeMin(o.type)]} 이상 성에서만 만들 수 있음`; // 2026-11-28 기획자
   const price = siegePrice(g, o.type);
   if (g.gold < price) return `내 금 부족 (필요 ${fmt(price)}, 있음 ${fmt(g.gold)})`;
   g.gold -= price; addRecord(g, 'goldSpent', price); // 쓴 금 (2026-11-08)

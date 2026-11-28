@@ -156,9 +156,9 @@ function helpTopics() {
           return ''; })), related: ['battle.skill'] },
       { id: 'upgrade', title: '승급', keys: ['승급', '정예'], body: `<p>징병 창의 <b>정예</b> 탭에서 해요. 지금 기본 병종 병력을 해산하지 않고 같은 계열 정예 병종으로 바꿔요 (보병 → 중보병). ${gName[T2.gradeMin]} 이상 성에서만, 1,000명당 금 ${T2.upPer1000}. 1턴을 써요.</p>`, related: [] },
       { id: 'siege', title: '병기', keys: ['병기', '충차', '정란', '연노', '벽력거', '내구도'], body: `<p>병기는 부대에 하나 갖추는 장비예요. 공격·수비 목적에 맞게 골라요.</p>`
-        + table(['병기', '쓰는 때', '금', '효과'], sieges.map(t => [`<b>${t}</b>`, useText(SIEGE[t].use), siegePriceText(t), SIEGE[t].desc]))
+        + table(['병기', '쓰는 때', '금', '만드는 성', '효과'], sieges.map(t => [`<b>${t}</b>`, useText(SIEGE[t].use), siegePriceText(t), `${gName[siegeGradeMin(t)]} 이상`, SIEGE[t].desc]))
         + '<p class="dim small">세력·장수 특성에 따라 실제 구매 가격이 달라질 수 있어요.</p>'
-        + ul([`<b>내구도 ${SIEGE_EFFECT.durMax}</b>: 효과가 나올 때마다 1씩 닳고 0이 되면 사라져요.`, '부대마다 하나만. 다른 병기를 만들면 갖고 있던 병기는 사라져요.', `부대가 전멸하거나 성이 점령당하면 ${pct(SIEGE_EFFECT.breakChance)}% 확률로 부서져요.`]),
+        + ul([`<b>내구도 ${SIEGE_EFFECT.durMax}</b>: 효과가 나올 때마다 1씩 닳고 0이 되면 사라져요.`, '부대마다 하나만. 다른 병기를 만들면 갖고 있던 병기는 사라져요.', '성 크기는 만들 때만 봐요. 갖춘 병기는 어느 성에서든 써요.', `부대가 전멸하거나 성이 점령당하면 ${pct(SIEGE_EFFECT.breakChance)}% 확률로 부서져요.`]),
         detail: ul(['내구도가 닳는 때: 충차 = 성벽 공격 1번·정란 = 수비 부대 하나와 싸운 1번·연노 = 공격 부대 하나와 싸운 1번·벽력거 = 사격 1번',
           '<b>벽력거</b>: 공격할 때는 출진 한 번에 처음 맞붙는 수비 부대에게, 수비할 때는 턴마다 처음 맞붙는 공격 부대에게 1번 쏴요. 양쪽 다 있으면 공격 쪽이 먼저 쏴요. 반격은 없어요.',
           '<b>연노</b>는 방어 모드로 성을 지킬 때만, <b>정란·충차</b>는 공격할 때만 효과가 나요. 야전에서는 병기가 효과가 없어요.',
