@@ -1989,7 +1989,7 @@ function buyItem(g, item) {
 }
 
 // ----- 갈취 (개인 특성 이게 일상이야, 2026-10-28) -----
-// 머무는 성에서 금을 거둔다: 금 +10~500, 그 성 치안 -3. 한 번 쓰면 5턴 동안 못 쓴다. 명성·경험치 없음
+// 머무는 성에서 금을 거둔다: 금 = 무력 × warMin~warMax배 (시즌 9 3~5), 그 성 치안 -peace. 한 번 쓰면 cooldown턴 동안 못 쓴다. 명성 없음, 무력 경험치 +warExp (2026-11-26, 지금 20)
 // 갈취로 받는 금의 범위: 무력 × warMin~warMax배 (시즌 9 3~5, 그 전 2~5). [최소, 최대]
 const levyRange = g => { const L = gTrait(g).levy, w = effStats(g).war; return [w * L.warMin, w * L.warMax]; };
 const levyLeft = g => { const L = gTrait(g).levy; return L && g.levyTurn ? Math.max(0, g.levyTurn + L.cooldown - S.turn) : 0; };
