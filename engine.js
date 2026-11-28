@@ -838,7 +838,7 @@ function runDomestic(g, key) {
   addMerit(g, fullTurn ? F.merit : RULES.merit.domestic);
   gainStatExp(g, d.stat, fullTurn ? F.exp : RULES.statExp.domestic);
   if (peaceEv && raw > 0 && gain < raw) counterSpy(g, city, (raw - gain) / raw); // 최대치 치안: 첩자 색출
-  if (s9 && Math.random() < RULES.s9cmd.domExplore) runExplore(g, d.name); // 모든 내정 10% 탐색 이벤트
+  if (s9 && Math.random() < RULES.s9cmd.domExplore + (gTrait(g).exploreUp || 0)) runExplore(g, d.name); // 모든 내정 15% 탐색 이벤트 (견문 +5%p, 2026-11-28)
   return '';
 }
 // 첩자 색출 (2026-11-23 기획자, 시즌 9부터): 치안이 넘친 비율 × counterSpy 확률로, 이 성에 걸린 적 세력 첩보(S.intel)를 모두 끊는다. 첩보가 없으면 아무 일도 없다
