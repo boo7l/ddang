@@ -13,7 +13,7 @@ const FACES = [
   { id: 'm3', name: '무관 3', style: '무관', chat: '#c8b6f7' }, // 2026-11-03 #aeb0f7 → 연보라
   { id: 'm4', name: '무관 4', style: '무관', chat: '#f2cf5e' },
   { id: 'm5', name: '무관 5', style: '무관', chat: '#5fd6b0' }, // 2026-11-03 시즌 5 (사용자 그림 face/무5.png)
-  { id: 'm6', name: '무관 6', style: '무관', chat: '#f58cc8' }, // 2026-11-28 분홍 (사용자 그림 face/무6.png)
+  { id: 'm6', name: '무관 6', style: '무관', chat: '#5fd0f5' }, // 2026-11-28 하늘색 (분홍에서) (사용자 그림 face/무6.png)
   { id: 'c1', name: '문관 1', style: '문관', chat: '#d9b070' },
   { id: 'c2', name: '문관 2', style: '문관', chat: '#b47cf2' }, // 2026-11-03 #c99af2 → 짙은 보라
   { id: 'c3', name: '문관 3', style: '문관', chat: '#6b9cf5' }, // 2026-11-03 #93b6ee → 맑은 파랑
