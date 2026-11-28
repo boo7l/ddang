@@ -777,7 +777,7 @@ const treasuresOf = g => (g.treasures || []).map(n => TREASURE_RENAME[n] || n).f
 const trKeys = n => TREASURES[n].stat === 'all' ? STATS.map(x => x.key) : TREASURES[n].stat === 'move' ? [] : [TREASURES[n].stat]; // 적토마(move)는 능력치를 올리지 않는다
 const trMove = g => treasuresOf(g).reduce((a, n) => a + (TREASURES[n].stat === 'move' ? TREASURES[n].bonus : 0), 0); // 보물로 늘어난 이동 칸 수 (적토마, 2026-11-26)
 // 효과 글: '통솔 +7' · '모든 능력 +3 · 경험치 +30%'. short면 '통+7' · '모두+3'
-const trLabel = (n, short) => { const t = TREASURES[n]; if (t.stat === 'move') return short ? `이동+${t.bonus}` : `이동 +${t.bonus}칸 (이동 명령만)`; if (t.stat === 'all') return short ? `모두+${t.bonus}` : `모든 능력 +${t.bonus}${t.exp ? ` · 경험치 +${Math.round(t.exp * 100)}%` : ''}`; const nm = STATS.find(x => x.key === t.stat).name; return short ? `${nm[0]}+${t.bonus}` : `${nm} +${t.bonus}`; };
+const trLabel = (n, short) => { const t = TREASURES[n]; if (t.stat === 'move') return short ? `이동+${t.bonus}` : `이동 +${t.bonus}칸`; if (t.stat === 'all') return short ? `모두+${t.bonus}` : `모든 능력 +${t.bonus}${t.exp ? ` · 경험치 +${Math.round(t.exp * 100)}%` : ''}`; const nm = STATS.find(x => x.key === t.stat).name; return short ? `${nm[0]}+${t.bonus}` : `${nm} +${t.bonus}`; };
 // 지금 능력치 글: '지금 95' · '지금 통솔 80 · 무력 90 · 지력 70'
 const trNow = (g, n) => { const s = effStats(g), k = trKeys(n); if (!k.length) return typeof moveRangeOf === 'function' ? `지금 이동 ${isRonin(g) ? roninMoveOf(g) : moveRangeOf(g)}칸` : ''; return k.length > 1 ? `지금 ${k.map(x => `${STATS.find(y => y.key === x).name} ${s[x]}`).join(' · ')}` : `지금 ${s[k[0]]}`; };
 const trWeight = n => TREASURES[n].weight || TREASURE_RULES.pickWeight[TREASURES[n].bonus]; // 뽑힐 무게
