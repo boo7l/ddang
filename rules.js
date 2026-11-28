@@ -414,7 +414,7 @@ const GENERAL_TRAITS = {
   discipline: { tier: 'R', name: '기강 잡기', desc: '머무는 성의 치안이 매턴 +2 (중복 불가)', peaceTurn: 2 },
   logistic: { tier: 'N', name: '보급관', get desc() { return `군량 수송 범위 4칸·수송량 무제한·${seasonNow() >= 9 ? '수송·보급' : '수송'} 명성 +${this.transportMerit}·구매 시세 +1`; }, transportRange: 4, transportNoCap: true, get transportMerit() { return seasonNow() >= 9 ? 5 : 3; }, foodPrice: 1 }, // 2026-11-23 기획자: 시즌 9부터 수송·보급 명성 +3 → +5 (기본 5와 합쳐 10). // 2026-11-19 기획자: 비전투 군수 특성 (수도 3칸과 겹치면 큰 값 4칸, 양 제한 없음 = 창고가 허락하는 만큼)
   scholar: { tier: 'N', name: '학구열', desc: '수련 경험치 +15%', trainExp: 0.15, get off() { return seasonNow() >= 9; } }, // 2026-11-23 기획자: 시즌 9부터 수련과 함께 없앰 (off = 뽑기·확률표에서 빠짐) // 2026-10-28 +10%에서
-  engineer: { tier: 'R', name: '병기도 과학', get desc() { return seasonNow() >= 8 ? `병기 효과 +40% (${seasonNow() >= 9 ? '충차·정란·벽력거·연노' : '충차·정란·벽력거'})` : '병기 제작비 -20%'; }, get siegePrice() { return seasonNow() >= 8 ? 0 : -0.20; }, get siegeBoost() { return seasonNow() >= 8 ? 0.4 : 0; } }, // 2026-11-19 기획자: 시즌 8부터 할인 대신 병기 효과 +40% (충차 40→56%, 정란 15→21%, 벽력거 50→70%). // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
+  engineer: { tier: 'R', name: '병기도 과학', get desc() { return seasonNow() >= 8 ? `병기 효과 +40%${seasonNow() >= 9 ? ' · 병기 내구도 +2' : ''} (${seasonNow() >= 9 ? '충차·정란·벽력거·연노' : '충차·정란·벽력거'})` : '병기 제작비 -20%'; }, get siegePrice() { return seasonNow() >= 8 ? 0 : -0.20; }, get siegeBoost() { return seasonNow() >= 8 ? 0.4 : 0; }, get siegeDur() { return seasonNow() >= 9 ? 2 : 0; } /* 2026-11-28 기획자: 시즌 9부터 병기 내구도 +2 (6 → 8) */ }, // 2026-11-19 기획자: 시즌 8부터 할인 대신 병기 효과 +40% (충차 40→56%, 정란 15→21%, 벽력거 50→70%). // 2026-11-07 시즌 6: -15% → -20% (2026-10-28 -20%에서 -15%로 내렸었음)
   medic: { tier: 'R', name: '너 치료된 거야', get desc() { return seasonNow() >= 9 ? '전투 뒤 40% 확률로 잃은 병력의 40%가 돌아옴' : '전투 뒤 30% 확률로 잃은 병력의 30%가 돌아옴'; }, get heal() { return seasonNow() >= 9 ? { chance: 0.4, rate: 0.4 } : { chance: 0.3, rate: 0.3 }; } }, // 2026-11-25 기획자: 시즌 9부터 30%·30% → 40%·40%. // 2026-11-08 시즌 6: 20% → 30%. // 2026-10-28 50%·25% → 30%·25%, 2026-10-31 30%·20%
   pierce: { tier: 'SR', name: '관통맨', get desc() { return `공격 시 합마다 ${Math.round(this.pierce.chance * 100)}% 확률로 성벽 피해 (병력 ÷ ${this.pierce.per})`; }, pierce: { chance: 0.40, get per() { return seasonNow() >= 9 ? 130 : seasonNow() >= 8 ? 180 : 200; } } }, // 2026-11-23 기획자: 시즌 9부터 ÷ 180 → ÷ 130 (축성 한 번에 메워지는 수준이라. 처음 120으로 했다가 같은 날 130, 실전 시뮬 출진 평균 57 → 약 79). 2026-11-18 기획자: 시즌 8부터 성벽 피해 병력 ÷ 200 → ÷ 180 (+11%). // 2026-11-08 시즌 6: 25%·÷400 → 40%·÷200 (출진 한 번 성벽 18 → 약 60, 시뮬). // 2026-10-31 추가. 병력 손실 없음, 방어가 0이 돼도 수비 부대를 쓰러뜨려야 점령
   bond: { tier: 'SR', name: '유대', desc: '전멸 피해를 25% 확률로 1명으로 버팀 (상대 고정피해)', oddsDesc: '전멸 피해를 25% 확률로 1명으로 버팀 (상대에게 능력치 평균 × 20~25 고정 피해)', bond: { chance: 0.25, perTurn: Infinity, dmgPer: [20, 25] /* 2026-11-28 기획자: × 20 → × 20~25 */ } }, // 2026-11-22 기획자: 턴당 2회 제한 없앰 (무제한). // 2026-11-22 기획자: 고정 피해 평균 × 10 → × 20. 2026-11-19 기획자: 버티면 상대에게 능력치 평균 × 10 고정 피해 (설명에는 안 씀). 공격·수비·야전·단기접전·책략·돌격·벽력거 모두, 같은 전투에서 연달아도 됨 (턴당 2회). 피해 명성 포함 (손실로 셈)
@@ -840,8 +840,9 @@ function siegeBreak(x, t, out) {
 // 병기 내구도 (2026-11-22 기획자 확정, 2026-11-23 적용, 시즌 9부터): 모든 병기 내구도 durMax(6). 효과가 실제로 나온 1번마다 -1, 0이 되면 사라진다
 // 벽력거 = 사격 1번 (공격·수비), 충차 = 성벽을 깎은 1번, 정란 = 수비(야전 상대) 부대 하나와 맞붙은 전투 1번. 값이 없으면(예전 병기) 가득으로 본다
 const siegeDurOn = () => seasonNow() >= SIEGE_EFFECT.durFrom;
-const siegeDur = g => (g.siegeDur == null ? SIEGE_EFFECT.durMax : g.siegeDur);
-const siegeDurText = g => (siegeDurOn() && g && g.siege && Object.values(g.siege).some(Boolean) ? ` (내구도 ${siegeDur(g)}/${SIEGE_EFFECT.durMax})` : ''); // 화면 표시용
+const siegeDurMax = g => SIEGE_EFFECT.durMax + ((g && gTrait(g).siegeDur) || 0); // 병기도 과학 +2 (2026-11-28)
+const siegeDur = g => (g.siegeDur == null ? siegeDurMax(g) : g.siegeDur);
+const siegeDurText = g => (siegeDurOn() && g && g.siege && Object.values(g.siege).some(Boolean) ? ` (내구도 ${siegeDur(g)}/${siegeDurMax(g)})` : ''); // 화면 표시용
 function siegeWear(x, t, out) {
   if (!siegeDurOn()) return;
   const g = x.ref || x; // 전투 부대면 장수에게 적는다

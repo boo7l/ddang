@@ -1236,7 +1236,7 @@ function siegeDialog() {
       <span class="r ${have || small ? 'dim' : ''}">${have ? '가지고 있음' : small ? `${GN[siegeGradeMin(t)]} 이상 성에서만 만들 수 있어요` : w.desc.replace(' (', '<br>(')}</span></label>`;
   }).join('');
   pickDialog('병기 제작', `<p>금을 내고 병기를 만들어 내 부대에 갖춥니다.${seasonNow() >= 9 ? '' : ' 공격할 때만 효과가 있어요.'} 부대마다 병기는 하나만 가질 수 있고, 다른 병기를 만들면 가지고 있던 병기는 사라져요. 부대가 전멸하${seasonNow() >= SIEGE_EFFECT.retreatFrom ? '거나 성이 점령당하' : ''}면 ${Math.round(SIEGE_EFFECT.breakChance * 100)}% 확률로 부서져요.</p>
-    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}${siegeDurText(p)}${p.siegeFix ? '(강화) · 새로 만들면 강화가 사라져요' : ''}${siegeDurOn() ? ` · 새 병기는 내구도 ${SIEGE_EFFECT.durMax}` : ''}</p>`, opts, '예약', v => {
+    <p class="dim">지금 병기 ${Object.keys(SIEGE).find(t => p.siege && p.siege[t]) || '없음'}${siegeDurText(p)}${p.siegeFix ? '(강화) · 새로 만들면 강화가 사라져요' : ''}${siegeDurOn() ? ` · 새 병기는 내구도 ${siegeDurMax(p)}` : ''}</p>`, opts, '예약', v => {
     const old = Object.keys(SIEGE).find(t => p.siege && p.siege[t]);
     if (old && !confirm(`실행되면 가지고 있던 ${josa(old, '은는')} 버려지고 ${josa(v, '으로')} 바뀌어요. 예약할까요?`)) return false;
     reserve({ cmd: 'siege', type: v });
@@ -2181,7 +2181,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128113803&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128114304&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2191,7 +2191,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128113803&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128114304&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2201,7 +2201,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128113803&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128114304&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
