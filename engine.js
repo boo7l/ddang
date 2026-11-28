@@ -698,11 +698,18 @@ function giftBlocked(g, i) {
 // to를 주면 먼 길 2턴 출진(시즌 9)인지 보고, 전투하는 칸(다음 칸)을 기준으로 잰다 (2026-11-28 기획자: 1칸 먼 길 출발 · 2칸 전투면 다음 출진은 4칸부터)
 function attackBlocked(g, i, to) {
   const cd = RULES.attackCooldown, tc = to && cityById(to);
+  // 2026-11-28 기획자 최종: 1 먼 길 출진 · 2 먼 길 행군(전투) · 3 출진 불가 · 4 출진 가능 = 전투한 칸에서 cd칸 뒤부터 '출발'할 수 있다 (먼 길 출발도 같다)
   const bi = tc && farTwoTurn(cityAtSlot(g, i), tc) ? i + 1 : i; // 이 출진이 싸우는 칸
-  if (g.attackTurn && g.attackTurn + cd > S.turn + 1 + bi) return `출진은 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.attackTurn + cd - (bi - i)).month}월 칸부터 가능)`;
-  const mine = g.queue[i] && g.queue[i].cmd === 'attack' && g.queue[i].far2 ? i + 1 : -1; // 이 칸에 있던 먼 길 출진의 행군 칸 (바꾸면 함께 사라진다)
-  const fightAt = (o, j) => (o.cmd === 'farArrive' ? j : o.far2 ? j + 1 : j); // 예약된 출진이 싸우는 칸
-  if (g.queue.some((o, j) => j !== i && j !== mine && o && (o.cmd === 'attack' || o.cmd === 'farArrive') && Math.abs(bi - fightAt(o, j)) < cd)) return `출진은 ${cd}턴에 한 번이라, 앞뒤 ${cd - 1}칸 안에 전투가 있으면 넣을 수 없어요.${bi > i ? ' (먼 길은 다음 칸에서 싸워요)' : ''}`;
+  if (g.attackTurn && g.attackTurn + cd > S.turn + 1 + i) return `출진은 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.attackTurn + cd).month}월 칸부터 가능)`;
+  // 예약된 출진들: [출발 칸, 전투 칸]. 지금 행군 중이면 맨 앞 행군 칸이 전투 칸
+  const list = [];
+  g.queue.forEach((o, j) => {
+    if (!o || j === i) return;
+    if (o.cmd === 'attack') list.push([j, o.far2 ? j + 1 : j]);
+    else if (o.cmd === 'farArrive' && j === 0 && onMarch(g)) list.push([-1, 0]);
+  });
+  const hit = list.some(([s, f]) => (s < i ? i - f < cd : s - bi < cd)); // 앞 출진의 전투 → 이 출발, 이 전투 → 뒤 출진의 출발
+  if (hit) return `출진은 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (싸운 칸 다음 칸은 출진 불가${bi > i ? ' · 먼 길은 다음 칸에서 싸워요' : ''})`;
   return '';
 }
 // 앞 칸에 먼 길 출진이 없는 '행군' 칸은 지운다 (맨 앞 칸은 지금 행군 중이면 그대로)
@@ -1317,7 +1324,7 @@ function runAttack(g, o, mark) {
   if (riseProtected(to.faction)) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 공격할 수 없음`; // 동맹 (2026-11-13): 금·군량을 쓰기 전에 막는다
   if (g.troops <= 0) return '병력이 없음';
   const depart = !o.arrive && farTwoTurn(from, to); // 먼 길 2턴 출진의 출발 턴 (시즌 9, 2026-11-28): 비용만 내고 다음 턴에 싸운다
-  const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn - (depart ? 1 : 0) : 0; // 쿨타임은 전투하는 턴 기준
+  const cdLeft = g.attackTurn ? g.attackTurn + RULES.attackCooldown - S.turn : 0; // 전투한 턴부터 cd턴 뒤에 출발할 수 있다 (먼 길 출발도, 2026-11-28 기획자)
   if (cdLeft > 0) return `출진한 뒤라 ${cdLeft}턴 뒤에 다시 출진할 수 있음`;
   if (!o.arrive) { // 먼 길 도착 턴에는 출발할 때 이미 냈다
     const mm = marchMult(from, to); // 먼 길 원정이면 × RULES.farMarch.mult (2026-11-14, 시즌 7)
