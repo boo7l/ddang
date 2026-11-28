@@ -1,4 +1,11 @@
 'use strict';
+// 창 바깥(어두운 배경)을 누르면 닫기 (2026-11-28 기획자): 누르기 시작한 곳과 뗀 곳이 모두 바깥일 때만 닫는다.
+// 입력칸에서 글자를 드래그하다 마우스가 창 밖으로 조금 나가도 꺼지지 않게
+function outsideClose(el, close) {
+  let downOut = false;
+  el.addEventListener('pointerdown', e => { downOut = e.target === el; });
+  el.addEventListener('click', e => { if (downOut && e.target === el) close(); downOut = false; });
+}
 
 // ===== 화면 =====
 // 게임 계산은 engine.js, 규칙과 숫자는 rules.js, 지도 그리기는 map.js에 있다. 여기는 화면이다.
@@ -1036,7 +1043,7 @@ function pickMap(title, ids, homeId, picked, onPick, o = {}) { // o.homeLabel: �
     <div class="modalBtns"><button type="button" data-pm-close>닫기</button></div></div>`;
   document.body.appendChild(cover);
   cover.querySelector('[data-pm-close]').onclick = closePickMap;
-  cover.onclick = e => { if (e.target === cover) closePickMap(); };
+  outsideClose(cover, closePickMap);
   cover.querySelectorAll('.rpCity.can').forEach(d => { d.onclick = () => { closePickMap(); onPick(d.dataset.c); }; });
   if (o.onHome && homeId) { const h = cover.querySelector(`.rpCity[data-c="${homeId}"]`); if (h) { h.style.cursor = 'pointer'; h.onclick = () => { closePickMap(); o.onHome(); }; } }
 }
@@ -2001,7 +2008,7 @@ function openMinigame() {
   w.querySelector('.miniClose').onclick = closeMinigame;
   w.querySelector('#mpIlgi').onclick = () => openMiniPage('minigame.html', '미니게임');
   w.querySelector('#mpRogue').onclick = () => openMiniPage('rogue.html', '맹장집결', 'rogue');
-  w.onclick = e => { if (e.target === w) closeMinigame(); };
+  outsideClose(w, closeMinigame);
   document.body.appendChild(w);
 }
 function openMiniPage(src, title, cls) {
@@ -2221,7 +2228,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128184241&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128184436&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2231,7 +2238,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128184241&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128184436&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2241,7 +2248,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128184241&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128184436&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3931,7 +3938,7 @@ $('#adminNewTab').onclick = () => window.open(location.pathname + '?admin', 'dda
 $('#cResign').onclick = resignDialog;
 $('#cDelete').onclick = deleteGeneralDialog;
 $('#rankBtn').onclick = () => { if (RANK_PUBLIC || IS_ADMIN) rankDialog(); };
-$('#modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+outsideClose($('#modal'), closeModal);
 document.addEventListener('keydown', e => { if (e.key !== 'Escape' || keyWait) return; if (document.getElementById('pickMap')) closePickMap(); else if (!$('#modal').hidden) closeModal(); }); // 지도 팝업이 열려 있으면 그것만 닫는다 (2026-11-10)
 
 // ===== 단축키 (PC, 2026-11-07) =====
