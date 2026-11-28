@@ -1336,17 +1336,18 @@ function giftDialog() {
   const p = me(), R = RULES.gift, at = cityAtSlot(p, slot);
   const cool = giftBlocked(p, slot);
   if (cool) { alert(cool); return; }
-  const mine = treasuresOf(p)[0], regift = mine ? giftRegiftLeft(p, mine, S.turn + 1 + slot) : 0; // 증여로 받은 보물은 12턴 동안 다시 못 줌
+  const mine = treasuresOf(p)[0], regift = mine ? giftRegiftLeft(p, mine, S.turn + 1 + slot) : 0, fee = mine ? giftTreasureFee(mine) : 0, poor = mine && p.gold < fee; // poor: 수수료를 낼 금이 없다 (2026-11-28)
+  const shortWhy = x => ((x.merit || 0) < R.minMerit ? `명성 ${R.minMerit} 미만` : (x.merit || 0) >= (p.merit || 0) ? '나보다 명성 높음' : giftTargetWhy(p, x, at.id)); // 목록 칸에 들어가게 짧게 (2026-11-28) // 증여로 받은 보물은 12턴 동안 다시 못 줌
   const opts = allGenerals().filter(x => x.id !== p.id && x.faction === p.faction && x.city === at.id).sort((a, b) => (b.merit || 0) - (a.merit || 0)).map(x => {
-    const no = giftTargetWhy(p, x, at.id);
+    const no = giftTargetWhy(p, x, at.id) ? shortWhy(x) : '';
     return `<label class="opt"${no ? ' style="opacity:.5"' : ''}><input type="radio" name="tgt" value="${x.id}"${no ? ' disabled' : ''}><b>${esc(x.name)}</b> <span class="dim">명성 ${fmt(x.merit || 0)}${treasuresOf(x).length ? ' · 보물 있음' : ''}</span>${no ? ` <span class="dim small">(${esc(no)})</span>` : ''}</label>`;
   }).join('');
   const extra = `
     <p class="sub">줄 것</p>
     <p class="picks"><label class="opt"><input type="radio" name="gk" value="gold" checked> 금</label>
-      <label class="opt"><input type="radio" name="gk" value="treasure"${mine && !regift ? '' : ' disabled'}> 보물 ${mine ? `「${esc(mine)}」 <span class="dim">(${regift ? `증여로 받은 보물이라 ${regift}턴 뒤에 줄 수 있어요` : `수수료 금 ${fmt(giftTreasureFee(mine))}`})</span>` : '<span class="dim">(가진 보물 없음)</span>'}</label></p>
+      <label class="opt"><input type="radio" name="gk" value="treasure"${mine && !regift && !poor ? '' : ' disabled'}> 보물 ${mine ? `「${esc(mine)}」 <span class="dim">(${regift ? `증여로 받은 보물이라 ${regift}턴 뒤에 줄 수 있어요` : `수수료 금 ${fmt(fee)}${poor ? ' · 금이 모자라요' : ''}`})</span>` : '<span class="dim">(가진 보물 없음)</span>'}</label></p>
     <p class="sub">금 <span class="dim">(1~${fmt(R.goldMax)} · 받는 장수는 ${Math.round((1 - R.fee) * 100)}%를 받아요)</span></p>
-    <p><input type="number" id="gAmount" min="1" max="${R.goldMax}" step="1" value="${Math.min(R.goldMax, 1000)}" style="width:110px">
+    <p><input type="number" id="gAmount" min="1" max="${R.goldMax}" step="1" value="${Math.max(0, Math.min(R.goldMax, 1000, p.gold))}" style="width:110px">
       ${[500, 1000, R.goldMax].map(n => `<button type="button" class="mini" data-gamt="${n}">${fmt(n)}</button>`).join(' ')} <span id="gEst" class="dim"></span></p>`;
   pickDialog('증여', `<p>${esc(at.name)}에 있는 우리 세력 장수에게 금이나 보물을 줘요. 둘 다 명성 ${R.minMerit} 이상이고, 받는 장수의 명성이 나보다 낮아야 해요.</p>
     <p class="dim">금은 한 번에 ${fmt(R.goldMax)}까지 (수수료 ${Math.round(R.fee * 100)}%) · 보물은 받는 장수에게 보물이 없을 때만 (수수료 판매가의 ${Math.round(R.fee * 100)}%) · 한 번 주면 ${R.cooldown}턴 동안 다시 줄 수 없어요 · 실행할 때 조건을 다시 봐요</p>
@@ -1356,6 +1357,7 @@ function giftDialog() {
     if (kind === 'treasure') { reserve({ cmd: 'gift', target: v, type: 'treasure', item: mine }); return; }
     const n = Math.floor(+box.querySelector('#gAmount').value);
     if (!(n >= 1 && n <= R.goldMax)) { alert(`금은 1~${fmt(R.goldMax)} 사이로 적어 주세요.`); return false; }
+    if (n > p.gold) { alert(`지금 가진 금(${fmt(p.gold)})보다 많아요. 실행할 때 금이 모자라면 증여가 실패해요.`); return false; }
     reserve({ cmd: 'gift', target: v, type: 'gold', amount: String(n) });
   }, extra, 'narrow');
   const est = () => { const n = Math.floor(+$('#gAmount').value); $('#gEst').textContent = n >= 1 ? `→ 받는 금 ${fmt(Math.floor(n * (1 - R.fee)))}` : ''; };
@@ -2219,7 +2221,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183730&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128184006&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2229,7 +2231,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128183730&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128184006&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2239,7 +2241,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183730&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128184006&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
