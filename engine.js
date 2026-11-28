@@ -2135,9 +2135,9 @@ function runRaid(g, o, mark) {
   g.merit = (g.merit || 0) - cut;
   const lines = [`🏴 ${c.name} 약탈 (${fmtClock(mark)}): ${g.name}(${g.unitType} ${fmt(g.troops)})의 무리가 ${josa(c.name, '을를')} 덮쳤다!${cut ? ` 명성 -${cut} (${fmt(g.merit)})` : ''}`];
   gainStatExp(g, UNIT_TYPES[g.unitType].stat, RULES.statExp.battle); // 출진처럼 병종 능력치 경험치
-  // 지키는 쪽: 방어 모드 장수 중 병력 최다, 없으면 수비대 (도적군 성은 도적군)
+  // 지키는 쪽: 방어 모드 장수 중 무작위 1명 (2026-11-28 기획자, 병력 최다에서), 없으면 수비대 (도적군 성은 도적군)
   let d = null;
-  if (c.faction) { const defs = defendersOf(c); d = defs.find(x => x.ref) || defs.find(x => x.guard) || null; }
+  if (c.faction) { const defs = defendersOf(c), gens = defs.filter(x => x.ref); d = gens.length ? gens[Math.floor(Math.random() * gens.length)] : defs.find(x => x.guard) || null; }
   const owner = c.faction && c.faction !== BANDIT.id ? factionById(c.faction) : null;
   let fought = false;
   if (d && Math.random() < R.fightChance) {
