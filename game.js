@@ -2181,7 +2181,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128001123&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128094459&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2191,7 +2191,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128001123&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128094459&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2201,7 +2201,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128001123&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128094459&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3322,7 +3322,7 @@ function renderCommands() {
     <p class="sub">${dateText(S.turn + 1 + slot)} (${fmtClock(slotTime(slot))}) 에 넣을 명령 <span class="dim atCity">(${esc(at.name)}에서)</span></p>
     <p class="dim small">임관하려면 들어갈 세력의 성으로 가서 [임관]을 쓰세요.</p>
     <div class="cmds cg-etc">
-      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) + btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}${btn('raid', '약탈', `명성 -${RULES.raid.merit}`)}${btn('rise', '거병', `금 ${fmt(RULES.rise.gold)}`)}
+      ${btn('move', '이동', '')}${roninArmyOn() ? btn('draft', '모병', `금 ${RULES.myGoldCost.draft}`) : ''}${btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`)}${btn('train', '수련', `경험 ${RULES.ronin.train.min}~${RULES.ronin.train.max}`)}${btn('quest', '의뢰', `금 +${RULES.ronin.quest[0]}~${RULES.ronin.quest[1]}`)}${btn('raid', '약탈', `명성 -${RULES.raid.merit}`)}${roninArmyOn() ? btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`) : ''}${(() => { const here = cityById(p.city); return btn('enlist', '임관', here && here.faction ? esc(factionById(here.faction).name) : '빈 땅'); })()}${btn('rise', '거병', `금 ${fmt(RULES.rise.gold)}`)}
     </div>
     <div class="qBtnsM">${qBtns}</div>
 ` : `
@@ -3906,8 +3906,8 @@ const KEY_ACTIONS = [ // [이름, 기본 키, 그룹]
   ['draft', '징병', 'KeyA', '군사'], ['attack', '출진', 'KeyS', '군사'], ['move', '이동', 'KeyD', '군사'], ['siege', '병기', 'KeyF', '군사'],
   ['destroy', '파괴', 'KeyT', '계략'], ['rumor', '유언', 'KeyY', '계략'], ['spy', '첩보', 'KeyU', '계략'],
   ['explore', '탐색', 'KeyG', '기타'], ['train', '수련', 'KeyH', '기타'], ['buyFood', '군량 구매', 'KeyJ', '기타'], ['transport', '군량 수송', 'KeyV', '기타'], ['expand', '증축', 'KeyB', '기타'], ['extra', '추가 명령', 'KeyN', '기타'], // 특성으로 생기는 명령 (지금은 갈취). 새로 생기면 EXTRA_CMDS에 넣는다
-  ['r_move', '이동', 'KeyQ', '재야'], ['r_draft', '모병', 'KeyW', '재야'], ['r_buyFood', '군량 구매', 'KeyE', '재야'], ['r_explore', '탐색', 'KeyR', '재야'], // 재야 전용 (2026-11-25 기획자: QWERASDF)
-  ['r_quest', '의뢰', 'KeyA', '재야'], ['r_enlist', '임관', 'KeyS', '재야'], ['r_raid', '약탈', 'KeyD', '재야'], ['r_rise', '거병', 'KeyF', '재야'],
+  ['r_move', '이동', 'KeyQ', '재야'], ['r_draft', '모병', 'KeyW', '재야'], ['r_explore', '탐색', 'KeyE', '재야'], ['r_quest', '의뢰', 'KeyR', '재야'], // 재야 전용 (2026-11-25 기획자: QWERASDF, 2026-11-28 단추 순서 바꿈)
+  ['r_raid', '약탈', 'KeyA', '재야'], ['r_buyFood', '군량 구매', 'KeyS', '재야'], ['r_enlist', '임관', 'KeyD', '재야'], ['r_rise', '거병', 'KeyF', '재야'],
   ['home', '내 성 보기', 'Space', '기타 화면'], ['chat', '채팅 입력', 'Slash', '기타 화면'], ['letter', '외교 서신', 'Quote', '기타 화면'], ['music', '음악 켜기·끄기', 'KeyM', '기타 화면'], // 2026-11-22 기획자
 ];
 const KEY_GROUP = Object.fromEntries(KEY_ACTIONS.map(a => [a[0], a[3]]));
