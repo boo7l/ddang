@@ -450,7 +450,7 @@ const meritRanking = () => allGenerals()
 // 기능 스위치가 꺼진 명령인지
 const FEATURE_OF = { tech: 'tech', siege: 'siege', spy: 'spy', explore: 'explore', shop: 'shop', buy: 'shop' };
 // 시즌 9부터 없어진 명령 (2026-11-23): 수련은 모두, 탐색은 재야만 남김. g가 없으면 일반 장수로 본다
-const cmdGone = (cmd, g) => (cmd === 'raid' && seasonNow() < RULES.raid.fromSeason) || (cmd === 'rise' && seasonNow() < RULES.rise.fromSeason) || (seasonNow() >= RULES.s9cmd.fromSeason && (cmd === 'train' || (cmd === 'explore' && !isRonin(g)))); // 약탈·거병은 시즌 9부터 (2026-11-25)
+const cmdGone = (cmd, g) => (cmd === 'raid' && seasonNow() < RULES.raid.fromSeason) || (cmd === 'rise' && seasonNow() < RULES.rise.fromSeason) || (cmd === 'gift' && seasonNow() < RULES.gift.fromSeason) || (seasonNow() >= RULES.s9cmd.fromSeason && (cmd === 'train' || (cmd === 'explore' && !isRonin(g)))); // 약탈·거병은 시즌 9부터 (2026-11-25)
 const cmdOn = (cmd, g) => (!FEATURE_OF[cmd] || RULES.features[FEATURE_OF[cmd]]) && !cmdGone(cmd, g);
 // 뽑을 수 있는 특성 (시즌마다 off로 빠지는 것 제외, 2026-11-23)
 const traitIds = () => Object.keys(GENERAL_TRAITS).filter(k => !GENERAL_TRAITS[k].off);
@@ -683,6 +683,13 @@ function levyBlocked(g, i) {
   if (g.queue.some((o, j) => j !== i && o && o.cmd === 'levy' && Math.abs(i - j) < L.cooldown)) return `갈취는 ${L.cooldown}턴에 한 번이라, 앞뒤 ${L.cooldown - 1}칸 안에 갈취가 있으면 넣을 수 없어요.`;
   return '';
 }
+// 증여를 i번 칸에 넣을 수 없는 이유 (2026-11-28): 주는 쪽 쿨타임 RULES.gift.cooldown턴. 갈취와 같은 방식
+function giftBlocked(g, i) {
+  const cd = RULES.gift.cooldown;
+  if (g.giftTurn && g.giftTurn + cd > S.turn + 1 + i) return `증여는 ${cd}턴에 한 번이라 이 칸에는 넣을 수 없어요. (${dateOf(g.giftTurn + cd).month}월 칸부터 가능)`;
+  if (g.queue.some((o, j) => j !== i && o && o.cmd === 'gift' && Math.abs(i - j) < cd)) return `증여는 ${cd}턴에 한 번이라, 앞뒤 ${cd - 1}칸 안에 증여가 있으면 넣을 수 없어요.`;
+  return '';
+}
 // 출진을 i번 칸에 넣을 수 없는 이유. 출진은 attackCooldown턴에 한 번 (2026-10-31, 예약 때 막아서 실패로 턴을 버리지 않게)
 function attackBlocked(g, i) {
   const cd = RULES.attackCooldown;
@@ -694,6 +701,7 @@ function setOrder(g, i, order) {
   if (!Number.isInteger(i) || i < 0 || i >= RULES.queueSize) return '없는 칸이에요.';
   if (order && (!COMMANDS[order.cmd] || !cmdOn(order.cmd, g))) return '쓸 수 없는 명령이에요.'; // 2026-11-25: g를 넘겨야 재야 탐색(시즌 9)이 막히지 않는다
   if (order && order.cmd === 'levy') { const why = levyBlocked(g, i); if (why) return why; }
+  if (order && order.cmd === 'gift') { const why = giftBlocked(g, i); if (why) return why; } // 증여 쿨타임 (2026-11-28)
   if (order && order.cmd === 'attack') { const why = attackBlocked(g, i); if (why) return why; }
   if (order && order.cmd === 'attack') { const to = cityById(order.to), pt = to && riseProtected(to.faction), pm = riseProtected(g.faction); if (pm) return `우리 세력은 거병 보호 중이라 ${pm}턴 동안 출진할 수 없어요.`; if (pt) return `${factionById(to.faction).name} 세력은 거병 보호 중이라 ${pt}턴 동안 공격할 수 없어요.`; if (to && to.faction !== g.faction && openProtected(to.faction, S.turn + 1 + i)) return openProtectText(); } // 거병 보호 (2026-11-25) · 시즌 시작 보호 (2026-11-26, 이 칸이 실행되는 턴 기준)
   g.queue[i] = order ? { ...order, orderedAt: now() } : null;
@@ -702,7 +710,7 @@ function setOrder(g, i, order) {
 function clearOrders(g) { g.queue = Array(RULES.queueSize).fill(null); }
 // 비어 있는 칸을 모두 같은 명령으로 채운다 (예: 12칸 모두 농업). 하야는 되풀이할 수 없다
 function fillOrders(g, order) {
-  if (!order || order.cmd === 'expand' || order.cmd === 'rise') return '채울 수 없는 명령이에요.'; // 증축은 한 번만 (2026-11-08) · 거병도 (2026-11-25)
+  if (!order || order.cmd === 'expand' || order.cmd === 'rise' || order.cmd === 'gift') return '채울 수 없는 명령이에요.'; // 증여도 (2026-11-28) // 증축은 한 번만 (2026-11-08) · 거병도 (2026-11-25)
   for (let i = 0; i < RULES.queueSize; i++) {
     if (g.queue[i]) continue;
     if (order.cmd === 'levy' && gTrait(g).levy && levyBlocked(g, i)) continue; // 갈취는 쿨타임이 끝난 칸에만 채운다
@@ -1943,7 +1951,7 @@ function runSiege(g, o) {
 // ----- 상점 (내 금, 예약 없이 바로) -----
 // 명마·명검·서적은 여러 번 살 수 있다. 살 때마다 그 물건 값이 오른다 (shopPrice).
 // 명령이 아니라서 턴을 쓰지 않고 명성도 없다. 틀리면 이유를 돌려준다
-// 보물 팔기 (2026-11-08): 마음에 안 드는 보물을 상인에게 판다. 가점 × sellPer 금. 보물은 세상으로 돌아가 다시 탐색에서 나온다 (다른 장수에게 주는 기능은 다중 계정 몰아주기 때문에 만들지 않음)
+// 보물 팔기 (2026-11-08): 마음에 안 드는 보물을 상인에게 판다. 가점 × sellPer 금. 보물은 세상으로 돌아가 다시 탐색에서 나온다 (다른 장수에게 주는 기능은 다중 계정 몰아주기 때문에 만들지 않음 → 2026-11-28 조건을 붙인 증여(runGift)로 시즌 9부터 생김)
 // 통솔 보물을 팔아 병력 최대치가 줄어도 지금 병력은 그대로 둔다 (최대치를 넘는 동안은 징병만 막힘)
 function sellTreasure(g, name) {
   if (!treasuresOf(g).includes(name)) return '가지고 있지 않은 보물이에요.';
@@ -2005,6 +2013,62 @@ function runLevy(g) {
   g.levyTurn = S.turn;
   gainStatExp(g, 'war', L.warExp || 0); // 2026-11-26 기획자: 갈취하면 무력 경험치 +20 (설명에는 따로 쓰지 않는다)
   addLog(g, `${josa(city.name, '은는')} 이게 일상이야.. 백성에게서 금을 거두었다. 내 금 +${fmt(got)} · ${ansan ? '왜인지 치안이 줄지 않았다!' : `치안 -${drop} (${cs.peace})`}`);
+  return '';
+}
+
+// ----- 증여 (2026-11-28 기획자, 시즌 9부터, RULES.gift) -----
+// 같은 성·같은 세력 장수에게 금 또는 보물을 준다. 받는 쪽 동의는 없다. 조건은 실행할 때 다시 본다 (그 사이 이동·명성 변화)
+// 금: 한 번에 goldMax까지, 받는 쪽은 수수료를 뺀 만큼 (받는 쪽 금 최대치를 넘으면 들어가는 만큼만 보내고 나머지는 내 금에 남는다)
+// 보물: 받는 쪽에 보물(고르는 중인 보물 포함)이 없을 때만, 수수료 = 판매가 × fee를 주는 쪽 금에서
+// 모든 증여는 gift_log 표에 남긴다 (다중 계정 감시, api.js recordGift → index.ts)
+const giftLeft = g => (g.giftTurn ? Math.max(0, g.giftTurn + RULES.gift.cooldown - S.turn) : 0);
+const giftTreasureFee = n => Math.round(trSell(n) * RULES.gift.fee);
+// t가 g에게서 받을 수 있는지 (명령 창 목록과 실행에 함께 쓴다). 안 되면 이유
+function giftTargetWhy(g, t, cityId = g.city) {
+  const R = RULES.gift;
+  if (!t || t.id === g.id) return '받을 장수가 없음';
+  if (!g.faction || t.faction !== g.faction) return `${josa(t.name, '은는')} 우리 세력 장수가 아님`;
+  if (t.city !== cityId) return `${josa(t.name, '이가')} 같은 성에 없음`;
+  if ((g.merit || 0) < R.minMerit) return `명성 ${R.minMerit} 이상이어야 줄 수 있음`;
+  if ((t.merit || 0) < R.minMerit) return `받는 장수도 명성 ${R.minMerit} 이상이어야 함`;
+  if ((t.merit || 0) >= (g.merit || 0)) return '받는 장수의 명성이 나보다 낮아야 함';
+  return '';
+}
+function runGift(g, o) {
+  const R = RULES.gift, t = S.generals[o.target];
+  if (giftLeft(g)) return `증여는 ${giftLeft(g)}턴 뒤에 다시 할 수 있음`;
+  const why = giftTargetWhy(g, t);
+  if (why) return why;
+  const city = cityById(g.city), base = { season: S.season || 1, turn: S.turn, from_uid: g.id, from_name: g.name, to_uid: t.id, to_name: t.name, faction: g.faction, city: city ? city.name : null, from_merit: g.merit || 0, to_merit: t.merit || 0 };
+  if (o.type === 'treasure') {
+    const name = o.item;
+    if (!TREASURES[name] || !treasuresOf(g).includes(name)) return '가지고 있지 않은 보물';
+    if (treasuresOf(t).length || t.treasureFound) return `${josa(t.name, '은는')} 이미 보물이 있음`;
+    const fee = giftTreasureFee(name);
+    if (g.gold < fee) return `수수료 금 ${fmt(fee)}이 모자람`;
+    g.gold -= fee;
+    g.treasures = treasuresOf(g).filter(n => n !== name);
+    t.treasures = [name];
+    addLog(g, `🎁 ${t.name}에게 보물 「${name}」${josa(name, '을를').slice(-1)} 주었다. 수수료 금 -${fmt(fee)} (${fmt(g.gold)})`);
+    addLog(t, `🎁 ${g.name}에게서 보물 「${name}」${josa(name, '을를').slice(-1)} 받았다! ${trLabel(name)}`);
+    if (typeof recordGift === 'function') recordGift({ ...base, kind: 'treasure', item: name, amount: trSell(name), received: 0, fee });
+  } else {
+    let amt = Math.floor(+o.amount);
+    if (!(amt >= 1 && amt <= R.goldMax)) return `금은 1~${fmt(R.goldMax)} 사이여야 함`;
+    if (g.gold < amt) return `금이 모자람 (가진 금 ${fmt(g.gold)})`;
+    const room = RULES.playerGoldMax - t.gold;
+    if (room <= 0) return `${t.name}의 금이 최대치(${fmt(RULES.playerGoldMax)})라 받을 수 없음`;
+    let net = Math.floor(amt * (1 - R.fee));
+    if (net > room) { net = room; amt = Math.min(amt, Math.ceil(room / (1 - R.fee))); } // 받는 쪽에 들어가는 만큼만 보낸다
+    const fee = amt - net;
+    g.gold -= amt;
+    t.gold += net;
+    addLog(g, `🎁 ${t.name}에게 금 ${fmt(amt)}을 주었다. 수수료 ${fmt(fee)} · ${t.name} +${fmt(net)} · 내 금 ${fmt(g.gold)}`);
+    addLog(t, `🎁 ${g.name}에게서 금 +${fmt(net)}을 받았다 (${fmt(t.gold)})`);
+    if (typeof recordGift === 'function') recordGift({ ...base, kind: 'gold', item: null, amount: amt, received: net, fee });
+  }
+  g.giftTurn = S.turn;
+  addRecord(t, 'giftIn');
   return '';
 }
 
@@ -2334,6 +2398,7 @@ const COMMANDS = {
   siege: { label: o => `병기 제작 (${o.type})`, run: runSiege },
   buyFood: { label: o => `군량 구매 (금 ${fmt(buyFoodGold(o))})`, run: runBuyFood },
   levy: { label: () => '갈취', run: runLevy },
+  gift: { label: o => `증여 → ${(S.generals[o.target] || { name: '?' }).name} (${o.type === 'treasure' ? o.item : `금 ${fmt(Math.floor(+o.amount) || 0)}`})`, run: runGift }, // 2026-11-28, 시즌 9부터
   transport: { label: o => `수송 ${o.dir === 'fetch' ? '←' : '→'} ${cityName(o.to)} (${fmt(transportAmount(o))})`, run: runTransport },
   quest: { label: () => '의뢰', run: runQuest }, // 재야 (2026-11-16)
   enlist: { label: () => '임관', run: runEnlist }, // 재야: 머무는 성의 세력에 (2026-11-16)

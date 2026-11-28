@@ -1331,6 +1331,38 @@ function buyFoodDialog() {
   });
 }
 
+// 증여 (2026-11-28 기획자, 시즌 9부터, RULES.gift): 이 턴에 있을 성의 우리 세력 장수에게 금 또는 보물. 조건이 안 되는 장수는 흐리게 + 이유
+function giftDialog() {
+  const p = me(), R = RULES.gift, at = cityAtSlot(p, slot);
+  const cool = giftBlocked(p, slot);
+  if (cool) { alert(cool); return; }
+  const mine = treasuresOf(p)[0];
+  const opts = allGenerals().filter(x => x.id !== p.id && x.faction === p.faction && x.city === at.id).sort((a, b) => (b.merit || 0) - (a.merit || 0)).map(x => {
+    const no = giftTargetWhy(p, x, at.id);
+    return `<label class="opt"${no ? ' style="opacity:.5"' : ''}><input type="radio" name="tgt" value="${x.id}"${no ? ' disabled' : ''}><b>${esc(x.name)}</b> <span class="dim">명성 ${fmt(x.merit || 0)}${treasuresOf(x).length ? ' · 보물 있음' : ''}</span>${no ? ` <span class="dim small">(${esc(no)})</span>` : ''}</label>`;
+  }).join('');
+  const extra = `
+    <p class="sub">줄 것</p>
+    <p class="picks"><label class="opt"><input type="radio" name="gk" value="gold" checked> 금</label>
+      <label class="opt"><input type="radio" name="gk" value="treasure"${mine ? '' : ' disabled'}> 보물 ${mine ? `「${esc(mine)}」 <span class="dim">(수수료 금 ${fmt(giftTreasureFee(mine))})</span>` : '<span class="dim">(가진 보물 없음)</span>'}</label></p>
+    <p class="sub">금 <span class="dim">(1~${fmt(R.goldMax)} · 받는 장수는 ${Math.round((1 - R.fee) * 100)}%를 받아요)</span></p>
+    <p><input type="number" id="gAmount" min="1" max="${R.goldMax}" step="1" value="${Math.min(R.goldMax, 1000)}" style="width:110px">
+      ${[500, 1000, R.goldMax].map(n => `<button type="button" class="mini" data-gamt="${n}">${fmt(n)}</button>`).join(' ')} <span id="gEst" class="dim"></span></p>`;
+  pickDialog('증여', `<p>${esc(at.name)}에 있는 우리 세력 장수에게 금이나 보물을 줘요. 둘 다 명성 ${R.minMerit} 이상이고, 받는 장수의 명성이 나보다 낮아야 해요.</p>
+    <p class="dim">금은 한 번에 ${fmt(R.goldMax)}까지 (수수료 ${Math.round(R.fee * 100)}%) · 보물은 받는 장수에게 보물이 없을 때만 (수수료 판매가의 ${Math.round(R.fee * 100)}%) · 한 번 주면 ${R.cooldown}턴 동안 다시 줄 수 없어요 · 실행할 때 조건을 다시 봐요</p>
+    <p class="dim">내 명성 ${fmt(p.merit || 0)} · 내 금 ${fmt(p.gold)}</p>`,
+  opts, '예약', (v, box) => {
+    const kind = box.querySelector('input[name=gk]:checked').value;
+    if (kind === 'treasure') { reserve({ cmd: 'gift', target: v, type: 'treasure', item: mine }); return; }
+    const n = Math.floor(+box.querySelector('#gAmount').value);
+    if (!(n >= 1 && n <= R.goldMax)) { alert(`금은 1~${fmt(R.goldMax)} 사이로 적어 주세요.`); return false; }
+    reserve({ cmd: 'gift', target: v, type: 'gold', amount: String(n) });
+  }, extra, 'narrow');
+  const est = () => { const n = Math.floor(+$('#gAmount').value); $('#gEst').textContent = n >= 1 ? `→ 받는 금 ${fmt(Math.floor(n * (1 - R.fee)))}` : ''; };
+  $('#gAmount').oninput = est; est();
+  document.querySelectorAll('[data-gamt]').forEach(b => { b.onclick = () => { $('#gAmount').value = b.dataset.gamt; est(); }; });
+}
+
 // 이동·수송 목록에서 성 이름 옆: 규모 별(★) + 이웃에 다른 세력 성이 있으면 ⚔전선 (2026-11-02)
 const isFront = c => neighborsOf(MAP, c).some(n => n.faction && n.faction !== c.faction);
 // 이동·수송 목록 (2026-11-03): 칼(전선)은 성 이름 옆, 규모 별은 오른쪽 정렬된 군량 글자 바로 왼쪽
@@ -2187,7 +2219,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128164332&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183158&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2197,7 +2229,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128164332&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128183158&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2207,7 +2239,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128164332&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128183158&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -3305,7 +3337,7 @@ function renderCommands() {
   // 기타 명령: 모두 꺼져 있으면 제목도 숨긴다
   const plot = [btn('destroy', '파괴', '방어 낮추기'), btn('rumor', '유언', '치안 낮추기'), btn('spy', '첩보', '적 성 엿보기')].join('');
   const etc = [btn('explore', '탐색', `금 ${RULES.myGoldCost.explore}`),
-    btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`), btn('transport', '군량 수송', '가져오기·보내기'),
+    btn('train', '수련', trainLock && lockStat ? `${statName(lockStat)} 고정` : '능력치 경험'), btn('buyFood', '군량 구매', `금 1 → 군량 ${foodPriceOf(p)}`), btn('transport', '군량 수송', '가져오기·보내기'), btn('gift', '증여', giftBlocked(p, slot) ? COOL : '금·보물'), // 증여 (2026-11-28, 시즌 9부터)
     // 증축 (2026-11-08): 늘 보인다 (눌러서 조건·비용·보상을 언제든 볼 수 있게). 조건이 안 되면 흐리게, 예약은 확인 창에서 막는다
     (() => { const ok = at.faction === p.faction && expandReady(at), can = at.faction === p.faction && at.grade < expandTop(at); return btn('expand', '증축', ok ? `금 ${fmt(RULES.expand.cost[at.grade])}` : at.grade >= 4 ? '수도' : at.grade >= expandTop(at) ? '대도시' : '조건 부족', !can); })(), // 2026-11-16: 시즌 8부터 대도시 → 수도 (세력당 하나) // 2026-11-15 기획자: 조건이 모자라도 예약은 된다 (실행하는 턴에 확인)
     gTrait(p).levy ? btn('levy', '갈취', levyBlocked(p, slot) ? COOL : `금 ${levyRange(p).map(fmt).join('~')}`) : '', // 개인 특성 이게 일상이야
@@ -3349,7 +3381,7 @@ function renderCommands() {
     <div class="cmds cg-etc">${etc}</div>` : ''}
     <div class="qBtnsM">${qBtns}</div>
 `;
-  const dialogs = { raid: raidDialog, rise: riseDialog, enlist: enlistDialog, expand: expandConfirm, adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
+  const dialogs = { raid: raidDialog, rise: riseDialog, enlist: enlistDialog, expand: expandConfirm, adminPouch: async () => { if (await call('adminPouch')) pouchDialog(); }, buyFood: buyFoodDialog, transport: transportDialog, gift: giftDialog, siege: siegeDialog, shop: shopDialog, draft: draftDialog, attack: attackDialog, move: moveDialog, spy: spyDialog, train: trainDialog, destroy: () => plotDialog('destroy'), rumor: () => plotDialog('rumor') };
   if ($('#draftLock')) $('#draftLock').onchange = e => {
     draftLock = e.target.checked;
     try { localStorage.setItem(DRAFT_LOCK_KEY, draftLock ? '1' : '0'); } catch (err) { /* 이번만 */ }
