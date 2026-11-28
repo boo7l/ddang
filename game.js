@@ -339,12 +339,13 @@ function adminDialog(tab = 'users', fid = null) {
     if (chatOf(RON).length || roninOn()) fs.push({ id: RON, name: '재야', ron: true }); // 재야 채팅방 (2026-11-20 기획자: 관리에서 안 보였음)
     const roomName = id => (id === RON ? '재야' : factionById(id).name);
     fid = fid || (fs[0] && fs[0].id);
+    adminChatFid = fid; // 자동 갱신 때 같은 방을 다시 그린다 (2026-11-28)
     const list = fid ? chatOf(fid) : [];
     const allChat = fs.reduce((n, f) => n + chatOf(f.id).length, 0);
     body = `<div class="picks">${fs.map(f => `<button class="pick${f.id === fid ? ' on' : ''}" data-f="${f.id}">${f.ron ? '' : swatch(f.id)}${esc(f.name)} <span class="dim">${chatOf(f.id).length}</span></button>`).join('') || '<p class="dim">채팅이 있는 세력이 없어요.</p>'}</div>
       <ul class="adminChat">${list.map(m => `<li><span class="t">${fmtTime(m.t)}</span><span class="who">${m.letter && m.letter.admin ? '<b class="adminName">부기</b> <span class="dim small">(관리자)</span>' : ''}${m.letter && !m.letter.sys && !m.letter.admin ? `📜 ${m.letter.dir === 'in' ? `${fName(m.letter.other)}에서 온 서신 · ` : `${fName(m.letter.other)}에 보낸 서신 · `}` : ''}${m.letter && m.letter.admin ? '' : chatWho(m, m.letter && m.letter.dir === 'in' ? m.letter.other : fid)}</span>${esc(m.text)}${m.id ? ` <button class="mini x" data-delchat="${esc(m.id)}" title="이 글 지우기">✕</button>` : ''}</li>`).join('') || '<li class="dim">아직 아무 말도 없어요.</li>'}</ul>${fid ? `<p class="adminChatSend"><input type="text" id="acText" maxlength="${CHAT_LEN}" placeholder="${esc(roomName(fid))}${fid === RON ? '' : ' 세력'} 채팅에 '부기'로 보내기"> <button id="acSend" class="main">보내기</button></p>` : ''}${allChat ? '<p class="adminDelAll"><button id="acDelAll" class="mini" title="이번 시즌의 모든 방 채팅 지우기 (테스트 정리용)">모두 지우기</button></p>' : ''}`;
   }
-  adminShow(tab, `${body}<p class="dim small">새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.</p>`, box => {
+  adminShow(tab, `${body}<p class="dim small">${tab === 'chat' ? '채팅은 이 화면을 보는 동안 10초마다 새로 받아 와요.' : '새 정보는 1분마다 받아 와요. 메뉴를 다시 누르면 새로 그려요.'}</p>`, box => {
     box.querySelectorAll('[data-f]').forEach(b => { b.onclick = () => adminDialog('chat', b.dataset.f); });
     box.querySelectorAll('[data-uf]').forEach(b => { b.onclick = () => adminDialog('users', b.dataset.uf); });
     if (tab === 'users' || tab === 'factions') sortableTable(box.querySelector('.adminScroll table'), tab);
@@ -2186,7 +2187,7 @@ function tourOpenDuel(T, m) {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128150124&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${tourIcon(T)} ${tourMatchName(m.slot)} · ${esc(m.names[0])} vs ${esc(m.names[1])}</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128150359&kind=${tourKind(T)}#web&id=${T.id}-${m.slot}" title="무술대회 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2196,7 +2197,7 @@ function tourOpenPractice(kind = 'martial') { // kind: 'debate'면 설전 연습
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128150124&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>${kind === 'debate' ? '🗣 설전 연습' : '🥋 연습 경기'}</span><button class="duelClose">✕ 닫기</button></div><iframe src="duel.html?v=20261128150359&kind=${kind}#practice" title="연습 경기"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
   bgmHold(true);
@@ -2206,7 +2207,7 @@ function tourOpenRules() {
   tourCloseDuel();
   const w = document.createElement('div');
   w.id = 'duelWrap';
-  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128150124&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
+  w.innerHTML = `<div class="duelBox"><div class="duelBar"><span>📖 ${tourName(tourT())} 규칙</span><button class="duelClose">✕ 대진표로</button></div><iframe src="duel.html?v=20261128150359&kind=${tourKind(tourT())}#rules" title="대회 규칙"></iframe></div>`;
   w.querySelector('.duelClose').onclick = tourCloseDuel;
   document.body.appendChild(w); fitDuel(w);
 }
@@ -4027,8 +4028,24 @@ document.addEventListener('keydown', e => {
   if (b && !b.disabled && b.onclick) b.click();
 });
 
+// 관리 → 채팅 자동 갱신 (2026-11-28 기획자): 관리 화면은 게임 화면을 숨겨서 아래 1분 갱신이 돌지 않는다.
+// 새 글이 있을 때만 다시 그리고, 보내기 칸에 글을 쓰는 중이면 건드리지 않는다 (한글 입력이 깨지지 않게). 위로 올려 읽는 중이면 그 자리를 지킨다
+let adminChatPoll = 0, adminChatFid = null;
+async function adminChatPollNow() {
+  adminChatPoll = Date.now();
+  const sig = () => Object.values(S.chat || {}).reduce((n, l) => n + l.length + ':' + ((l[l.length - 1] || {}).t || 0) + ',', '');
+  const before = sig();
+  await call('state');
+  if ($('#adminPage').hidden || adminTab !== 'chat' || sig() === before) return;
+  const inp = $('#acText');
+  if (inp && (inp.value || document.activeElement === inp)) return;
+  const ul = $('#adminMain .adminChat'), atBottom = !ul || ul.scrollHeight - ul.scrollTop - ul.clientHeight < 40, keep = ul ? ul.scrollTop : 0;
+  adminDialog('chat', adminChatFid);
+  const ul2 = $('#adminMain .adminChat'); if (ul2 && !atBottom) ul2.scrollTop = keep;
+}
 // 1초마다: 남은 시간·시계 갱신. 턴이 넘어가고 1~6초 뒤(사람마다 무작위)이거나 1분이 지났으면 서버에서 새로 받아 온다
 setInterval(() => {
+  if (S && !$('#adminPage').hidden && adminTab === 'chat' && !busy && !document.hidden && Date.now() - adminChatPoll > 10 * 1000) { adminChatPollNow(); return; } // 관리 → 채팅: 10초마다 (2026-11-28)
   if (!S || $('#game').hidden) return;
   showPopup(); // 다른 창이 열려 있으면 닫힌 뒤에 뜬다
   const turnPassed = nextTurn(lastFetch + S.timeOffset) <= now() - turnWait; // 서버가 턴을 처리할 1초 여유 + 흩어 묻기 0~5초
