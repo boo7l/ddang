@@ -398,8 +398,8 @@ function joinFaction(g, fid, cityId) {
 const skipBlocked = g => allGenerals().some(x => !x.test && x !== g);
 function editorBlocked(g) {
   if (!g) return '장수가 없어요.';
-  const all = allGenerals();
-  if (all.length !== 1 || all[0] !== g) return `세계에 내 장수 혼자일 때만 쓸 수 있어요 (지금 장수 ${all.length}명).`;
+  const all = allGenerals().filter(x => !x.test); // 🧪 테스트 장수는 세지 않는다 (2026-11-28 기획자)
+  if (all.length !== 1 || all[0] !== g) return `세계에 내 장수 혼자일 때만 쓸 수 있어요 (테스트 장수 빼고 지금 장수 ${all.length}명).`;
   return '';
 }
 function adminEdit(g, p = {}) {
