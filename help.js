@@ -7,6 +7,7 @@
 // 아직 관리자만 본다 (game.js의 #helpBtn). 일반 장수는 옛 helpDialog
 function helpTopics() {
   const R = RULES, pct = v => Math.round(v * 100), sn = k => STATS.find(s => s.key === k).name, gName = ['', '소성', '중성', '대도시', '수도'];
+  const G = R.gift; // 증여 (2026-11-28)
   const C = R.commander, RA = R.raid, RI = R.rise, RN = R.ronin, RAr = R.roninArmy, T2 = R.tier2, B = R.bandit, BS = R.besiege, CP = R.capital, CU = R.catchUp;
   const ul = items => `<ul>${items.filter(Boolean).map(x => `<li>${x}</li>`).join('')}</ul>`;
   const table = (head, rows) => `<table class="oddsTable helpTable"><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;
@@ -69,12 +70,12 @@ function helpTopics() {
         '<b>세력 특성</b>: 지도에 따라 세력마다 붙어 있어요. 세력 창에서 세력을 누르면 보여요.',
         '등급이 높다고 무조건 좋은 성능은 아니에요. 대신 더 재밌는 플레이를 할 수 있어요.'])}`, related: [] },
       { id: 'gear', title: '장비와 보물', keys: ['상점', '장비', '명마', '명검', '서적', '보물'], body: table(['', '장비', '보물'], [
-        ['얻는 곳', '장수 창의 <b>상점</b>에서 금으로 (턴을 쓰지 않음), 탐색 이벤트', '탐색 이벤트, 적 성 함락에서 아주 드물게'],
+        ['얻는 곳', '장수 창의 <b>상점</b>에서 금으로 (턴을 쓰지 않음), 탐색 이벤트', '탐색 이벤트, 적 성 함락에서 아주 드물게' + (cmdOn('gift') ? `, 우리 세력 장수의 ${link('economy.gift', '증여')}` : '')],
         ['효과', `명마(통솔)·명검(무력)·서적(지력) 하나에 +${SHOP.명검.bonus}, 최대치(${R.statMax})까지`, '능력치 +3~+7, 최대치를 넘길 수 있음' + (TREASURES.적토마 && trOpen('적토마') ? '<br>적토마는 능력치 대신 이동 +1칸' : '')],
         ['개수', '여러 개 (살 때마다 비싸짐)', '세상에 하나씩, 장수 한 명당 1개'],
         ['잃는 경우', '—', `내 부대가 전멸하면 사라지거나(${pct(TREASURE_RULES.loseRate)}%) 적에게 빼앗김(${pct(TREASURE_RULES.takeRate)}%)`]]), related: [] },
     ] },
-    { id: 'economy', icon: '💰', title: '금과 군량', blurb: '수입·수확·지출·수송', subs: [
+    { id: 'economy', icon: '💰', title: '금과 군량', blurb: cmdOn('gift') ? '수입·수확·지출·수송·증여' : '수입·수확·지출·수송', subs: [
       { id: 'kinds', title: '금과 군량은 누구 것', keys: ['금', '군량', '개인 군량'], body: ul([
         '<b>금</b>은 장수 개인 것이에요. 내 명령에 내가 써요.',
         '<b>군량</b>은 성마다 따로 있어요. 그 성에 머무는 우리 세력 장수들의 병사가 함께 먹어요.',
@@ -97,6 +98,12 @@ function helpTopics() {
         `<b>군량 구매</b>: 금으로 머무는 성의 군량을 사요. 시세(금 1당 군량 ${R.foodBuy.min}~${R.foodBuy.max})는 매달 바뀌어요. 한 번에 금 ${fmt(R.foodBuy.goldMax)}까지.`,
         `<b>군량 수송</b>: 우리 땅으로 ${R.moveRange}칸 안의 우리 성과 군량을 주고받아요 (한 번에 최대 ${fmt(R.transportMax)}). 수도가 끼면 ${CP.transportRange}칸.`,
         `대도독은 어디에 있든 우리 성끼리 군량을 옮기는 <b>보급</b>을 할 수 있어요. ${link('faction.commander', '대도독')}`]), related: [] },
+      ...(cmdOn('gift') ? [{ id: 'gift', title: '증여', keys: ['증여', '선물', '금 주기', '보물 주기'], body: `<p>같은 성에 있는 우리 세력 장수에게 <b>금</b>이나 <b>보물</b>을 줘요. 🎒 기타의 <b>증여</b> 명령으로 예약하고, 받는 장수가 따로 수락하지 않아도 돼요.</p>` + ul([
+        `주는 장수와 받는 장수 모두 명성 ${G.minMerit} 이상이어야 하고, <b>받는 장수의 명성이 나보다 낮아야</b> 해요.`,
+        `<b>금</b>: 한 번에 ${fmt(G.goldMax)}까지. 수수료 ${pct(G.fee)}%를 뺀 만큼 받아요 (예: ${fmt(G.goldMax)} → ${fmt(Math.floor(G.goldMax * (1 - G.fee)))}).`,
+        `<b>보물</b>: 받는 장수에게 보물이 없을 때만 줄 수 있어요. 수수료로 그 보물 판매가의 ${pct(G.fee)}%를 내 금에서 내요.`,
+        `한 번 주면 ${G.cooldown}턴 동안 다시 줄 수 없어요. 증여로 받은 보물은 ${G.treasureRegift}턴 동안 다른 장수에게 다시 줄 수 없어요.`,
+        '조건은 명령이 실행될 때 다시 확인해요. 그사이 상대가 다른 성으로 가거나 명성이 바뀌면 실패해요.']), related: ['general.gear'] }] : []),
     ] },
     { id: 'city', icon: '🏯', title: '내정과 도시', blurb: '내정·성 크기·수비대·도적', subs: [
       { id: 'domestic', title: '내정', keys: ['농업', '상업', '축성', '치안', '내정'], body: table(['명령', '능력치', '효과', '최대치에서 하면'], [
